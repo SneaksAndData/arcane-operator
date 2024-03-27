@@ -6,9 +6,7 @@ jobs:
   create_release:
     name: Create Release
     runs-on: ubuntu-latest
-    # Remove the line below and uncomment the next one
-    if: ${{ false }}
-    #if: ${{ github.ref == 'refs/heads/main' }}
+    if: ${{ github.ref == 'refs/heads/main' }}
 
     steps:
       - uses: actions/checkout@v4
@@ -17,5 +15,5 @@ jobs:
       - name: Create Release
         uses: SneaksAndData/github-actions/semver_release@v0.1.6
         with:
-          major_v: 0
+          major_v: 2
           minor_v: 0

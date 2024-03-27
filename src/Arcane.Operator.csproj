@@ -3,9 +3,12 @@
     <PropertyGroup>
         <OutputType>Exe</OutputType>
         <TargetFramework>net6.0</TargetFramework>
+        <LangVersion>10</LangVersion>
+        <RootNamespace>Arcane.Operator</RootNamespace>
     </PropertyGroup>
+    
     <ItemGroup>
-        <PackageReference Include="ESD.Proteus" Version="1.0.3" />
+        <PackageReference Include="SnD.Sdk" Version="1.0.4"/>
     </ItemGroup>
 
 </Project>
