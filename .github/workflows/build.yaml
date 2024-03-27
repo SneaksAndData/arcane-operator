@@ -71,7 +71,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: Import Secrets (DEV)
-        uses: hashicorp/vault-action@v2.7.4
+        uses: hashicorp/vault-action@v3.0.0
         with:
           url: https://hashicorp-vault.production.sneaksanddata.com/
           role: github
@@ -104,7 +104,7 @@ jobs:
           container_registry_token: ${{steps.vault_secrets_dev.outputs.acr_token}}
           container_registry_address: ${{steps.vault_secrets_dev.outputs.acr_name}}.azurecr.io
       - name: Import Secrets (PROD)
-        uses: hashicorp/vault-action@v2.7.4
+        uses: hashicorp/vault-action@v3.0.0
         if: ${{ github.ref == 'refs/heads/main' }}
         with:
           url: https://hashicorp-vault.production.sneaksanddata.com/
