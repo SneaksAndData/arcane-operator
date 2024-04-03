@@ -1,5 +1,49 @@
-﻿// See https://aka.ms/new-console-template for more information
-
 using System;
+using System.Diagnostics.CodeAnalysis;
+using Arcane.Operator.Services.Maintenance;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Serilog;
+using Snd.Sdk.Logs.Providers;
+using Snd.Sdk.Logs.Providers.Configurations;
 
-Console.WriteLine("Hello, World!");
+namespace Arcane.Operator;
+
+[ExcludeFromCodeCoverage(Justification = "Service entrypoint")]
+public class Program
+{
+    public static int Main(string[] args)
+    {
+        Log.Logger = DefaultLoggingProvider.CreateBootstrappLogger(nameof(Arcane));
+        try
+        {
+            Log.Information("Starting web host");
+            CreateHostBuilder(args).Build().Run();
+            return 0;
+        }
+        catch (Exception ex)
+        {
+            Log.Fatal(ex, "Host terminated unexpectedly");
+            return 1;
+        }
+        finally
+        {
+            Log.CloseAndFlush();
+        }
+    }
+
+    public static IHostBuilder CreateHostBuilder(string[] args)
+    {
+        return Host.CreateDefaultBuilder(args)
+            .AddSerilogLogger(nameof(Arcane), loggerConfiguration => loggerConfiguration.Default().AddDatadog())
+            .ConfigureWebHostDefaults(webBuilder => { webBuilder.UseStartup<Startup>(); })
+            .ConfigureServices(services =>
+            {
+                if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("MAINTAINER")))
+                {
+                    services.AddHostedService<HostedStreamingJobMaintenanceService>();
+                }
+            });
+    }
+}
