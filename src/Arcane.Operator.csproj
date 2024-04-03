@@ -6,10 +6,12 @@
         <LangVersion>10</LangVersion>
         <RootNamespace>Arcane.Operator</RootNamespace>
     </PropertyGroup>
-    
+
     <ItemGroup>
-        <PackageReference Include="SnD.Sdk" Version="1.0.5"/>
+        <PackageReference Include="SnD.Sdk" Version="1.0.6"/>
+        <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0"/>
     </ItemGroup>
+
 
 
 </Project>
