@@ -11,11 +11,11 @@ public class HostedStreamOperatorService<TStreamType> : BackgroundService
 {
     private readonly ILogger<HostedStreamOperatorService<TStreamType>> logger;
     private readonly IMaterializer materializer;
-    private readonly IStreamOperatorService streamOperatorService;
+    private readonly IStreamOperatorService<TStreamType> streamOperatorService;
 
     public HostedStreamOperatorService(
         ILogger<HostedStreamOperatorService<TStreamType>> logger,
-        IStreamOperatorService streamOperatorService,
+        IStreamOperatorService<TStreamType> streamOperatorService,
         IMaterializer materializer)
     {
         this.logger = logger;

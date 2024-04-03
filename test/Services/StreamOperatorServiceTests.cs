@@ -76,7 +76,7 @@ public class StreamOperatorServiceTests : IClassFixture<ServiceFixture>, IClassF
 
         // Act
         var sp = this.CreateServiceProvider();
-        await sp.GetRequiredService<IStreamOperatorService>()
+        await sp.GetRequiredService<IStreamOperatorService<StreamDefinition>>()
             .GetStreamDefinitionEventsGraph(CancellationToken.None)
             .Run(this.akkaFixture.Materializer);
 
@@ -122,7 +122,7 @@ public class StreamOperatorServiceTests : IClassFixture<ServiceFixture>, IClassF
 
         // Act
         var sp = this.CreateServiceProvider();
-        await sp.GetRequiredService<IStreamOperatorService>()
+        await sp.GetRequiredService<IStreamOperatorService<StreamDefinition>>()
             .GetStreamDefinitionEventsGraph(CancellationToken.None)
             .Run(this.akkaFixture.Materializer);
 
@@ -159,7 +159,7 @@ public class StreamOperatorServiceTests : IClassFixture<ServiceFixture>, IClassF
 
         // Act
         var sp = this.CreateServiceProvider();
-        await sp.GetRequiredService<IStreamOperatorService>()
+        await sp.GetRequiredService<IStreamOperatorService<StreamDefinition>>()
             .GetStreamDefinitionEventsGraph(CancellationToken.None)
             .Run(this.akkaFixture.Materializer);
 
@@ -210,7 +210,7 @@ public class StreamOperatorServiceTests : IClassFixture<ServiceFixture>, IClassF
 
         // Act
         var sp = this.CreateServiceProvider();
-        await sp.GetRequiredService<IStreamOperatorService>()
+        await sp.GetRequiredService<IStreamOperatorService<StreamDefinition>>()
             .GetStreamDefinitionEventsGraph(CancellationToken.None)
             .Run(this.akkaFixture.Materializer);
 
@@ -251,7 +251,7 @@ public class StreamOperatorServiceTests : IClassFixture<ServiceFixture>, IClassF
 
         // Act
         var sp = this.CreateServiceProvider();
-        await sp.GetRequiredService<IStreamOperatorService>()
+        await sp.GetRequiredService<IStreamOperatorService<FailedStreamDefinition>>()
             .GetStreamDefinitionEventsGraph(CancellationToken.None)
             .Run(this.akkaFixture.Materializer);
 
@@ -292,7 +292,7 @@ public class StreamOperatorServiceTests : IClassFixture<ServiceFixture>, IClassF
         var exception = await Assert.ThrowsAnyAsync<Exception>(async () =>
         {
             var sp = this.CreateServiceProvider();
-            await sp.GetRequiredService<IStreamOperatorService>()
+            await sp.GetRequiredService<IStreamOperatorService<FailedStreamDefinition>>()
                 .GetStreamDefinitionEventsGraph(CancellationToken.None)
                 .Run(this.akkaFixture.Materializer);
         });
@@ -335,7 +335,7 @@ public class StreamOperatorServiceTests : IClassFixture<ServiceFixture>, IClassF
 
         // Act
         var sp = this.CreateServiceProvider();
-        await sp.GetRequiredService<IStreamOperatorService>()
+        await sp.GetRequiredService<IStreamOperatorService<StreamDefinition>>()
             .GetStreamDefinitionEventsGraph(CancellationToken.None)
             .Run(this.akkaFixture.Materializer);
 
@@ -379,10 +379,8 @@ public class StreamOperatorServiceTests : IClassFixture<ServiceFixture>, IClassF
             {
                 Parallelism = 1, MaxBufferCapacity = 100
             }))
-            .AddSingleton<IStreamOperatorService,
-                StreamOperatorService<StreamDefinition>>()
-            .AddSingleton<IStreamOperatorService,
-                StreamOperatorService<FailedStreamDefinition>>()
+            .AddSingleton<IStreamOperatorService<StreamDefinition>, StreamOperatorService<StreamDefinition>>()
+            .AddSingleton<IStreamOperatorService<FailedStreamDefinition>, StreamOperatorService<FailedStreamDefinition>>()
             .BuildServiceProvider();
     }
 }

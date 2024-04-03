@@ -23,7 +23,7 @@ using Snd.Sdk.Tasks;
 
 namespace Arcane.Operator.Services.Operator;
 
-public class StreamOperatorService<TStreamType> : IStreamOperatorService
+public class StreamOperatorService<TStreamType> : IStreamOperatorService<TStreamType>
     where TStreamType : IStreamDefinition
 {
     private readonly StreamOperatorServiceConfiguration configuration;

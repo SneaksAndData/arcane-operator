@@ -112,7 +112,7 @@ public class HostedStreamingJobMaintenanceServiceTests : IClassFixture<ServiceFi
             .AddSingleton(this.loggerFixture.Factory.CreateLogger<HostedStreamOperatorService<StreamDefinition>>())
             .AddSingleton<IStreamingJobMaintenanceService, StreamingJobMaintenanceService>()
             .AddSingleton(Options.Create(new StreamingJobOperatorServiceConfiguration()))
-            .AddSingleton<IStreamOperatorService, StreamOperatorService<StreamDefinition>>()
+            .AddSingleton<IStreamOperatorService<StreamDefinition>, StreamOperatorService<StreamDefinition>>()
             .AddSingleton<HostedStreamOperatorService<StreamDefinition>>()
             .AddSingleton(this.akkaFixture.Materializer)
             .BuildServiceProvider()
