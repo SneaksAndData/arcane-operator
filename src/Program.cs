@@ -40,10 +40,7 @@ public class Program
             .ConfigureWebHostDefaults(webBuilder => { webBuilder.UseStartup<Startup>(); })
             .ConfigureServices(services =>
             {
-                if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("MAINTAINER")))
-                {
-                    services.AddHostedService<HostedStreamingJobMaintenanceService>();
-                }
+                services.AddHostedService<HostedStreamingJobMaintenanceService>();
             });
     }
 }

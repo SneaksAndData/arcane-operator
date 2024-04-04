@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks;
 using Akka.Util;
-using Arcane.Operator.JobTemplates.V1Beta1;
+using Arcane.Operator.Models.JobTemplates.V1Beta1;
 
 namespace Arcane.Operator.Services.Base;
 

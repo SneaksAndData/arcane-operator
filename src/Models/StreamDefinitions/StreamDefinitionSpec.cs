@@ -3,7 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
 using k8s.Models;
 
-namespace Arcane.Operator.StreamDefinitions;
+namespace Arcane.Operator.Models.StreamDefinitions;
 
 /// <summary>
 /// Configuration for Sql Server Single Table Stream.

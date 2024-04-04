@@ -4,7 +4,7 @@ using k8s;
 using k8s.Models;
 using Newtonsoft.Json;
 
-namespace Arcane.Operator.StreamDefinitions.Base;
+namespace Arcane.Operator.Models.StreamDefinitions.Base;
 
 public interface IStreamDefinition : IKubernetesObject<V1ObjectMeta>
 {

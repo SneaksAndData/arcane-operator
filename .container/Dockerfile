@@ -1,4 +1,4 @@
-﻿FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build-env
+﻿FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build-env
 ARG NUGET_TOKEN
 ARG PROJECT_NAME
 
@@ -14,8 +14,8 @@ COPY src/. ./
 RUN dotnet publish "$PROJECT_NAME.csproj" -c Release -o out
 
 # Build runtime image
-FROM mcr.microsoft.com/dotnet/aspnet:6.0-bullseye-slim
-ARG TRACER_VERSION="2.32.0"
+FROM mcr.microsoft.com/dotnet/aspnet:8.0-bookworm-slim
+ARG TRACER_VERSION="2.48.0"
 ARG PROJECT_NAME
 ENV PROJECT_ASSEMBLY=$PROJECT_NAME
 
@@ -31,4 +31,7 @@ RUN mkdir -p /opt/datadog \
 
 WORKDIR /app
 COPY --from=build-env /app/out .
+
+USER app
+
 ENTRYPOINT "dotnet" "$PROJECT_ASSEMBLY.dll"

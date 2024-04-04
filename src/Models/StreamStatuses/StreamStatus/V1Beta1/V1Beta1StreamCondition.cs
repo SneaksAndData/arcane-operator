@@ -1,7 +1,7 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
 
-namespace Arcane.Operator.StreamStatuses.StreamStatus.V1Beta1;
+namespace Arcane.Operator.Models.StreamStatuses.StreamStatus.V1Beta1;
 
 /// <summary>
 /// Represents the status of a stream for Kubernetes CRD

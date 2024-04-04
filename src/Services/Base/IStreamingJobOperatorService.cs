@@ -1,7 +1,7 @@
 ﻿using System.Threading.Tasks;
 using Akka.Util;
 using Arcane.Operator.Models;
-using Arcane.Operator.StreamDefinitions.Base;
+using Arcane.Operator.Models.StreamDefinitions.Base;
 using k8s.Models;
 
 namespace Arcane.Operator.Services.Base;
