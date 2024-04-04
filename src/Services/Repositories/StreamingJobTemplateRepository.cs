@@ -1,7 +1,7 @@
 ﻿using System.Threading.Tasks;
 using Akka.Util;
 using Akka.Util.Extensions;
-using Arcane.Operator.JobTemplates.V1Beta1;
+using Arcane.Operator.Models.JobTemplates.V1Beta1;
 using Arcane.Operator.Services.Base;
 using Microsoft.Extensions.Logging;
 using Snd.Sdk.Kubernetes.Base;

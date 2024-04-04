@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using Arcane.Models.StreamingJobLifecycle;
-using Arcane.Operator.StreamDefinitions;
-using Arcane.Operator.StreamDefinitions.Base;
+using Arcane.Operator.Models.StreamDefinitions;
+using Arcane.Operator.Models.StreamDefinitions.Base;
 using k8s.Models;
 
 namespace Arcane.Operator.Tests.Services.TestCases;

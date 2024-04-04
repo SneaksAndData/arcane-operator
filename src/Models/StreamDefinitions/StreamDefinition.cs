@@ -7,10 +7,10 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Arcane.Models.StreamingJobLifecycle;
-using Arcane.Operator.StreamDefinitions.Base;
+using Arcane.Operator.Models.StreamDefinitions.Base;
 using k8s.Models;
 
-namespace Arcane.Operator.StreamDefinitions;
+namespace Arcane.Operator.Models.StreamDefinitions;
 
 [ExcludeFromCodeCoverage(Justification = "Model")]
 public class StreamDefinition : IStreamDefinition

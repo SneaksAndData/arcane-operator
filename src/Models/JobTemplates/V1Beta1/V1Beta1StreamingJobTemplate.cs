@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 using k8s;
 using k8s.Models;
 
-namespace Arcane.Operator.JobTemplates.V1Beta1;
+namespace Arcane.Operator.Models.JobTemplates.V1Beta1;
 
 [ExcludeFromCodeCoverage(Justification = "Model")]
 public class V1Beta1StreamingJobTemplate : IKubernetesObject<V1ObjectMeta>

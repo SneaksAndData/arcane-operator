@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using Arcane.Operator.StreamDefinitions.Base;
+using Arcane.Operator.Models.StreamDefinitions.Base;
 using k8s.Models;
 
 namespace Arcane.Operator.Tests.Services.TestCases;
