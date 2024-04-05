@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
+using Arcane.Operator.Configurations;
 using Arcane.Operator.Models.StreamClass.Base;
 using k8s;
 using k8s.Models;
@@ -37,5 +38,13 @@ public class V1Beta1StreamClass: IStreamClass
     public string ToStreamClassId()
     {
         return $"{this.Metadata.Namespace()}/{this.Metadata.Name}";
+    }
+
+    public StreamOperatorServiceConfiguration ToStreamOperatorServiceConfiguration()
+    {
+        return new StreamOperatorServiceConfiguration
+        {
+            MaxBufferCapacity = this.Spec.MaxBufferCapacity
+        };
     }
 }

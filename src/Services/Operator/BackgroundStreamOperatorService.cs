@@ -22,12 +22,12 @@ public class BackgroundStreamOperatorService
     public BackgroundStreamOperatorService(
         ILogger<BackgroundStreamOperatorService> logger,
         IStreamOperatorService<StreamDefinition> streamOperatorService,
-        IMaterializer materializer, CancellationTokenSource cts)
+        IMaterializer materializer)
     {
         this.logger = logger;
         this.streamOperatorService = streamOperatorService;
         this.materializer = materializer;
-        this.cts = cts;
+        this.cts = new CancellationTokenSource();
     }
 
     /// <summary>

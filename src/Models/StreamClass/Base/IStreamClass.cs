@@ -1,4 +1,5 @@
-﻿using k8s;
+﻿using Arcane.Operator.Configurations;
+using k8s;
 using k8s.Models;
 
 namespace Arcane.Operator.Models.StreamClass.Base;
@@ -13,4 +14,6 @@ public interface IStreamClass: IKubernetesObject<V1ObjectMeta>
     /// </summary>
     /// <returns></returns>
     string ToStreamClassId();
+
+    StreamOperatorServiceConfiguration ToStreamOperatorServiceConfiguration();
 }
