@@ -1,12 +1,10 @@
 ﻿FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build-env
-ARG NUGET_TOKEN
 ARG PROJECT_NAME
 
 WORKDIR /app
 
 # Copy csproj and restore as distinct layers
 COPY src/*.csproj ./
-RUN dotnet nuget add source --username USERNAME --password $NUGET_TOKEN --store-password-in-clear-text --name github "https://nuget.pkg.github.com/SneaksAndData/index.json"
 RUN dotnet restore
 
 # Copy everything else and build
