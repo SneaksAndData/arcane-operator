@@ -15,5 +15,9 @@ public interface IStreamClass: IKubernetesObject<V1ObjectMeta>
     /// <returns></returns>
     string ToStreamClassId();
 
+    /// <summary>
+    /// Converts the StreamClass object to a StreamOperatorServiceConfiguration object
+    /// </summary>
+    /// <returns></returns>
     StreamOperatorServiceConfiguration ToStreamOperatorServiceConfiguration();
 }
