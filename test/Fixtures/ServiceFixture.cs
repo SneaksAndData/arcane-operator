@@ -10,9 +10,7 @@ public class ServiceFixture
 
     public Mock<IStreamInteractionService> MockStreamInteractionService { get; } = new();
 
-    public Mock<IStreamingJobOperatorService> MockStreamingJobOperatorService = new();
+    public Mock<IStreamingJobOperatorService> MockStreamingJobOperatorService { get; } = new();
 
     public Mock<IStreamDefinitionRepository> MockStreamDefinitionRepository { get; } = new();
-    
-    public Mock<IStreamClassStateRepository> MockStreamClassRepository { get; } = new();
 }
