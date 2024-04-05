@@ -18,7 +18,6 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
 using static Arcane.Operator.Tests.Services.TestCases.StreamClassTestCases;
-using StreamOperatorServiceWorkerFactory = Arcane.Operator.Services.Operator.StreamOperatorServiceWorkerFactory;
 
 namespace Arcane.Operator.Tests.Services;
 
@@ -28,6 +27,7 @@ public class StreamClassOperatorServiceTests : IClassFixture<ServiceFixture>, IC
     private readonly AkkaFixture akkaFixture;
     private readonly LoggerFixture loggerFixture;
     private readonly ServiceFixture serviceFixture;
+    private readonly Mock<IStreamingJobOperatorService> streamingJobOperatorServiceMock;
 
     public StreamClassOperatorServiceTests(ServiceFixture serviceFixture, LoggerFixture loggerFixture,
         AkkaFixture akkaFixture)
@@ -35,14 +35,13 @@ public class StreamClassOperatorServiceTests : IClassFixture<ServiceFixture>, IC
         this.serviceFixture = serviceFixture;
         this.loggerFixture = loggerFixture;
         this.akkaFixture = akkaFixture;
+        this.streamingJobOperatorServiceMock = new Mock<IStreamingJobOperatorService>();
     }
 
     [Fact]
     public async Task TestStreamAdded()
     {
         // Arrange
-        this.serviceFixture.MockStreamingJobOperatorService.Reset();
-        this.serviceFixture.MockKubeCluster.Reset();
         this.serviceFixture
             .MockKubeCluster
             .Setup(m => m.StreamCustomResourceEvents<V1Beta1StreamClass>(
@@ -81,16 +80,13 @@ public class StreamClassOperatorServiceTests : IClassFixture<ServiceFixture>, IC
             .Run(this.akkaFixture.Materializer);
 
         // Assert
-        this.serviceFixture
-            .MockStreamingJobOperatorService
-            .Verify(service => service.StartRegisteredStream(It.IsAny<StreamDefinition>(), It.IsAny<bool>()));
+        this.streamingJobOperatorServiceMock.Verify(service => service.StartRegisteredStream(It.IsAny<StreamDefinition>(), It.IsAny<bool>()));
     }
 
     [Fact]
     public async Task TestStreamDeleted()
     {
         // Arrange
-        this.serviceFixture.MockStreamingJobOperatorService.Reset();
         this.serviceFixture.MockKubeCluster.Reset();
         this.serviceFixture
             .MockKubeCluster
@@ -130,9 +126,7 @@ public class StreamClassOperatorServiceTests : IClassFixture<ServiceFixture>, IC
             .Run(this.akkaFixture.Materializer);
 
         // Assert
-        this.serviceFixture
-            .MockStreamingJobOperatorService
-            .Verify(
+        this.streamingJobOperatorServiceMock.Verify(
                 service => service.StartRegisteredStream(It.IsAny<StreamDefinition>(), It.IsAny<bool>()),
                 Times.Never
             );
@@ -147,23 +141,20 @@ public class StreamClassOperatorServiceTests : IClassFixture<ServiceFixture>, IC
         return new ServiceCollection()
             .AddSingleton(this.akkaFixture.Materializer)
             .AddSingleton(this.serviceFixture.MockKubeCluster.Object)
-            .AddSingleton(this.serviceFixture.MockStreamingJobOperatorService.Object)
+            .AddSingleton(this.streamingJobOperatorServiceMock.Object)
             .AddSingleton(this.serviceFixture.MockStreamDefinitionRepository.Object)
             .AddSingleton(this.serviceFixture.MockStreamClassRepository.Object)
             .AddSingleton(this.loggerFixture.Factory.CreateLogger<StreamOperatorService<StreamDefinition>>())
             .AddSingleton(this.loggerFixture.Factory.CreateLogger<StreamClassOperatorService>())
             .AddSingleton(this.loggerFixture.Factory)
-            .AddSingleton(this.serviceFixture.MockStreamingJobOperatorService.Object)
             .AddSingleton(optionsMock.Object)
             .AddSingleton(Options.Create(new StreamClassOperatorServiceConfiguration
             {
                 Parallelism = 1,
                 MaxBufferCapacity = 100
             }))
-            .AddSingleton<IStreamOperatorService<FailedStreamDefinition>,
-                StreamOperatorService<FailedStreamDefinition>>()
             .AddSingleton<IStreamClassOperatorService, StreamClassOperatorService>()
-            .AddSingleton<StreamOperatorServiceWorkerFactory, StreamOperatorServiceWorkerFactory>()
+            .AddSingleton<IStreamOperatorServiceWorkerFactory, StreamOperatorServiceWorkerFactory>()
             .BuildServiceProvider();
     }
 }

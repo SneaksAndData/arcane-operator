@@ -73,9 +73,9 @@ public class StreamClassOperatorService : IStreamClassOperatorService
     {
         return arg switch
         {
-            (WatchEventType.Added, var streamClass) => this.OnStartListener(streamClass),
-            (WatchEventType.Modified, var streamClass) => this.OnRestartListener(streamClass),
-            (WatchEventType.Deleted, var streamClass) => this.OnStopListener(streamClass),
+            (WatchEventType.Added, var streamClass) => this.OnAdded(streamClass),
+            (WatchEventType.Modified, var streamClass) => this.OnModified(streamClass),
+            (WatchEventType.Deleted, var streamClass) => this.OnDeleted(streamClass),
             _ => Option<StreamClassOperatorResponse>.None
         };
     }
@@ -90,7 +90,7 @@ public class StreamClassOperatorService : IStreamClassOperatorService
         };
     }
 
-    private Option<StreamClassOperatorResponse> OnStartListener(IStreamClass streamClass)
+    private Option<StreamClassOperatorResponse> OnAdded(IStreamClass streamClass)
     {
         try
         {
@@ -111,7 +111,7 @@ public class StreamClassOperatorService : IStreamClassOperatorService
         }
     }
 
-    private Option<StreamClassOperatorResponse> OnStopListener(IStreamClass streamClass)
+    private Option<StreamClassOperatorResponse> OnDeleted(IStreamClass streamClass)
     {
         if (!this.streams.ContainsKey(streamClass.ToStreamClassId()))
         {
@@ -123,10 +123,10 @@ public class StreamClassOperatorService : IStreamClassOperatorService
 
     }
     
-    private Option<StreamClassOperatorResponse> OnRestartListener(IStreamClass streamClass)
+    private Option<StreamClassOperatorResponse> OnModified(IStreamClass streamClass)
     {
-        this.OnStopListener(streamClass);
-        return this.OnStartListener(streamClass);
+        this.OnDeleted(streamClass);
+        return this.OnAdded(streamClass);
     }
 
     private Source<(WatchEventType, V1Beta1StreamClass), NotUsed> GetStreamingJobSynchronizationGraph()
