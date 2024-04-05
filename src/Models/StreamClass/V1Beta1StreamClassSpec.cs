@@ -27,5 +27,5 @@ public class V1Beta1StreamClassSpec
     /// This value is dependent on the expected number of streams that will be created for this class.
     /// </summary>
     [JsonPropertyName("maxBufferCapacity")]
-    public string MaxBufferCapacity { get; set; }
+    public int MaxBufferCapacity { get; set; }
 }
