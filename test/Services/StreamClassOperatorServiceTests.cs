@@ -145,7 +145,7 @@ public class StreamClassOperatorServiceTests : IClassFixture<ServiceFixture>, IC
             .AddSingleton(this.serviceFixture.MockKubeCluster.Object)
             .AddSingleton(this.streamingJobOperatorServiceMock.Object)
             .AddSingleton(this.serviceFixture.MockStreamDefinitionRepository.Object)
-            .AddSingleton(this.streamingJobOperatorServiceMock.Object)
+            .AddSingleton(this.streamClassStateRepository.Object)
             .AddSingleton(this.loggerFixture.Factory.CreateLogger<StreamOperatorService<StreamDefinition>>())
             .AddSingleton(this.loggerFixture.Factory.CreateLogger<StreamClassOperatorService>())
             .AddSingleton(this.loggerFixture.Factory)
