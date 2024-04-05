@@ -1,5 +1,4 @@
 ﻿FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build-env
-ARG PROJECT_NAME
 
 WORKDIR /app
 
@@ -9,13 +8,11 @@ RUN dotnet restore
 
 # Copy everything else and build
 COPY src/. ./
-RUN dotnet publish "$PROJECT_NAME.csproj" -c Release -o out
+RUN dotnet publish "Arcane.Operator.csproj" -c Release -o out
 
 # Build runtime image
 FROM mcr.microsoft.com/dotnet/aspnet:8.0-bookworm-slim
 ARG TRACER_VERSION="2.48.0"
-ARG PROJECT_NAME
-ENV PROJECT_ASSEMBLY=$PROJECT_NAME
 
 RUN apt-get update -y && apt-get install -y curl jq
 
@@ -32,4 +29,4 @@ COPY --from=build-env /app/out .
 
 USER app
 
-ENTRYPOINT "dotnet" "$PROJECT_ASSEMBLY.dll"
+ENTRYPOINT "dotnet" "Arcane.Operator.dll"
