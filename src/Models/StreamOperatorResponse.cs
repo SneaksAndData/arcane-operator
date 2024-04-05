@@ -1,30 +1,10 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using Arcane.Operator.Models.Common;
 using Arcane.Operator.Models.StreamStatuses.StreamStatus.V1Beta1;
 
 namespace Arcane.Operator.Models;
-
-/// <summary>
-/// Represents stream status badge for Lens app.
-/// </summary>
-public enum StreamStatusType
-{
-    /// <summary>
-    /// The stream is in a ready state.
-    /// </summary>
-    READY,
-
-    /// <summary>
-    /// The stream is in an error state.
-    /// </summary>
-    ERROR,
-
-    /// <summary>
-    /// The stream is in a warning state.
-    /// </summary>
-    WARNING
-}
 
 /// <summary>
 /// Possible stream states.
@@ -114,7 +94,7 @@ public class StreamOperatorResponse
             Kind = kind,
             Conditions = new[]
             {
-                new V1Beta1StreamCondition { Type = StreamStatusType.WARNING.ToString(), Status = "True" }
+                new V1Beta1StreamCondition { Type = ResourceStatus.WARNING.ToString(), Status = "True" }
             },
             Phase = StreamPhase.RESTARTING
         };
@@ -135,7 +115,7 @@ public class StreamOperatorResponse
             Namespace = nameSpace,
             Conditions = new[]
             {
-                new V1Beta1StreamCondition { Type = StreamStatusType.READY.ToString(), Status = "True" }
+                new V1Beta1StreamCondition { Type = ResourceStatus.READY.ToString(), Status = "True" }
             },
             Phase = StreamPhase.RUNNING
         };
@@ -156,7 +136,7 @@ public class StreamOperatorResponse
             Namespace = nameSpace,
             Conditions = new[]
             {
-                new V1Beta1StreamCondition { Type = StreamStatusType.READY.ToString(), Status = "True" }
+                new V1Beta1StreamCondition { Type = ResourceStatus.READY.ToString(), Status = "True" }
             },
             Phase = StreamPhase.RELOADING
         };
@@ -177,7 +157,7 @@ public class StreamOperatorResponse
             Kind = kind,
             Conditions = new[]
             {
-                new V1Beta1StreamCondition { Type = StreamStatusType.WARNING.ToString(), Status = "True" }
+                new V1Beta1StreamCondition { Type = ResourceStatus.WARNING.ToString(), Status = "True" }
             },
             Phase = StreamPhase.TERMINATING
         };
@@ -198,7 +178,7 @@ public class StreamOperatorResponse
             Namespace = nameSpace,
             Conditions = new[]
             {
-                new V1Beta1StreamCondition { Type = StreamStatusType.WARNING.ToString(), Status = "True" }
+                new V1Beta1StreamCondition { Type = ResourceStatus.WARNING.ToString(), Status = "True" }
             },
             Phase = StreamPhase.STOPPED
         };
@@ -222,7 +202,7 @@ public class StreamOperatorResponse
             Conditions = new[]
             {
                 new V1Beta1StreamCondition
-                    { Type = StreamStatusType.ERROR.ToString(), Status = "True", Message = message }
+                    { Type = ResourceStatus.ERROR.ToString(), Status = "True", Message = message }
             },
             Phase = StreamPhase.FAILED
         };
@@ -244,7 +224,7 @@ public class StreamOperatorResponse
             Namespace = nameSpace,
             Conditions = new[]
             {
-                new V1Beta1StreamCondition { Type = StreamStatusType.WARNING.ToString(), Status = "True" }
+                new V1Beta1StreamCondition { Type = ResourceStatus.WARNING.ToString(), Status = "True" }
             },
             Phase = StreamPhase.SUSPENDED
         };
@@ -266,7 +246,7 @@ public class StreamOperatorResponse
             Namespace = nameSpace,
             Conditions = new[]
             {
-                new V1Beta1StreamCondition { Type = StreamStatusType.ERROR.ToString(), Status = "True" }
+                new V1Beta1StreamCondition { Type = ResourceStatus.ERROR.ToString(), Status = "True" }
             },
             Phase = StreamPhase.FAILED
         };
