@@ -61,16 +61,17 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Get project version
+        uses: SneaksAndData/github-actions/generate_version@v0.0.17
+        id: version
+          
       - name: Extract metadata (tags, labels) for Docker
         id: meta
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            type=ref,event=branch
-            type=ref,event=pr
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}.{{patch}}
+            type=semver,pattern={{version}},value=${{steps.version.outputs.version}}
           
 #      - name: Build and push Docker image
 #        uses: docker/build-push-action@f2a1d5e99d037542a71f64918e516c093c6f3fc4
