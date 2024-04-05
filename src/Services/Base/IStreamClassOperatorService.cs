@@ -7,7 +7,7 @@ namespace Arcane.Operator.Services.Base;
 public interface IStreamClassOperatorService
 {
     /// <summary>
-    /// Return graph that watches for job events and updates stream state accordingly
+    /// Return graph that watches StreamClass events
     /// </summary>
     public IRunnableGraph<Task> GetStreamClassEventsGraph(CancellationToken cancellationToken);
 }

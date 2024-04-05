@@ -9,8 +9,8 @@ using Snd.Sdk.Kubernetes.Base;
 
 namespace Arcane.Operator.Services.Operator;
 
-/// <inheritdoc cref="IStreamOperatorServiceFactory"/>
-public class StreamOperatorServiceFactory: IStreamOperatorServiceFactory
+/// <inheritdoc cref="IStreamOperatorServiceWorkerFactory"/>
+public class StreamOperatorServiceWorkerFactory: IStreamOperatorServiceWorkerFactory
 {
     private readonly ILoggerFactory loggerFactory;
     private readonly IMaterializer materializer;
@@ -19,7 +19,7 @@ public class StreamOperatorServiceFactory: IStreamOperatorServiceFactory
     private readonly IStreamDefinitionRepository streamDefinitionRepository;
     private readonly IOptionsSnapshot<CustomResourceConfiguration> customResourceConfigurationsOptionsSnapshot;
 
-    public StreamOperatorServiceFactory(ILoggerFactory loggerFactory,IMaterializer materializer,
+    public StreamOperatorServiceWorkerFactory(ILoggerFactory loggerFactory,IMaterializer materializer,
         IKubeCluster kubeCluster, IStreamingJobOperatorService jobOperatorService, IStreamDefinitionRepository streamDefinitionRepository,
         IOptionsSnapshot<CustomResourceConfiguration> customResourceConfigurationsOptionsSnapshot)
     {
@@ -31,8 +31,8 @@ public class StreamOperatorServiceFactory: IStreamOperatorServiceFactory
         this.customResourceConfigurationsOptionsSnapshot = customResourceConfigurationsOptionsSnapshot;
     }
     
-    /// <inheritdoc cref="IStreamOperatorServiceFactory.Create"/>
-    public BackgroundStreamOperatorService Create(IStreamClass streamClass)
+    /// <inheritdoc cref="IStreamOperatorServiceWorkerFactory.Create"/>
+    public StreamOperatorServiceWorker Create(IStreamClass streamClass)
     {
         var streamOperatorService = new StreamOperatorService<StreamDefinition>(
             this.kubeCluster,
@@ -42,8 +42,8 @@ public class StreamOperatorServiceFactory: IStreamOperatorServiceFactory
             this.streamDefinitionRepository,
             this.loggerFactory.CreateLogger<StreamOperatorService<StreamDefinition>>()
         );
-        return new BackgroundStreamOperatorService(
-            this.loggerFactory.CreateLogger<BackgroundStreamOperatorService>(),
+        return new StreamOperatorServiceWorker(
+            this.loggerFactory.CreateLogger<StreamOperatorServiceWorker>(),
             streamOperatorService,
             this.materializer
         );

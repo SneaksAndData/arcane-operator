@@ -14,5 +14,5 @@ public class ServiceFixture
 
     public Mock<IStreamDefinitionRepository> MockStreamDefinitionRepository { get; } = new();
     
-    public Mock<IStreamingClassRepository> MockStreamClassRepository { get; } = new();
+    public Mock<IStreamClassStateRepository> MockStreamClassRepository { get; } = new();
 }

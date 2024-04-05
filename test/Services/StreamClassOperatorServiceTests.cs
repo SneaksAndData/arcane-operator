@@ -18,6 +18,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
 using static Arcane.Operator.Tests.Services.TestCases.StreamClassTestCases;
+using StreamOperatorServiceWorkerFactory = Arcane.Operator.Services.Operator.StreamOperatorServiceWorkerFactory;
 
 namespace Arcane.Operator.Tests.Services;
 
@@ -162,7 +163,7 @@ public class StreamClassOperatorServiceTests : IClassFixture<ServiceFixture>, IC
             .AddSingleton<IStreamOperatorService<FailedStreamDefinition>,
                 StreamOperatorService<FailedStreamDefinition>>()
             .AddSingleton<IStreamClassOperatorService, StreamClassOperatorService>()
-            .AddSingleton<IStreamOperatorServiceFactory, StreamOperatorServiceFactory>()
+            .AddSingleton<StreamOperatorServiceWorkerFactory, StreamOperatorServiceWorkerFactory>()
             .BuildServiceProvider();
     }
 }

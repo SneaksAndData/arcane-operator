@@ -28,22 +28,22 @@ public class StreamClassOperatorService : IStreamClassOperatorService
     private readonly StreamClassOperatorServiceConfiguration configuration;
     private readonly IKubeCluster kubeCluster;
 
-    private readonly Dictionary<string, BackgroundStreamOperatorService> streams = new();
+    private readonly Dictionary<string, StreamOperatorServiceWorker> streams = new();
     private readonly ILogger<StreamClassOperatorService> logger;
-    private readonly IStreamingClassRepository streamingClassRepository;
-    private readonly IStreamOperatorServiceFactory streamOperatorServiceFactory;
+    private readonly IStreamClassStateRepository streamClassStateRepository;
+    private readonly IStreamOperatorServiceWorkerFactory streamOperatorServiceWorkerFactory;
 
     public StreamClassOperatorService(IKubeCluster kubeCluster,
         IOptions<StreamClassOperatorServiceConfiguration> streamOperatorServiceOptions,
-        IStreamingClassRepository streamingClassRepository,
-        IStreamOperatorServiceFactory streamOperatorServiceFactory,
+        IStreamClassStateRepository streamClassStateRepository,
+        IStreamOperatorServiceWorkerFactory streamOperatorServiceWorkerFactory,
         ILogger<StreamClassOperatorService> logger)
     {
         this.kubeCluster = kubeCluster;
         this.configuration = streamOperatorServiceOptions.Value;
         this.logger = logger;
-        this.streamingClassRepository = streamingClassRepository;
-        this.streamOperatorServiceFactory = streamOperatorServiceFactory;
+        this.streamClassStateRepository = streamClassStateRepository;
+        this.streamOperatorServiceWorkerFactory = streamOperatorServiceWorkerFactory;
     }
 
     /// <inheritdoc cref="IStreamClassOperatorService.GetStreamClassEventsGraph"/>
@@ -58,7 +58,7 @@ public class StreamClassOperatorService : IStreamClassOperatorService
             this.configuration.MaxBufferCapacity,
             OverflowStrategy.Fail);
 
-        var sink = Sink.ForEachAsync<StreamClassOperatorResponse>(this.configuration.Parallelism, this.streamingClassRepository.SetStreamingClassStatus);
+        var sink = Sink.ForEachAsync<StreamClassOperatorResponse>(this.configuration.Parallelism, this.streamClassStateRepository.SetStreamClassState);
         
         return synchronizationSource
             .Concat(actualStateEventSource)
@@ -99,7 +99,7 @@ public class StreamClassOperatorService : IStreamClassOperatorService
                 return StreamClassOperatorResponse.Ready(streamClass.Namespace(), streamClass.Kind, streamClass.Name());
             }
 
-            var listener = this.streamOperatorServiceFactory.Create(streamClass);
+            var listener = this.streamOperatorServiceWorkerFactory.Create(streamClass);
             this.streams[streamClass.ToStreamClassId()] = listener;
             this.streams[streamClass.ToStreamClassId()].Start(streamClass.ToStreamClassId());
             return StreamClassOperatorResponse.Ready(streamClass.Namespace(), streamClass.Kind, streamClass.Name());
