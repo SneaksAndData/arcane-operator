@@ -44,7 +44,8 @@ public class V1Beta1StreamClass: IStreamClass
     {
         return new StreamOperatorServiceConfiguration
         {
-            MaxBufferCapacity = this.Spec.MaxBufferCapacity
+            MaxBufferCapacity = this.Spec.MaxBufferCapacity,
+            Parallelism = 1
         };
     }
 }
