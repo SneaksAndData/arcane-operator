@@ -15,8 +15,8 @@ body:
   attributes:
   label: Possible solution
   description: |
-  Describe the solution you'd like.
-  A clear and concise description of what you want to happen.
+    Describe the solution you'd like.
+    A clear and concise description of what you want to happen.
   validations:
   required: false
 
@@ -24,8 +24,8 @@ body:
   attributes:
   label: Alternatives
   description: |
-  Describe alternatives you've considered
-  A clear and concise description of any alternative solutions or features you've considered.
+    Describe alternatives you've considered
+    A clear and concise description of any alternative solutions or features you've considered.
   validations:
   required: true
 
@@ -33,7 +33,7 @@ body:
   attributes:
   label: Context
   description: |
-  Additional context
-  Add any other context or screenshots about the feature request here.
+    Additional context
+    Add any other context or screenshots about the feature request here.
   validations:
   required: false
