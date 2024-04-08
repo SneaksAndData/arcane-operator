@@ -2,7 +2,7 @@ environment: "Development"
 replicaCount: 1
 
 image:
-  repository: arcane-operator
+  repository: "ghcr.io/sneaksanddata/arcane-operator"
   tag: "v0.0.0"
 
 serviceAccount:
@@ -13,3 +13,21 @@ serviceAccount:
   # The name of the service account to use.
   # If not set and create is true, a name is generated using the fullname template
   name: ""
+
+nameOverride: "" # TODO
+fullnameOverride: "" # TODO
+namespaceOverride: "" # TODO
+
+podSecurityContext: # TODO
+  fsGroup: 65532
+  
+securityContext: # TODO
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  runAsUser: 1000
+  seccompProfile:
+    type: RuntimeDefault
