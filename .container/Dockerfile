@@ -1,4 +1,5 @@
 ﻿FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build-env
+ARG TARGETARCH
 
 WORKDIR /app
 
@@ -13,13 +14,14 @@ RUN dotnet publish "Arcane.Operator.csproj" -c Release -o out
 # Build runtime image
 FROM mcr.microsoft.com/dotnet/aspnet:8.0-bookworm-slim
 ARG TRACER_VERSION="2.48.0"
+ARG TARGETARCH
 
 RUN apt-get update -y && apt-get install -y curl jq
 
 # Download and install the Datadog Tracer
 RUN mkdir -p /opt/datadog \
     && mkdir -p /var/log/datadog \
-    && curl -LO https://github.com/DataDog/dd-trace-dotnet/releases/download/v${TRACER_VERSION}/datadog-dotnet-apm_${TRACER_VERSION}_amd64.deb \
+    && curl -LO https://github.com/DataDog/dd-trace-dotnet/releases/download/v${TRACER_VERSION}/datadog-dotnet-apm_${TRACER_VERSION}-${TARGETARCH}.deb \
     && dpkg -i ./datadog-dotnet-apm_${TRACER_VERSION}_amd64.deb \
     && rm ./datadog-dotnet-apm_${TRACER_VERSION}_amd64.deb 
     
