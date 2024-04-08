@@ -42,7 +42,7 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           lcov-file: ./test/Coverage/coverage.info
-  build_image_and_chart:
+  build_image:
     name: Build Docker Image and Helm Charts
     runs-on: ubuntu-latest
     needs: [ validate_commit ]
@@ -74,7 +74,10 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
             type=semver,pattern={{version}},value=${{steps.version.outputs.version}}
-          
+            
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        
       - name: Build and push Docker image
         uses: docker/build-push-action@v5.3.0
         with:
@@ -83,3 +86,4 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          platforms: linux/arm64,linux/amd64
