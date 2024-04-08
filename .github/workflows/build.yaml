@@ -85,6 +85,7 @@ jobs:
         uses: docker/build-push-action@v5.3.0
         with:
           context: .
+          build-args: INSTALL_DD_TRACER=""
           file: .container/Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
