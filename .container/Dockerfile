@@ -25,7 +25,7 @@ ARG TARGETARCH
 RUN apt-get update -y && apt-get install -y curl jq
 
 # Download and install the Datadog Tracer
-RUN if [ -z "$INSTALL_DATADOG_TRACER" ]; then \
+RUN if [ -z "$INSTALL_DD_TRACER" ]; then \
       echo "Datadog tracer installation skipped"; \
     else \
         mkdir -p /opt/datadog \
