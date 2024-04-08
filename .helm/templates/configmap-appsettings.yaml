@@ -7,7 +7,6 @@ metadata:
 data:
   appsettings.json: |
     {
-      "AllowedHosts": "*",
       "StreamingJobOperatorServiceConfiguration": {
         "MaxBufferCapacity": {{ .Values.settings.jobMaintenanceController.maxEventBufferCapacity }},
         "Namespace": "{{ default .Release.Namespace .Values.settings.jobMaintenanceController.jobNamespace}}"
