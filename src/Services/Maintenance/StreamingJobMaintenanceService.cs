@@ -23,6 +23,7 @@ namespace Arcane.Operator.Services.Maintenance;
 
 public class StreamingJobMaintenanceService : IStreamingJobMaintenanceService
 {
+    private const int parallelism = 1;
     private readonly StreamingJobMaintenanceServiceConfiguration configuration;
     private readonly IKubeCluster kubeCluster;
     private readonly ILogger<StreamingJobMaintenanceService> logger;
@@ -50,9 +51,9 @@ public class StreamingJobMaintenanceService : IStreamingJobMaintenanceService
             .StreamJobEvents(this.operatorService.StreamJobNamespace, this.configuration.MaxBufferCapacity,
                 OverflowStrategy.Fail)
             .Via(cancellationToken.AsFlow<(WatchEventType, V1Job)>(true))
-            .SelectAsync(this.configuration.Parallelism, this.OnJobEvent)
+            .SelectAsync(parallelism, this.OnJobEvent)
             .CollectOption()
-            .SelectAsync(this.configuration.Parallelism, this.HandleStreamOperatorResponse)
+            .SelectAsync(parallelism, this.HandleStreamOperatorResponse)
             .ToMaterialized(Sink.Ignore<Option<IStreamDefinition>>(), Keep.Right);
     }
 

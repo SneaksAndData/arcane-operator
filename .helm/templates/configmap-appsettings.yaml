@@ -3,69 +3,17 @@ kind: ConfigMap
 metadata:
   name: {{ template "app.name" . }}-config
   labels:
-    app.kubernetes.io/name: {{ template "app.name" . }}
     {{- include "app.labels" . | nindent 4 }}
 data:
   appsettings.json: |
     {
       "AllowedHosts": "*",
-      "CheckpointServiceConfiguration": {
-        "CheckpointTable": {{ .Values.checkpointing.checkpointTable | quote }},
-        "CheckpointsPerBatch": {{ .Values.checkpointing.checkpointsPerBatch }}
-      },
-      "JsonIngestionConfiguration": {
-        "BufferSize": {{ .Values.ingestion.bufferSize }},
-        "ThrottleDocumentLimit": {{ .Values.ingestion.throttleDocumentLimit }},
-        "ThrottleDocumentBurst": {{ .Values.ingestion.throttleDocumentBurst }},
-        "ThrottleTimespan": {{ .Values.ingestion.throttleTimespan | quote }},
-        "MaxDocumentsPerFile": {{ .Values.ingestion.maxDocumentsPerFile }},
-        "GroupingInterval": {{ .Values.ingestion.groupingInterval | quote }},
-        "IngestionSinkPath": {{ .Values.ingestion.ingestionSinkPath | quote }}
-      },
       "StreamingJobOperatorServiceConfiguration": {
-        "Namespace": "{{ .Release.Namespace }}"
+        "MaxBufferCapacity": {{ .Values.settings.jobMaintenanceController.maxEventBufferCapacity }},
+        "Namespace": "{{ default .Release.Namespace .Values.settings.jobMaintenanceController.jobNamespace}}"
       },
       "StreamingJobMaintenanceServiceConfiguration": {
-        "MaxBufferCapacity": 10000,
-        "Parallelism": 1
-      },
-      "StreamOperatorServiceConfiguration": {
-        "MaxBufferCapacity": 10000,
-        "Parallelism": 1
-       },
-      "V1Beta1SqlServerChangeTrackingStream": {
-        "ApiGroup": {{.Values.streamDefinitions.v1Beta1SqlServerChangeTrackingStream.apiGroup | quote }},
-        "Plural": {{ .Values.streamDefinitions.v1Beta1SqlServerChangeTrackingStream.plural | quote }},
-        "Version": {{ .Values.streamDefinitions.v1Beta1SqlServerChangeTrackingStream.version | quote }}
-      },
-      "V1Beta1StreamingJobTemplate": {
-        "ApiGroup": {{.Values.jobTemplates.v1Beta1StreamingJobTemplate.apiGroup | quote }},
-        "Plural": {{ .Values.jobTemplates.v1Beta1StreamingJobTemplate.plural | quote }},
-        "Version": {{ .Values.jobTemplates.v1Beta1StreamingJobTemplate.version | quote }}
-      },
-      "V1Beta1SqlServerStream": {
-        "ApiGroup": {{.Values.streamDefinitions.v1Beta1SqlServerStream.apiGroup | quote }},
-        "Plural": {{ .Values.streamDefinitions.v1Beta1SqlServerStream.plural | quote }},
-        "Version": {{ .Values.streamDefinitions.v1Beta1SqlServerStream.version | quote }}
-      },
-      "V1Beta1CdmChangeFeedStream": {
-        "ApiGroup": {{.Values.streamDefinitions.v1Beta1CdmChangeFeedStream.apiGroup | quote }},
-        "Plural": {{ .Values.streamDefinitions.v1Beta1CdmChangeFeedStream.plural | quote }},
-        "Version": {{ .Values.streamDefinitions.v1Beta1CdmChangeFeedStream.version | quote }}
-      },
-      "V1Beta1RestApiFixedAuthStream": {
-        "ApiGroup": {{.Values.streamDefinitions.v1Beta1RestApiFixedAuthStream.apiGroup | quote }},
-        "Plural": {{ .Values.streamDefinitions.v1Beta1RestApiFixedAuthStream.plural | quote }},
-        "Version": {{ .Values.streamDefinitions.v1Beta1RestApiFixedAuthStream.version | quote }}
-      },
-      "V1Beta1RestApiPagedDynamicAuthStream": {
-        "ApiGroup": {{.Values.streamDefinitions.v1Beta1RestApiPagedDynamicAuthStream.apiGroup | quote }},
-        "Plural": {{ .Values.streamDefinitions.v1Beta1RestApiPagedDynamicAuthStream.plural | quote }},
-        "Version": {{ .Values.streamDefinitions.v1Beta1RestApiPagedDynamicAuthStream.version | quote }}
-      },
-      "V1Beta1RestApiPagedFixedAuthStream": {
-        "ApiGroup": {{.Values.streamDefinitions.v1Beta1RestApiPagedFixedAuthStream.apiGroup | quote }},
-        "Plural": {{ .Values.streamDefinitions.v1Beta1RestApiPagedFixedAuthStream.plural | quote }},
-        "Version": {{ .Values.streamDefinitions.v1Beta1RestApiPagedFixedAuthStream.version | quote }}
+        "MaxBufferCapacity": {{ .Values.settings.streamClassController.maxEventBufferCapacity }},
+        "Namespace": "{{ default .Release.Namespace .Values.settings.streamClassController.streamClassesNamespace }}"
       }
     }

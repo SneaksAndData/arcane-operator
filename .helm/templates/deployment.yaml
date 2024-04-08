@@ -1,12 +1,10 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ template "app.name" . }}
+  name: {{ include "app.name" . }}
   labels:
-    app.kubernetes.io/name: {{ template "app.name" . }}
     {{- include "app.labels" $ | nindent 4 }}
-    {{- include "app.additionalLabels" $ | nindent 4 }} # TODO
-  {{- with .Values.additionalAnnotations }} # TODO
+  {{- with .Values.additionalAnnotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
   {{- end }}
@@ -19,33 +17,43 @@ spec:
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: {{ template "app.name" . }}
-        app.kubernetes.io/instance: {{ .Release.Name | quote }}
-        {{- include "app.additionalLabels" $ | nindent 8 }} # TODO
-      {{- with .Values.additionalAnnotations }} # TODO
+        {{- include "app.labels" $ | nindent 8 }}
+      {{- with .Values.additionalAnnotations }}
       annotations:
         deployment/date: {{ now }} # Force redeployment
         {{- toYaml . | nindent 8 }}
       {{- end }}
     spec:
-      {{- with .Values.imagePullSecrets }} # TODO
+      {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      serviceAccountName: {{ template "app.serviceAccountName" . }}
+      serviceAccountName: {{ include "app.serviceAccountName" . }}
+      {{- with .Values.securityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }} 
       containers:
       - name: arcane-operator
-        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        {{- with .Values.securityContext }}
+        securityContext:
+          {{- toYaml . | nindent 12 }}
+        {{- end }}
+        image: "{{ include "app.image" . }}"
         imagePullPolicy: "{{ .Values.image.pullPolicy }}"
         livenessProbe:
-          exec:
-            command:
-              - /bin/bash
-              - '-c'
-              - |
-                
-                curl --fail http://localhost:80/health
-
+          httpGet:
+            port: 80
+            path: /health
+          initialDelaySeconds: 10
+          timeoutSeconds: 5
+          periodSeconds: 30
+          successThreshold: 1
+          failureThreshold: 10
+        readinessProbe:
+          httpGet:
+            port: 80
+            path: /health/ready
           initialDelaySeconds: 10
           timeoutSeconds: 5
           periodSeconds: 30
@@ -55,40 +63,37 @@ spec:
           - name: ASPNETCORE_ENVIRONMENT
             value: {{ .Values.environment }}
           - name: APPLICATION_VERSION
-            value: {{ .Values.image.tag }}
-          {{- with .Values.extraEnv }} # TODO
+            value: "{{ (default (printf "v%s" .Chart.AppVersion) .Values.image.tag) }}"
+          {{- with .Values.extraEnv }}
             {{- toYaml . | nindent 12 }}
           {{- end }}
+        {{- if .Values.extraEnvFrom }}
         envFrom:
-          {{- with .Values.extraEnvFrom }} # TODO
+          {{- with .Values.extraEnvFrom }}
             {{- toYaml . | nindent 12 }}
           {{- end }}
+        {{- end }}
         volumeMounts:
-          {{- with .Values.extraVolumesMounts }} # TODO
+          {{- with .Values.extraVolumeMounts }}
             {{- toYaml . | nindent 12 }}
           {{- end }}
-        - name: arcane-config
+        - name: {{ template "app.name" . }}-config
           mountPath: /app/api/appsettings.json
           subPath: appsettings.json
           readOnly: true
-        {{- with .Values.controller.resources }}
+        {{- with .Values.resources }}
         resources:
           {{- toYaml . | nindent 12 }}
         {{- end }}
       volumes:
-      - name: arcane-config
+      - name: {{ template "app.name" . }}-config
         configMap:
           name: {{ template "app.name" . }}-config
-      {{- with .Values.extraVolumesMounts }} # TODO
-        {{- toYaml . | nindent 10 }}
-      {{- end }}
       {{- with .Values.tolerations }}
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       {{- with .Values.affinity }}
-      # The template below patches the .Values.affinity to add a default label selector where not specificed
-      {{- $_ := include "karpenter.patchAffinity" $ }}
       affinity:
         {{- toYaml . | nindent 8 }}
       {{- end }}

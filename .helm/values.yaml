@@ -1,27 +1,65 @@
 environment: "Development"
-replicaCount: 1
 
 image:
+  # Repository to pull the image from
   repository: "ghcr.io/sneaksanddata/arcane-operator"
-  tag: "v0.0.0"
+  
+  # Tag to pull (defaults to the chart appVersion)
+  tag: ""
+  
+  # Image pull policy
+  pullPolicy: "IfNotPresent"
 
+# Image pull secrets for private repositories
+imagePullSecrets: []
+
+# Override the application name
+nameOverride: ""
+
+# Fullname override
+fullnameOverride: ""
+
+# Service account configuration
 serviceAccount:
   # Specifies whether a service account should be created
   create: true
+  
   # Annotations to add to the service account
   annotations: {}
+  
   # The name of the service account to use.
   # If not set and create is true, a name is generated using the fullname template
   name: ""
 
-nameOverride: "" # TODO
-fullnameOverride: "" # TODO
-namespaceOverride: "" # TODO
+# Additional labels for the deployment and pods
+additionalLabels: {}
 
-podSecurityContext: # TODO
-  fsGroup: 65532
-  
-securityContext: # TODO
+# Additional labels for the deployment and pods
+additionalAnnotations: {}
+
+# Extra environment variables to set in the deployment
+extraEnv: {}
+
+# Extra environment variables referencing a ConfigMap or Secret
+extraEnvFrom: {}
+
+# Extra volumes to add to the deployment
+extraVolumes: {}
+
+# Extra volumes to add to the deployment
+extraVolumeMounts: {}
+
+# Resources
+resources: { }
+
+# Node labels for pod assignment
+tolerations: { }
+
+# Node labels for pod assignment
+affinity: { }
+
+# Security context settings for the container
+securityContext:
   allowPrivilegeEscalation: false
   capabilities:
     drop:
@@ -31,3 +69,28 @@ securityContext: # TODO
   runAsUser: 1000
   seccompProfile:
     type: RuntimeDefault
+
+settings:
+  # Settings for the streaming Job Maintenance controller
+  jobMaintenanceController:
+    
+    # The namespace where the streaming jobs are created and maintained
+    # Defaults to the namespace where the operator is deployed
+    jobNamespace: ""
+    
+    # The maximum number of streaming job events in the Akka event buffer
+    # If the number of events exceeds this value, the service throws an exception
+    # and will be restarted by the Deployment controller
+    maxEventBufferCapacity: 10000
+    
+  # Settings for the StreamClass controller
+  streamClassController:
+    
+    # The namespace where the streaming jobs are created and maintained
+    # Defaults to the namespace where the operator is deployed
+    streamClassesNamespace: ""
+    
+    # The maximum number of streaming job events in the Akka event buffer
+    # If the number of events exceeds this value, the service throws an exception
+    # and will be restarted by the Deployment controller
+    maxEventBufferCapacity: 10000
