@@ -10,7 +10,9 @@ RUN dotnet restore
 
 # Copy everything else and build
 COPY src/. ./
-RUN dotnet publish "Arcane.Operator.csproj" -c Release -o out
+RUN dotnet_arch=$(test "$TARGETARCH" == "amd64" && echo "x64" else "$TARGETARCH") && \
+    echo "dotnet RID: $dotnet_arch" && \
+    dotnet publish "Arcane.Operator.csproj" -c Release -o out --architecture "$dotnet_arch"
 
 # Build runtime image
 FROM mcr.microsoft.com/dotnet/aspnet:8.0-bookworm-slim
