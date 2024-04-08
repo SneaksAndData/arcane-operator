@@ -1,4 +1,4 @@
-﻿FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build-env
+﻿FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build-env
 ARG TARGETARCH
 ARG INSTALL_DD_TRACER="true"
 
@@ -14,7 +14,7 @@ COPY src/*.csproj ./
 COPY src/. ./
 RUN dotnet_arch=$(test "$TARGETARCH" = "amd64" && echo "x64" || echo "$TARGETARCH") && \
     echo "dotnet RID: $dotnet_arch" && \
-    dotnet publish "Arcane.Operator.csproj" -c Release -o out --runtime "linux-$dotnet_arch"  --no-self-contained
+    dotnet publish "Arcane.Operator.csproj" -c Release -o out --runtime "linux-$dotnet_arch" --arch "$dotnet_arch" --no-self-contained
 
 # Build runtime image
 FROM mcr.microsoft.com/dotnet/aspnet:8.0-bookworm-slim
