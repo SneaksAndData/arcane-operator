@@ -6,9 +6,9 @@ WORKDIR /app
 
 # Copy csproj and restore as distinct layers
 COPY src/*.csproj ./
-RUN dotnet_arch=$(test "$TARGETARCH" = "amd64" && echo "x64" || echo "$TARGETARCH") && \
-    echo "dotnet RID: $dotnet_arch" && \
-    dotnet restore --runtime "linux-$dotnet_arch"
+#RUN dotnet_arch=$(test "$TARGETARCH" = "amd64" && echo "x64" || echo "$TARGETARCH") && \
+#    echo "dotnet RID: $dotnet_arch" && \
+#    dotnet restore --runtime "linux-$dotnet_arch"
 
 # Copy everything else and build
 COPY src/. ./
