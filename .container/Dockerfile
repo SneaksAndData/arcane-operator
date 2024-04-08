@@ -14,7 +14,7 @@ RUN dotnet_arch=$(test "$TARGETARCH" = "amd64" && echo "x64" || echo "$TARGETARC
 COPY src/. ./
 RUN dotnet_arch=$(test "$TARGETARCH" = "amd64" && echo "x64" || echo "$TARGETARCH") && \
     echo "dotnet RID: $dotnet_arch" && \
-    dotnet publish "Arcane.Operator.csproj" -c Release -o out --arch "$dotnet_arch"
+    dotnet publish "Arcane.Operator.csproj" -c Release -o out --runtime "$dotnet_arch"
 
 # Build runtime image
 FROM mcr.microsoft.com/dotnet/aspnet:8.0-bookworm-slim
