@@ -6,13 +6,13 @@ WORKDIR /app
 
 # Copy csproj and restore as distinct layers
 COPY src/*.csproj ./
-RUN dotnet_arch=$(test "$TARGETARCH" == "amd64" && echo "linux-x64" else echo "linux-$TARGETARCH") && \
+RUN dotnet_arch=$(test "$TARGETARCH" = "amd64" && echo "linux-x64" else echo "linux-$TARGETARCH") && \
     echo "dotnet RID: $dotnet_arch" && \
     dotnet restore --architecture "$dotnet_arch"
 
 # Copy everything else and build
 COPY src/. ./
-RUN dotnet_arch=$(test "$TARGETARCH" == "amd64" && echo "linux-x64" else echo "linux-$TARGETARCH") && \
+RUN dotnet_arch=$(test "$TARGETARCH" = "amd64" && echo "linux-x64" else echo "linux-$TARGETARCH") && \
     echo "dotnet RID: $dotnet_arch" && \
     dotnet publish "Arcane.Operator.csproj" -c Release -o out --architecture "$dotnet_arch"
 
