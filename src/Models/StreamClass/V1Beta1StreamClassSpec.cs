@@ -7,6 +7,12 @@ public class V1Beta1StreamClassSpec
     /// <summary>
     /// Api group of the stream class
     /// </summary>
+    [JsonPropertyName("streamClassResourceKind")]
+    public string StreamClassResourceKind { get; set; }
+    
+    /// <summary>
+    /// Api group of the stream class
+    /// </summary>
     [JsonPropertyName("apiGroupRef")]
     public string ApiGroupRef { get; set; }
     
