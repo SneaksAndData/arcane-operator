@@ -34,24 +34,59 @@ serviceAccount:
 
 # Additional labels for the deployment and pods
 additionalLabels: {}
+# Example:
+#
+#  app.my-company.com/name: arcane-operator
+#  app.my-company.com/component: streaming
 
 # Additional labels for the deployment and pods
 additionalAnnotations: {}
+# Example:
+#
+#  app.my-company.com/name: arcane-operator
+#  app.my-company.com/component: streaming
+#  app.my-company.com/application: arcane
 
 # Extra environment variables to set in the deployment
 extraEnv: {}
+# Example:
+#
+#  - name: ASPNETCORE_ENVIRONMENT
+#    value: production
 
 # Extra environment variables referencing a ConfigMap or Secret
 extraEnvFrom: {}
+# Example:
+#
+#  envFrom:
+#    - configMapRef:
+#        name: custom-api-access-token
 
 # Extra volumes to add to the deployment
 extraVolumes: {}
+# Example:
+# 
+#  - name: data-volume
+#    emptyDir:
+#      sizeLimit: 500Mi
 
 # Extra volumes to add to the deployment
 extraVolumeMounts: {}
+# Example:
+#
+#  - mountPath: /data
+#    name: data-volume
 
-# Resources
+# Resources constraints. By default, the operator does not specify any constraints to allow for easier deployment
 resources: { }
+# Example:
+#
+#  requests:
+#    cpu: 1
+#    memory: 1Gi
+#  limits:
+#    cpu: 1
+#    memory: 1Gi
 
 # Node labels for pod assignment
 tolerations: { }
