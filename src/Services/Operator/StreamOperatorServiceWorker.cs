@@ -10,17 +10,17 @@ namespace Arcane.Operator.Services.Operator;
 /// <summary>
 /// Background service that listens for stream definition events and executes the stream operator service.
 /// </summary>
-public class BackgroundStreamOperatorService
+public class StreamOperatorServiceWorker
 {
-    private readonly ILogger<BackgroundStreamOperatorService> logger;
+    private readonly ILogger<StreamOperatorServiceWorker> logger;
     private readonly IMaterializer materializer;
     private readonly IStreamOperatorService<StreamDefinition> streamOperatorService;
     private readonly CancellationTokenSource cts;
     private Task streamExecutionTask;
     private string streamClassId;
 
-    public BackgroundStreamOperatorService(
-        ILogger<BackgroundStreamOperatorService> logger,
+    public StreamOperatorServiceWorker(
+        ILogger<StreamOperatorServiceWorker> logger,
         IStreamOperatorService<StreamDefinition> streamOperatorService,
         IMaterializer materializer)
     {
