@@ -2,9 +2,8 @@
 using System.Text.Json;
 using System.Threading.Tasks;
 using Akka.Util;
-using Akka.Util.Extensions;
 using Arcane.Models.StreamingJobLifecycle;
-using Arcane.Operator.Models.StreamDefinitions;
+using Arcane.Operator.Extensions;
 using Arcane.Operator.Models.StreamDefinitions.Base;
 using Arcane.Operator.Models.StreamStatuses.StreamStatus.V1Beta1;
 using Arcane.Operator.Services.Base;
@@ -29,86 +28,85 @@ public class StreamDefinitionRepository : IStreamDefinitionRepository
         this.streamClassRepository = streamClassRepository;
     }
 
-    public Task<Option<IStreamDefinition>> GetStreamDefinition(string nameSpace, string kind, string streamId)
-    {
-        var crdConf = this.streamClassRepository.Get(nameSpace, kind);
-        if (crdConf is { ApiGroup: null, Version: null, Plural: null })
-        {
-            this.logger.LogError("Failed to get configuration for kind {kind}", kind);
-            return Task.FromResult(Option<IStreamDefinition>.None);
-        }
+    public Task<Option<IStreamDefinition>> GetStreamDefinition(string nameSpace, string kind, string streamId) =>
+        this.streamClassRepository.Get(nameSpace, kind).FlatMap(crdConf =>
+            {
+                if (crdConf is { HasValue: false })
+                {
+                    this.logger.LogError("Failed to get configuration for kind {kind}", kind);
+                    return Task.FromResult(Option<IStreamDefinition>.None);
+                }
 
-        return this.kubeCluster
-            .GetCustomResource(
-                crdConf.ApiGroup,
-                crdConf.Version,
-                crdConf.Plural,
-                nameSpace,
-                streamId,
-                element => (IStreamDefinition)element.Deserialize<StreamDefinition>())
-            .Map(resource => resource.AsOption());
-    }
+                return this.kubeCluster
+                    .GetCustomResource(
+                        crdConf.Value.ApiGroupRef,
+                        crdConf.Value.VersionRef,
+                        crdConf.Value.PluralNameRef,
+                        nameSpace,
+                        streamId,
+                        element => element.AsOptionalStreamDefinition());
+            }
+        );
 
     public Task<Option<IStreamDefinition>> SetStreamStatus(string nameSpace, string kind, string streamId,
-        V1Beta1StreamStatus streamStatus)
-    {
-        this.logger.LogInformation(
-            "Status and phase of stream with kind {kind} and id {streamId} changed to {statuses}, {phase}",
-            kind,
-            streamId,
-            string.Join(", ", streamStatus.Conditions.Select(sc => sc.Type)),
-            streamStatus.Phase);
-        var crdConf = this.streamClassRepository.Get(nameSpace, kind);
-        if (crdConf is { ApiGroup: null, Version: null, Plural: null })
+        V1Beta1StreamStatus streamStatus) =>
+        this.streamClassRepository.Get(nameSpace, kind).FlatMap(crdConf =>
         {
-            this.logger.LogError("Failed to get configuration for kind {kind}", kind);
-            return Task.FromResult(Option<IStreamDefinition>.None);
-        }
+            if (crdConf is { HasValue: false })
+            {
+                this.logger.LogError("Failed to get configuration for kind {kind}", kind);
+                return Task.FromResult(Option<IStreamDefinition>.None);
+            }
 
-        return this.kubeCluster.UpdateCustomResourceStatus(
-                crdConf.ApiGroup,
-                crdConf.Version,
-                crdConf.Plural,
+            this.logger.LogInformation(
+                "Status and phase of stream with kind {kind} and id {streamId} changed to {statuses}, {phase}",
+                kind,
+                streamId,
+                string.Join(", ", streamStatus.Conditions.Select(sc => sc.Type)),
+                streamStatus.Phase);
+
+            return this.kubeCluster.UpdateCustomResourceStatus(
+                crdConf.Value.ApiGroupRef,
+                crdConf.Value.VersionRef,
+                crdConf.Value.PluralNameRef,
                 nameSpace,
                 streamId,
                 streamStatus,
-                element => (IStreamDefinition)element.Deserialize<StreamDefinition>())
-            .Map(resource => resource.AsOption());
-    }
+                element => element.AsOptionalStreamDefinition());
+        });
 
-    public Task<Option<IStreamDefinition>> RemoveReloadingAnnotation(string nameSpace, string kind, string streamId)
-    {
-        var crdConf = this.streamClassRepository.Get(nameSpace, kind);
-        if (crdConf is { ApiGroup: null, Version: null, Plural: null })
+    public Task<Option<IStreamDefinition>> RemoveReloadingAnnotation(string nameSpace, string kind, string streamId) =>
+        this.streamClassRepository.Get(nameSpace, kind).FlatMap(crdConf =>
         {
-            this.logger.LogError("Failed to get configuration for kind {kind}", kind);
-            return Task.FromResult(Option<IStreamDefinition>.None);
-        }
+            if (crdConf is { HasValue: false })
+            {
+                this.logger.LogError("Failed to get configuration for kind {kind}", kind);
+                return Task.FromResult(Option<IStreamDefinition>.None);
+            }
 
-        return this.kubeCluster
-            .RemoveObjectAnnotation(crdConf.ToNamespacedCrd(),
-                Annotations.STATE_ANNOTATION_KEY,
-                streamId,
-                nameSpace)
-            .Map(result => (IStreamDefinition)((JsonElement)result).Deserialize<StreamDefinition>())
-            .Map(result => result.AsOption());
-    }
+            return this.kubeCluster
+                .RemoveObjectAnnotation(crdConf.Value.ToNamespacedCrd(),
+                    Annotations.STATE_ANNOTATION_KEY,
+                    streamId,
+                    nameSpace)
+                .Map(result => ((JsonElement)result).AsOptionalStreamDefinition());
+        });
 
-    public Task<Option<IStreamDefinition>> SetCrashLoopAnnotation(string nameSpace, string kind, string streamId)
-    {
-        var crdConf = this.streamClassRepository.Get(nameSpace, kind);
-        if (crdConf is { ApiGroup: null, Version: null, Plural: null })
+    public Task<Option<IStreamDefinition>> SetCrashLoopAnnotation(string nameSpace, string kind, string streamId) =>
+        this.streamClassRepository.Get(nameSpace, kind).FlatMap(crdConf =>
         {
-            this.logger.LogError("Failed to get configuration for kind {kind}", kind);
-            return Task.FromResult(Option<IStreamDefinition>.None);
-        }
+            if (crdConf is { HasValue: false })
+            {
+                this.logger.LogError("Failed to get configuration for kind {kind}", kind);
+                return Task.FromResult(Option<IStreamDefinition>.None);
+            }
 
-        return this.kubeCluster
-            .AnnotateObject(crdConf.ToNamespacedCrd(),
-                Annotations.STATE_ANNOTATION_KEY,
-                Annotations.CRASH_LOOP_STATE_ANNOTATION_VALUE,
-                streamId,
-                nameSpace)
-            .Map(result => ((IStreamDefinition)((JsonElement)result).Deserialize<StreamDefinition>()).AsOption());
-    }
+            return this.kubeCluster
+                .AnnotateObject(crdConf.Value.ToNamespacedCrd(),
+                    Annotations.STATE_ANNOTATION_KEY,
+                    Annotations.CRASH_LOOP_STATE_ANNOTATION_VALUE,
+                    streamId,
+                    nameSpace)
+                .Map(result => ((JsonElement)result).AsOptionalStreamDefinition());
+        });
 }
