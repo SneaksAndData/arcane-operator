@@ -1,9 +1,11 @@
 ﻿using System.Threading.Tasks;
 using Akka.Util;
 using Akka.Util.Extensions;
+using Arcane.Operator.Configurations;
 using Arcane.Operator.Models.JobTemplates.V1Beta1;
 using Arcane.Operator.Services.Base;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Snd.Sdk.Kubernetes.Base;
 using Snd.Sdk.Tasks;
 
@@ -13,34 +15,32 @@ public class StreamingJobTemplateRepository : IStreamingJobTemplateRepository
 {
     private readonly IKubeCluster kubeCluster;
     private readonly ILogger<StreamingJobTemplateRepository> logger;
-    private readonly IStreamClassRepository streamClassRepository;
+    private readonly IOptionsSnapshot<CustomResourceConfiguration> configuration;
 
     public StreamingJobTemplateRepository(IKubeCluster kubeCluster,
-        IStreamClassRepository streamClassRepository,
+        IOptionsSnapshot<CustomResourceConfiguration> configuration,
         ILogger<StreamingJobTemplateRepository> logger)
     {
         this.kubeCluster = kubeCluster;
         this.logger = logger;
-        this.streamClassRepository = streamClassRepository;
+        this.configuration = configuration;
     }
 
     public Task<Option<V1Beta1StreamingJobTemplate>> GetStreamingJobTemplate(string kind, string jobNamespace,
         string templateName)
     {
-        var crdConf = this.streamClassRepository.Get(jobNamespace, kind);
-        if (crdConf is { ApiGroup: null, Version: null, Plural: null })
+        var jobTemplateResourceConfiguration = this.configuration.Get(kind);
+        if (jobTemplateResourceConfiguration is { ApiGroup: null, Version: null, Plural: null })
         {
-            this.logger.LogError("Failed to get configuration for kind {kind} and mapped type {typeName}",
-                kind,
-                crdConf.GetType().Name);
+            this.logger.LogError("Failed to get job template configuration for kind {kind}", kind);
             return Task.FromResult(Option<V1Beta1StreamingJobTemplate>.None);
         }
 
         return this.kubeCluster
             .GetCustomResource<V1Beta1StreamingJobTemplate>(
-                crdConf.ApiGroup,
-                crdConf.Version,
-                crdConf.Plural,
+                jobTemplateResourceConfiguration.ApiGroup,
+                jobTemplateResourceConfiguration.Version,
+                jobTemplateResourceConfiguration.Plural,
                 jobNamespace,
                 templateName)
             .Map(resource => resource.AsOption());
