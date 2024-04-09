@@ -48,4 +48,13 @@ public static class StreamDefinitionTestCases
     {
         return new FailedStreamDefinition(exception);
     }
+    
+    public static StreamDefinition NamedStreamDefinition(string name = null) => new()
+    {
+        Spec = new StreamDefinitionSpec(),
+        Metadata = new V1ObjectMeta
+        {
+            Name = name ?? Guid.NewGuid().ToString()
+        }
+    };
 }
