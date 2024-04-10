@@ -68,8 +68,9 @@ rbac:
       create: true
       nameOverride: ""
       
-  # Specifies whether RBAC resources should be created.
-  # If any of the roles are set to true, this should be set to true
+  # This parameter determines whether role binding resources need to be created.
+  # If you have any roles in your configuration set to 'true', then this parameter for creating role binding resources
+  # should also be set to 'true'.
   clusterRoleBindings:
     create: true
     
