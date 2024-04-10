@@ -28,7 +28,7 @@ public class StreamClassOperatorServiceTests : IClassFixture<ServiceFixture>, IC
     private readonly LoggerFixture loggerFixture;
     private readonly ServiceFixture serviceFixture;
     private readonly Mock<IStreamingJobOperatorService> streamingJobOperatorServiceMock;
-    private readonly Mock<IStreamClassStateRepository> streamClassStateRepository;
+    private readonly Mock<IStreamClassRepository> streamClassStateRepository;
 
     public StreamClassOperatorServiceTests(ServiceFixture serviceFixture, LoggerFixture loggerFixture,
         AkkaFixture akkaFixture)
@@ -37,7 +37,7 @@ public class StreamClassOperatorServiceTests : IClassFixture<ServiceFixture>, IC
         this.loggerFixture = loggerFixture;
         this.akkaFixture = akkaFixture;
         this.streamingJobOperatorServiceMock = new Mock<IStreamingJobOperatorService>();
-        this.streamClassStateRepository = new Mock<IStreamClassStateRepository>();
+        this.streamClassStateRepository = new Mock<IStreamClassRepository>();
     }
 
     [Fact]
@@ -152,7 +152,6 @@ public class StreamClassOperatorServiceTests : IClassFixture<ServiceFixture>, IC
             .AddSingleton(optionsMock.Object)
             .AddSingleton(Options.Create(new StreamClassOperatorServiceConfiguration
             {
-                Parallelism = 1,
                 MaxBufferCapacity = 100
             }))
             .AddSingleton<IStreamClassOperatorService, StreamClassOperatorService>()

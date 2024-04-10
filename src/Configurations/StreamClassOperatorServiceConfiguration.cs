@@ -15,11 +15,6 @@ public class StreamClassOperatorServiceConfiguration
     public int MaxBufferCapacity { get; init; }
 
     /// <summary>
-    /// Parallelism for StreamClasses events stream
-    /// </summary>
-    public int Parallelism { get; init; }
-    
-    /// <summary>
     /// Api group of the StreamClass CRD
     /// </summary>
     public string ApiGroup { get; init; }
