@@ -32,6 +32,48 @@ serviceAccount:
   # If not set and create is true, a name is generated using the fullname template
   name: ""
 
+### Role Based Access Control configuration
+rbac:
+  
+  # Specifies whether RBAC resources should be created
+  clusterRole:
+    
+    # Allows the Arcane Operator to create and manage jobs in the cluster
+    jobEditor:
+      create: true
+      nameOverride: ""
+      
+    # Allows the Arcane Operator to read jobs in the cluster
+    jobViewer:
+      create: true
+      nameOverride: ""
+      
+    # Allows managing the StreamingJobTemplate custom resources
+    jobTemplateEditor:
+      create: true
+      nameOverride: ""
+    
+    # Allows the Arcane Operator to read the StreamingJobTemplate custom resources
+    jobTemplateViewer:
+      create: true
+      nameOverride: ""
+      
+    # Allows managing the StreamClass custom resources
+    streamClassEditor:
+      create: true
+      nameOverride: ""
+
+    # Allows the Arcane Operator to read the StreamClass custom resources
+    streamClassViewer:
+      create: true
+      nameOverride: ""
+      
+  # This parameter determines whether role binding resources need to be created.
+  # If you have any roles in your configuration set to 'true', then this parameter for creating role binding resources
+  # should also be set to 'true'.
+  clusterRoleBindings:
+    create: true
+    
 # Additional labels for the deployment and pods
 additionalLabels: {}
 # Example:
