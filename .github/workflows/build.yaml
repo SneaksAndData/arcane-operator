@@ -93,7 +93,6 @@ jobs:
           platforms: linux/arm64,linux/amd64
 
       - name: Build and Push Chart
-        if: ${{ github.ref == 'refs/heads/main' }}
         uses: SneaksAndData/github-actions/build_helm_chart@v0.1.6
         with:
           application: arcane-operator
