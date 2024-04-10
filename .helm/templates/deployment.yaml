@@ -1,0 +1,99 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "app.name" . }}
+  labels:
+    {{- include "app.labels" $ | nindent 4 }}
+  {{- with .Values.additionalAnnotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "app.selectorLabels" $ | nindent 6 }}
+  # For now Arcane Operator supports only single replica
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        {{- include "app.labels" $ | nindent 8 }}
+      {{- with .Values.additionalAnnotations }}
+      annotations:
+        deployment/date: {{ now }} # Force redeployment
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "app.serviceAccountName" . }}
+      {{- with .Values.securityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }} 
+      containers:
+      - name: arcane-operator
+        {{- with .Values.securityContext }}
+        securityContext:
+          {{- toYaml . | nindent 12 }}
+        {{- end }}
+        image: "{{ include "app.image" . }}"
+        imagePullPolicy: "{{ .Values.image.pullPolicy }}"
+        livenessProbe:
+          httpGet:
+            port: 80
+            path: /health
+          initialDelaySeconds: 10
+          timeoutSeconds: 5
+          periodSeconds: 30
+          successThreshold: 1
+          failureThreshold: 10
+        readinessProbe:
+          httpGet:
+            port: 80
+            path: /health/ready
+          initialDelaySeconds: 10
+          timeoutSeconds: 5
+          periodSeconds: 30
+          successThreshold: 1
+          failureThreshold: 10
+        env:
+          - name: ASPNETCORE_ENVIRONMENT
+            value: {{ .Values.environment }}
+          - name: APPLICATION_VERSION
+            value: "{{ (default (printf "v%s" .Chart.AppVersion) .Values.image.tag) }}"
+          {{- with .Values.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+        {{- if .Values.extraEnvFrom }}
+        envFrom:
+          {{- with .Values.extraEnvFrom }}
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+        {{- end }}
+        volumeMounts:
+          {{- with .Values.extraVolumeMounts }}
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+        - name: {{ template "app.name" . }}-config
+          mountPath: /app/api/appsettings.json
+          subPath: appsettings.json
+          readOnly: true
+        {{- with .Values.resources }}
+        resources:
+          {{- toYaml . | nindent 12 }}
+        {{- end }}
+      volumes:
+      - name: {{ template "app.name" . }}-config
+        configMap:
+          name: {{ template "app.name" . }}-config
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

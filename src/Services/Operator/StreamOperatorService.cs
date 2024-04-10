@@ -26,6 +26,8 @@ namespace Arcane.Operator.Services.Operator;
 public class StreamOperatorService<TStreamType> : IStreamOperatorService<TStreamType>
     where TStreamType : IStreamDefinition
 {
+    private const int parallelism = 1;
+    
     private readonly StreamOperatorServiceConfiguration configuration;
     private readonly IKubeCluster kubeCluster;
     private readonly ILogger<StreamOperatorService<TStreamType>> logger;
@@ -62,10 +64,10 @@ public class StreamOperatorService<TStreamType> : IStreamOperatorService<TStream
         return synchronizationSource
             .Concat(actualStateEventSource)
             .Via(cancellationToken.AsFlow<(WatchEventType, TStreamType)>(true))
-            .SelectAsync(this.configuration.Parallelism, this.OnEvent)
+            .SelectAsync(parallelism, this.OnEvent)
             .WithAttributes(ActorAttributes.CreateSupervisionStrategy(this.HandleError))
             .CollectOption()
-            .SelectAsync(this.configuration.Parallelism,
+            .SelectAsync(parallelism,
                 response => this.streamDefinitionRepository.SetStreamStatus(response.Namespace,
                     response.Kind,
                     response.Id,
