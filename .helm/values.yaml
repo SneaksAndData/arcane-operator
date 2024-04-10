@@ -34,32 +34,42 @@ serviceAccount:
 
 ### Role Based Access Control configuration
 rbac:
-  # -- Specifies whether role and role binding resources should be created.
+  
+  # Specifies whether RBAC resources should be created
   clusterRole:
+    
+    # Allows the Arcane Operator to create and manage jobs in the cluster
     jobEditor:
       create: true
       nameOverride: ""
       
+    # Allows the Arcane Operator to read jobs in the cluster
     jobViewer:
       create: true
       nameOverride: ""
       
+    # Allows managing the StreamingJobTemplate custom resources
     jobTemplateEditor:
       create: true
       nameOverride: ""
     
+    # Allows the Arcane Operator to read the StreamingJobTemplate custom resources
     jobTemplateViewer:
       create: true
       nameOverride: ""
       
+    # Allows managing the StreamClass custom resources
     streamClassEditor:
       create: true
       nameOverride: ""
 
+    # Allows the Arcane Operator to read the StreamClass custom resources
     streamClassViewer:
       create: true
       nameOverride: ""
       
+  # Specifies whether RBAC resources should be created.
+  # If any of the roles are set to true, this should be set to true
   clusterRoleBindings:
     create: true
     
