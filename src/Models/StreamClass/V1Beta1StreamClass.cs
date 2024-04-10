@@ -47,4 +47,13 @@ public class V1Beta1StreamClass: IStreamClass
             MaxBufferCapacity = this.Spec.MaxBufferCapacity,
         };
     }
+
+    /// <inheritdoc cref="IStreamClass.ApiGroupRef"/>
+    public string ApiGroupRef => this.Spec.ApiGroupRef;
+    
+    /// <inheritdoc cref="IStreamClass.VersionRef"/>
+    public string VersionRef => this.Spec.ApiVersion;
+    
+    /// <inheritdoc cref="IStreamClass.PluralNameRef"/>
+    public string PluralNameRef => this.Spec.PluralName;
 }
