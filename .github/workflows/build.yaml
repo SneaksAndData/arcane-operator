@@ -90,3 +90,12 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           platforms: linux/arm64,linux/amd64
+
+      - name: Build and Push Chart
+        if: ${{ github.ref == 'refs/heads/main' }}
+        uses: SneaksAndData/github-actions/build_helm_chart@v0.1.2
+        with:
+          application: arcane-operator
+          container_registry_user: ${{ github.actor }}
+          container_registry_token: ${{ secrets.GITHUB_TOKEN }}
+          container_registry_address: ghcr.io/arcane-operator/charts
