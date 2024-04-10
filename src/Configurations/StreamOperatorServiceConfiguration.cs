@@ -13,9 +13,4 @@ public class StreamOperatorServiceConfiguration
     /// Max buffer capacity for StreamDefinitions events stream
     /// </summary>
     public int MaxBufferCapacity { get; init; }
-
-    /// <summary>
-    /// Parallelism for StreamDefinitions events stream
-    /// </summary>
-    public int Parallelism { get; init; }
 }

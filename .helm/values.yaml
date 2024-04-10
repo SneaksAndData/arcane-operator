@@ -1,15 +1,132 @@
 environment: "Development"
-replicaCount: 1
 
 image:
-  repository: arcane-operator
-  tag: "v0.0.0"
+  # Repository to pull the image from
+  repository: "ghcr.io/sneaksanddata/arcane-operator"
+  
+  # Tag to pull (defaults to the chart appVersion)
+  tag: ""
+  
+  # Image pull policy
+  pullPolicy: "IfNotPresent"
 
+# Image pull secrets for private repositories
+imagePullSecrets: []
+
+# Override the application name
+nameOverride: ""
+
+# Fullname override
+fullnameOverride: ""
+
+# Service account configuration
 serviceAccount:
+  
   # Specifies whether a service account should be created
   create: true
+  
   # Annotations to add to the service account
   annotations: {}
+  
   # The name of the service account to use.
   # If not set and create is true, a name is generated using the fullname template
   name: ""
+
+# Additional labels for the deployment and pods
+additionalLabels: {}
+# Example:
+#
+#  app.my-company.com/name: arcane-operator
+#  app.my-company.com/component: streaming
+
+# Additional labels for the deployment and pods
+additionalAnnotations: {}
+# Example:
+#
+#  app.my-company.com/name: arcane-operator
+#  app.my-company.com/component: streaming
+#  app.my-company.com/application: arcane
+
+# Extra environment variables to set in the deployment
+extraEnv: {}
+# Example:
+#
+#  - name: ASPNETCORE_ENVIRONMENT
+#    value: production
+
+# Extra environment variables referencing a ConfigMap or Secret
+extraEnvFrom: {}
+# Example:
+#
+#  envFrom:
+#    - configMapRef:
+#        name: custom-api-access-token
+
+# Extra volumes to add to the deployment
+extraVolumes: {}
+# Example:
+# 
+#  - name: data-volume
+#    emptyDir:
+#      sizeLimit: 500Mi
+
+# Extra volumes to add to the deployment
+extraVolumeMounts: {}
+# Example:
+#
+#  - mountPath: /data
+#    name: data-volume
+
+# Resources constraints. By default, the operator does not specify any constraints to allow for easier deployment
+resources: { }
+# Example:
+#
+#  requests:
+#    cpu: 1
+#    memory: 1Gi
+#  limits:
+#    cpu: 1
+#    memory: 1Gi
+
+# Node labels for pod assignment
+tolerations: { }
+
+# Node labels for pod assignment
+affinity: { }
+
+# Security context settings for the container
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  runAsUser: 1000
+  seccompProfile:
+    type: RuntimeDefault
+
+settings:
+  # Settings for the streaming Job Maintenance controller
+  jobMaintenanceController:
+    
+    # The namespace where the streaming jobs are created and maintained
+    # Defaults to the namespace where the operator is deployed
+    jobNamespace: ""
+    
+    # The maximum number of streaming job events in the Akka event buffer
+    # If the number of events exceeds this value, the service throws an exception
+    # and will be restarted by the Deployment controller
+    maxEventBufferCapacity: 10000
+    
+  # Settings for the StreamClass controller
+  streamClassController:
+    
+    # The namespace where the streaming jobs are created and maintained
+    # Defaults to the namespace where the operator is deployed
+    streamClassesNamespace: ""
+    
+    # The maximum number of streaming job events in the Akka event buffer
+    # If the number of events exceeds this value, the service throws an exception
+    # and will be restarted by the Deployment controller
+    maxEventBufferCapacity: 10000

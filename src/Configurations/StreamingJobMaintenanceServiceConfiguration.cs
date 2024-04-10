@@ -13,10 +13,4 @@ public class StreamingJobMaintenanceServiceConfiguration
     /// Max buffer capacity for job events stream
     /// </summary>
     public int MaxBufferCapacity { get; init; }
-
-
-    /// <summary>
-    /// Parallelism for job events stream
-    /// </summary>
-    public int Parallelism { get; init; }
 }
