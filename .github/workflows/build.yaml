@@ -98,4 +98,4 @@ jobs:
           application: arcane-operator
           container_registry_user: ${{ github.actor }}
           container_registry_token: ${{ secrets.GITHUB_TOKEN }}
-          container_registry_address: ghcr.io/sneaksanddata/arcane-operator/charts
+          container_registry_address: ghcr.io/sneaksanddata/
