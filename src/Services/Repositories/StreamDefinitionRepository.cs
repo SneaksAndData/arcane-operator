@@ -52,18 +52,18 @@ public class StreamDefinitionRepository : IStreamDefinitionRepository
         V1Beta1StreamStatus streamStatus) =>
         this.streamClassRepository.Get(nameSpace, kind).FlatMap(crdConf =>
         {
-            if (crdConf is { HasValue: false })
-            {
-                this.logger.LogError("Failed to get configuration for kind {kind}", kind);
-                return Task.FromResult(Option<IStreamDefinition>.None);
-            }
-
             this.logger.LogInformation(
                 "Status and phase of stream with kind {kind} and id {streamId} changed to {statuses}, {phase}",
                 kind,
                 streamId,
                 string.Join(", ", streamStatus.Conditions.Select(sc => sc.Type)),
                 streamStatus.Phase);
+            
+            if (crdConf is { HasValue: false })
+            {
+                this.logger.LogError("Failed to get configuration for kind {kind}", kind);
+                return Task.FromResult(Option<IStreamDefinition>.None);
+            }
 
             return this.kubeCluster.UpdateCustomResourceStatus(
                 crdConf.Value.ApiGroupRef,
