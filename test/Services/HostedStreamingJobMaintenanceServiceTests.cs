@@ -100,7 +100,7 @@ public class HostedStreamingJobMaintenanceServiceTests : IClassFixture<ServiceFi
         return new ServiceCollection()
             .AddSingleton(Options.Create(new StreamOperatorServiceConfiguration
             {
-                Parallelism = 1, MaxBufferCapacity = 100
+                MaxBufferCapacity = 100
             }))
             .AddSingleton(optionsMock.Object)
             .AddSingleton(this.serviceFixture.MockKubeCluster.Object)

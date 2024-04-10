@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "app.name" . }}-config
+  labels:
+    {{- include "app.labels" . | nindent 4 }}
+data:
+  appsettings.json: |
+    {
+      "StreamingJobOperatorServiceConfiguration": {
+        "MaxBufferCapacity": {{ .Values.settings.jobMaintenanceController.maxEventBufferCapacity }},
+        "Namespace": "{{ default .Release.Namespace .Values.settings.jobMaintenanceController.jobNamespace}}"
+      },
+      "StreamingJobMaintenanceServiceConfiguration": {
+        "MaxBufferCapacity": {{ .Values.settings.streamClassController.maxEventBufferCapacity }},
+        "Namespace": "{{ default .Release.Namespace .Values.settings.streamClassController.streamClassesNamespace }}"
+      }
+    }

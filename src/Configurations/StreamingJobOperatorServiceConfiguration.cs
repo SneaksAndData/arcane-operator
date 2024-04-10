@@ -11,11 +11,6 @@ namespace Arcane.Operator.Configurations;
 public class StreamingJobOperatorServiceConfiguration
 {
     /// <summary>
-    /// Template for the job to be created.
-    /// </summary>
-    public V1Job JobTemplate { get; set; }
-
-    /// <summary>
     /// Namespace where the job will be created
     /// </summary>
     public string Namespace { get; set; }

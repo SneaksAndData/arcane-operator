@@ -377,7 +377,7 @@ public class StreamOperatorServiceTests : IClassFixture<ServiceFixture>, IClassF
             .AddSingleton(optionsMock.Object)
             .AddSingleton(Options.Create(new StreamOperatorServiceConfiguration
             {
-                Parallelism = 1, MaxBufferCapacity = 100
+                MaxBufferCapacity = 100
             }))
             .AddSingleton<IStreamOperatorService<StreamDefinition>, StreamOperatorService<StreamDefinition>>()
             .AddSingleton<IStreamOperatorService<FailedStreamDefinition>, StreamOperatorService<FailedStreamDefinition>>()

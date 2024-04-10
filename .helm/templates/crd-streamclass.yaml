@@ -1,0 +1,86 @@
+﻿apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: stream-class.streaming.sneaksanddata.com
+spec:
+  group: streaming.sneaksanddata.com
+  scope: Namespaced
+  names:
+    plural: stream-classes
+    singular: stream-class
+    kind: StreamClass
+    shortNames:
+      - streamclass
+      - streamcls
+      - scls
+  versions:
+    - name: v1beta1
+      served: true
+      storage: true
+      additionalPrinterColumns:
+        - name: Plural
+          description: The plural name of the stream class to watch for.
+          type: string
+          jsonPath: .spec.pluralName
+        - name: ApiGroup
+          description: The api group of the stream class to watch for.
+          type: string
+          jsonPath: .spec.apiGroup
+        - name: Phase
+          type: string
+          jsonPath: .status.phase
+      subresources:
+        status: {}
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              properties:
+                apiGroupRef:
+                  type: string
+                  description: The api group of the stream class to watch for.
+                apiVersion:
+                  type: string
+                  description: The API version of the stream class to watch for.
+                pluralName:
+                  type: string
+                  description: The plural name of the stream class to watch for.
+                maxBufferCapacity:
+                  type: integer
+                  description: Maximum buffer capacity for this stream class.
+            status:
+              type: object
+              properties:
+                phase:
+                  type: string
+                  enum:
+                    - INITIALIZING
+                    - READY
+                    - FAILED
+                    - STOPPED
+                conditions:
+                  type: array
+                  items:
+                    type: object
+                    required:
+                      - status
+                      - type
+                    properties:
+                      message:
+                        type: string
+                      phase:
+                        type: string
+                      type:
+                        type: string
+                        enum:
+                          - WARNING
+                          - ERROR
+                          - INFO
+                          - READY
+                      status:
+                        type: string
+                        enum:
+                          - "True"
+                          - "False"

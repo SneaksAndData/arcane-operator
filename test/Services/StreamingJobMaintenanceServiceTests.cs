@@ -227,7 +227,7 @@ public class StreamingJobMaintenanceServiceTests : IClassFixture<ServiceFixture>
             .AddSingleton<StreamingJobMaintenanceService>()
             .AddSingleton(Options.Create(new StreamingJobMaintenanceServiceConfiguration
             {
-                MaxBufferCapacity = 1000, Parallelism = 1
+                MaxBufferCapacity = 1000
             }))
             .AddSingleton(Options.Create(new StreamingJobOperatorServiceConfiguration()))
             .AddSingleton<HostedStreamingJobMaintenanceService>()
