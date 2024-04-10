@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using Arcane.Operator.Models.Common;
+using Arcane.Operator.Models.StreamClass.Base;
 using Arcane.Operator.Models.StreamStatuses.StreamStatus.V1Beta1;
 
 namespace Arcane.Operator.Models;
@@ -38,19 +39,9 @@ public enum StreamClassPhase
 public record StreamClassOperatorResponse
 {
     /// <summary>
-    /// Affected StreamClass identifier
+    /// Affected StreamClass object
     /// </summary>
-    public string Id { get; private init; }
-
-    /// <summary>
-    /// Affected StreamClass kind
-    /// </summary>
-    public string Kind { get; set; }
-
-    /// <summary>
-    /// Affected StreamClass namespace
-    /// </summary>
-    public string Namespace { get; set; }
+    public IStreamClass StreamClass { get; set; }
 
     /// <summary>
     /// Latest observed state of the StreamClass object
@@ -66,16 +57,12 @@ public record StreamClassOperatorResponse
     /// <summary>
     /// Creates a StreamOperatorResponse object for stream with specified identifier, setting it state to RUNNING 
     /// </summary>
-    /// <param name="nameSpace">Kubernetes namespace</param>
-    /// <param name="kind">Affected stream class kind</param>
-    /// <param name="streamClassId">Affected stream class identifier</param>
-    public static StreamClassOperatorResponse Ready(string nameSpace, string kind, string streamClassId)
+    /// <param name="affectedObject">Affected stream class model</param>
+    public static StreamClassOperatorResponse Ready(IStreamClass affectedObject)
     {
         return new StreamClassOperatorResponse
         {
-            Id = streamClassId,
-            Kind = kind,
-            Namespace = nameSpace,
+            StreamClass = affectedObject,
             Conditions = new[]
             {
                 new V1Beta1StreamCondition { Type = ResourceStatus.READY.ToString(), Status = "True" }
@@ -87,16 +74,12 @@ public record StreamClassOperatorResponse
     /// <summary>
     /// Creates a StreamOperatorResponse object for stream with specified identifier, setting it state to RUNNING 
     /// </summary>
-    /// <param name="nameSpace">Kubernetes namespace</param>
-    /// <param name="kind">Affected stream class kind</param>
-    /// <param name="streamClassId">Affected stream class identifier</param>
-    public static StreamClassOperatorResponse Failed(string nameSpace, string kind, string streamClassId)
+    /// <param name="affectedObject">Affected stream class model</param>
+    public static StreamClassOperatorResponse Failed(IStreamClass affectedObject)
     {
         return new StreamClassOperatorResponse
         {
-            Id = streamClassId,
-            Kind = kind,
-            Namespace = nameSpace,
+            StreamClass = affectedObject,
             Conditions = new[]
             {
                 new V1Beta1StreamCondition { Type = ResourceStatus.READY.ToString(), Status = "True" }
@@ -108,16 +91,12 @@ public record StreamClassOperatorResponse
     /// <summary>
     /// Creates a StreamOperatorResponse object for stream with specified identifier, setting it state to RUNNING 
     /// </summary>
-    /// <param name="nameSpace">Kubernetes namespace</param>
-    /// <param name="kind">Affected stream class kind</param>
-    /// <param name="streamClassId">Affected stream class identifier</param>
-    public static StreamClassOperatorResponse Stopped(string nameSpace, string kind, string streamClassId)
+    /// <param name="affectedObject">Affected stream class model</param>
+    public static StreamClassOperatorResponse Stopped(IStreamClass affectedObject)
     {
         return new StreamClassOperatorResponse
         {
-            Id = streamClassId,
-            Kind = kind,
-            Namespace = nameSpace,
+            StreamClass = affectedObject,
             Conditions = new[]
             {
                 new V1Beta1StreamCondition { Type = ResourceStatus.READY.ToString(), Status = "True" }
