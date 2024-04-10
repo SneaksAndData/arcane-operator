@@ -2,20 +2,17 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: {{ .Release.Name }}-job-manager
+  name: {{ include "app.name" }}-job-template-editor
   labels:
     rbac.authorization.k8s.io/aggregate-to-edit: "true"
 rules:
   - verbs:
-      - get
-      - list
       - create
-      - delete
-      - deletecollection
-      - patch
       - update
+      - patch
+      - delete
     apiGroups:
-      - batch
+      - streaming.sneaksanddata.com
     resources:
-      - jobs
+      - jobs-templates
 {{- end }}

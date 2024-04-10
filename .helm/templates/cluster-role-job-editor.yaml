@@ -1,0 +1,16 @@
+{{- if .Values.rbac.clusterRole.create-}}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "app.name" }}-job-editor
+rules:
+  - verbs:
+      - create
+      - delete
+      - update
+      - watch
+    apiGroups:
+      - batch
+    resources:
+      - jobs
+{{- end }}
