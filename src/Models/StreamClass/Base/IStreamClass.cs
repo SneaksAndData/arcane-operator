@@ -38,6 +38,11 @@ public interface IStreamClass: IKubernetesObject<V1ObjectMeta>
     string PluralNameRef { get; }
     
     /// <summary>
+    /// Reference to the kind name of the StreamDefinition CRD
+    /// </summary>
+    string KindRef { get; }
+    
+    /// <summary>
     /// Convert configuration to NamespacedCrd object for consuming in the Proteus library
     /// </summary>
     /// <returns><see cref="NamespacedCrd"/>NamespacedCrd object</returns>

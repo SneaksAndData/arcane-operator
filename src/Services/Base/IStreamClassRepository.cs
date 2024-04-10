@@ -26,8 +26,9 @@ public interface IStreamClassRepository
     /// <param name="streamClass">The StreamClass object to insert or update.</param>
     /// <param name="phase">The stream class phase</param>
     /// <param name="conditions">The stream class conditions</param>
+    /// <param name="pluralName">The stream class plural name</param>
     /// <returns></returns>
     Task InsertOrUpdate(IStreamClass streamClass, StreamClassPhase phase,
-        IEnumerable<V1Beta1StreamCondition> conditions);
+        IEnumerable<V1Beta1StreamCondition> conditions, string pluralName);
 
 }

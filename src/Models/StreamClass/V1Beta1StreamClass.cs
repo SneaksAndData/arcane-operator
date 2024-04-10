@@ -56,4 +56,7 @@ public class V1Beta1StreamClass: IStreamClass
     
     /// <inheritdoc cref="IStreamClass.PluralNameRef"/>
     public string PluralNameRef => this.Spec.PluralName;
+    
+    /// <inheritdoc cref="IStreamClass.KindRef"/>
+    public string KindRef => this.Spec.KindRef;
 }
