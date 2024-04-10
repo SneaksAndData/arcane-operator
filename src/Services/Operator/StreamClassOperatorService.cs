@@ -25,24 +25,26 @@ namespace Arcane.Operator.Services.Operator;
 /// <inheritdoc cref="IStreamClassOperatorService"/>
 public class StreamClassOperatorService : IStreamClassOperatorService
 {
+    private const int parallelism = 1;
+    
     private readonly StreamClassOperatorServiceConfiguration configuration;
     private readonly IKubeCluster kubeCluster;
 
     private readonly Dictionary<string, StreamOperatorServiceWorker> streams = new();
     private readonly ILogger<StreamClassOperatorService> logger;
-    private readonly IStreamClassStateRepository streamClassStateRepository;
+    private readonly IStreamClassRepository streamClassRepository;
     private readonly IStreamOperatorServiceWorkerFactory streamOperatorServiceWorkerFactory;
 
     public StreamClassOperatorService(IKubeCluster kubeCluster,
         IOptions<StreamClassOperatorServiceConfiguration> streamOperatorServiceOptions,
-        IStreamClassStateRepository streamClassStateRepository,
         IStreamOperatorServiceWorkerFactory streamOperatorServiceWorkerFactory,
+        IStreamClassRepository streamClassRepository,
         ILogger<StreamClassOperatorService> logger)
     {
         this.kubeCluster = kubeCluster;
         this.configuration = streamOperatorServiceOptions.Value;
         this.logger = logger;
-        this.streamClassStateRepository = streamClassStateRepository;
+        this.streamClassRepository = streamClassRepository;
         this.streamOperatorServiceWorkerFactory = streamOperatorServiceWorkerFactory;
     }
 
@@ -58,7 +60,14 @@ public class StreamClassOperatorService : IStreamClassOperatorService
             this.configuration.MaxBufferCapacity,
             OverflowStrategy.Fail);
 
-        var sink = Sink.ForEachAsync<StreamClassOperatorResponse>(this.configuration.Parallelism, this.streamClassStateRepository.SetStreamClassState);
+        var sink = Sink.ForEachAsync<StreamClassOperatorResponse>(parallelism, response =>
+        {
+            this.logger.LogInformation("The phase of the stream class {namespace}/{name} changed to {status}",
+                response.StreamClass.Metadata.Namespace(),
+                response.StreamClass.Metadata.Name,
+                response.Phase);
+            return this.streamClassRepository.InsertOrUpdate(response.StreamClass, response.Phase, response.Conditions);
+        });
         
         return synchronizationSource
             .Concat(actualStateEventSource)
@@ -79,7 +88,7 @@ public class StreamClassOperatorService : IStreamClassOperatorService
             _ => Option<StreamClassOperatorResponse>.None
         };
     }
-
+    
     private Directive HandleError(Exception exception)
     {
         this.logger.LogError(exception, "Failed to handle stream definition event");
@@ -90,45 +99,37 @@ public class StreamClassOperatorService : IStreamClassOperatorService
         };
     }
 
-    private Option<StreamClassOperatorResponse> OnAdded(IStreamClass streamClass)
-    {
-        try
-        {
-            if (this.streams.ContainsKey(streamClass.ToStreamClassId()))
-            {
-                return StreamClassOperatorResponse.Ready(streamClass.Namespace(), streamClass.Kind, streamClass.Name());
-            }
+    private Option<StreamClassOperatorResponse> OnAdded(IStreamClass streamClass) => this.StartStreamWorker(streamClass);
 
-            var listener = this.streamOperatorServiceWorkerFactory.Create(streamClass);
-            this.streams[streamClass.ToStreamClassId()] = listener;
-            this.streams[streamClass.ToStreamClassId()].Start(streamClass.ToStreamClassId());
-            return StreamClassOperatorResponse.Ready(streamClass.Namespace(), streamClass.Kind, streamClass.Name());
-        }
-        catch (Exception ex)
-        {
-            this.logger.LogError(ex, "Failed to initialize stream listener");
-            return StreamClassOperatorResponse.Failed(streamClass.Namespace(), streamClass.Kind, streamClass.Name());
-        }
-    }
-
-    private Option<StreamClassOperatorResponse> OnDeleted(IStreamClass streamClass)
-    {
-        if (!this.streams.ContainsKey(streamClass.ToStreamClassId()))
-        {
-            return Option<StreamClassOperatorResponse>.None;
-        }
-
-        this.streams[streamClass.ToStreamClassId()].Stop();
-        return StreamClassOperatorResponse.Stopped(streamClass.Namespace(), streamClass.Kind, streamClass.Name());
-
-    }
+    private Option<StreamClassOperatorResponse> OnDeleted(IStreamClass streamClass) => this.StopStreamWorker(streamClass);
     
     private Option<StreamClassOperatorResponse> OnModified(IStreamClass streamClass)
     {
-        this.OnDeleted(streamClass);
-        return this.OnAdded(streamClass);
+        this.StopStreamWorker(streamClass);
+        return this.StartStreamWorker(streamClass);
+    }
+    
+    private Option<StreamClassOperatorResponse> StartStreamWorker(IStreamClass streamClass)
+    {
+        if (!this.streams.ContainsKey(streamClass.ToStreamClassId()))
+        {
+            var listener = this.streamOperatorServiceWorkerFactory.Create(streamClass);
+            this.streams[streamClass.ToStreamClassId()] = listener;
+            this.streams[streamClass.ToStreamClassId()].Start(streamClass.ToStreamClassId());
+        }
+        return StreamClassOperatorResponse.Ready(streamClass);
     }
 
+    private Option<StreamClassOperatorResponse> StopStreamWorker(IStreamClass streamClass)
+    {
+        if (this.streams.ContainsKey(streamClass.ToStreamClassId()))
+        {
+            this.streams[streamClass.ToStreamClassId()].Stop();
+        }
+        return StreamClassOperatorResponse.Stopped(streamClass);
+    }
+    
+    
     private Source<(WatchEventType, V1Beta1StreamClass), NotUsed> GetStreamingJobSynchronizationGraph()
     {
         var listTask = this.kubeCluster.ListCustomResources<V1Beta1StreamClass>(
