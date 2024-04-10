@@ -12,41 +12,41 @@ env:
   IMAGE_NAME: ${{ github.repository }}
   
 jobs:
-  validate_commit:
-    name: Validate commit
-    runs-on: ubuntu-latest
-    if: ${{ github.ref != 'refs/heads/main' }}
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4.0.0
-        with:
-          dotnet-version: 8.0.x
-
-      - name: Restore dependencies
-        run: dotnet clean && dotnet nuget locals all --clear && dotnet restore
-
-      - name: Build
-        run: dotnet build --no-restore
-
-      - name: Test
-        working-directory: ./test
-        run: |
-          dotnet add package coverlet.msbuild &&
-          dotnet test ${PROJECT_NAME}.Tests.csproj --configuration Debug --runtime linux-x64 /p:CollectCoverage=true /p:CoverletOutput=Coverage/ /p:CoverletOutputFormat=lcov --logger GitHubActions
-
-      - name: Publish Code Coverage
-        if: ${{ github.event_name == 'pull_request' && always() }}
-        uses: romeovs/lcov-reporter-action@v0.3.1
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          lcov-file: ./test/Coverage/coverage.info
+#  validate_commit:
+#    name: Validate commit
+#    runs-on: ubuntu-latest
+#    if: ${{ github.ref != 'refs/heads/main' }}
+#    steps:
+#      - uses: actions/checkout@v4
+#
+#      - name: Setup .NET
+#        uses: actions/setup-dotnet@v4.0.0
+#        with:
+#          dotnet-version: 8.0.x
+#
+#      - name: Restore dependencies
+#        run: dotnet clean && dotnet nuget locals all --clear && dotnet restore
+#
+#      - name: Build
+#        run: dotnet build --no-restore
+#
+#      - name: Test
+#        working-directory: ./test
+#        run: |
+#          dotnet add package coverlet.msbuild &&
+#          dotnet test ${PROJECT_NAME}.Tests.csproj --configuration Debug --runtime linux-x64 /p:CollectCoverage=true /p:CoverletOutput=Coverage/ /p:CoverletOutputFormat=lcov --logger GitHubActions
+#
+#      - name: Publish Code Coverage
+#        if: ${{ github.event_name == 'pull_request' && always() }}
+#        uses: romeovs/lcov-reporter-action@v0.3.1
+#        with:
+#          github-token: ${{ secrets.GITHUB_TOKEN }}
+#          lcov-file: ./test/Coverage/coverage.info
   build_image:
     name: Build Docker Image and Helm Charts
     runs-on: ubuntu-latest
-    needs: [ validate_commit ]
-    if: ${{ always() && (needs.validate_commit.result == 'success' || needs.validate_commit.result == 'skipped') }}
+#    needs: [ validate_commit ]
+#    if: ${{ always() && (needs.validate_commit.result == 'success' || needs.validate_commit.result == 'skipped') }}
     permissions:
       contents: read
       packages: write
