@@ -1,8 +1,8 @@
-{{- if .Values.rbac.clusterRole.create-}}
+{{- if .Values.rbac.clusterRole.jobViewer.create -}}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: {{ include "app.name" }}-job-viewer
+  name: {{ include "app.clusteRole.jobViewer" }}
   labels:
     rbac.authorization.k8s.io/aggregate-to-view: "true"
     rbac.authorization.k8s.io/aggregate-to-edit: "true"

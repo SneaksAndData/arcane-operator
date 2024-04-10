@@ -32,18 +32,36 @@ serviceAccount:
   # If not set and create is true, a name is generated using the fullname template
   name: ""
 
-### Role Based Access Control condiguration
+### Role Based Access Control configuration
 rbac:
-  # -- Specifies whether role and rolebinding resources should be created.
+  # -- Specifies whether role and role binding resources should be created.
   clusterRole:
-    create: true
-    nameOverride: ""
+    jobEditor:
+      create: true
+      nameOverride: ""
+      
+    jobViewer:
+      create: true
+      nameOverride: ""
+      
+    jobTemplateEditor:
+      create: true
+      nameOverride: ""
     
+    jobTemplateViewer:
+      create: true
+      nameOverride: ""
+      
+    streamClassEditor:
+      create: true
+      nameOverride: ""
+
+    streamClassViewer:
+      create: true
+      nameOverride: ""
+      
   clusterRoleBindings:
     create: true
-    nameOverride: ""
-    serviceAccountName: ""
-
     
 # Additional labels for the deployment and pods
 additionalLabels: {}

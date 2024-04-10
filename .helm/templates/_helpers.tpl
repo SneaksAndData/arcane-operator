@@ -70,3 +70,70 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{ toYaml . }}
 {{- end }}
 {{- end }}
+
+{{/*
+Generate the job editor cluster role name
+*/}}
+{{- define "app.clusteRole.jobEditor" -}}
+{{- if .Values.rbac.clusterRole.jobEditor.nameOverride }}
+{{- .Values.rbac.clusterRole.jobEditor.nameOverride }}
+{{- else }}
+{{- printf "%s-job-editor" (include "app.fullname" .) }}
+{{- end }}
+{{- end }}
+
+{{/*
+Generate the job viewer cluster role name
+*/}}
+{{- define "app.clusteRole.jobViewer" -}}
+{{- if .Values.rbac.clusterRole.jobViewer.nameOverride }}
+{{- .Values.rbac.clusterRole.jobViewer.nameOverride }}
+{{- else }}
+{{- printf "%s-job-viewer" (include "app.fullname" .) }}
+{{- end }}
+{{- end }}
+
+{{/*
+Generate the job template editor cluster role name
+*/}}
+{{- define "app.clusteRole.jobTemplateEditor" -}}
+{{- if .Values.rbac.clusterRole.jobTemplateEditor.nameOverride }}
+{{- .Values.rbac.clusterRole.jobTemplateEditor.nameOverride }}
+{{- else }}
+{{- printf "%s-job-template-editor" (include "app.fullname" .) }}
+{{- end }}
+{{- end }}
+
+{{/*
+Generate the job template viewer cluster role name
+*/}}
+{{- define "app.clusteRole.jobTemplateViewer" -}}
+{{- if .Values.rbac.clusterRole.jobTemplateViewer.nameOverride }}
+{{- .Values.rbac.clusterRole.jobTemplateViewer.nameOverride }}
+{{- else }}
+{{- printf "%s-job-template-viewer" (include "app.fullname" .) }}
+{{- end }}
+{{- end }}
+
+{{/*
+Generate the job template editor cluster role name
+*/}}
+{{- define "app.clusteRole.streamClassEditor" -}}
+{{- if .Values.rbac.clusterRole.streamClassEditor.nameOverride }}
+{{- .Values.rbac.clusterRole.streamClassEditor.nameOverride }}
+{{- else }}
+{{- printf "%s-stream-class-editor" (include "app.fullname" .) }}
+{{- end }}
+{{- end }}
+
+{{/*
+Generate the job template viewer cluster role name
+*/}}
+{{- define "app.clusteRole.streamClassViewer" -}}
+{{- if .Values.rbac.clusterRole.streamClassViewer.nameOverride }}
+{{- .Values.rbac.clusterRole.streamClassViewer.nameOverride }}
+{{- else }}
+{{- printf "%s-stream-class-viewer" (include "app.fullname" .) }}
+{{- end }}
+{{- end }}
+

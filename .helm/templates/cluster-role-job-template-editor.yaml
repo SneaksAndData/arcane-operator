@@ -1,8 +1,8 @@
-{{- if .Values.rbac.clusterRole.create-}}
+{{- if .Values.rbac.clusterRole.jobTemplateEditor.create -}}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: {{ include "app.name" }}-job-template-editor
+  name: {{ include "app.clusteRole.jobTemplateEditor" . }}
   labels:
     rbac.authorization.k8s.io/aggregate-to-edit: "true"
 rules:
