@@ -64,7 +64,7 @@ public class StreamDefinitionRepository : IStreamDefinitionRepository
                 streamId,
                 string.Join(", ", streamStatus.Conditions.Select(sc => sc.Type)),
                 streamStatus.Phase);
-            
+
             return this.kubeCluster.UpdateCustomResourceStatus(
                 crdConf.Value.ApiGroupRef,
                 crdConf.Value.VersionRef,
