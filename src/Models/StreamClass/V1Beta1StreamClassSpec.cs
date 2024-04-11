@@ -29,6 +29,12 @@ public class V1Beta1StreamClassSpec
     public string PluralName { get; set; }
     
     /// <summary>
+    /// Stream class object kind
+    /// </summary>
+    [JsonPropertyName("kind")]
+    public string KindRef { get; set; }
+    
+    /// <summary>
     /// Stream class buffer object max capacity.
     /// This value is dependent on the expected number of streams that will be created for this class.
     /// </summary>

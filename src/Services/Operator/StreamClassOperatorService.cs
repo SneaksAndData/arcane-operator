@@ -66,7 +66,7 @@ public class StreamClassOperatorService : IStreamClassOperatorService
                 response.StreamClass.Metadata.Namespace(),
                 response.StreamClass.Metadata.Name,
                 response.Phase);
-            return this.streamClassRepository.InsertOrUpdate(response.StreamClass, response.Phase, response.Conditions);
+            return this.streamClassRepository.InsertOrUpdate(response.StreamClass, response.Phase, response.Conditions, this.configuration.Plural);
         });
         
         return synchronizationSource

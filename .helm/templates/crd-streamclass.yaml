@@ -41,6 +41,9 @@ spec:
                 apiGroupRef:
                   type: string
                   description: The api group of the stream class to watch for.
+                kindRef:
+                  type: string
+                  description: The kind of the stream class to watch for.
                 apiVersion:
                   type: string
                   description: The API version of the stream class to watch for.
