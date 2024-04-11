@@ -9,6 +9,7 @@ using Akka.Streams.Supervision;
 using Akka.Util;
 using Akka.Util.Extensions;
 using Arcane.Operator.Configurations;
+using Arcane.Operator.Configurations.Common;
 using Arcane.Operator.Extensions;
 using Arcane.Operator.Models;
 using Arcane.Operator.Models.StreamDefinitions.Base;

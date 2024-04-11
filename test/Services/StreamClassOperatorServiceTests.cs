@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Akka.Streams;
 using Akka.Streams.Dsl;
 using Arcane.Operator.Configurations;
+using Arcane.Operator.Configurations.Common;
 using Arcane.Operator.Models.StreamClass;
 using Arcane.Operator.Models.StreamDefinitions;
 using Arcane.Operator.Services.Base;

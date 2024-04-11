@@ -14,5 +14,20 @@ data:
       "StreamingJobMaintenanceServiceConfiguration": {
         "MaxBufferCapacity": {{ .Values.settings.streamClassController.maxEventBufferCapacity }},
         "Namespace": "{{ default .Release.Namespace .Values.settings.streamClassController.streamClassesNamespace }}"
+      },
+      "StreamClassOperatorServiceConfiguration": {
+        "Namespace": {{ default .Release.Namespace .Values.settings.streamClassController.streamClassesNamespace }},
+        "MaxBufferCapacity": 100,
+        "ApiGroup": "streaming.sneaksanddata.com",
+        "Version": "v1beta1",
+        "Plural": "stream-classes"
+      },
+      "StreamingJobTemplateRepositoryConfiguration": {
+        "ResourceConfiguration": {
+          "ApiGroup": "streaming.sneaksanddata.com",
+          "Version": "v1",
+          "Plural": "streaming-job-templates"
+        }
       }
     }
+    
