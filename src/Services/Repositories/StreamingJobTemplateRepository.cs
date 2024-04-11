@@ -15,10 +15,10 @@ public class StreamingJobTemplateRepository : IStreamingJobTemplateRepository
 {
     private readonly IKubeCluster kubeCluster;
     private readonly ILogger<StreamingJobTemplateRepository> logger;
-    private readonly IOptionsSnapshot<CustomResourceConfiguration> configuration;
+    private readonly IOptions<CustomResourceConfiguration> configuration;
 
     public StreamingJobTemplateRepository(IKubeCluster kubeCluster,
-        IOptionsSnapshot<CustomResourceConfiguration> configuration,
+        IOptions<CustomResourceConfiguration> configuration,
         ILogger<StreamingJobTemplateRepository> logger)
     {
         this.kubeCluster = kubeCluster;
@@ -29,7 +29,7 @@ public class StreamingJobTemplateRepository : IStreamingJobTemplateRepository
     public Task<Option<V1Beta1StreamingJobTemplate>> GetStreamingJobTemplate(string kind, string jobNamespace,
         string templateName)
     {
-        var jobTemplateResourceConfiguration = this.configuration.Get(kind);
+        var jobTemplateResourceConfiguration = this.configuration.Value;
         if (jobTemplateResourceConfiguration is { ApiGroup: null, Version: null, Plural: null })
         {
             this.logger.LogError("Failed to get job template configuration for kind {kind}", kind);
