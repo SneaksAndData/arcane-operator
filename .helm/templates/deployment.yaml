@@ -89,6 +89,9 @@ spec:
       - name: {{ template "app.name" . }}-config
         configMap:
           name: {{ template "app.name" . }}-config
+        {{- with .Values.extraVolumeMounts }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
       {{- with .Values.tolerations }}
       tolerations:
         {{- toYaml . | nindent 8 }}
