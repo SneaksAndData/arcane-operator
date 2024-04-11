@@ -29,7 +29,7 @@ public class V1Beta1StreamClassSpec
     public string PluralName { get; set; }
     
     /// <summary>
-    /// Stream class object plural name
+    /// Stream class object kind
     /// </summary>
     [JsonPropertyName("kind")]
     public string KindRef { get; set; }
