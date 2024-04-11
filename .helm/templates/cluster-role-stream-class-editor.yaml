@@ -1,0 +1,18 @@
+{{- if .Values.rbac.clusterRole.streamClassEditor.create -}}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "app.clusteRole.streamClassEditor" . }}
+  labels:
+    rbac.authorization.k8s.io/aggregate-to-edit: "true"
+rules:
+  - verbs:
+      - create
+      - update
+      - patch
+      - delete
+    apiGroups:
+      - streaming.sneaksanddata.com
+    resources:
+      - stream-classes
+{{- end }}
