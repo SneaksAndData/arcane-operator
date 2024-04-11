@@ -1,8 +1,10 @@
 ﻿using System.Diagnostics.CodeAnalysis;
-using Snd.Sdk.Kubernetes;
 
-namespace Arcane.Operator.Configurations;
+namespace Arcane.Operator.Configurations.Common;
 
+/// <summary>
+/// Configuration of various custom resources listeners
+/// </summary>
 [ExcludeFromCodeCoverage(Justification = "Model")]
 public class CustomResourceConfiguration
 {
@@ -20,18 +22,4 @@ public class CustomResourceConfiguration
     /// Plural of the CRD
     /// </summary>
     public string Plural { get; init; }
-
-    /// <summary>
-    /// Convert configuration to NamespacedCrd object for consuming in the Proteus library
-    /// </summary>
-    /// <returns><see cref="NamespacedCrd"/> object</returns>
-    public NamespacedCrd ToNamespacedCrd()
-    {
-        return new NamespacedCrd
-        {
-            Group = this.ApiGroup,
-            Plural = this.Plural,
-            Version = this.Version
-        };
-    }
 }
