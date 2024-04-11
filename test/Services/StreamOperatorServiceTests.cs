@@ -8,6 +8,7 @@ using Akka.Streams.Dsl;
 using Akka.Util;
 using Akka.Util.Extensions;
 using Arcane.Operator.Configurations;
+using Arcane.Operator.Configurations.Common;
 using Arcane.Operator.Models.StreamDefinitions;
 using Arcane.Operator.Models.StreamDefinitions.Base;
 using Arcane.Operator.Models.StreamStatuses.StreamStatus.V1Beta1;
