@@ -50,7 +50,7 @@ public class Startup
         services.Configure<StreamClassOperatorServiceConfiguration>(
                 Configuration.GetSection(nameof(StreamClassOperatorServiceConfiguration)));
         
-        services.Configure<StreamClassOperatorServiceConfiguration>(
+        services.Configure<CustomResourceConfiguration>(
                 Configuration.GetSection("StreamingJobTemplate"));
         
         services.AddSingleton<IStreamingJobOperatorService, StreamingJobOperatorService>();
