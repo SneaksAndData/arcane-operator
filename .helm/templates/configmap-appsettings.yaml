@@ -16,7 +16,7 @@ data:
         "Namespace": "{{ default .Release.Namespace .Values.settings.streamClassController.streamClassesNamespace }}"
       },
       "StreamClassOperatorServiceConfiguration": {
-        "Namespace": {{ .Values.settings.streamClassController.streamClassesNamespace }},
+        "Namespace": {{ default .Release.Namespace .Values.settings.streamClassController.streamClassesNamespace }},
         "MaxBufferCapacity": 100,
         "ApiGroup": "streaming.sneaksanddata.com",
         "Version": "v1beta1",
@@ -28,3 +28,4 @@ data:
         "Plural": "streaming-job-templates"
       }
     }
+    
