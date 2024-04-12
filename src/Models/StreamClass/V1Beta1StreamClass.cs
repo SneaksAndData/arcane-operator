@@ -60,6 +60,6 @@ public class V1Beta1StreamClass: IStreamClass
     /// <inheritdoc cref="IStreamClass.KindRef"/>
     public string KindRef => this.Spec.KindRef;
     
-    /// <inheritdoc cref="IStreamClass.KindRef"/>
+    /// <inheritdoc cref="IStreamClass.MaxBufferCapacity"/>
     public int MaxBufferCapacity => this.Spec.MaxBufferCapacity;
 }
