@@ -1,6 +1,7 @@
 ﻿using System.Threading.Tasks;
 using Akka.Util;
 using Arcane.Operator.Models;
+using Arcane.Operator.Models.StreamClass.Base;
 using Arcane.Operator.Models.StreamDefinitions.Base;
 using k8s.Models;
 
@@ -18,8 +19,10 @@ public interface IStreamingJobOperatorService
     /// </summary>
     /// <param name="streamDefinition">Stream definition</param>
     /// <param name="fullLoad">Whether to perform a full reload for this stream.</param>
+    /// <param name="streamClass"></param>
     /// <returns>StreamInfo if stream was created or None if an error occured</returns>
-    Task<Option<StreamOperatorResponse>> StartRegisteredStream(IStreamDefinition streamDefinition, bool fullLoad);
+    Task<Option<StreamOperatorResponse>> StartRegisteredStream(IStreamDefinition streamDefinition, bool fullLoad,
+        IStreamClass streamClass);
 
     /// <summary>
     /// Retrieves a streaming job with name equal to streamId from the cluster. If not found, returns None.

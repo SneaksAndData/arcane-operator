@@ -1,4 +1,6 @@
-﻿using Arcane.Operator.Configurations;
+﻿using System.Collections;
+using System.Collections.Generic;
+using Arcane.Operator.Configurations;
 using k8s;
 using k8s.Models;
 using Snd.Sdk.Kubernetes;
@@ -57,4 +59,6 @@ public interface IStreamClass: IKubernetesObject<V1ObjectMeta>
         Plural = this.PluralNameRef,
         Version = this.VersionRef
     };
+
+    bool IsSecretField(string propertyName);
 }

@@ -7,7 +7,9 @@ using Akka.Streams.Dsl;
 using Arcane.Operator.Configurations;
 using Arcane.Operator.Configurations.Common;
 using Arcane.Operator.Models.StreamClass;
+using Arcane.Operator.Models.StreamClass.Base;
 using Arcane.Operator.Models.StreamDefinitions;
+using Arcane.Operator.Models.StreamDefinitions.Base;
 using Arcane.Operator.Services.Base;
 using Arcane.Operator.Services.Operator;
 using Arcane.Operator.Tests.Fixtures;
@@ -16,6 +18,7 @@ using k8s;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Logging;
+using Microsoft.VisualStudio.TestPlatform.PlatformAbstractions.Interfaces;
 using Moq;
 using Xunit;
 using static Arcane.Operator.Tests.Services.TestCases.StreamClassTestCases;
@@ -84,7 +87,7 @@ public class StreamClassOperatorServiceTests : IClassFixture<ServiceFixture>, IC
         await Task.Delay(5000);
 
         // Assert
-        this.streamingJobOperatorServiceMock.Verify(service => service.StartRegisteredStream(It.IsAny<StreamDefinition>(), It.IsAny<bool>()));
+        this.streamingJobOperatorServiceMock.Verify(service => service.StartRegisteredStream(It.IsAny<StreamDefinition>(), It.IsAny<bool>(), It.IsAny<IStreamClass>()));
     }
 
     [Fact]
@@ -132,7 +135,7 @@ public class StreamClassOperatorServiceTests : IClassFixture<ServiceFixture>, IC
         
         // Assert
         this.streamingJobOperatorServiceMock.Verify(
-                service => service.StartRegisteredStream(It.IsAny<StreamDefinition>(), It.IsAny<bool>()),
+                service => service.StartRegisteredStream(It.IsAny<StreamDefinition>(), It.IsAny<bool>(), It.IsAny<IStreamClass>()),
                 Times.Never
             );
     }

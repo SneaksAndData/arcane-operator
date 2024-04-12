@@ -1,4 +1,5 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
 using Arcane.Operator.Configurations;
 using Arcane.Operator.Models.StreamClass.Base;
@@ -62,4 +63,10 @@ public class V1Beta1StreamClass: IStreamClass
     
     /// <inheritdoc cref="IStreamClass.MaxBufferCapacity"/>
     public int MaxBufferCapacity => this.Spec.MaxBufferCapacity;
+
+    /// <inheritdoc cref="IStreamClass.IsSecretField"/>
+    public bool IsSecretField(string propertyName)
+    {
+        return this.Spec.SecretFields.Contains(propertyName);
+    }
 }

@@ -7,6 +7,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Arcane.Models.StreamingJobLifecycle;
+using Arcane.Operator.Models.StreamClass.Base;
 using Arcane.Operator.Models.StreamDefinitions.Base;
 using k8s.Models;
 
@@ -19,7 +20,7 @@ public class StreamDefinition : IStreamDefinition
     /// Stream configuration
     /// </summary>
     [JsonPropertyName("spec")]
-    public StreamDefinitionSpec Spec { get; set; }
+    public JsonElement Spec { get; set; }
 
     /// <summary>
     /// Api version
@@ -57,16 +58,24 @@ public class StreamDefinition : IStreamDefinition
 
     /// <inheritdoc cref="IStreamDefinition"/>
     [JsonIgnore]
-    public V1TypedLocalObjectReference JobTemplateRef => this.Spec.JobTemplateRef;
+    public V1TypedLocalObjectReference JobTemplateRef =>
+        this.Spec.GetProperty("jobTemplateRef").Deserialize<V1TypedLocalObjectReference>();
 
     /// <inheritdoc cref="IStreamDefinition"/>
     [JsonIgnore]
-    public V1TypedLocalObjectReference ReloadingJobTemplateRef => this.Spec.ReloadingJobTemplateRef;
+    public V1TypedLocalObjectReference ReloadingJobTemplateRef => 
+        this.Spec.GetProperty("reloadingJobTemplateRef").Deserialize<V1TypedLocalObjectReference>();
 
     /// <inheritdoc cref="IStreamDefinition"/>
-    public IEnumerable<V1EnvFromSource> ToV1EnvFromSources()
+    public IEnumerable<V1EnvFromSource> ToV1EnvFromSources(IStreamClass streamDefinition)
     {
-        return this.Spec.ToV1EnvFromSources();
+        foreach (var property in this.Spec.EnumerateObject())
+        {
+            if (streamDefinition.IsSecretField(property.Name))
+            {
+                yield return new V1EnvFromSource(secretRef: new V1SecretEnvSource(property.Value.GetString()));
+            }
+        }
     }
 
     /// <summary>
@@ -74,11 +83,24 @@ public class StreamDefinition : IStreamDefinition
     /// </summary>
     /// <param name="fullLoad"></param>
     /// <returns>Dictionary of strings</returns>
-    public Dictionary<string, string> ToEnvironment(bool fullLoad)
+    public Dictionary<string, string> ToEnvironment(bool fullLoad, IStreamClass streamClass)
     {
         return this.SelfToEnvironment(fullLoad)
-            .Concat(this.Spec.ToEnvironment())
+            .Concat(this.SpecToEnvironment(streamClass))
             .ToDictionary(x => x.Key, x => x.Value);
+    }
+
+    private IEnumerable<KeyValuePair<string,string>> SpecToEnvironment(IStreamClass streamClass)
+    {
+        var newObj = this.Spec.Clone().Deserialize<Dictionary<string, object>>();
+        foreach (var property in this.Spec.EnumerateObject().Where(property => streamClass.IsSecretField(property.Name)))
+        {
+            newObj.Remove(property.Name);
+        }
+        return new KeyValuePair<string, string>[]
+        {
+            new("SPEC".GetEnvironmentVariableName(), JsonSerializer.Serialize(newObj))
+        };
     }
 
     public string GetConfigurationChecksum()

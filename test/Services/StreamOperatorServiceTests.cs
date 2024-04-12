@@ -86,7 +86,7 @@ public class StreamOperatorServiceTests : IClassFixture<ServiceFixture>, IClassF
 
         this.serviceFixture.MockStreamingJobOperatorService.Verify(service
                 => service.StartRegisteredStream(
-                    It.IsAny<StreamDefinition>(), true),
+                    It.IsAny<StreamDefinition>(), true, It.IsAny<IStreamClass>()),
             Times.Exactly(expectFullLoad ? 1 : 0));
 
         this.serviceFixture.MockStreamingJobOperatorService.Verify(service
@@ -95,7 +95,7 @@ public class StreamOperatorServiceTests : IClassFixture<ServiceFixture>, IClassF
 
         this.serviceFixture.MockStreamingJobOperatorService.Verify(service
                 => service.StartRegisteredStream(
-                    It.IsAny<StreamDefinition>(), false),
+                    It.IsAny<StreamDefinition>(), false, It.IsAny<IStreamClass>()),
             Times.Exactly(expectRestart && !streamingJobExists ? 1 : 0));
 
         this.serviceFixture.MockStreamingJobOperatorService.Verify(service
@@ -170,7 +170,7 @@ public class StreamOperatorServiceTests : IClassFixture<ServiceFixture>, IClassF
             => service.RequestStreamingJobReload(It.IsAny<string>()), Times.Exactly(expectReload ? 1 : 0));
 
         this.serviceFixture.MockStreamingJobOperatorService.Verify(service
-            => service.StartRegisteredStream(It.IsAny<IStreamDefinition>(), true), Times.Exactly(expectReload ? 0 : 1));
+            => service.StartRegisteredStream(It.IsAny<IStreamDefinition>(), true, It.IsAny<IStreamClass>()), Times.Exactly(expectReload ? 0 : 1));
 
         this.serviceFixture.MockStreamDefinitionRepository.Verify(service
             => service.RemoveReloadingAnnotation(streamDefinition.Namespace(), streamDefinition.Kind,
@@ -221,7 +221,7 @@ public class StreamOperatorServiceTests : IClassFixture<ServiceFixture>, IClassF
             => service.RequestStreamingJobReload(It.IsAny<string>()), Times.Exactly(0));
 
         this.serviceFixture.MockStreamingJobOperatorService.Verify(service
-            => service.StartRegisteredStream(It.IsAny<IStreamDefinition>(), true), Times.Exactly(expectStart ? 1 : 0));
+            => service.StartRegisteredStream(It.IsAny<IStreamDefinition>(), true, It.IsAny<IStreamClass>()), Times.Exactly(expectStart ? 1 : 0));
     }
 
     public static IEnumerable<object[]> GenerateRecoverableTestCases()

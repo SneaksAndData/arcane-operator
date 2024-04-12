@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using Arcane.Models.StreamingJobLifecycle;
+using Arcane.Operator.Models.StreamClass.Base;
 using k8s;
 using k8s.Models;
 using Newtonsoft.Json;
@@ -47,13 +48,13 @@ public interface IStreamDefinition : IKubernetesObject<V1ObjectMeta>
     /// <summary>
     /// Convert stream configuration to Kubernetes environment references
     /// </summary>
-    public IEnumerable<V1EnvFromSource> ToV1EnvFromSources();
+    public IEnumerable<V1EnvFromSource> ToV1EnvFromSources(IStreamClass streamDefinition);
 
     /// <summary>
     /// Convert stream configuration to environment variables
     /// </summary>
     /// <param name="fullLoad"></param>
-    public Dictionary<string, string> ToEnvironment(bool fullLoad);
+    public Dictionary<string, string> ToEnvironment(bool fullLoad, IStreamClass streamDefinition);
 
     /// <summary>
     /// Returns checksum of the stream configuration

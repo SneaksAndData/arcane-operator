@@ -9,6 +9,7 @@ using Arcane.Models.StreamingJobLifecycle;
 using Arcane.Operator.Configurations;
 using Arcane.Operator.Extensions;
 using Arcane.Operator.Models;
+using Arcane.Operator.Models.StreamClass.Base;
 using Arcane.Operator.Models.StreamDefinitions.Base;
 using Arcane.Operator.Services.Base;
 using k8s.Models;
@@ -55,7 +56,8 @@ public class StreamingJobOperatorService : IStreamingJobOperatorService
             });
     }
 
-    public Task<Option<StreamOperatorResponse>> StartRegisteredStream(IStreamDefinition streamDefinition, bool fullLoad)
+    public Task<Option<StreamOperatorResponse>> StartRegisteredStream(IStreamDefinition streamDefinition, bool fullLoad,
+        IStreamClass streamClass)
     {
         var templateRefKind = fullLoad
             ? streamDefinition.ReloadingJobTemplateRef.Kind
@@ -81,8 +83,8 @@ public class StreamingJobOperatorService : IStreamingJobOperatorService
                     .GetJob()
                     .WithStreamingJobLabels(streamDefinition.StreamId, fullLoad, streamDefinition.Kind)
                     .WithStreamingJobAnnotations(streamDefinition.GetConfigurationChecksum())
-                    .WithCustomEnvironment(streamDefinition.ToV1EnvFromSources())
-                    .WithCustomEnvironment(streamDefinition.ToEnvironment(fullLoad))
+                    .WithCustomEnvironment(streamDefinition.ToV1EnvFromSources(streamClass))
+                    .WithCustomEnvironment(streamDefinition.ToEnvironment(fullLoad, streamClass))
                     .WithOwnerReference(streamDefinition)
                     .WithName(streamDefinition.StreamId);
                 this.logger.LogInformation("Starting a new stream job with an id {streamId}",

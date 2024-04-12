@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text.Json;
 using Arcane.Models.StreamingJobLifecycle;
 using Arcane.Operator.Models.StreamDefinitions;
 using Arcane.Operator.Models.StreamDefinitions.Base;
@@ -11,7 +12,7 @@ public static class StreamDefinitionTestCases
 {
     public static IStreamDefinition StreamDefinition => new StreamDefinition
     {
-        Spec = new StreamDefinitionSpec(),
+        Spec = JsonDocument.Parse("{}").RootElement,
         Metadata = new V1ObjectMeta
         {
             Name = "stream"
@@ -20,7 +21,7 @@ public static class StreamDefinitionTestCases
 
     public static IStreamDefinition SuspendedStreamDefinition => new StreamDefinition
     {
-        Spec = new StreamDefinitionSpec(),
+        Spec = JsonDocument.Parse("{}").RootElement,
         Metadata = new V1ObjectMeta
         {
             Name = "stream",
@@ -33,7 +34,7 @@ public static class StreamDefinitionTestCases
 
     public static IStreamDefinition ReloadRequestedStreamDefinition => new StreamDefinition
     {
-        Spec = new StreamDefinitionSpec(),
+        Spec = JsonDocument.Parse("{}").RootElement,
         Metadata = new V1ObjectMeta
         {
             Name = "stream",
@@ -51,7 +52,7 @@ public static class StreamDefinitionTestCases
     
     public static StreamDefinition NamedStreamDefinition(string name = null) => new()
     {
-        Spec = new StreamDefinitionSpec(),
+        Spec = JsonDocument.Parse("{}").RootElement,
         Metadata = new V1ObjectMeta
         {
             Name = name ?? Guid.NewGuid().ToString()

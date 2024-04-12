@@ -1,4 +1,5 @@
-﻿using System.Text.Json.Serialization;
+﻿using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace Arcane.Operator.Models.StreamClass;
 
@@ -40,4 +41,11 @@ public class V1Beta1StreamClassSpec
     /// </summary>
     [JsonPropertyName("maxBufferCapacity")]
     public int MaxBufferCapacity { get; set; }
+
+    /// <summary>
+    /// Stream class buffer object max capacity.
+    /// This value is dependent on the expected number of streams that will be created for this class.
+    /// </summary>
+    [JsonPropertyName("secretFields")]
+    public List<string> SecretFields { get; set; }
 }
