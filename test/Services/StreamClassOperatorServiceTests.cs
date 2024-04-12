@@ -75,13 +75,13 @@ public class StreamClassOperatorServiceTests : IClassFixture<ServiceFixture>, IC
                     (WatchEventType.Added, StreamDefinitionTestCases.NamedStreamDefinition()),
                     (WatchEventType.Added, StreamDefinitionTestCases.NamedStreamDefinition())
                 }));
-        await Task.Delay(5000);
 
         // Act
         var sp = this.CreateServiceProvider();
         await sp.GetRequiredService<IStreamClassOperatorService>()
             .GetStreamClassEventsGraph(CancellationToken.None)
             .Run(this.akkaFixture.Materializer);
+        await Task.Delay(5000);
 
         // Assert
         this.streamingJobOperatorServiceMock.Verify(service => service.StartRegisteredStream(It.IsAny<StreamDefinition>(), It.IsAny<bool>()));
