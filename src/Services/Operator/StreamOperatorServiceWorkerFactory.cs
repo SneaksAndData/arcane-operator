@@ -37,8 +37,7 @@ public class StreamOperatorServiceWorkerFactory: IStreamOperatorServiceWorkerFac
     {
         var streamOperatorService = new StreamOperatorService<StreamDefinition>(
             this.kubeCluster,
-            Options.Create(streamClass.ToStreamOperatorServiceConfiguration()),
-            this.customResourceConfigurationsOptionsSnapshot,
+            streamClass,
             this.jobOperatorService, 
             this.streamDefinitionRepository,
             this.loggerFactory.CreateLogger<StreamOperatorService<StreamDefinition>>()

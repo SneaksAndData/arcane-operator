@@ -36,8 +36,8 @@ public class StreamOperatorServiceWorker
     /// <param name="toStreamClassId"></param>
     public void Start(string toStreamClassId)
     {
-        this.streamExecutionTask = this.Execute(this.cts.Token);
         this.streamClassId = toStreamClassId;
+        this.streamExecutionTask = this.Execute(this.cts.Token);
     }
     
     /// <summary>
@@ -62,5 +62,4 @@ public class StreamOperatorServiceWorker
             await task;
         }
     }
-
 }
