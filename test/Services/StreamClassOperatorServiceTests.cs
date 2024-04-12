@@ -75,6 +75,7 @@ public class StreamClassOperatorServiceTests : IClassFixture<ServiceFixture>, IC
                     (WatchEventType.Added, StreamDefinitionTestCases.NamedStreamDefinition()),
                     (WatchEventType.Added, StreamDefinitionTestCases.NamedStreamDefinition())
                 }));
+        await Task.Delay(5000);
 
         // Act
         var sp = this.CreateServiceProvider();
