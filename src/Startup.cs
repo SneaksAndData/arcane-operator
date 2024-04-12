@@ -4,6 +4,7 @@ using Arcane.Operator.Configurations;
 using Arcane.Operator.Services;
 using Arcane.Operator.Services.Base;
 using Arcane.Operator.Services.Maintenance;
+using Arcane.Operator.Services.Operator;
 using Arcane.Operator.Services.Repositories;
 using Arcane.Operator.Services.Streams;
 using Azure.Data.Tables;
@@ -59,6 +60,8 @@ public class Startup
         services.AddSingleton<IStreamDefinitionRepository, StreamDefinitionRepository>();
         services.AddSingleton<IStreamingJobTemplateRepository, StreamingJobTemplateRepository>();
         services.AddSingleton<IStreamClassRepository, StreamClassRepository>();
+        services.AddSingleton<IStreamClassOperatorService, StreamClassOperatorService>();
+        services.AddSingleton<IStreamOperatorServiceWorkerFactory, StreamOperatorServiceWorkerFactory>();
         services.AddMemoryCache();
         services.AddKubernetes();
 

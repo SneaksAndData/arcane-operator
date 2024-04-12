@@ -46,7 +46,7 @@ public class StreamClassRepository: IStreamClassRepository
         };
         return this.kubeCluster.UpdateCustomResourceStatus(
             streamClass.ApiGroup(),
-            streamClass.ApiVersion,
+            streamClass.ApiGroupVersion(),
             pluralName,
             streamClass.Namespace(),
             streamClass.Name(),

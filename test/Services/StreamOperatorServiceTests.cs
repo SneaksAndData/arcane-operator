@@ -7,8 +7,9 @@ using Akka.Streams;
 using Akka.Streams.Dsl;
 using Akka.Util;
 using Akka.Util.Extensions;
-using Arcane.Operator.Configurations;
 using Arcane.Operator.Configurations.Common;
+using Arcane.Operator.Models.StreamClass;
+using Arcane.Operator.Models.StreamClass.Base;
 using Arcane.Operator.Models.StreamDefinitions;
 using Arcane.Operator.Models.StreamDefinitions.Base;
 using Arcane.Operator.Models.StreamStatuses.StreamStatus.V1Beta1;
@@ -376,10 +377,19 @@ public class StreamOperatorServiceTests : IClassFixture<ServiceFixture>, IClassF
             .AddSingleton(this.loggerFixture.Factory.CreateLogger<StreamOperatorService<FailedStreamDefinition>>())
             .AddSingleton(this.serviceFixture.MockStreamingJobOperatorService.Object)
             .AddSingleton(optionsMock.Object)
-            .AddSingleton(Options.Create(new StreamOperatorServiceConfiguration
+             // In read code StreamClass is not registered as a service, but it is used in StreamOperatorService
+            .AddSingleton<IStreamClass>(new V1Beta1StreamClass
             {
-                MaxBufferCapacity = 100
-            }))
+                Spec = new V1Beta1StreamClassSpec
+                {
+                    MaxBufferCapacity = 1000,
+                    KindRef = "StreamKind",
+                    ApiVersion = "v1",
+                    PluralName = "streams",
+                    ApiGroupRef = "example.com",
+                    StreamClassResourceKind = "StreamClass"
+                }
+            })
             .AddSingleton<IStreamOperatorService<StreamDefinition>, StreamOperatorService<StreamDefinition>>()
             .AddSingleton<IStreamOperatorService<FailedStreamDefinition>, StreamOperatorService<FailedStreamDefinition>>()
             .BuildServiceProvider();
