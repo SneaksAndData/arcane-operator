@@ -31,7 +31,7 @@ public class V1Beta1StreamClassSpec
     /// <summary>
     /// Stream class object kind
     /// </summary>
-    [JsonPropertyName("kind")]
+    [JsonPropertyName("kindRef")]
     public string KindRef { get; set; }
     
     /// <summary>

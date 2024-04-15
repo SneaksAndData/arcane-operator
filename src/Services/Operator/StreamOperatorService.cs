@@ -8,16 +8,14 @@ using Akka.Streams.Dsl;
 using Akka.Streams.Supervision;
 using Akka.Util;
 using Akka.Util.Extensions;
-using Arcane.Operator.Configurations;
-using Arcane.Operator.Configurations.Common;
 using Arcane.Operator.Extensions;
 using Arcane.Operator.Models;
+using Arcane.Operator.Models.StreamClass.Base;
 using Arcane.Operator.Models.StreamDefinitions.Base;
 using Arcane.Operator.Services.Base;
 using k8s;
 using k8s.Models;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Snd.Sdk.ActorProviders;
 using Snd.Sdk.Kubernetes.Base;
 using Snd.Sdk.Tasks;
@@ -29,23 +27,20 @@ public class StreamOperatorService<TStreamType> : IStreamOperatorService<TStream
 {
     private const int parallelism = 1;
     
-    private readonly StreamOperatorServiceConfiguration configuration;
     private readonly IKubeCluster kubeCluster;
     private readonly ILogger<StreamOperatorService<TStreamType>> logger;
     private readonly IStreamingJobOperatorService operatorService;
-    private readonly CustomResourceConfiguration resourceConfiguration;
     private readonly IStreamDefinitionRepository streamDefinitionRepository;
+    private readonly IStreamClass streamClass;
 
     public StreamOperatorService(IKubeCluster kubeCluster,
-        IOptions<StreamOperatorServiceConfiguration> streamOperatorServiceOptions,
-        IOptionsSnapshot<CustomResourceConfiguration> customResourceConfigurationsOptionsSnapshot,
+        IStreamClass streamClass,
         IStreamingJobOperatorService operatorService,
         IStreamDefinitionRepository streamDefinitionRepository,
         ILogger<StreamOperatorService<TStreamType>> logger)
     {
         this.kubeCluster = kubeCluster;
-        this.configuration = streamOperatorServiceOptions.Value;
-        this.resourceConfiguration = customResourceConfigurationsOptionsSnapshot.Get(typeof(TStreamType).Name);
+        this.streamClass = streamClass;
         this.streamDefinitionRepository = streamDefinitionRepository;
         this.operatorService = operatorService;
         this.logger = logger;
@@ -56,10 +51,10 @@ public class StreamOperatorService<TStreamType> : IStreamOperatorService<TStream
         var synchronizationSource = this.GetStreamingJobSynchronizationGraph();
         var actualStateEventSource = this.kubeCluster.StreamCustomResourceEvents<TStreamType>(
             this.operatorService.StreamJobNamespace,
-            this.resourceConfiguration.ApiGroup,
-            this.resourceConfiguration.Version,
-            this.resourceConfiguration.Plural,
-            this.configuration.MaxBufferCapacity,
+            this.streamClass.ApiGroupRef,
+            this.streamClass.VersionRef,
+            this.streamClass.PluralNameRef,
+            this.streamClass.MaxBufferCapacity,
             OverflowStrategy.Fail);
 
         return synchronizationSource
@@ -179,9 +174,9 @@ public class StreamOperatorService<TStreamType> : IStreamOperatorService<TStream
     private Source<(WatchEventType, TStreamType), NotUsed> GetStreamingJobSynchronizationGraph()
     {
         var listTask = this.kubeCluster.ListCustomResources<TStreamType>(
-            this.resourceConfiguration.ApiGroup,
-            this.resourceConfiguration.Version,
-            this.resourceConfiguration.Plural,
+            this.streamClass.ApiGroupRef,
+            this.streamClass.VersionRef,
+            this.streamClass.PluralNameRef,
             this.operatorService.StreamJobNamespace);
 
         return Source

@@ -37,7 +37,7 @@ public class V1Beta1StreamClass: IStreamClass
     /// <inheritdoc cref="IKubernetesObject.Kind"/>
     public string ToStreamClassId()
     {
-        return $"{this.Metadata.Namespace()}/{this.Metadata.Name}";
+        return $"{this.Namespace()}/{this.Name()}";
     }
 
     public StreamOperatorServiceConfiguration ToStreamOperatorServiceConfiguration()
@@ -59,4 +59,7 @@ public class V1Beta1StreamClass: IStreamClass
     
     /// <inheritdoc cref="IStreamClass.KindRef"/>
     public string KindRef => this.Spec.KindRef;
+    
+    /// <inheritdoc cref="IStreamClass.MaxBufferCapacity"/>
+    public int MaxBufferCapacity => this.Spec.MaxBufferCapacity;
 }

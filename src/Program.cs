@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 using Arcane.Operator.Services.Maintenance;
+using Arcane.Operator.Services.Operator;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -41,6 +42,7 @@ public class Program
             .ConfigureServices(services =>
             {
                 services.AddHostedService<HostedStreamingJobMaintenanceService>();
+                services.AddHostedService<HostedStreamingClassOperatorService>();
             });
     }
 }
