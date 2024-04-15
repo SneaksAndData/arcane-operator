@@ -84,6 +84,13 @@ public class StreamDefinition : IStreamDefinition
             .ToDictionary(x => x.Key, x => x.Value);
     }
 
+    /// <summary>
+    /// Converts the stream configuration .spec field to to JSON document and removes secret fields
+    /// Unfortunately, we cannot serialize the JSONElement directly to string, because the JSONElement is immutable.
+    /// To work around this, we clone the JSONElement to a new object and then serialize it.
+    /// </summary>
+    /// <param name="streamClass">StreamClass object containing stream metadata.</param>
+    /// <returns>Serialized KeyValuePair containing the stream definition.</returns>
     private IEnumerable<KeyValuePair<string,string>> SpecToEnvironment(IStreamClass streamClass)
     {
         var newObj = this.Spec.Clone().Deserialize<Dictionary<string, object>>();

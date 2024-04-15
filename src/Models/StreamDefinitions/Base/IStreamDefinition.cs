@@ -48,13 +48,14 @@ public interface IStreamDefinition : IKubernetesObject<V1ObjectMeta>
     /// <summary>
     /// Convert stream configuration to Kubernetes environment references
     /// </summary>
-    public IEnumerable<V1EnvFromSource> ToV1EnvFromSources(IStreamClass streamDefinition);
+    public IEnumerable<V1EnvFromSource> ToV1EnvFromSources(IStreamClass streamClass);
 
     /// <summary>
-    /// Convert stream configuration to environment variables
+    /// Convert stream configuration to environment variables.
     /// </summary>
-    /// <param name="fullLoad"></param>
-    public Dictionary<string, string> ToEnvironment(bool fullLoad, IStreamClass streamDefinition);
+    /// <param name="fullLoad">True if stream should run in backfill mode.</param>
+    /// <param name="streamClass">Stream class object containing stream metadata.</param>
+    public Dictionary<string, string> ToEnvironment(bool fullLoad, IStreamClass streamClass);
 
     /// <summary>
     /// Returns checksum of the stream configuration
