@@ -1,4 +1,6 @@
-﻿using Arcane.Operator.Configurations;
+﻿using System.Collections;
+using System.Collections.Generic;
+using Arcane.Operator.Configurations;
 using k8s;
 using k8s.Models;
 using Snd.Sdk.Kubernetes;
@@ -57,4 +59,11 @@ public interface IStreamClass: IKubernetesObject<V1ObjectMeta>
         Plural = this.PluralNameRef,
         Version = this.VersionRef
     };
+
+    /// <summary>
+    /// Returns true if the property should be mapped to environment variable with secret reference.
+    /// </summary>
+    /// <param name="propertyName">Name of the property to test</param>
+    /// <returns></returns>
+    bool IsSecretField(string propertyName);
 }

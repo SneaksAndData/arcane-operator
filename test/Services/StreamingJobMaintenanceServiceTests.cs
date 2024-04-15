@@ -9,6 +9,7 @@ using Akka.Util.Extensions;
 using Arcane.Operator.Configurations;
 using Arcane.Operator.Extensions;
 using Arcane.Operator.Models;
+using Arcane.Operator.Models.StreamClass.Base;
 using Arcane.Operator.Models.StreamDefinitions.Base;
 using Arcane.Operator.Models.StreamStatuses.StreamStatus.V1Beta1;
 using Arcane.Operator.Services.Maintenance;
@@ -23,6 +24,7 @@ using Moq;
 using Xunit;
 using static Arcane.Operator.Tests.Services.TestCases.JobTestCases;
 using static Arcane.Operator.Tests.Services.TestCases.StreamDefinitionTestCases;
+using static Arcane.Operator.Tests.Services.TestCases.StreamClassTestCases;
 
 namespace Arcane.Operator.Tests.Services;
 
@@ -62,7 +64,7 @@ public class StreamingJobMaintenanceServiceTests : IClassFixture<ServiceFixture>
             .MockStreamDefinitionRepository
             .Setup(s => s.GetStreamDefinition(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
             .ReturnsAsync(() =>
-                definitionExists ? Mock.Of<IStreamDefinition>().AsOption() : Option<IStreamDefinition>.None);
+                definitionExists ? (Mock.Of<IStreamClass>().AsOption(), Mock.Of<IStreamDefinition>().AsOption()) : (Option<IStreamClass>.None, Option<IStreamDefinition>.None));
         var service = this.CreateService();
 
         // Act
@@ -70,7 +72,7 @@ public class StreamingJobMaintenanceServiceTests : IClassFixture<ServiceFixture>
 
         // Assert
         this.serviceFixture.MockStreamingJobOperatorService
-            .Verify(s => s.StartRegisteredStream(It.IsAny<IStreamDefinition>(), fullLoad),
+            .Verify(s => s.StartRegisteredStream(It.IsAny<IStreamDefinition>(), fullLoad, It.IsAny<IStreamClass>()),
                 Times.Exactly(definitionExists && expectRestart ? 1 : 0));
     }
 
@@ -135,7 +137,7 @@ public class StreamingJobMaintenanceServiceTests : IClassFixture<ServiceFixture>
 
     [Theory]
     [MemberData(nameof(GenerateDeletedJobTestCases))]
-    public async Task HandleDeletedJob(V1Job job, IStreamDefinition streamDefinition, bool expectToRestart,
+    public async Task HandleDeletedJob(V1Job job, IStreamClass streamClass, IStreamDefinition streamDefinition, bool expectToRestart,
         bool expectFullLoad)
     {
         // Arrange
@@ -155,7 +157,7 @@ public class StreamingJobMaintenanceServiceTests : IClassFixture<ServiceFixture>
             .MockStreamDefinitionRepository
             .Setup(service =>
                 service.GetStreamDefinition(job.Namespace(), job.GetStreamKind(), job.GetStreamId()))
-            .ReturnsAsync(streamDefinition.AsOption());
+            .ReturnsAsync((streamClass.AsOption(), streamDefinition.AsOption()));
 
 
         var service = this.CreateService();
@@ -164,20 +166,20 @@ public class StreamingJobMaintenanceServiceTests : IClassFixture<ServiceFixture>
         await service.GetJobEventsGraph(CancellationToken.None).Run(this.akkaFixture.Materializer);
 
         this.serviceFixture.MockStreamingJobOperatorService.Verify(s =>
-                s.StartRegisteredStream(streamDefinition, expectFullLoad),
+                s.StartRegisteredStream(streamDefinition, expectFullLoad, It.IsAny<IStreamClass>()),
             Times.Exactly(expectToRestart ? 1 : 0)
         );
     }
 
     public static IEnumerable<object[]> GenerateDeletedJobTestCases()
     {
-        yield return new object[] { CompletedJob, StreamDefinition, true, false };
-        yield return new object[] { ReloadRequestedJob, StreamDefinition, true, true };
-        yield return new object[] { SchemaMismatchJob, StreamDefinition, true, true };
+        yield return new object[] { CompletedJob, StreamClass, StreamDefinition, true, false };
+        yield return new object[] { ReloadRequestedJob, StreamClass, StreamDefinition, true, true };
+        yield return new object[] { SchemaMismatchJob, StreamClass, StreamDefinition, true, true };
 
-        yield return new object[] { CompletedJob, SuspendedStreamDefinition, false, false };
-        yield return new object[] { ReloadRequestedJob, SuspendedStreamDefinition, false, true };
-        yield return new object[] { SchemaMismatchJob, SuspendedStreamDefinition, false, true };
+        yield return new object[] { CompletedJob, StreamClass, SuspendedStreamDefinition, false, false };
+        yield return new object[] { ReloadRequestedJob, StreamClass, SuspendedStreamDefinition, false, true };
+        yield return new object[] { SchemaMismatchJob, StreamClass, SuspendedStreamDefinition, false, true };
     }
 
     public static IEnumerable<object[]> GenerateAddedJobTestCases()

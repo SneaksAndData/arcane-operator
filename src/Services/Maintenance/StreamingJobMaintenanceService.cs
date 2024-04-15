@@ -114,9 +114,7 @@ public class StreamingJobMaintenanceService : IStreamingJobMaintenanceService
             .GetStreamDefinition(job.Namespace(), job.GetStreamKind(), job.GetStreamId())
             .Map(maybeSd => maybeSd switch
             {
-                { HasValue: false }
-                    => Task.FromResult(Option<StreamOperatorResponse>.None),
-                { HasValue: true, Value: var sd } when job.IsFailed()
+                ({HasValue: true}, { HasValue: true, Value: var sd }) when job.IsFailed()
                     => this.streamDefinitionRepository
                         .SetCrashLoopAnnotation(sd.Namespace(), sd.Kind, sd.StreamId)
                         .Map(maybeUpdatedSd => maybeUpdatedSd.HasValue
@@ -125,14 +123,16 @@ public class StreamingJobMaintenanceService : IStreamingJobMaintenanceService
                                     maybeUpdatedSd.Value.StreamId)
                                 .AsOption()
                             : Option<StreamOperatorResponse>.None),
-                { HasValue: true, Value: var sd } when sd.Suspended
+                (_, { HasValue: true, Value: var sd }) when sd.Suspended
                     => Task.FromResult(
                         StreamOperatorResponse.Suspended(sd.Namespace(), sd.Kind, sd.StreamId).AsOption()),
-                { HasValue: true, Value: var sd } when sd.CrashLoopDetected
+                (_, { HasValue: true, Value: var sd }) when sd.CrashLoopDetected
                     => Task.FromResult(StreamOperatorResponse.CrashLoopDetected(sd.Namespace(), sd.Kind, sd.StreamId)
                         .AsOption()),
-                { HasValue: true, Value: var sd } when !sd.Suspended
-                    => this.operatorService.StartRegisteredStream(maybeSd.Value, fullLoad),
+                ({HasValue: true, Value: var sc}, { HasValue: true, Value: var sd }) when !sd.Suspended
+                    => this.operatorService.StartRegisteredStream(sd, fullLoad, sc),
+                (_, { HasValue: false })
+                    => Task.FromResult(Option<StreamOperatorResponse>.None),
                 _ => throw new ArgumentOutOfRangeException(nameof(maybeSd), maybeSd, null)
             }).Flatten();
     }

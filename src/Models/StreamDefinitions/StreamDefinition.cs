@@ -7,6 +7,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Arcane.Models.StreamingJobLifecycle;
+using Arcane.Operator.Models.StreamClass.Base;
 using Arcane.Operator.Models.StreamDefinitions.Base;
 using k8s.Models;
 
@@ -19,7 +20,7 @@ public class StreamDefinition : IStreamDefinition
     /// Stream configuration
     /// </summary>
     [JsonPropertyName("spec")]
-    public StreamDefinitionSpec Spec { get; set; }
+    public JsonElement Spec { get; set; }
 
     /// <summary>
     /// Api version
@@ -57,28 +58,50 @@ public class StreamDefinition : IStreamDefinition
 
     /// <inheritdoc cref="IStreamDefinition"/>
     [JsonIgnore]
-    public V1TypedLocalObjectReference JobTemplateRef => this.Spec.JobTemplateRef;
+    public V1TypedLocalObjectReference JobTemplateRef =>
+        this.Spec.GetProperty("jobTemplateRef").Deserialize<V1TypedLocalObjectReference>();
 
     /// <inheritdoc cref="IStreamDefinition"/>
     [JsonIgnore]
-    public V1TypedLocalObjectReference ReloadingJobTemplateRef => this.Spec.ReloadingJobTemplateRef;
+    public V1TypedLocalObjectReference ReloadingJobTemplateRef => 
+        this.Spec.GetProperty("reloadingJobTemplateRef").Deserialize<V1TypedLocalObjectReference>();
 
     /// <inheritdoc cref="IStreamDefinition"/>
-    public IEnumerable<V1EnvFromSource> ToV1EnvFromSources()
-    {
-        return this.Spec.ToV1EnvFromSources();
-    }
+    public IEnumerable<V1EnvFromSource> ToV1EnvFromSources(IStreamClass streamDefinition) =>
+        this.Spec.EnumerateObject()
+            .Where(s => streamDefinition.IsSecretField(s.Name))
+            .Select(p => new V1EnvFromSource(secretRef: p.Value.Deserialize<V1SecretEnvSource>()));
 
     /// <summary>
     /// Encode Stream runner configuration to dictionary that can be passed as environment variables
     /// </summary>
     /// <param name="fullLoad"></param>
     /// <returns>Dictionary of strings</returns>
-    public Dictionary<string, string> ToEnvironment(bool fullLoad)
+    public Dictionary<string, string> ToEnvironment(bool fullLoad, IStreamClass streamClass)
     {
         return this.SelfToEnvironment(fullLoad)
-            .Concat(this.Spec.ToEnvironment())
+            .Concat(this.SpecToEnvironment(streamClass))
             .ToDictionary(x => x.Key, x => x.Value);
+    }
+
+    /// <summary>
+    /// Converts the stream configuration .spec field to to JSON document and removes secret fields
+    /// Unfortunately, we cannot serialize the JSONElement directly to string, because the JSONElement is immutable.
+    /// To work around this, we clone the JSONElement to a new object and then serialize it.
+    /// </summary>
+    /// <param name="streamClass">StreamClass object containing stream metadata.</param>
+    /// <returns>Serialized KeyValuePair containing the stream definition.</returns>
+    private IEnumerable<KeyValuePair<string,string>> SpecToEnvironment(IStreamClass streamClass)
+    {
+        var newObj = this.Spec.Clone().Deserialize<Dictionary<string, object>>();
+        foreach (var property in this.Spec.EnumerateObject().Where(property => streamClass.IsSecretField(property.Name)))
+        {
+            newObj.Remove(property.Name);
+        }
+        return new KeyValuePair<string, string>[]
+        {
+            new("SPEC".GetEnvironmentVariableName(), JsonSerializer.Serialize(newObj))
+        };
     }
 
     public string GetConfigurationChecksum()

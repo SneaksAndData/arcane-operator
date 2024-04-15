@@ -112,7 +112,7 @@ public class StreamOperatorService<TStreamType> : IStreamOperatorService<TStream
                             .RemoveReloadingAnnotation(streamDefinition.Namespace(), streamDefinition.Kind,
                                 streamDefinition.StreamId)
                             .Map(sd => sd.HasValue
-                                ? this.operatorService.StartRegisteredStream(sd.Value, true)
+                                ? this.operatorService.StartRegisteredStream(sd.Value, true, this.streamClass)
                                 : Task.FromResult(Option<StreamOperatorResponse>.None))
                             .Flatten(),
                     { HasValue: true } when streamDefinition.ReloadRequested
@@ -138,7 +138,7 @@ public class StreamOperatorService<TStreamType> : IStreamOperatorService<TStream
                                             streamDefinition.GetConfigurationChecksum()
                         => this.operatorService.RequestStreamingJobRestart(streamDefinition.StreamId),
                     { HasValue: false }
-                        => this.operatorService.StartRegisteredStream(streamDefinition, false),
+                        => this.operatorService.StartRegisteredStream(streamDefinition, false, this.streamClass),
                     _ => Task.FromResult(Option<StreamOperatorResponse>.None)
                 };
             }).Flatten();
@@ -167,7 +167,7 @@ public class StreamOperatorService<TStreamType> : IStreamOperatorService<TStream
                                 streamDefinition.Kind,
                                 streamDefinition.StreamId)
                             .AsOption()),
-                    { HasValue: false } => this.operatorService.StartRegisteredStream(streamDefinition, true)
+                    { HasValue: false } => this.operatorService.StartRegisteredStream(streamDefinition, true, this.streamClass)
                 }).Flatten();
     }
 

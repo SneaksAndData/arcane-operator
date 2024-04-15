@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Arcane.Operator.Models.StreamClass.Base;
 using Arcane.Operator.Models.StreamDefinitions.Base;
 using k8s.Models;
 
@@ -40,6 +41,9 @@ public class FailedStreamDefinition : IStreamDefinition
     public bool ReloadRequested => throw this.exception;
     public V1TypedLocalObjectReference JobTemplateRef => throw this.exception;
     public V1TypedLocalObjectReference ReloadingJobTemplateRef => throw this.exception;
+    public IEnumerable<V1EnvFromSource> ToV1EnvFromSources(IStreamClass streamDefinition) => throw this.exception;
+
+    public Dictionary<string, string> ToEnvironment(bool fullLoad, IStreamClass streamDefinition) => throw this.exception;
 
     public IEnumerable<V1EnvFromSource> ToV1EnvFromSources()
     {

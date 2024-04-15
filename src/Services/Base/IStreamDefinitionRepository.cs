@@ -1,5 +1,6 @@
 ﻿using System.Threading.Tasks;
 using Akka.Util;
+using Arcane.Operator.Models.StreamClass.Base;
 using Arcane.Operator.Models.StreamDefinitions.Base;
 using Arcane.Operator.Models.StreamStatuses.StreamStatus.V1Beta1;
 
@@ -14,7 +15,8 @@ public interface IStreamDefinitionRepository
     /// <param name="kind">Stream definition kind to update</param>
     /// <param name="streamId">Stream identifier</param>
     /// <returns>IStreamDefinition or None, it it does not exit</returns>
-    public Task<Option<IStreamDefinition>> GetStreamDefinition(string nameSpace, string kind, string streamId);
+    public Task<(Option<IStreamClass>, Option<IStreamDefinition>)> GetStreamDefinition(string nameSpace, string kind,
+        string streamId);
 
     /// <summary>
     /// Update stream condition for the given stream id
