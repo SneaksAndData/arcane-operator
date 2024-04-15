@@ -53,6 +53,27 @@ spec:
                 maxBufferCapacity:
                   type: integer
                   description: Maximum buffer capacity for this stream class.
+                  default: 10000
+                secretRefs:
+                  description: |
+                    List of the fields of stream definition to be extracted from the secret.
+                    The secret should be in the same namespace as the stream class. The stream definition should
+                    contain all fields defined in this list inside the `.spec` field.
+                    Those fields should be deserializable into the `V1SecretEnvSource` struct.
+                    Example:
+                    ```yaml
+                    apiVersion: v1
+                    kind: CustomStreamDefinition
+                    spec:
+                      # ...
+                      secretReference:
+                        - name: my-secret
+                      anotherSecretReference:
+                        - name: my-secret
+                      # ...
+                  type: array
+                  items:
+                    type: string
             status:
               type: object
               properties:

@@ -67,16 +67,10 @@ public class StreamDefinition : IStreamDefinition
         this.Spec.GetProperty("reloadingJobTemplateRef").Deserialize<V1TypedLocalObjectReference>();
 
     /// <inheritdoc cref="IStreamDefinition"/>
-    public IEnumerable<V1EnvFromSource> ToV1EnvFromSources(IStreamClass streamDefinition)
-    {
-        foreach (var property in this.Spec.EnumerateObject())
-        {
-            if (streamDefinition.IsSecretField(property.Name))
-            {
-                yield return new V1EnvFromSource(secretRef: new V1SecretEnvSource(property.Value.GetString()));
-            }
-        }
-    }
+    public IEnumerable<V1EnvFromSource> ToV1EnvFromSources(IStreamClass streamDefinition) =>
+        this.Spec.EnumerateObject()
+            .Where(s => streamDefinition.IsSecretField(s.Name))
+            .Select(p => new V1EnvFromSource(secretRef: p.Value.Deserialize<V1SecretEnvSource>()));
 
     /// <summary>
     /// Encode Stream runner configuration to dictionary that can be passed as environment variables
