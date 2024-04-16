@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Akka;
 using Akka.Streams;
 using Akka.Streams.Dsl;
 using Akka.Streams.Supervision;
@@ -13,6 +11,7 @@ using Arcane.Operator.Models;
 using Arcane.Operator.Models.StreamClass.Base;
 using Arcane.Operator.Models.StreamDefinitions.Base;
 using Arcane.Operator.Services.Base;
+using Arcane.Operator.Services.Models;
 using k8s;
 using k8s.Models;
 using Microsoft.Extensions.Logging;
@@ -48,18 +47,14 @@ public class StreamOperatorService<TStreamType> : IStreamOperatorService<TStream
 
     public IRunnableGraph<Task> GetStreamDefinitionEventsGraph(CancellationToken cancellationToken)
     {
-        var synchronizationSource = this.GetStreamingJobSynchronizationGraph();
-        var actualStateEventSource = this.kubeCluster.StreamCustomResourceEvents<TStreamType>(
+        var request = new CustomResourceApiRequest(
             this.operatorService.StreamJobNamespace,
             this.streamClass.ApiGroupRef,
             this.streamClass.VersionRef,
-            this.streamClass.PluralNameRef,
-            this.streamClass.MaxBufferCapacity,
-            OverflowStrategy.Fail);
-
-        return synchronizationSource
-            .Concat(actualStateEventSource)
-            .Via(cancellationToken.AsFlow<(WatchEventType, TStreamType)>(true))
+            this.streamClass.PluralNameRef
+        );
+        return this.streamDefinitionRepository.GetUpdates(request, this.streamClass.MaxBufferCapacity)
+            .Via(cancellationToken.AsFlow<UpdateEvent<IStreamDefinition>>(true))
             .SelectAsync(parallelism, this.OnEvent)
             .WithAttributes(ActorAttributes.CreateSupervisionStrategy(this.HandleError))
             .CollectOption()
@@ -72,9 +67,9 @@ public class StreamOperatorService<TStreamType> : IStreamOperatorService<TStream
             .ToMaterialized(Sink.Ignore<Option<IStreamDefinition>>(), Keep.Right);
     }
 
-    private Task<Option<StreamOperatorResponse>> OnEvent((WatchEventType, TStreamType) arg)
+    private Task<Option<StreamOperatorResponse>> OnEvent(UpdateEvent<IStreamDefinition> updateEvent)
     {
-        return arg switch
+        return updateEvent switch
         {
             (WatchEventType.Added, var streamDefinition) => this.OnAdded(streamDefinition),
             (WatchEventType.Modified, var streamDefinition) => this.OnModified(streamDefinition),
@@ -169,18 +164,5 @@ public class StreamOperatorService<TStreamType> : IStreamOperatorService<TStream
                             .AsOption()),
                     { HasValue: false } => this.operatorService.StartRegisteredStream(streamDefinition, true, this.streamClass)
                 }).Flatten();
-    }
-
-    private Source<(WatchEventType, TStreamType), NotUsed> GetStreamingJobSynchronizationGraph()
-    {
-        var listTask = this.kubeCluster.ListCustomResources<TStreamType>(
-            this.streamClass.ApiGroupRef,
-            this.streamClass.VersionRef,
-            this.streamClass.PluralNameRef,
-            this.operatorService.StreamJobNamespace);
-
-        return Source
-            .FromTask(listTask)
-            .SelectMany(l => l.Select(d => (WatchEventType.Modified, d)));
     }
 }

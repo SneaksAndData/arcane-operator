@@ -14,7 +14,9 @@ using Arcane.Operator.Models.StreamDefinitions;
 using Arcane.Operator.Models.StreamDefinitions.Base;
 using Arcane.Operator.Models.StreamStatuses.StreamStatus.V1Beta1;
 using Arcane.Operator.Services.Base;
+using Arcane.Operator.Services.Models;
 using Arcane.Operator.Services.Operator;
+using Arcane.Operator.Services.Repositories;
 using Arcane.Operator.Tests.Fixtures;
 using Arcane.Operator.Tests.Services.TestCases;
 using k8s;
@@ -236,16 +238,9 @@ public class StreamOperatorServiceTests : IClassFixture<ServiceFixture>, IClassF
         // Arrange
         this.serviceFixture.MockStreamingJobOperatorService.Invocations.Clear();
         this.serviceFixture
-            .MockKubeCluster.Setup(cluster =>
-                cluster.StreamCustomResourceEvents<FailedStreamDefinition>(
-                    It.IsAny<string>(),
-                    It.IsAny<string>(),
-                    It.IsAny<string>(),
-                    It.IsAny<string>(),
-                    It.IsAny<int>(),
-                    It.IsAny<OverflowStrategy>(),
-                    It.IsAny<TimeSpan?>()))
-            .Returns(Source.Single((WatchEventType.Added, streamDefinition)));
+            .MockStreamDefinitionRepository.Setup(
+                cluster => cluster.GetUpdates(It.IsAny<CustomResourceApiRequest>(), It.IsAny<int>()))
+            .Returns(Source.Single(new UpdateEvent<IStreamDefinition>(WatchEventType.Added, streamDefinition)));
 
         this.serviceFixture.MockStreamingJobOperatorService
             .Setup(service => service.GetStreamingJob(It.IsAny<string>()))
@@ -275,16 +270,9 @@ public class StreamOperatorServiceTests : IClassFixture<ServiceFixture>, IClassF
         // Arrange
         this.serviceFixture.MockStreamingJobOperatorService.Invocations.Clear();
         this.serviceFixture
-            .MockKubeCluster.Setup(cluster =>
-                cluster.StreamCustomResourceEvents<FailedStreamDefinition>(
-                    It.IsAny<string>(),
-                    It.IsAny<string>(),
-                    It.IsAny<string>(),
-                    It.IsAny<string>(),
-                    It.IsAny<int>(),
-                    It.IsAny<OverflowStrategy>(),
-                    It.IsAny<TimeSpan?>()))
-            .Returns(Source.Single((WatchEventType.Added, streamDefinition)));
+            .MockStreamDefinitionRepository.Setup(s =>
+                    s.GetUpdates(It.IsAny<CustomResourceApiRequest>(), It.IsAny<int>()))
+            .Returns(Source.Single(new UpdateEvent<IStreamDefinition>(WatchEventType.Added, streamDefinition)));
 
         this.serviceFixture.MockStreamingJobOperatorService
             .Setup(service => service.GetStreamingJob(It.IsAny<string>()))
@@ -310,17 +298,11 @@ public class StreamOperatorServiceTests : IClassFixture<ServiceFixture>, IClassF
         this.serviceFixture.MockStreamingJobOperatorService.Invocations.Clear();
         this.serviceFixture.MockStreamDefinitionRepository.Invocations.Clear();
         this.serviceFixture
-            .MockKubeCluster.Setup(cluster =>
-                cluster.StreamCustomResourceEvents<StreamDefinition>(
-                    It.IsAny<string>(),
-                    It.IsAny<string>(),
-                    It.IsAny<string>(),
-                    It.IsAny<string>(),
-                    It.IsAny<int>(),
-                    It.IsAny<OverflowStrategy>(),
-                    It.IsAny<TimeSpan?>()))
+            .MockStreamDefinitionRepository.Setup(s 
+                => s.GetUpdates(It.IsAny<CustomResourceApiRequest>(), It.IsAny<int>()))
             .Returns(
-                Source.Single((WatchEventType.Added, (StreamDefinition)StreamDefinitionTestCases.StreamDefinition)));
+                Source.Single(new UpdateEvent<IStreamDefinition>(WatchEventType.Added,
+                    StreamDefinitionTestCases.StreamDefinition)));
 
         this.serviceFixture.MockStreamingJobOperatorService
             .Setup(service => service.GetStreamingJob(It.IsAny<string>()))
@@ -346,19 +328,12 @@ public class StreamOperatorServiceTests : IClassFixture<ServiceFixture>, IClassF
     }
 
 
-    private void SetupEventMock(WatchEventType eventType, StreamDefinition streamDefinition)
+    private void SetupEventMock(WatchEventType eventType, IStreamDefinition streamDefinition)
     {
         this.serviceFixture
-            .MockKubeCluster.Setup(cluster =>
-                cluster.StreamCustomResourceEvents<StreamDefinition>(
-                    It.IsAny<string>(),
-                    It.IsAny<string>(),
-                    It.IsAny<string>(),
-                    It.IsAny<string>(),
-                    It.IsAny<int>(),
-                    It.IsAny<OverflowStrategy>(),
-                    It.IsAny<TimeSpan?>()))
-            .Returns(Source.Single<(WatchEventType, StreamDefinition)>((eventType, streamDefinition)));
+            .MockStreamDefinitionRepository.Setup(service =>
+                    service.GetUpdates(It.IsAny<CustomResourceApiRequest>(), It.IsAny<int>()))
+            .Returns(Source.Single(new UpdateEvent<IStreamDefinition>(eventType, streamDefinition)));
     }
 
 
@@ -373,8 +348,10 @@ public class StreamOperatorServiceTests : IClassFixture<ServiceFixture>, IClassF
             .AddSingleton(this.serviceFixture.MockKubeCluster.Object)
             .AddSingleton(this.serviceFixture.MockStreamingJobOperatorService.Object)
             .AddSingleton(this.serviceFixture.MockStreamDefinitionRepository.Object)
+            .AddSingleton(Mock.Of<IStreamClassRepository>())
             .AddSingleton(this.loggerFixture.Factory.CreateLogger<StreamOperatorService<StreamDefinition>>())
             .AddSingleton(this.loggerFixture.Factory.CreateLogger<StreamOperatorService<FailedStreamDefinition>>())
+            .AddSingleton(this.loggerFixture.Factory.CreateLogger<StreamDefinitionRepository>())
             .AddSingleton(this.serviceFixture.MockStreamingJobOperatorService.Object)
             .AddSingleton(optionsMock.Object)
             // In read code StreamClass is not registered as a service, but it is used in StreamOperatorService

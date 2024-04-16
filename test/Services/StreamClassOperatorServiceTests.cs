@@ -11,7 +11,9 @@ using Arcane.Operator.Models.StreamClass.Base;
 using Arcane.Operator.Models.StreamDefinitions;
 using Arcane.Operator.Models.StreamDefinitions.Base;
 using Arcane.Operator.Services.Base;
+using Arcane.Operator.Services.Models;
 using Arcane.Operator.Services.Operator;
+using Arcane.Operator.Services.Repositories;
 using Arcane.Operator.Tests.Fixtures;
 using Arcane.Operator.Tests.Services.TestCases;
 using k8s;
@@ -62,21 +64,14 @@ public class StreamClassOperatorServiceTests : IClassFixture<ServiceFixture>, IC
                 (V1Beta1StreamClass)StreamClass)));
 
         this.serviceFixture
-            .MockKubeCluster
-            .Setup(m => m.StreamCustomResourceEvents<StreamDefinition>(
-                It.IsAny<string>(),
-                It.IsAny<string>(),
-                It.IsAny<string>(),
-                It.IsAny<string>(),
-                It.IsAny<int>(),
-                It.IsAny<OverflowStrategy>(),
-                It.IsAny<TimeSpan?>()))
+            .MockStreamDefinitionRepository
+            .Setup(m => m.GetUpdates(It.IsAny<CustomResourceApiRequest>(), It.IsAny<int>()))
             .Returns(Source.From(
-                new List<(WatchEventType, StreamDefinition)>
+                new List<UpdateEvent<IStreamDefinition>>
                 {
-                    (WatchEventType.Added, StreamDefinitionTestCases.NamedStreamDefinition()),
-                    (WatchEventType.Added, StreamDefinitionTestCases.NamedStreamDefinition()),
-                    (WatchEventType.Added, StreamDefinitionTestCases.NamedStreamDefinition())
+                    new(WatchEventType.Added, StreamDefinitionTestCases.NamedStreamDefinition()),
+                    new(WatchEventType.Added, StreamDefinitionTestCases.NamedStreamDefinition()),
+                    new(WatchEventType.Added, StreamDefinitionTestCases.NamedStreamDefinition())
                 }));
 
         // Act
@@ -109,21 +104,14 @@ public class StreamClassOperatorServiceTests : IClassFixture<ServiceFixture>, IC
                 (V1Beta1StreamClass)StreamClass)));
 
         this.serviceFixture
-            .MockKubeCluster
-            .Setup(m => m.StreamCustomResourceEvents<StreamDefinition>(
-                It.IsAny<string>(),
-                It.IsAny<string>(),
-                It.IsAny<string>(),
-                It.IsAny<string>(),
-                It.IsAny<int>(),
-                It.IsAny<OverflowStrategy>(),
-                It.IsAny<TimeSpan?>()))
+            .MockStreamDefinitionRepository
+            .Setup(m => m.GetUpdates(It.IsAny<CustomResourceApiRequest>(), It.IsAny<int>()))
             .Returns(Source.From(
-                new List<(WatchEventType, StreamDefinition)>
+                new List<UpdateEvent<IStreamDefinition>>
                 {
-                    (WatchEventType.Added, StreamDefinitionTestCases.NamedStreamDefinition()),
-                    (WatchEventType.Added, StreamDefinitionTestCases.NamedStreamDefinition()),
-                    (WatchEventType.Added, StreamDefinitionTestCases.NamedStreamDefinition())
+                    new(WatchEventType.Added, StreamDefinitionTestCases.NamedStreamDefinition()),
+                    new(WatchEventType.Added, StreamDefinitionTestCases.NamedStreamDefinition()),
+                    new(WatchEventType.Added, StreamDefinitionTestCases.NamedStreamDefinition())
                 }));
 
         // Act
@@ -151,7 +139,8 @@ public class StreamClassOperatorServiceTests : IClassFixture<ServiceFixture>, IC
             .AddSingleton(this.serviceFixture.MockKubeCluster.Object)
             .AddSingleton(this.streamingJobOperatorServiceMock.Object)
             .AddSingleton(this.serviceFixture.MockStreamDefinitionRepository.Object)
-            .AddSingleton(this.streamClassStateRepository.Object)
+            .AddSingleton<IStreamClassRepository, StreamClassRepository>()
+            .AddMemoryCache()
             .AddSingleton(this.loggerFixture.Factory.CreateLogger<StreamOperatorService<StreamDefinition>>())
             .AddSingleton(this.loggerFixture.Factory.CreateLogger<StreamClassOperatorService>())
             .AddSingleton(this.loggerFixture.Factory)

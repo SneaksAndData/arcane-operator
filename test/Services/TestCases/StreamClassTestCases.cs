@@ -10,7 +10,8 @@ public static class StreamClassTestCases
     {
         Spec = new V1Beta1StreamClassSpec
         {
-            MaxBufferCapacity = 100
+            MaxBufferCapacity = 100,
+            KindRef = "StreamClass",
         },
         Metadata = new V1ObjectMeta
         {
