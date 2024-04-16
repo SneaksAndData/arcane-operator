@@ -11,7 +11,7 @@ namespace Arcane.Operator.Tests.Services.TestCases;
 public static class StreamDefinitionTestCases
 {
     private static readonly string StreamSpec = "{\"jobTemplateRef\": {\"name\": \"jobTemplate\"}, \"reloadingJobTemplateRef\": {\"name\": \"jobTemplate\"}}";
-    
+
     public static IStreamDefinition StreamDefinition => new StreamDefinition
     {
         Spec = JsonDocument.Parse(StreamSpec).RootElement,

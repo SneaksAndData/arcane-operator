@@ -298,7 +298,7 @@ public class StreamOperatorServiceTests : IClassFixture<ServiceFixture>, IClassF
         this.serviceFixture.MockStreamingJobOperatorService.Invocations.Clear();
         this.serviceFixture.MockStreamDefinitionRepository.Invocations.Clear();
         this.serviceFixture
-            .MockStreamDefinitionRepository.Setup(s 
+            .MockStreamDefinitionRepository.Setup(s
                 => s.GetUpdates(It.IsAny<CustomResourceApiRequest>(), It.IsAny<int>()))
             .Returns(
                 Source.Single(new UpdateEvent<IStreamDefinition>(WatchEventType.Added,

@@ -20,7 +20,6 @@ using k8s;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Logging;
-using Microsoft.VisualStudio.TestPlatform.PlatformAbstractions.Interfaces;
 using Moq;
 using Xunit;
 using static Arcane.Operator.Tests.Services.TestCases.StreamClassTestCases;

@@ -6,7 +6,7 @@ using Arcane.Operator.Models.StreamStatuses.StreamStatus.V1Beta1;
 
 namespace Arcane.Operator.Services.Base;
 
-public interface IStreamDefinitionRepository: IReactiveResourceCollection<IStreamDefinition>
+public interface IStreamDefinitionRepository : IReactiveResourceCollection<IStreamDefinition>
 {
     /// <summary>
     /// Return the definition object fot the given stream id
