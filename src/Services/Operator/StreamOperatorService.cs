@@ -53,8 +53,8 @@ public class StreamOperatorService<TStreamType> : IStreamOperatorService<TStream
             this.streamClass.VersionRef,
             this.streamClass.PluralNameRef
         );
-        return this.streamDefinitionRepository.GetUpdates(request, this.streamClass.MaxBufferCapacity)
-            .Via(cancellationToken.AsFlow<UpdateEvent<IStreamDefinition>>(true))
+        return this.streamDefinitionRepository.GetEvents(request, this.streamClass.MaxBufferCapacity)
+            .Via(cancellationToken.AsFlow<ResourceEvent<IStreamDefinition>>(true))
             .SelectAsync(parallelism, this.OnEvent)
             .WithAttributes(ActorAttributes.CreateSupervisionStrategy(this.HandleError))
             .CollectOption()
@@ -67,9 +67,9 @@ public class StreamOperatorService<TStreamType> : IStreamOperatorService<TStream
             .ToMaterialized(Sink.Ignore<Option<IStreamDefinition>>(), Keep.Right);
     }
 
-    private Task<Option<StreamOperatorResponse>> OnEvent(UpdateEvent<IStreamDefinition> updateEvent)
+    private Task<Option<StreamOperatorResponse>> OnEvent(ResourceEvent<IStreamDefinition> resourceEvent)
     {
-        return updateEvent switch
+        return resourceEvent switch
         {
             (WatchEventType.Added, var streamDefinition) => this.OnAdded(streamDefinition),
             (WatchEventType.Modified, var streamDefinition) => this.OnModified(streamDefinition),

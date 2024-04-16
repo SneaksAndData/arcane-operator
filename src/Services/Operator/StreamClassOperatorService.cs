@@ -61,17 +61,17 @@ public class StreamClassOperatorService : IStreamClassOperatorService
             this.configuration.Plural
         );
 
-        return this.streamClassRepository.GetUpdates(request, this.configuration.MaxBufferCapacity)
-            .Via(cancellationToken.AsFlow<UpdateEvent<IStreamClass>>(true))
+        return this.streamClassRepository.GetEvents(request, this.configuration.MaxBufferCapacity)
+            .Via(cancellationToken.AsFlow<ResourceEvent<IStreamClass>>(true))
             .Select(this.OnEvent)
             .WithAttributes(ActorAttributes.CreateSupervisionStrategy(this.HandleError))
             .CollectOption()
             .ToMaterialized(sink, Keep.Right);
     }
 
-    private Option<StreamClassOperatorResponse> OnEvent(UpdateEvent<IStreamClass> updateEvent)
+    private Option<StreamClassOperatorResponse> OnEvent(ResourceEvent<IStreamClass> resourceEvent)
     {
-        return updateEvent switch
+        return resourceEvent switch
         {
             (WatchEventType.Added, var streamClass) => this.OnAdded(streamClass),
             (WatchEventType.Modified, var streamClass) => this.OnModified(streamClass),

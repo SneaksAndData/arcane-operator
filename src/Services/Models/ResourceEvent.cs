@@ -8,4 +8,4 @@ namespace Arcane.Operator.Services.Models;
 /// <param name="EventType">The type of the event</param>
 /// <param name="kubernetesObject">Deserialized object</param>
 /// <typeparam name="TUpdatedObject">Object type</typeparam>
-public record UpdateEvent<TUpdatedObject>(WatchEventType EventType, TUpdatedObject kubernetesObject);
+public record ResourceEvent<TUpdatedObject>(WatchEventType EventType, TUpdatedObject kubernetesObject);

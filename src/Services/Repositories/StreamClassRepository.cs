@@ -57,8 +57,8 @@ public class StreamClassRepository : IStreamClassRepository
             element => element.AsOptionalStreamClass());
     }
 
-    /// <inheritdoc cref="IStreamClassRepository.GetUpdates"/>>
-    public Source<UpdateEvent<IStreamClass>, NotUsed> GetUpdates(CustomResourceApiRequest request, int maxBufferCapacity) =>
+    /// <inheritdoc cref="IReactiveResourceCollection{TResourceType}.GetEvents"/>>
+    public Source<ResourceEvent<IStreamClass>, NotUsed> GetEvents(CustomResourceApiRequest request, int maxBufferCapacity) =>
         this.kubeCluster.StreamCustomResourceEvents<V1Beta1StreamClass>(
                 request.Namespace,
                 request.ApiGroup,
@@ -66,6 +66,6 @@ public class StreamClassRepository : IStreamClassRepository
                 request.PluralName,
                 maxBufferCapacity,
                 OverflowStrategy.Fail)
-            .Select((tuple) => new UpdateEvent<IStreamClass>(tuple.Item1, tuple.Item2));
+            .Select((tuple) => new ResourceEvent<IStreamClass>(tuple.Item1, tuple.Item2));
 }
 

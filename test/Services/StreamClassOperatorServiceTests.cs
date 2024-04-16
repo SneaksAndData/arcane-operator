@@ -64,9 +64,9 @@ public class StreamClassOperatorServiceTests : IClassFixture<ServiceFixture>, IC
 
         this.serviceFixture
             .MockStreamDefinitionRepository
-            .Setup(m => m.GetUpdates(It.IsAny<CustomResourceApiRequest>(), It.IsAny<int>()))
+            .Setup(m => m.GetEvents(It.IsAny<CustomResourceApiRequest>(), It.IsAny<int>()))
             .Returns(Source.From(
-                new List<UpdateEvent<IStreamDefinition>>
+                new List<ResourceEvent<IStreamDefinition>>
                 {
                     new(WatchEventType.Added, StreamDefinitionTestCases.NamedStreamDefinition()),
                     new(WatchEventType.Added, StreamDefinitionTestCases.NamedStreamDefinition()),
@@ -104,9 +104,9 @@ public class StreamClassOperatorServiceTests : IClassFixture<ServiceFixture>, IC
 
         this.serviceFixture
             .MockStreamDefinitionRepository
-            .Setup(m => m.GetUpdates(It.IsAny<CustomResourceApiRequest>(), It.IsAny<int>()))
+            .Setup(m => m.GetEvents(It.IsAny<CustomResourceApiRequest>(), It.IsAny<int>()))
             .Returns(Source.From(
-                new List<UpdateEvent<IStreamDefinition>>
+                new List<ResourceEvent<IStreamDefinition>>
                 {
                     new(WatchEventType.Added, StreamDefinitionTestCases.NamedStreamDefinition()),
                     new(WatchEventType.Added, StreamDefinitionTestCases.NamedStreamDefinition()),

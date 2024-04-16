@@ -12,5 +12,5 @@ public interface IReactiveResourceCollection<TResourceType>
     /// <param name="request">An object that contains required information for a Kubernetes API call</param>
     /// <param name="maxBufferCapacity">Maximum capacity of the buffer in the source</param>
     /// <returns>An Akka source that emits a Kubernetes entity updates</returns>
-    Source<UpdateEvent<TResourceType>, NotUsed> GetUpdates(CustomResourceApiRequest request, int maxBufferCapacity);
+    Source<ResourceEvent<TResourceType>, NotUsed> GetEvents(CustomResourceApiRequest request, int maxBufferCapacity);
 }

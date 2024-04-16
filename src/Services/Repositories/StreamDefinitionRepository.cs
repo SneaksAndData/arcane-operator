@@ -116,8 +116,8 @@ public class StreamDefinitionRepository : IStreamDefinitionRepository
                 .Map(result => ((JsonElement)result).AsOptionalStreamDefinition());
         });
 
-    /// <inheritdoc cref="IReactiveResourceCollection{TResourceType}.GetUpdates"/>
-    public Source<UpdateEvent<IStreamDefinition>, NotUsed> GetUpdates(CustomResourceApiRequest request, int maxBufferCapacity) =>
+    /// <inheritdoc cref="IReactiveResourceCollection{TResourceType}.GetEvents"/>
+    public Source<ResourceEvent<IStreamDefinition>, NotUsed> GetEvents(CustomResourceApiRequest request, int maxBufferCapacity) =>
         this.kubeCluster.StreamCustomResourceEvents<StreamDefinition>(
                 request.Namespace,
                 request.ApiGroup,
@@ -125,5 +125,5 @@ public class StreamDefinitionRepository : IStreamDefinitionRepository
                 request.PluralName,
                 maxBufferCapacity,
                 OverflowStrategy.Fail)
-            .Select(tuple => new UpdateEvent<IStreamDefinition>(tuple.Item1, tuple.Item2));
+            .Select(tuple => new ResourceEvent<IStreamDefinition>(tuple.Item1, tuple.Item2));
 }

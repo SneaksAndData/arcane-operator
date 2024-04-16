@@ -239,8 +239,8 @@ public class StreamOperatorServiceTests : IClassFixture<ServiceFixture>, IClassF
         this.serviceFixture.MockStreamingJobOperatorService.Invocations.Clear();
         this.serviceFixture
             .MockStreamDefinitionRepository.Setup(
-                cluster => cluster.GetUpdates(It.IsAny<CustomResourceApiRequest>(), It.IsAny<int>()))
-            .Returns(Source.Single(new UpdateEvent<IStreamDefinition>(WatchEventType.Added, streamDefinition)));
+                cluster => cluster.GetEvents(It.IsAny<CustomResourceApiRequest>(), It.IsAny<int>()))
+            .Returns(Source.Single(new ResourceEvent<IStreamDefinition>(WatchEventType.Added, streamDefinition)));
 
         this.serviceFixture.MockStreamingJobOperatorService
             .Setup(service => service.GetStreamingJob(It.IsAny<string>()))
@@ -271,8 +271,8 @@ public class StreamOperatorServiceTests : IClassFixture<ServiceFixture>, IClassF
         this.serviceFixture.MockStreamingJobOperatorService.Invocations.Clear();
         this.serviceFixture
             .MockStreamDefinitionRepository.Setup(s =>
-                    s.GetUpdates(It.IsAny<CustomResourceApiRequest>(), It.IsAny<int>()))
-            .Returns(Source.Single(new UpdateEvent<IStreamDefinition>(WatchEventType.Added, streamDefinition)));
+                    s.GetEvents(It.IsAny<CustomResourceApiRequest>(), It.IsAny<int>()))
+            .Returns(Source.Single(new ResourceEvent<IStreamDefinition>(WatchEventType.Added, streamDefinition)));
 
         this.serviceFixture.MockStreamingJobOperatorService
             .Setup(service => service.GetStreamingJob(It.IsAny<string>()))
@@ -299,9 +299,9 @@ public class StreamOperatorServiceTests : IClassFixture<ServiceFixture>, IClassF
         this.serviceFixture.MockStreamDefinitionRepository.Invocations.Clear();
         this.serviceFixture
             .MockStreamDefinitionRepository.Setup(s
-                => s.GetUpdates(It.IsAny<CustomResourceApiRequest>(), It.IsAny<int>()))
+                => s.GetEvents(It.IsAny<CustomResourceApiRequest>(), It.IsAny<int>()))
             .Returns(
-                Source.Single(new UpdateEvent<IStreamDefinition>(WatchEventType.Added,
+                Source.Single(new ResourceEvent<IStreamDefinition>(WatchEventType.Added,
                     StreamDefinitionTestCases.StreamDefinition)));
 
         this.serviceFixture.MockStreamingJobOperatorService
@@ -332,8 +332,8 @@ public class StreamOperatorServiceTests : IClassFixture<ServiceFixture>, IClassF
     {
         this.serviceFixture
             .MockStreamDefinitionRepository.Setup(service =>
-                    service.GetUpdates(It.IsAny<CustomResourceApiRequest>(), It.IsAny<int>()))
-            .Returns(Source.Single(new UpdateEvent<IStreamDefinition>(eventType, streamDefinition)));
+                    service.GetEvents(It.IsAny<CustomResourceApiRequest>(), It.IsAny<int>()))
+            .Returns(Source.Single(new ResourceEvent<IStreamDefinition>(eventType, streamDefinition)));
     }
 
 
