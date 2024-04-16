@@ -114,7 +114,7 @@ public class StreamingJobMaintenanceService : IStreamingJobMaintenanceService
             .GetStreamDefinition(job.Namespace(), job.GetStreamKind(), job.GetStreamId())
             .Map(maybeSd => maybeSd switch
             {
-                ({HasValue: true}, { HasValue: true, Value: var sd }) when job.IsFailed()
+                ({ HasValue: true }, { HasValue: true, Value: var sd }) when job.IsFailed()
                     => this.streamDefinitionRepository
                         .SetCrashLoopAnnotation(sd.Namespace(), sd.Kind, sd.StreamId)
                         .Map(maybeUpdatedSd => maybeUpdatedSd.HasValue
@@ -129,7 +129,7 @@ public class StreamingJobMaintenanceService : IStreamingJobMaintenanceService
                 (_, { HasValue: true, Value: var sd }) when sd.CrashLoopDetected
                     => Task.FromResult(StreamOperatorResponse.CrashLoopDetected(sd.Namespace(), sd.Kind, sd.StreamId)
                         .AsOption()),
-                ({HasValue: true, Value: var sc}, { HasValue: true, Value: var sd }) when !sd.Suspended
+                ({ HasValue: true, Value: var sc }, { HasValue: true, Value: var sd }) when !sd.Suspended
                     => this.operatorService.StartRegisteredStream(sd, fullLoad, sc),
                 (_, { HasValue: false })
                     => Task.FromResult(Option<StreamOperatorResponse>.None),

@@ -17,7 +17,7 @@ using Snd.Sdk.Kubernetes.Base;
 
 namespace Arcane.Operator.Services.Repositories;
 
-public class StreamClassRepository: IStreamClassRepository
+public class StreamClassRepository : IStreamClassRepository
 {
     private readonly IMemoryCache memoryCache;
     private readonly IKubeCluster kubeCluster;
@@ -27,7 +27,7 @@ public class StreamClassRepository: IStreamClassRepository
         this.memoryCache = memoryCache;
         this.kubeCluster = kubeCluster;
     }
-    
+
     public Task<Option<IStreamClass>> Get(string nameSpace, string streamDefinitionKind) =>
         this.memoryCache.Get<V1Beta1StreamClass>(streamDefinitionKind) switch
         {

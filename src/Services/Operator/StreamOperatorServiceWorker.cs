@@ -39,7 +39,7 @@ public class StreamOperatorServiceWorker
         this.streamClassId = toStreamClassId;
         this.streamExecutionTask = this.Execute(this.cts.Token);
     }
-    
+
     /// <summary>
     /// Stop the Stream Operator service and wait for it to finish.
     /// </summary>
@@ -49,7 +49,7 @@ public class StreamOperatorServiceWorker
         this.cts.Cancel();
         this.streamExecutionTask.GetAwaiter().GetResult();
     }
-    
+
     private async Task Execute(CancellationToken stoppingToken)
     {
         this.logger.LogInformation("Activated {service}", this.streamClassId);

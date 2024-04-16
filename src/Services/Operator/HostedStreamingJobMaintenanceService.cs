@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Arcane.Operator.Services.Operator;
 
-public class HostedStreamingClassOperatorService: BackgroundService
+public class HostedStreamingClassOperatorService : BackgroundService
 {
     private readonly ILogger<HostedStreamingClassOperatorService> logger;
     private readonly IMaterializer materializer;

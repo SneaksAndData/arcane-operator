@@ -10,7 +10,7 @@ namespace Arcane.Operator.Models.StreamClass.Base;
 /// <summary>
 /// Base interface for StreamClass objects
 /// </summary>
-public interface IStreamClass: IKubernetesObject<V1ObjectMeta> 
+public interface IStreamClass : IKubernetesObject<V1ObjectMeta>
 {
     /// <summary>
     /// Return Unique ID for the StreamClass object
@@ -28,17 +28,17 @@ public interface IStreamClass: IKubernetesObject<V1ObjectMeta>
     /// Reference to the API group of the StreamDefinition CRD
     /// </summary>
     string ApiGroupRef { get; }
-    
+
     /// <summary>
     /// Reference to the API version of the StreamDefinition CRD
     /// </summary>
     string VersionRef { get; }
-    
+
     /// <summary>
     /// Reference to the plural name of the StreamDefinition CRD
     /// </summary>
     string PluralNameRef { get; }
-    
+
     /// <summary>
     /// Reference to the kind name of the StreamDefinition CRD
     /// </summary>

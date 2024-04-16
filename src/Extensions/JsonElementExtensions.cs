@@ -20,7 +20,7 @@ public static class JsonElementExtensions
     /// <returns></returns>
     public static Option<IStreamDefinition> AsOptionalStreamDefinition(this JsonElement jsonElement) =>
         jsonElement.Deserialize<StreamDefinition>().AsOption<IStreamDefinition>();
-    
+
     /// <summary>
     /// Deserialize the JsonElement to IStreamDefinition object and wrap it in an Option{IStreamDefinition} object
     /// </summary>

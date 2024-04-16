@@ -63,7 +63,7 @@ public class StreamDefinition : IStreamDefinition
 
     /// <inheritdoc cref="IStreamDefinition"/>
     [JsonIgnore]
-    public V1TypedLocalObjectReference ReloadingJobTemplateRef => 
+    public V1TypedLocalObjectReference ReloadingJobTemplateRef =>
         this.Spec.GetProperty("reloadingJobTemplateRef").Deserialize<V1TypedLocalObjectReference>();
 
     /// <inheritdoc cref="IStreamDefinition"/>
@@ -91,7 +91,7 @@ public class StreamDefinition : IStreamDefinition
     /// </summary>
     /// <param name="streamClass">StreamClass object containing stream metadata.</param>
     /// <returns>Serialized KeyValuePair containing the stream definition.</returns>
-    private IEnumerable<KeyValuePair<string,string>> SpecToEnvironment(IStreamClass streamClass)
+    private IEnumerable<KeyValuePair<string, string>> SpecToEnvironment(IStreamClass streamClass)
     {
         var newObj = this.Spec.Clone().Deserialize<Dictionary<string, object>>();
         foreach (var property in this.Spec.EnumerateObject().Where(property => streamClass.IsSecretField(property.Name)))

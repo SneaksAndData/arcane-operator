@@ -26,7 +26,7 @@ public class StreamOperatorService<TStreamType> : IStreamOperatorService<TStream
     where TStreamType : IStreamDefinition
 {
     private const int parallelism = 1;
-    
+
     private readonly IKubeCluster kubeCluster;
     private readonly ILogger<StreamOperatorService<TStreamType>> logger;
     private readonly IStreamingJobOperatorService operatorService;

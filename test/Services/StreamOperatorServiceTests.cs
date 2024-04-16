@@ -377,7 +377,7 @@ public class StreamOperatorServiceTests : IClassFixture<ServiceFixture>, IClassF
             .AddSingleton(this.loggerFixture.Factory.CreateLogger<StreamOperatorService<FailedStreamDefinition>>())
             .AddSingleton(this.serviceFixture.MockStreamingJobOperatorService.Object)
             .AddSingleton(optionsMock.Object)
-             // In read code StreamClass is not registered as a service, but it is used in StreamOperatorService
+            // In read code StreamClass is not registered as a service, but it is used in StreamOperatorService
             .AddSingleton<IStreamClass>(new V1Beta1StreamClass
             {
                 Spec = new V1Beta1StreamClassSpec
