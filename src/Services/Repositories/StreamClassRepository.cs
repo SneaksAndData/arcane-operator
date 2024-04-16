@@ -2,15 +2,18 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Akka.Streams.Implementation;
+using Akka;
+using Akka.Streams;
+using Akka.Streams.Dsl;
 using Akka.Util;
-using Akka.Util.Extensions;
 using Arcane.Operator.Extensions;
 using Arcane.Operator.Models;
 using Arcane.Operator.Models.StreamClass;
 using Arcane.Operator.Models.StreamClass.Base;
 using Arcane.Operator.Models.StreamStatuses.StreamStatus.V1Beta1;
 using Arcane.Operator.Services.Base;
+using Arcane.Operator.Services.Models;
+using k8s;
 using k8s.Models;
 using Microsoft.Extensions.Caching.Memory;
 using Snd.Sdk.Kubernetes.Base;
@@ -54,4 +57,15 @@ public class StreamClassRepository : IStreamClassRepository
             element => element.AsOptionalStreamClass());
     }
 
+    /// <inheritdoc cref="IReactiveResourceCollection{TResourceType}.GetEvents"/>>
+    public Source<ResourceEvent<IStreamClass>, NotUsed> GetEvents(CustomResourceApiRequest request, int maxBufferCapacity) =>
+        this.kubeCluster.StreamCustomResourceEvents<V1Beta1StreamClass>(
+                request.Namespace,
+                request.ApiGroup,
+                request.ApiVersion,
+                request.PluralName,
+                maxBufferCapacity,
+                OverflowStrategy.Fail)
+            .Select((tuple) => new ResourceEvent<IStreamClass>(tuple.Item1, tuple.Item2));
 }
+

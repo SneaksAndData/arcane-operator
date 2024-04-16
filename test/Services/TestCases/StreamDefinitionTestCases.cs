@@ -10,9 +10,11 @@ namespace Arcane.Operator.Tests.Services.TestCases;
 
 public static class StreamDefinitionTestCases
 {
+    private static readonly string StreamSpec = "{\"jobTemplateRef\": {\"name\": \"jobTemplate\"}, \"reloadingJobTemplateRef\": {\"name\": \"jobTemplate\"}}";
+
     public static IStreamDefinition StreamDefinition => new StreamDefinition
     {
-        Spec = JsonDocument.Parse("{}").RootElement,
+        Spec = JsonDocument.Parse(StreamSpec).RootElement,
         Metadata = new V1ObjectMeta
         {
             Name = "stream"
@@ -21,7 +23,7 @@ public static class StreamDefinitionTestCases
 
     public static IStreamDefinition SuspendedStreamDefinition => new StreamDefinition
     {
-        Spec = JsonDocument.Parse("{}").RootElement,
+        Spec = JsonDocument.Parse(StreamSpec).RootElement,
         Metadata = new V1ObjectMeta
         {
             Name = "stream",
@@ -34,7 +36,7 @@ public static class StreamDefinitionTestCases
 
     public static IStreamDefinition ReloadRequestedStreamDefinition => new StreamDefinition
     {
-        Spec = JsonDocument.Parse("{}").RootElement,
+        Spec = JsonDocument.Parse(StreamSpec).RootElement,
         Metadata = new V1ObjectMeta
         {
             Name = "stream",
@@ -50,9 +52,9 @@ public static class StreamDefinitionTestCases
         return new FailedStreamDefinition(exception);
     }
 
-    public static StreamDefinition NamedStreamDefinition(string name = null) => new()
+    public static IStreamDefinition NamedStreamDefinition(string name = null) => new StreamDefinition
     {
-        Spec = JsonDocument.Parse("{}").RootElement,
+        Spec = JsonDocument.Parse(StreamSpec).RootElement,
         Metadata = new V1ObjectMeta
         {
             Name = name ?? Guid.NewGuid().ToString()

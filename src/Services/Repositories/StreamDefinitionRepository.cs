@@ -1,13 +1,18 @@
 ﻿using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Akka;
+using Akka.Streams;
+using Akka.Streams.Dsl;
 using Akka.Util;
 using Arcane.Models.StreamingJobLifecycle;
 using Arcane.Operator.Extensions;
 using Arcane.Operator.Models.StreamClass.Base;
+using Arcane.Operator.Models.StreamDefinitions;
 using Arcane.Operator.Models.StreamDefinitions.Base;
 using Arcane.Operator.Models.StreamStatuses.StreamStatus.V1Beta1;
 using Arcane.Operator.Services.Base;
+using Arcane.Operator.Services.Models;
 using Microsoft.Extensions.Logging;
 using Snd.Sdk.Kubernetes.Base;
 using Snd.Sdk.Tasks;
@@ -110,4 +115,15 @@ public class StreamDefinitionRepository : IStreamDefinitionRepository
                     nameSpace)
                 .Map(result => ((JsonElement)result).AsOptionalStreamDefinition());
         });
+
+    /// <inheritdoc cref="IReactiveResourceCollection{TResourceType}.GetEvents"/>
+    public Source<ResourceEvent<IStreamDefinition>, NotUsed> GetEvents(CustomResourceApiRequest request, int maxBufferCapacity) =>
+        this.kubeCluster.StreamCustomResourceEvents<StreamDefinition>(
+                request.Namespace,
+                request.ApiGroup,
+                request.ApiVersion,
+                request.PluralName,
+                maxBufferCapacity,
+                OverflowStrategy.Fail)
+            .Select(tuple => new ResourceEvent<IStreamDefinition>(tuple.Item1, tuple.Item2));
 }
