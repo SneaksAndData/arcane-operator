@@ -44,16 +44,16 @@ public class Startup
 
         var config = Configuration.GetSection(nameof(StreamingJobMaintenanceServiceConfiguration));
         services.Configure<StreamingJobMaintenanceServiceConfiguration>(config);
-        
+
         services.Configure<StreamingJobOperatorServiceConfiguration>(
                 Configuration.GetSection(nameof(StreamingJobOperatorServiceConfiguration)));
-        
+
         services.Configure<StreamClassOperatorServiceConfiguration>(
                 Configuration.GetSection(nameof(StreamClassOperatorServiceConfiguration)));
-        
+
         services.Configure<StreamingJobTemplateRepositoryConfiguration>(
                 Configuration.GetSection(nameof(StreamingJobTemplateRepositoryConfiguration)));
-        
+
         services.AddSingleton<IStreamingJobOperatorService, StreamingJobOperatorService>();
         services.AddSingleton<IStreamInteractionService, StreamInteractionService>();
         services.AddSingleton<IStreamingJobMaintenanceService, StreamingJobMaintenanceService>();

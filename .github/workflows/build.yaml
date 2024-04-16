@@ -29,6 +29,9 @@ jobs:
 
       - name: Build
         run: dotnet build --no-restore
+        
+      - name: Check style
+        run: dotnet format --verify-no-changes
 
       - name: Test
         working-directory: ./test

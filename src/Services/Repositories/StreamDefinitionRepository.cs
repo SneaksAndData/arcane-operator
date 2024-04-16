@@ -35,7 +35,7 @@ public class StreamDefinitionRepository : IStreamDefinitionRepository
                 if (crdConf is { HasValue: false })
                 {
                     this.logger.LogError("Failed to get configuration for kind {kind}", kind);
-                    return Task.FromResult( (Option<IStreamClass>.None, Option<IStreamDefinition>.None));
+                    return Task.FromResult((Option<IStreamClass>.None, Option<IStreamDefinition>.None));
                 }
 
                 return this.kubeCluster

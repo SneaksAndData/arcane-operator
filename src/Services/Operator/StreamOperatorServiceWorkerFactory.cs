@@ -11,7 +11,7 @@ using Snd.Sdk.Kubernetes.Base;
 namespace Arcane.Operator.Services.Operator;
 
 /// <inheritdoc cref="IStreamOperatorServiceWorkerFactory"/>
-public class StreamOperatorServiceWorkerFactory: IStreamOperatorServiceWorkerFactory
+public class StreamOperatorServiceWorkerFactory : IStreamOperatorServiceWorkerFactory
 {
     private readonly ILoggerFactory loggerFactory;
     private readonly IMaterializer materializer;
@@ -20,7 +20,7 @@ public class StreamOperatorServiceWorkerFactory: IStreamOperatorServiceWorkerFac
     private readonly IStreamDefinitionRepository streamDefinitionRepository;
     private readonly IOptionsSnapshot<CustomResourceConfiguration> customResourceConfigurationsOptionsSnapshot;
 
-    public StreamOperatorServiceWorkerFactory(ILoggerFactory loggerFactory,IMaterializer materializer,
+    public StreamOperatorServiceWorkerFactory(ILoggerFactory loggerFactory, IMaterializer materializer,
         IKubeCluster kubeCluster, IStreamingJobOperatorService jobOperatorService, IStreamDefinitionRepository streamDefinitionRepository,
         IOptionsSnapshot<CustomResourceConfiguration> customResourceConfigurationsOptionsSnapshot)
     {
@@ -31,14 +31,14 @@ public class StreamOperatorServiceWorkerFactory: IStreamOperatorServiceWorkerFac
         this.streamDefinitionRepository = streamDefinitionRepository;
         this.customResourceConfigurationsOptionsSnapshot = customResourceConfigurationsOptionsSnapshot;
     }
-    
+
     /// <inheritdoc cref="IStreamOperatorServiceWorkerFactory.Create"/>
     public StreamOperatorServiceWorker Create(IStreamClass streamClass)
     {
         var streamOperatorService = new StreamOperatorService<StreamDefinition>(
             this.kubeCluster,
             streamClass,
-            this.jobOperatorService, 
+            this.jobOperatorService,
             this.streamDefinitionRepository,
             this.loggerFactory.CreateLogger<StreamOperatorService<StreamDefinition>>()
         );

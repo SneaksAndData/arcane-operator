@@ -15,12 +15,12 @@ namespace Arcane.Operator.Models.StreamClass;
 /// new streams claims of that class.
 /// </summary>
 [ExcludeFromCodeCoverage(Justification = "Model")]
-public class V1Beta1StreamClass: IStreamClass
+public class V1Beta1StreamClass : IStreamClass
 {
     /// <inheritdoc cref="IMetadata{T}.Metadata"/>
     [JsonPropertyName("metadata")]
     public V1ObjectMeta Metadata { get; set; }
-    
+
     /// <inheritdoc cref="IKubernetesObject.ApiVersion"/>
     [JsonPropertyName("apiVersion")]
     public string ApiVersion { get; set; }
@@ -28,7 +28,7 @@ public class V1Beta1StreamClass: IStreamClass
     /// <inheritdoc cref="IKubernetesObject.Kind"/>
     [JsonPropertyName("kind")]
     public string Kind { get; set; }
-    
+
     /// <summary>
     /// The StreamClass configuration
     /// </summary>
@@ -51,16 +51,16 @@ public class V1Beta1StreamClass: IStreamClass
 
     /// <inheritdoc cref="IStreamClass.ApiGroupRef"/>
     public string ApiGroupRef => this.Spec.ApiGroupRef;
-    
+
     /// <inheritdoc cref="IStreamClass.VersionRef"/>
     public string VersionRef => this.Spec.ApiVersion;
-    
+
     /// <inheritdoc cref="IStreamClass.PluralNameRef"/>
     public string PluralNameRef => this.Spec.PluralName;
-    
+
     /// <inheritdoc cref="IStreamClass.KindRef"/>
     public string KindRef => this.Spec.KindRef;
-    
+
     /// <inheritdoc cref="IStreamClass.MaxBufferCapacity"/>
     public int MaxBufferCapacity => this.Spec.MaxBufferCapacity;
 

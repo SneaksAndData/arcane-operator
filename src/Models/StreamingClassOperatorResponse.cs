@@ -20,12 +20,12 @@ public enum StreamClassPhase
     /// A ready streaming class is ready to be used and new Streams of this class can be created.
     /// </summary>
     READY,
-    
+
     /// <summary>
     /// An error occured in stream class controller and new Streams of this class can not be created.
     /// </summary>
     FAILED,
-    
+
     /// <summary>
     /// The stream class is stopped and new Streams of this class can not be created.
     /// </summary>
@@ -70,7 +70,7 @@ public record StreamClassOperatorResponse
             Phase = StreamClassPhase.READY
         };
     }
-    
+
     /// <summary>
     /// Creates a StreamOperatorResponse object for stream with specified identifier, setting it state to RUNNING 
     /// </summary>

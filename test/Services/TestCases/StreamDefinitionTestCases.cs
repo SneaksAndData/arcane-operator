@@ -49,7 +49,7 @@ public static class StreamDefinitionTestCases
     {
         return new FailedStreamDefinition(exception);
     }
-    
+
     public static StreamDefinition NamedStreamDefinition(string name = null) => new()
     {
         Spec = JsonDocument.Parse("{}").RootElement,

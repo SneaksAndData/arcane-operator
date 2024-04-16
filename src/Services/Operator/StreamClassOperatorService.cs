@@ -26,7 +26,7 @@ namespace Arcane.Operator.Services.Operator;
 public class StreamClassOperatorService : IStreamClassOperatorService
 {
     private const int parallelism = 1;
-    
+
     private readonly StreamClassOperatorServiceConfiguration configuration;
     private readonly IKubeCluster kubeCluster;
 
@@ -68,7 +68,7 @@ public class StreamClassOperatorService : IStreamClassOperatorService
                 response.Phase);
             return this.streamClassRepository.InsertOrUpdate(response.StreamClass, response.Phase, response.Conditions, this.configuration.Plural);
         });
-        
+
         return synchronizationSource
             .Concat(actualStateEventSource)
             .Via(cancellationToken.AsFlow<(WatchEventType, V1Beta1StreamClass)>(true))
@@ -88,7 +88,7 @@ public class StreamClassOperatorService : IStreamClassOperatorService
             _ => Option<StreamClassOperatorResponse>.None
         };
     }
-    
+
     private Directive HandleError(Exception exception)
     {
         this.logger.LogError(exception, "Failed to handle stream definition event");
@@ -102,13 +102,13 @@ public class StreamClassOperatorService : IStreamClassOperatorService
     private Option<StreamClassOperatorResponse> OnAdded(IStreamClass streamClass) => this.StartStreamWorker(streamClass);
 
     private Option<StreamClassOperatorResponse> OnDeleted(IStreamClass streamClass) => this.StopStreamWorker(streamClass);
-    
+
     private Option<StreamClassOperatorResponse> OnModified(IStreamClass streamClass)
     {
         this.StopStreamWorker(streamClass);
         return this.StartStreamWorker(streamClass);
     }
-    
+
     private Option<StreamClassOperatorResponse> StartStreamWorker(IStreamClass streamClass)
     {
         if (!this.streams.ContainsKey(streamClass.ToStreamClassId()))
@@ -128,8 +128,8 @@ public class StreamClassOperatorService : IStreamClassOperatorService
         }
         return StreamClassOperatorResponse.Stopped(streamClass);
     }
-    
-    
+
+
     private Source<(WatchEventType, V1Beta1StreamClass), NotUsed> GetStreamingJobSynchronizationGraph()
     {
         var listTask = this.kubeCluster.ListCustomResources<V1Beta1StreamClass>(
