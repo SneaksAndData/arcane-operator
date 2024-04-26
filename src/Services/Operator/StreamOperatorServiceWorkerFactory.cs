@@ -18,18 +18,16 @@ public class StreamOperatorServiceWorkerFactory : IStreamOperatorServiceWorkerFa
     private readonly IKubeCluster kubeCluster;
     private readonly IStreamingJobOperatorService jobOperatorService;
     private readonly IStreamDefinitionRepository streamDefinitionRepository;
-    private readonly IOptionsSnapshot<CustomResourceConfiguration> customResourceConfigurationsOptionsSnapshot;
 
     public StreamOperatorServiceWorkerFactory(ILoggerFactory loggerFactory, IMaterializer materializer,
-        IKubeCluster kubeCluster, IStreamingJobOperatorService jobOperatorService, IStreamDefinitionRepository streamDefinitionRepository,
-        IOptionsSnapshot<CustomResourceConfiguration> customResourceConfigurationsOptionsSnapshot)
+        IKubeCluster kubeCluster, IStreamingJobOperatorService jobOperatorService,
+        IStreamDefinitionRepository streamDefinitionRepository)
     {
         this.loggerFactory = loggerFactory;
         this.materializer = materializer;
         this.kubeCluster = kubeCluster;
         this.jobOperatorService = jobOperatorService;
         this.streamDefinitionRepository = streamDefinitionRepository;
-        this.customResourceConfigurationsOptionsSnapshot = customResourceConfigurationsOptionsSnapshot;
     }
 
     /// <inheritdoc cref="IStreamOperatorServiceWorkerFactory.Create"/>
