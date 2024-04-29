@@ -67,6 +67,6 @@ public class V1Beta1StreamClass : IStreamClass
     /// <inheritdoc cref="IStreamClass.IsSecretField"/>
     public bool IsSecretField(string propertyName)
     {
-        return this.Spec.SecretFields.Contains(propertyName);
+        return this.Spec?.SecretFields?.Contains(propertyName) ?? false;
     }
 }
