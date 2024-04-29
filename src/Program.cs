@@ -16,7 +16,7 @@ public class Program
 {
     public static int Main(string[] args)
     {
-        Log.Logger = DefaultLoggingProvider.CreateBootstrappLogger(nameof(Arcane));
+        Log.Logger = DefaultLoggingProvider.CreateBootstrapLogger(nameof(Arcane));
         try
         {
             Log.Information("Starting web host");
