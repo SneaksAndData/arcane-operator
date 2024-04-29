@@ -1,4 +1,4 @@
-environment: "Development"
+environment: "Production"
 
 image:
   # Repository to pull the image from
