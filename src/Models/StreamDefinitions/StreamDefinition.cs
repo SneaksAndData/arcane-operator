@@ -125,8 +125,8 @@ public class StreamDefinition : IStreamDefinition
     private Dictionary<string, string> SelfToEnvironment(bool backfill) =>
         new()
         {
-            { EnvironmentExtensions.GetAssemblyEnvironmentVariable("STREAM_ID"), this.StreamId },
-            { EnvironmentExtensions.GetAssemblyEnvironmentVariable("STREAM_KIND"), this.Kind },
-            { EnvironmentExtensions.GetAssemblyEnvironmentVariable("BACKFILL"), backfill.ToString().ToLowerInvariant() }
+            { $"{EnvironmentExtensions.GetAssemblyVariablePrefix()}__STREAM_ID", this.StreamId },
+            { $"{EnvironmentExtensions.GetAssemblyVariablePrefix()}__STREAM_KIND", this.Kind },
+            { $"{EnvironmentExtensions.GetAssemblyVariablePrefix()}__BACKFILL", backfill.ToString().ToLowerInvariant() }
         };
 }
