@@ -46,6 +46,6 @@ public class V1Beta1StreamClassSpec
     /// Stream class buffer object max capacity.
     /// This value is dependent on the expected number of streams that will be created for this class.
     /// </summary>
-    [JsonPropertyName("secretFields")]
-    public List<string> SecretFields { get; set; }
+    [JsonPropertyName("secretRefs")]
+    public List<string> SecretRefs { get; set; }
 }

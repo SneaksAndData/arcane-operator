@@ -64,9 +64,9 @@ public class V1Beta1StreamClass : IStreamClass
     /// <inheritdoc cref="IStreamClass.MaxBufferCapacity"/>
     public int MaxBufferCapacity => this.Spec.MaxBufferCapacity;
 
-    /// <inheritdoc cref="IStreamClass.IsSecretField"/>
-    public bool IsSecretField(string propertyName)
+    /// <inheritdoc cref="IStreamClass.IsSecretRef"/>
+    public bool IsSecretRef(string propertyName)
     {
-        return this.Spec?.SecretFields?.Contains(propertyName) ?? false;
+        return this.Spec?.SecretRefs?.Contains(propertyName) ?? false;
     }
 }
