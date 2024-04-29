@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Akka.Streams;
@@ -53,6 +54,8 @@ public class StreamOperatorService<TStreamType> : IStreamOperatorService<TStream
             this.streamClass.VersionRef,
             this.streamClass.PluralNameRef
         );
+        this.logger.LogInformation("Start listening to event stream for {streamClass}",
+            JsonSerializer.Serialize(request));
         return this.streamDefinitionRepository.GetEvents(request, this.streamClass.MaxBufferCapacity)
             .Via(cancellationToken.AsFlow<ResourceEvent<IStreamDefinition>>(true))
             .SelectAsync(parallelism, this.OnEvent)
