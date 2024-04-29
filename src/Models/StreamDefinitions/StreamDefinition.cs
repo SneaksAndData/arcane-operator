@@ -101,7 +101,7 @@ public class StreamDefinition : IStreamDefinition
         }
         return new KeyValuePair<string, string>[]
         {
-            new(EnvironmentExtensions.GetAssemblyEnvironmentVariable("SPEC"), JsonSerializer.Serialize(newObj))
+            new($"{EnvironmentExtensions.GetAssemblyVariablePrefix()}SPEC", JsonSerializer.Serialize(newObj))
         };
     }
 
@@ -125,8 +125,8 @@ public class StreamDefinition : IStreamDefinition
     private Dictionary<string, string> SelfToEnvironment(bool backfill) =>
         new()
         {
-            { $"{EnvironmentExtensions.GetAssemblyVariablePrefix()}__STREAM_ID", this.StreamId },
-            { $"{EnvironmentExtensions.GetAssemblyVariablePrefix()}__STREAM_KIND", this.Kind },
-            { $"{EnvironmentExtensions.GetAssemblyVariablePrefix()}__BACKFILL", backfill.ToString().ToLowerInvariant() }
+            { $"{EnvironmentExtensions.GetAssemblyVariablePrefix()}STREAM_ID", this.StreamId },
+            { $"{EnvironmentExtensions.GetAssemblyVariablePrefix()}STREAM_KIND", this.Kind },
+            { $"{EnvironmentExtensions.GetAssemblyVariablePrefix()}BACKFILL", backfill.ToString().ToLowerInvariant() }
         };
 }
