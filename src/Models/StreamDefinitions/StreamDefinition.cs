@@ -10,6 +10,7 @@ using Arcane.Models.StreamingJobLifecycle;
 using Arcane.Operator.Models.StreamClass.Base;
 using Arcane.Operator.Models.StreamDefinitions.Base;
 using k8s.Models;
+using Snd.Sdk.Hosting;
 
 namespace Arcane.Operator.Models.StreamDefinitions;
 
@@ -100,7 +101,7 @@ public class StreamDefinition : IStreamDefinition
         }
         return new KeyValuePair<string, string>[]
         {
-            new("SPEC".GetEnvironmentVariableName(), JsonSerializer.Serialize(newObj))
+            new($"{EnvironmentExtensions.GetAssemblyVariablePrefix()}SPEC", JsonSerializer.Serialize(newObj))
         };
     }
 
@@ -121,13 +122,11 @@ public class StreamDefinition : IStreamDefinition
         return SHA256.HashData(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(this.Spec)));
     }
 
-    private Dictionary<string, string> SelfToEnvironment(bool fullLoad)
-    {
-        return new Dictionary<string, string>
+    private Dictionary<string, string> SelfToEnvironment(bool backfill) =>
+        new()
         {
-            { "STREAM_ID".GetEnvironmentVariableName(), this.StreamId },
-            { "STREAM_KIND".GetEnvironmentVariableName(), this.Kind },
-            { "FULL_LOAD".GetEnvironmentVariableName(), fullLoad.ToString().ToLowerInvariant() }
+            { $"{EnvironmentExtensions.GetAssemblyVariablePrefix()}STREAM_ID", this.StreamId },
+            { $"{EnvironmentExtensions.GetAssemblyVariablePrefix()}STREAM_KIND", this.Kind },
+            { $"{EnvironmentExtensions.GetAssemblyVariablePrefix()}BACKFILL", backfill.ToString().ToLowerInvariant() }
         };
-    }
 }

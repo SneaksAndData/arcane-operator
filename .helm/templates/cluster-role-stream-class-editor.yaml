@@ -15,4 +15,5 @@ rules:
       - streaming.sneaksanddata.com
     resources:
       - stream-classes
+      - stream-classes/status
 {{- end }}
