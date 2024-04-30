@@ -120,7 +120,7 @@ extraVolumeMounts: {}
 #    name: data-volume
 
 # Resources constraints. By default, the operator does not specify any constraints to allow for easier deployment
-resources: { }
+resources: {}
 # Example:
 #
 #  requests:
