@@ -10,13 +10,14 @@ using Arcane.Models.StreamingJobLifecycle;
 using Arcane.Operator.Models.StreamClass.Base;
 using Arcane.Operator.Models.StreamDefinitions.Base;
 using k8s.Models;
-using Snd.Sdk.Hosting;
 
 namespace Arcane.Operator.Models.StreamDefinitions;
 
 [ExcludeFromCodeCoverage(Justification = "Model")]
 public class StreamDefinition : IStreamDefinition
 {
+    private const string ENV_PREFIX = "STREAMCONTEXT__";
+
     /// <summary>
     /// Stream configuration
     /// </summary>
@@ -70,7 +71,7 @@ public class StreamDefinition : IStreamDefinition
     /// <inheritdoc cref="IStreamDefinition"/>
     public IEnumerable<V1EnvFromSource> ToV1EnvFromSources(IStreamClass streamDefinition) =>
         this.Spec.EnumerateObject()
-            .Where(s => streamDefinition.IsSecretField(s.Name))
+            .Where(s => streamDefinition.IsSecretRef(s.Name))
             .Select(p => new V1EnvFromSource(secretRef: p.Value.Deserialize<V1SecretEnvSource>()));
 
     /// <summary>
@@ -95,13 +96,14 @@ public class StreamDefinition : IStreamDefinition
     private IEnumerable<KeyValuePair<string, string>> SpecToEnvironment(IStreamClass streamClass)
     {
         var newObj = this.Spec.Clone().Deserialize<Dictionary<string, object>>();
-        foreach (var property in this.Spec.EnumerateObject().Where(property => streamClass.IsSecretField(property.Name)))
+        foreach (var property in this.Spec.EnumerateObject().Where(property => streamClass.IsSecretRef(property.Name)))
         {
             newObj.Remove(property.Name);
         }
+
         return new KeyValuePair<string, string>[]
         {
-            new($"{EnvironmentExtensions.GetAssemblyVariablePrefix()}SPEC", JsonSerializer.Serialize(newObj))
+            new($"{ENV_PREFIX}SPEC", JsonSerializer.Serialize(newObj))
         };
     }
 
@@ -125,8 +127,8 @@ public class StreamDefinition : IStreamDefinition
     private Dictionary<string, string> SelfToEnvironment(bool backfill) =>
         new()
         {
-            { $"{EnvironmentExtensions.GetAssemblyVariablePrefix()}STREAM_ID", this.StreamId },
-            { $"{EnvironmentExtensions.GetAssemblyVariablePrefix()}STREAM_KIND", this.Kind },
-            { $"{EnvironmentExtensions.GetAssemblyVariablePrefix()}BACKFILL", backfill.ToString().ToLowerInvariant() }
+            { $"{ENV_PREFIX}STREAM_ID", this.StreamId },
+            { $"{ENV_PREFIX}STREAM_KIND", this.Kind },
+            { $"{ENV_PREFIX}BACKFILL", backfill.ToString().ToLowerInvariant() }
         };
 }

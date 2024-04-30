@@ -65,5 +65,5 @@ public interface IStreamClass : IKubernetesObject<V1ObjectMeta>
     /// </summary>
     /// <param name="propertyName">Name of the property to test</param>
     /// <returns></returns>
-    bool IsSecretField(string propertyName);
+    bool IsSecretRef(string propertyName);
 }
