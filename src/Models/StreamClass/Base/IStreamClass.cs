@@ -1,8 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
-using Arcane.Operator.Configurations;
-using k8s;
+﻿using k8s;
 using k8s.Models;
 using Snd.Sdk.Kubernetes;
 
@@ -18,12 +14,6 @@ public interface IStreamClass : IKubernetesObject<V1ObjectMeta>
     /// </summary>
     /// <returns></returns>
     string ToStreamClassId();
-
-    /// <summary>
-    /// Converts the StreamClass object to a StreamOperatorServiceConfiguration object
-    /// </summary>
-    /// <returns></returns>
-    StreamOperatorServiceConfiguration ToStreamOperatorServiceConfiguration();
 
     /// <summary>
     /// Reference to the API group of the StreamDefinition CRD
@@ -54,12 +44,7 @@ public interface IStreamClass : IKubernetesObject<V1ObjectMeta>
     /// Convert configuration to NamespacedCrd object for consuming in the Proteus library
     /// </summary>
     /// <returns><see cref="NamespacedCrd"/>NamespacedCrd object</returns>
-    public NamespacedCrd ToNamespacedCrd() => new()
-    {
-        Group = this.ApiGroupRef,
-        Plural = this.PluralNameRef,
-        Version = this.VersionRef
-    };
+    NamespacedCrd ToNamespacedCrd();
 
     /// <summary>
     /// Returns true if the property should be mapped to environment variable with secret reference.
