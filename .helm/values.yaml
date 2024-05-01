@@ -34,6 +34,7 @@ serviceAccount:
 
 # CRD configuration
 customResourceDefinitions:
+  
   # Set to true to create CRDs for this operator
   # Otherwise, the operator will expect the CRDs to be pre-installed
   create: false
