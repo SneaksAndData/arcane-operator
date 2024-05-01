@@ -5,6 +5,14 @@ metadata:
   name: {{ include "app.clusteRole.streamClassEditor" . }}
   labels:
     rbac.authorization.k8s.io/aggregate-to-edit: "true"
+    {{- include "app.labels" $ | nindent 4 }}
+    {{- with .Values.rbac.clusterRole.streamClassEditor.additionalLabels }}
+      {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with .Values.rbac.clusterRole.streamClassEditor.additionalAnnotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 rules:
   - verbs:
       - create
