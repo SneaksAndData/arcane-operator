@@ -60,7 +60,7 @@ public class V1Beta1StreamClass : IStreamClass
     {
         return this.Spec?.SecretRefs?.Contains(propertyName) ?? false;
     }
-    
+
     /// <inheritdoc cref="IStreamClass.ToNamespacedCrd"/>
     [ExcludeFromCodeCoverage(Justification = "Trivial")]
     public NamespacedCrd ToNamespacedCrd() => new()
