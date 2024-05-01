@@ -4,6 +4,8 @@ kind: ClusterRole
 metadata:
   name: {{ include "app.clusteRole.jobViewer" . }}
   labels:
+    rbac.authorization.k8s.io/aggregate-to-view: "true"
+    rbac.authorization.k8s.io/aggregate-to-edit: "true"
     {{- include "app.labels" $ | nindent 4 }}
     {{- with .Values.rbac.clusterRole.jobViewer.additionalLabels }}
       {{- toYaml . | nindent 4 }}

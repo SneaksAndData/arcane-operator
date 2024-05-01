@@ -5,7 +5,6 @@ metadata:
   name: {{ include "app.clusteRole.streamClassEditor" . }}
   labels:
     rbac.authorization.k8s.io/aggregate-to-edit: "true"
-    rbac.authorization.k8s.io/aggregate-to-view: "true"
     {{- include "app.labels" $ | nindent 4 }}
     {{- with .Values.rbac.clusterRole.streamClassEditor.additionalLabels }}
       {{- toYaml . | nindent 4 }}

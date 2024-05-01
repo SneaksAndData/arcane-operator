@@ -5,6 +5,7 @@ metadata:
   name: {{ include "app.clusteRole.jobTemplateViewer" . }}
   labels:
     rbac.authorization.k8s.io/aggregate-to-view: "true"
+    rbac.authorization.k8s.io/aggregate-to-edit: "true"
     {{- include "app.labels" $ | nindent 4 }}
     {{- with .Values.rbac.clusterRole.jobTemplateViewer.additionalLabels }}
       {{- toYaml . | nindent 4 }}
