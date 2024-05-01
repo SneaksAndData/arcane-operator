@@ -5,6 +5,7 @@ kind: ClusterRoleBinding
 metadata:
   name: {{ template "app.serviceAccountName" . }}-stream-class-editor
   labels:
+    rbac.authorization.k8s.io/aggregate-to-edit: "true"
     {{- include "app.labels" $ | nindent 4 }}
     {{- with .Values.rbac.clusterRoleBindings.additionalLabels }}
       {{- toYaml . | nindent 4 }}
