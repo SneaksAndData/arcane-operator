@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Akka.Util;
@@ -27,19 +24,16 @@ public class StreamingJobOperatorService : IStreamingJobOperatorService
     private readonly IKubeCluster kubernetesService;
     private readonly ILogger<StreamingJobOperatorService> logger;
     private readonly IStreamingJobTemplateRepository streamingJobTemplateRepository;
-    private readonly IStreamInteractionService streamInteractionService;
 
     public StreamingJobOperatorService(
         ILogger<StreamingJobOperatorService> logger,
         IOptions<StreamingJobOperatorServiceConfiguration> configuration,
         IKubeCluster kubernetesService,
-        IStreamInteractionService streamInteractionService,
         IStreamingJobTemplateRepository streamingJobTemplateRepository)
     {
         this.logger = logger;
         this.configuration = configuration.Value;
         this.kubernetesService = kubernetesService;
-        this.streamInteractionService = streamInteractionService;
         this.streamingJobTemplateRepository = streamingJobTemplateRepository;
     }
 
@@ -136,57 +130,6 @@ public class StreamingJobOperatorService : IStreamingJobOperatorService
     {
         return this.kubernetesService.DeleteJob(streamId, this.StreamJobNamespace)
             .Map(_ => StreamOperatorResponse.Suspended(this.StreamJobNamespace, kind, streamId).AsOption());
-    }
-
-    public Task<Option<StreamOperatorResponse>> FindAndStopStreamingJob(string kind, string streamId)
-    {
-        var labels = new Dictionary<string, string> { { V1JobExtensions.STREAM_ID_LABEL, streamId } };
-        return this.kubernetesService
-            .GetPods(labels, this.configuration.Namespace)
-            .Map(pods => this.StopActivePod(pods, kind, streamId))
-            .Flatten();
-    }
-
-    private async Task<Option<StreamOperatorResponse>> StopActivePod(IEnumerable<V1Pod> pods, string kind,
-        string streamId)
-    {
-        var activePods = pods.Where(p =>
-            p.Status != null
-            && p.Status.Phase.Equals("running", StringComparison.OrdinalIgnoreCase)
-            && !string.IsNullOrEmpty(p.Status.PodIP)).ToList();
-        if (activePods is { Count: 1 })
-        {
-            try
-            {
-                await this.streamInteractionService
-                    .SendStopRequest(activePods.Single().Status.PodIP);
-                return StreamOperatorResponse.Stopped(this.StreamJobNamespace, kind, streamId);
-            }
-            catch (Exception e)
-            {
-                this.logger.LogError(e, "Failed to send stop request to pod with stream id: {streamId}", streamId);
-                return StreamOperatorResponse.OperationFailed(this.StreamJobNamespace,
-                    kind,
-                    streamId,
-                    "Stopping the stream failed");
-            }
-        }
-
-        if (activePods is { Count: < 1 })
-        {
-            this.logger.LogWarning("Cannot find active pod for stream id {streamId}", streamId);
-            return StreamOperatorResponse.OperationFailed(this.StreamJobNamespace,
-                kind,
-                streamId,
-                "Stopping the stream failed: no running pods found");
-        }
-
-        this.logger.LogError("Found multiple active pods for stream id {streamId}: {count}", streamId,
-            activePods.Count);
-        return StreamOperatorResponse.OperationFailed(this.StreamJobNamespace,
-            kind,
-            streamId,
-            "Stopping the stream failed: multiple running pods found");
     }
 
     private Task<Option<V1Job>> SetStreamingJobAnnotation(string streamId, string annotationValue)

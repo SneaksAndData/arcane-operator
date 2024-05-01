@@ -1,10 +1,9 @@
-﻿using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
-using Arcane.Operator.Configurations;
 using Arcane.Operator.Models.StreamClass.Base;
 using k8s;
 using k8s.Models;
+using Snd.Sdk.Kubernetes;
 
 namespace Arcane.Operator.Models.StreamClass;
 
@@ -41,14 +40,6 @@ public class V1Beta1StreamClass : IStreamClass
         return $"{this.Namespace()}/{this.Name()}";
     }
 
-    public StreamOperatorServiceConfiguration ToStreamOperatorServiceConfiguration()
-    {
-        return new StreamOperatorServiceConfiguration
-        {
-            MaxBufferCapacity = this.Spec.MaxBufferCapacity,
-        };
-    }
-
     /// <inheritdoc cref="IStreamClass.ApiGroupRef"/>
     public string ApiGroupRef => this.Spec.ApiGroupRef;
 
@@ -69,4 +60,13 @@ public class V1Beta1StreamClass : IStreamClass
     {
         return this.Spec?.SecretRefs?.Contains(propertyName) ?? false;
     }
+
+    /// <inheritdoc cref="IStreamClass.ToNamespacedCrd"/>
+    [ExcludeFromCodeCoverage(Justification = "Trivial")]
+    public NamespacedCrd ToNamespacedCrd() => new()
+    {
+        Group = this.ApiGroupRef,
+        Plural = this.PluralNameRef,
+        Version = this.VersionRef
+    };
 }
