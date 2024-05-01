@@ -21,7 +21,7 @@ using Snd.Sdk.Tasks;
 
 namespace Arcane.Operator.Services.Operator;
 
-public class StreamOperatorService: IStreamOperatorService
+public class StreamOperatorService : IStreamOperatorService
 {
     private const int parallelism = 1;
 
