@@ -80,7 +80,7 @@ public class StreamOperatorServiceTests : IClassFixture<ServiceFixture>, IClassF
 
         // Act
         var sp = this.CreateServiceProvider();
-        await sp.GetRequiredService<IStreamOperatorService<StreamDefinition>>()
+        await sp.GetRequiredService<IStreamOperatorService>()
             .GetStreamDefinitionEventsGraph(CancellationToken.None)
             .Run(this.akkaFixture.Materializer);
 
@@ -126,7 +126,7 @@ public class StreamOperatorServiceTests : IClassFixture<ServiceFixture>, IClassF
 
         // Act
         var sp = this.CreateServiceProvider();
-        await sp.GetRequiredService<IStreamOperatorService<StreamDefinition>>()
+        await sp.GetRequiredService<IStreamOperatorService>()
             .GetStreamDefinitionEventsGraph(CancellationToken.None)
             .Run(this.akkaFixture.Materializer);
 
@@ -163,7 +163,7 @@ public class StreamOperatorServiceTests : IClassFixture<ServiceFixture>, IClassF
 
         // Act
         var sp = this.CreateServiceProvider();
-        await sp.GetRequiredService<IStreamOperatorService<StreamDefinition>>()
+        await sp.GetRequiredService<IStreamOperatorService>()
             .GetStreamDefinitionEventsGraph(CancellationToken.None)
             .Run(this.akkaFixture.Materializer);
 
@@ -214,7 +214,7 @@ public class StreamOperatorServiceTests : IClassFixture<ServiceFixture>, IClassF
 
         // Act
         var sp = this.CreateServiceProvider();
-        await sp.GetRequiredService<IStreamOperatorService<StreamDefinition>>()
+        await sp.GetRequiredService<IStreamOperatorService>()
             .GetStreamDefinitionEventsGraph(CancellationToken.None)
             .Run(this.akkaFixture.Materializer);
 
@@ -248,7 +248,7 @@ public class StreamOperatorServiceTests : IClassFixture<ServiceFixture>, IClassF
 
         // Act
         var sp = this.CreateServiceProvider();
-        await sp.GetRequiredService<IStreamOperatorService<FailedStreamDefinition>>()
+        await sp.GetRequiredService<IStreamOperatorService>()
             .GetStreamDefinitionEventsGraph(CancellationToken.None)
             .Run(this.akkaFixture.Materializer);
 
@@ -282,7 +282,7 @@ public class StreamOperatorServiceTests : IClassFixture<ServiceFixture>, IClassF
         var exception = await Assert.ThrowsAnyAsync<Exception>(async () =>
         {
             var sp = this.CreateServiceProvider();
-            await sp.GetRequiredService<IStreamOperatorService<FailedStreamDefinition>>()
+            await sp.GetRequiredService<IStreamOperatorService>()
                 .GetStreamDefinitionEventsGraph(CancellationToken.None)
                 .Run(this.akkaFixture.Materializer);
         });
@@ -319,7 +319,7 @@ public class StreamOperatorServiceTests : IClassFixture<ServiceFixture>, IClassF
 
         // Act
         var sp = this.CreateServiceProvider();
-        await sp.GetRequiredService<IStreamOperatorService<StreamDefinition>>()
+        await sp.GetRequiredService<IStreamOperatorService>()
             .GetStreamDefinitionEventsGraph(CancellationToken.None)
             .Run(this.akkaFixture.Materializer);
 
@@ -349,8 +349,7 @@ public class StreamOperatorServiceTests : IClassFixture<ServiceFixture>, IClassF
             .AddSingleton(this.serviceFixture.MockStreamingJobOperatorService.Object)
             .AddSingleton(this.serviceFixture.MockStreamDefinitionRepository.Object)
             .AddSingleton(Mock.Of<IStreamClassRepository>())
-            .AddSingleton(this.loggerFixture.Factory.CreateLogger<StreamOperatorService<StreamDefinition>>())
-            .AddSingleton(this.loggerFixture.Factory.CreateLogger<StreamOperatorService<FailedStreamDefinition>>())
+            .AddSingleton(this.loggerFixture.Factory.CreateLogger<StreamOperatorService>())
             .AddSingleton(this.loggerFixture.Factory.CreateLogger<StreamDefinitionRepository>())
             .AddSingleton(this.serviceFixture.MockStreamingJobOperatorService.Object)
             .AddSingleton(optionsMock.Object)
@@ -367,8 +366,7 @@ public class StreamOperatorServiceTests : IClassFixture<ServiceFixture>, IClassF
                     StreamClassResourceKind = "StreamClass"
                 }
             })
-            .AddSingleton<IStreamOperatorService<StreamDefinition>, StreamOperatorService<StreamDefinition>>()
-            .AddSingleton<IStreamOperatorService<FailedStreamDefinition>, StreamOperatorService<FailedStreamDefinition>>()
+            .AddSingleton<IStreamOperatorService, StreamOperatorService>()
             .BuildServiceProvider();
     }
 }

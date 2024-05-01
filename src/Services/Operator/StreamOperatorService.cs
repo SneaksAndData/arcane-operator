@@ -17,29 +17,24 @@ using k8s;
 using k8s.Models;
 using Microsoft.Extensions.Logging;
 using Snd.Sdk.ActorProviders;
-using Snd.Sdk.Kubernetes.Base;
 using Snd.Sdk.Tasks;
 
 namespace Arcane.Operator.Services.Operator;
 
-public class StreamOperatorService<TStreamType> : IStreamOperatorService<TStreamType>
-    where TStreamType : IStreamDefinition
+public class StreamOperatorService: IStreamOperatorService
 {
     private const int parallelism = 1;
 
-    private readonly IKubeCluster kubeCluster;
-    private readonly ILogger<StreamOperatorService<TStreamType>> logger;
+    private readonly ILogger<StreamOperatorService> logger;
     private readonly IStreamingJobOperatorService operatorService;
     private readonly IStreamDefinitionRepository streamDefinitionRepository;
     private readonly IStreamClass streamClass;
 
-    public StreamOperatorService(IKubeCluster kubeCluster,
-        IStreamClass streamClass,
+    public StreamOperatorService(IStreamClass streamClass,
         IStreamingJobOperatorService operatorService,
         IStreamDefinitionRepository streamDefinitionRepository,
-        ILogger<StreamOperatorService<TStreamType>> logger)
+        ILogger<StreamOperatorService> logger)
     {
-        this.kubeCluster = kubeCluster;
         this.streamClass = streamClass;
         this.streamDefinitionRepository = streamDefinitionRepository;
         this.operatorService = operatorService;
