@@ -1,7 +1,6 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
 using Akka.Streams;
-using Arcane.Operator.Models.StreamDefinitions;
 using Arcane.Operator.Services.Base;
 using Microsoft.Extensions.Logging;
 
@@ -14,14 +13,14 @@ public class StreamOperatorServiceWorker
 {
     private readonly ILogger<StreamOperatorServiceWorker> logger;
     private readonly IMaterializer materializer;
-    private readonly IStreamOperatorService<StreamDefinition> streamOperatorService;
+    private readonly IStreamOperatorService streamOperatorService;
     private readonly CancellationTokenSource cts;
     private Task streamExecutionTask;
     private string streamClassId;
 
     public StreamOperatorServiceWorker(
         ILogger<StreamOperatorServiceWorker> logger,
-        IStreamOperatorService<StreamDefinition> streamOperatorService,
+        IStreamOperatorService streamOperatorService,
         IMaterializer materializer)
     {
         this.logger = logger;

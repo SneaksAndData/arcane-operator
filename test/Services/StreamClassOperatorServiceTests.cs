@@ -140,7 +140,7 @@ public class StreamClassOperatorServiceTests : IClassFixture<ServiceFixture>, IC
             .AddSingleton(this.serviceFixture.MockStreamDefinitionRepository.Object)
             .AddSingleton<IStreamClassRepository, StreamClassRepository>()
             .AddMemoryCache()
-            .AddSingleton(this.loggerFixture.Factory.CreateLogger<StreamOperatorService<StreamDefinition>>())
+            .AddSingleton(this.loggerFixture.Factory.CreateLogger<StreamOperatorService>())
             .AddSingleton(this.loggerFixture.Factory.CreateLogger<StreamClassOperatorService>())
             .AddSingleton(this.loggerFixture.Factory)
             .AddSingleton(optionsMock.Object)
