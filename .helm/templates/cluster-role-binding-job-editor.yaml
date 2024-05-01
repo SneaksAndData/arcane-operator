@@ -4,6 +4,15 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   name: {{ template "app.serviceAccountName" . }}-job-editor
+  labels:
+    {{- include "app.labels" $ | nindent 4 }}
+    {{- with .Values.rbac.clusterRoleBindings.additionalLabels }}
+      {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with .Values.rbac.clusterRoleBindings.additionalAnnotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 subjects:
   - kind: ServiceAccount
     name: {{ template "app.serviceAccountName" . }}
