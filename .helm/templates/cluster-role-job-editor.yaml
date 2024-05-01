@@ -3,6 +3,16 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: {{ include "app.clusteRole.jobEditor" . }}
+  labels:
+    rbac.authorization.k8s.io/aggregate-to-edit: "true"
+    {{- include "app.labels" $ | nindent 4 }}
+    {{- with .Values.rbac.clusterRole.jobEditor.additionalLabels }}
+      {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with .Values.rbac.clusterRole.jobEditor.additionalAnnotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 rules:
   - verbs:
       - create

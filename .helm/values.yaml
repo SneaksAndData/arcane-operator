@@ -32,6 +32,13 @@ serviceAccount:
   # If not set and create is true, a name is generated using the fullname template
   name: ""
 
+# CRD configuration
+customResourceDefinitions:
+  
+  # Set to true to create CRDs for this operator
+  # Otherwise, the operator will expect the CRDs to be pre-installed
+  create: false
+  
 ### Role Based Access Control configuration
 rbac:
   
@@ -40,31 +47,43 @@ rbac:
     
     # Allows the Arcane Operator to create and manage jobs in the cluster
     jobEditor:
+      additionalLabels: {}
+      additionalAnnotations: {}
       create: true
       nameOverride: ""
       
     # Allows the Arcane Operator to read jobs in the cluster
     jobViewer:
+      additionalLabels: {}
+      additionalAnnotations: {}
       create: true
       nameOverride: ""
       
     # Allows managing the StreamingJobTemplate custom resources
     jobTemplateEditor:
+      additionalLabels: {}
+      additionalAnnotations: {}
       create: true
       nameOverride: ""
     
     # Allows the Arcane Operator to read the StreamingJobTemplate custom resources
     jobTemplateViewer:
+      additionalLabels: {}
+      additionalAnnotations: {}
       create: true
       nameOverride: ""
       
     # Allows managing the StreamClass custom resources
     streamClassEditor:
+      additionalLabels: {}
+      additionalAnnotations: {}
       create: true
       nameOverride: ""
 
     # Allows the Arcane Operator to read the StreamClass custom resources
     streamClassViewer:
+      additionalLabels: {}
+      additionalAnnotations: {}
       create: true
       nameOverride: ""
       
@@ -72,6 +91,8 @@ rbac:
   # If you have any roles in your configuration set to 'true', then this parameter for creating role binding resources
   # should also be set to 'true'.
   clusterRoleBindings:
+    additionalLabels: {}
+    additionalAnnotations: {}
     create: true
     
 # Additional labels for the deployment and pods
@@ -120,7 +141,7 @@ extraVolumeMounts: {}
 #    name: data-volume
 
 # Resources constraints. By default, the operator does not specify any constraints to allow for easier deployment
-resources: { }
+resources: {}
 # Example:
 #
 #  requests:

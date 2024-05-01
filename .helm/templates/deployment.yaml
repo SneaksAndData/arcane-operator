@@ -77,18 +77,21 @@ spec:
           {{- with .Values.extraVolumeMounts }}
             {{- toYaml . | nindent 12 }}
           {{- end }}
-        - name: {{ template "app.name" . }}-config
-          mountPath: /app/api/appsettings.json
-          subPath: appsettings.json
-          readOnly: true
+            - name: {{ template "app.name" . }}-config
+              mountPath: /app/api/appsettings.json
+              subPath: appsettings.json
+              readOnly: true
         {{- with .Values.resources }}
         resources:
           {{- toYaml . | nindent 12 }}
         {{- end }}
       volumes:
-      - name: {{ template "app.name" . }}-config
-        configMap:
-          name: {{ template "app.name" . }}-config
+          {{- with .Values.extraVolumes }}
+            {{- toYaml . | nindent 8 }}
+          {{- end }}
+        - name: {{ template "app.name" . }}-config
+          configMap:
+            name: {{ template "app.name" . }}-config
       {{- with .Values.tolerations }}
       tolerations:
         {{- toYaml . | nindent 8 }}
