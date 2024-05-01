@@ -32,5 +32,3 @@ body:
   attributes:
     label: System information
     placeholder: Arcane version, OS, dotnet version etc.
-  validations:
-    required: true
