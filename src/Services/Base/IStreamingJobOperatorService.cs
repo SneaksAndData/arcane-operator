@@ -43,22 +43,7 @@ public interface IStreamingJobOperatorService
     /// </summary>
     /// <param name="streamId">Stream identifier that should be terminated.</param>
     /// <returns></returns>
-    Task<Option<StreamOperatorResponse>> RequestStreamingJobTermination(string streamId);
-
-    /// <summary>
-    /// Marks streaming job for stop
-    /// </summary>
-    /// <param name="streamId">Stream identifier that should be terminated.</param>
-    /// <returns></returns>
     Task<Option<StreamOperatorResponse>> RequestStreamingJobReload(string streamId);
-
-    /// <summary>
-    /// Find pod for streaming job and stop it
-    /// </summary>
-    /// <param name="kind">Stream definition kind</param>
-    /// <param name="streamId">Stream identifier that should be terminated.</param>
-    /// <returns></returns>
-    Task<Option<StreamOperatorResponse>> FindAndStopStreamingJob(string kind, string streamId);
 
     /// <summary>
     /// Delete the streaming job
