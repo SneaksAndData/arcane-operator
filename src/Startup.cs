@@ -55,7 +55,6 @@ public class Startup
                 Configuration.GetSection(nameof(StreamingJobTemplateRepositoryConfiguration)));
 
         services.AddSingleton<IStreamingJobOperatorService, StreamingJobOperatorService>();
-        services.AddSingleton<IStreamInteractionService, StreamInteractionService>();
         services.AddSingleton<IStreamingJobMaintenanceService, StreamingJobMaintenanceService>();
         services.AddSingleton<IStreamDefinitionRepository, StreamDefinitionRepository>();
         services.AddSingleton<IStreamingJobTemplateRepository, StreamingJobTemplateRepository>();

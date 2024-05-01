@@ -222,7 +222,6 @@ public class StreamingJobMaintenanceServiceTests : IClassFixture<ServiceFixture>
         return new ServiceCollection()
             .AddSingleton(this.serviceFixture.MockKubeCluster.Object)
             .AddSingleton(this.serviceFixture.MockStreamDefinitionRepository.Object)
-            .AddSingleton(this.serviceFixture.MockStreamInteractionService.Object)
             .AddSingleton(this.serviceFixture.MockStreamingJobOperatorService.Object)
             .AddSingleton(this.loggerFixture.Factory.CreateLogger<StreamingJobMaintenanceService>())
             .AddSingleton(this.loggerFixture.Factory.CreateLogger<StreamingJobOperatorService>())
