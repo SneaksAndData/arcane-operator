@@ -38,7 +38,7 @@ public static class DeclaredMetrics
     public static SortedDictionary<string, string> GetMetricsTags(this StreamClassOperatorResponse s) => new()
     {
         { "namespace", s.StreamClass?.Namespace().ToLowerInvariant() },
-        { "kind", s.StreamClass?.Kind?.ToLowerInvariant() },
+        { "kind", s.StreamClass?.KindRef?.ToLowerInvariant() },
         { "phase", s.Phase.ToString().ToLowerInvariant() }
     };
 }
