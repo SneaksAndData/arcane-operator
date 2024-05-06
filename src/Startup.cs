@@ -4,6 +4,7 @@ using Arcane.Operator.Configurations;
 using Arcane.Operator.Services;
 using Arcane.Operator.Services.Base;
 using Arcane.Operator.Services.Maintenance;
+using Arcane.Operator.Services.Metrics;
 using Arcane.Operator.Services.Operator;
 using Arcane.Operator.Services.Repositories;
 using Arcane.Operator.Services.Streams;
@@ -40,7 +41,8 @@ public class Startup
 
         services.AddAzureBlob(AzureStorageConfiguration.CreateDefault());
         services.AddAzureTable<TableEntity>(AzureStorageConfiguration.CreateDefault());
-        services.AddDatadogMetrics(DatadogConfiguration.Default(nameof(Arcane)));
+        services.AddDatadogMetrics(DatadogConfiguration.UnixDomainSocket($"{nameof(Arcane)}.{nameof(Operator)}"));
+        services.AddSingleton<IMetricsReporter, MetricsReporter>();
 
         var config = Configuration.GetSection(nameof(StreamingJobMaintenanceServiceConfiguration));
         services.Configure<StreamingJobMaintenanceServiceConfiguration>(config);

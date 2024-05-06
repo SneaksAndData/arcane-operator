@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Akka.Streams;
@@ -10,6 +12,7 @@ using Arcane.Operator.Extensions;
 using Arcane.Operator.Models;
 using Arcane.Operator.Models.StreamDefinitions.Base;
 using Arcane.Operator.Services.Base;
+using Arcane.Operator.Services.Metrics;
 using k8s;
 using k8s.Models;
 using Microsoft.Extensions.Logging;
@@ -29,11 +32,13 @@ public class StreamingJobMaintenanceService : IStreamingJobMaintenanceService
     private readonly ILogger<StreamingJobMaintenanceService> logger;
     private readonly IStreamingJobOperatorService operatorService;
     private readonly IStreamDefinitionRepository streamDefinitionRepository;
+    private readonly IMetricsReporter metricsService;
 
     public StreamingJobMaintenanceService(
         ILogger<StreamingJobMaintenanceService> logger,
         IOptions<StreamingJobMaintenanceServiceConfiguration> options,
         IKubeCluster kubeCluster,
+        IMetricsReporter metricsService,
         IStreamDefinitionRepository streamDefinitionRepository,
         IStreamingJobOperatorService operatorService)
     {
@@ -42,17 +47,19 @@ public class StreamingJobMaintenanceService : IStreamingJobMaintenanceService
         this.streamDefinitionRepository = streamDefinitionRepository;
         this.operatorService = operatorService;
         this.logger = logger;
+        this.metricsService = metricsService;
     }
 
 
     public IRunnableGraph<Task> GetJobEventsGraph(CancellationToken cancellationToken)
     {
         return this.kubeCluster
-            .StreamJobEvents(this.operatorService.StreamJobNamespace, this.configuration.MaxBufferCapacity,
-                OverflowStrategy.Fail)
+            .StreamJobEvents(this.operatorService.StreamJobNamespace, this.configuration.MaxBufferCapacity, OverflowStrategy.Fail)
             .Via(cancellationToken.AsFlow<(WatchEventType, V1Job)>(true))
+            .Select(this.metricsService.ReportTrafficMetrics)
             .SelectAsync(parallelism, this.OnJobEvent)
             .CollectOption()
+            .Select(this.metricsService.ReportStatusMetrics)
             .SelectAsync(parallelism, this.HandleStreamOperatorResponse)
             .ToMaterialized(Sink.Ignore<Option<IStreamDefinition>>(), Keep.Right);
     }

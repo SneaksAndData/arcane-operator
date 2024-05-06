@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Akka.Streams;
@@ -10,12 +11,14 @@ using Arcane.Operator.Configurations;
 using Arcane.Operator.Models;
 using Arcane.Operator.Models.StreamClass.Base;
 using Arcane.Operator.Services.Base;
+using Arcane.Operator.Services.Metrics;
 using Arcane.Operator.Services.Models;
 using k8s;
 using k8s.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Snd.Sdk.ActorProviders;
+using Snd.Sdk.Metrics.Base;
 
 namespace Arcane.Operator.Services.Operator;
 
@@ -30,16 +33,19 @@ public class StreamClassOperatorService : IStreamClassOperatorService
     private readonly ILogger<StreamClassOperatorService> logger;
     private readonly IStreamClassRepository streamClassRepository;
     private readonly IStreamOperatorServiceWorkerFactory streamOperatorServiceWorkerFactory;
+    private readonly IMetricsReporter metricsService;
 
     public StreamClassOperatorService(IOptions<StreamClassOperatorServiceConfiguration> streamOperatorServiceOptions,
         IStreamOperatorServiceWorkerFactory streamOperatorServiceWorkerFactory,
         IStreamClassRepository streamClassRepository,
+        IMetricsReporter metricsService,
         ILogger<StreamClassOperatorService> logger)
     {
         this.configuration = streamOperatorServiceOptions.Value;
         this.logger = logger;
         this.streamClassRepository = streamClassRepository;
         this.streamOperatorServiceWorkerFactory = streamOperatorServiceWorkerFactory;
+        this.metricsService = metricsService;
     }
 
     /// <inheritdoc cref="IStreamClassOperatorService.GetStreamClassEventsGraph"/>
@@ -63,9 +69,11 @@ public class StreamClassOperatorService : IStreamClassOperatorService
 
         return this.streamClassRepository.GetEvents(request, this.configuration.MaxBufferCapacity)
             .Via(cancellationToken.AsFlow<ResourceEvent<IStreamClass>>(true))
+            .Select(this.metricsService.ReportTrafficMetrics)
             .Select(this.OnEvent)
             .WithAttributes(ActorAttributes.CreateSupervisionStrategy(this.HandleError))
             .CollectOption()
+            .Select(this.metricsService.ReportStatusMetrics)
             .ToMaterialized(sink, Keep.Right);
     }
 

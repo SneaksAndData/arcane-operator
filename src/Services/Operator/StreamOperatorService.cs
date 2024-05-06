@@ -12,11 +12,13 @@ using Arcane.Operator.Models;
 using Arcane.Operator.Models.StreamClass.Base;
 using Arcane.Operator.Models.StreamDefinitions.Base;
 using Arcane.Operator.Services.Base;
+using Arcane.Operator.Services.Metrics;
 using Arcane.Operator.Services.Models;
 using k8s;
 using k8s.Models;
 using Microsoft.Extensions.Logging;
 using Snd.Sdk.ActorProviders;
+using Snd.Sdk.Metrics.Base;
 using Snd.Sdk.Tasks;
 
 namespace Arcane.Operator.Services.Operator;
@@ -29,16 +31,19 @@ public class StreamOperatorService : IStreamOperatorService
     private readonly IStreamingJobOperatorService operatorService;
     private readonly IStreamDefinitionRepository streamDefinitionRepository;
     private readonly IStreamClass streamClass;
+    private readonly IMetricsReporter metricsService;
 
     public StreamOperatorService(IStreamClass streamClass,
         IStreamingJobOperatorService operatorService,
         IStreamDefinitionRepository streamDefinitionRepository,
+        IMetricsReporter metricsService,
         ILogger<StreamOperatorService> logger)
     {
         this.streamClass = streamClass;
         this.streamDefinitionRepository = streamDefinitionRepository;
         this.operatorService = operatorService;
         this.logger = logger;
+        this.metricsService = metricsService;
     }
 
     public IRunnableGraph<Task> GetStreamDefinitionEventsGraph(CancellationToken cancellationToken)
@@ -53,9 +58,11 @@ public class StreamOperatorService : IStreamOperatorService
             JsonSerializer.Serialize(request));
         return this.streamDefinitionRepository.GetEvents(request, this.streamClass.MaxBufferCapacity)
             .Via(cancellationToken.AsFlow<ResourceEvent<IStreamDefinition>>(true))
+            .Select(this.metricsService.ReportTrafficMetrics)
             .SelectAsync(parallelism, this.OnEvent)
             .WithAttributes(ActorAttributes.CreateSupervisionStrategy(this.HandleError))
             .CollectOption()
+            .Select(this.metricsService.ReportStatusMetrics)
             .SelectAsync(parallelism,
                 response => this.streamDefinitionRepository.SetStreamStatus(response.Namespace,
                     response.Kind,
