@@ -10,5 +10,5 @@ public interface IMetricsReporter
     StreamClassOperatorResponse ReportStatusMetrics(StreamClassOperatorResponse arg);
     StreamOperatorResponse ReportStatusMetrics(StreamOperatorResponse arg);
     (WatchEventType, V1Job) ReportTrafficMetrics((WatchEventType, V1Job) jobEvent);
-    ResourceEvent<TResource> ReportTrafficMetrics<TResource>(ResourceEvent<TResource> ev) where TResource: IKubernetesObject<V1ObjectMeta>;
+    ResourceEvent<TResource> ReportTrafficMetrics<TResource>(ResourceEvent<TResource> ev) where TResource : IKubernetesObject<V1ObjectMeta>;
 }
