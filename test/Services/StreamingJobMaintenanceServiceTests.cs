@@ -13,6 +13,7 @@ using Arcane.Operator.Models.StreamClass.Base;
 using Arcane.Operator.Models.StreamDefinitions.Base;
 using Arcane.Operator.Models.StreamStatuses.StreamStatus.V1Beta1;
 using Arcane.Operator.Services.Maintenance;
+using Arcane.Operator.Services.Metrics;
 using Arcane.Operator.Services.Streams;
 using Arcane.Operator.Tests.Fixtures;
 using k8s;
@@ -21,6 +22,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
+using Snd.Sdk.Metrics.Base;
 using Xunit;
 using static Arcane.Operator.Tests.Services.TestCases.JobTestCases;
 using static Arcane.Operator.Tests.Services.TestCases.StreamDefinitionTestCases;
@@ -225,6 +227,8 @@ public class StreamingJobMaintenanceServiceTests : IClassFixture<ServiceFixture>
             .AddSingleton(this.serviceFixture.MockStreamingJobOperatorService.Object)
             .AddSingleton(this.loggerFixture.Factory.CreateLogger<StreamingJobMaintenanceService>())
             .AddSingleton(this.loggerFixture.Factory.CreateLogger<StreamingJobOperatorService>())
+            .AddSingleton<IMetricsReporter, MetricsReporter>()
+            .AddSingleton(Mock.Of<MetricsService>())
             .AddSingleton<StreamingJobMaintenanceService>()
             .AddSingleton(Options.Create(new StreamingJobMaintenanceServiceConfiguration
             {

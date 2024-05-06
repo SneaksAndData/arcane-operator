@@ -14,6 +14,7 @@ using Arcane.Operator.Models.StreamDefinitions;
 using Arcane.Operator.Models.StreamDefinitions.Base;
 using Arcane.Operator.Models.StreamStatuses.StreamStatus.V1Beta1;
 using Arcane.Operator.Services.Base;
+using Arcane.Operator.Services.Metrics;
 using Arcane.Operator.Services.Models;
 using Arcane.Operator.Services.Operator;
 using Arcane.Operator.Services.Repositories;
@@ -25,6 +26,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
+using Snd.Sdk.Metrics.Base;
 using Xunit;
 using static Arcane.Operator.Tests.Services.TestCases.JobTestCases;
 using static Arcane.Operator.Tests.Services.TestCases.StreamDefinitionTestCases;
@@ -349,6 +351,8 @@ public class StreamOperatorServiceTests : IClassFixture<ServiceFixture>, IClassF
             .AddSingleton(this.serviceFixture.MockStreamingJobOperatorService.Object)
             .AddSingleton(this.serviceFixture.MockStreamDefinitionRepository.Object)
             .AddSingleton(Mock.Of<IStreamClassRepository>())
+            .AddSingleton<IMetricsReporter, MetricsReporter>()
+            .AddSingleton(Mock.Of<MetricsService>())
             .AddSingleton(this.loggerFixture.Factory.CreateLogger<StreamOperatorService>())
             .AddSingleton(this.loggerFixture.Factory.CreateLogger<StreamDefinitionRepository>())
             .AddSingleton(this.serviceFixture.MockStreamingJobOperatorService.Object)

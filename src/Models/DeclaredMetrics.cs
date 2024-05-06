@@ -11,13 +11,13 @@ public static class DeclaredMetrics
    public static string PhaseTransitions(string entity) => $"{entity}.phase_transitions";
    public static string Conditions(string entity) => $"{entity}.conditions";
    public static string TrafficMetric(this IKubernetesObject<V1ObjectMeta> obj, WatchEventType eventType)
-    => $"{obj.Kind.ToLowerInvariant()}.{eventType.ToString().ToLowerInvariant()}";
+    => $"{obj?.Kind?.ToLowerInvariant()}.{eventType.ToString().ToLowerInvariant()}";
    
     public static SortedDictionary<string, string> GetMetricsTags(this IKubernetesObject<V1ObjectMeta> job) => new()
     {
         { "namespace", job.Namespace() },
         { "kind", job.Kind },
-        { "name", job.Name() }
+        { "name", job.Name() },
     };
     
     public static SortedDictionary<string, string> GetMetricsTags(this V1Job job) => new()
@@ -32,13 +32,13 @@ public static class DeclaredMetrics
         { "namespace", s.Namespace },
         { "kind", s.Kind },
         { "streamId", s.Id },
-        { "condition", s.Conditions.Single().Type.ToLowerInvariant() }
+        { "phase", s.Phase.ToString().ToLowerInvariant() }
     };
 
     public static SortedDictionary<string, string> GetMetricsTags(this StreamClassOperatorResponse s) => new()
     {
-        { "namespace", s.StreamClass.Namespace().ToLowerInvariant() },
-        { "kind", s.StreamClass.Kind.ToLowerInvariant() },
-        { "condition", s.Conditions.Single().Type.ToLowerInvariant() }
+        { "namespace", s.StreamClass?.Namespace().ToLowerInvariant() },
+        { "kind", s.StreamClass?.Kind?.ToLowerInvariant() },
+        { "phase", s.Phase.ToString().ToLowerInvariant() }
     };
 }
