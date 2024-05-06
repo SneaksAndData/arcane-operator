@@ -11,7 +11,7 @@ public static class DeclaredMetrics
     public static string PhaseTransitions(string entity) => $"{entity}.phase_transitions";
     public static string Conditions(string entity) => $"{entity}.conditions";
     public static string TrafficMetric(this IKubernetesObject<V1ObjectMeta> obj, WatchEventType eventType)
-     => $"{obj?.Kind?.ToLowerInvariant()}.{eventType.ToString().ToLowerInvariant()}";
+     => $"events.{obj?.Kind?.ToLowerInvariant()}.{eventType.ToString().ToLowerInvariant()}";
 
     public static SortedDictionary<string, string> GetMetricsTags(this IKubernetesObject<V1ObjectMeta> job) => new()
     {
