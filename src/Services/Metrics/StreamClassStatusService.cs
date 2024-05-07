@@ -7,9 +7,9 @@ using Snd.Sdk.Metrics.Base;
 
 namespace Arcane.Operator.Services.Metrics;
 
-public record AddStreamClassMetricsMessage(string StreamKindRef, string MetricName,
+public record AddStreamClassHealth(string StreamKindRef, string MetricName,
     SortedDictionary<string, string> Metrics);
-public record RemoveStreamClassMetricsMessage(string StreamKindRef);
+public record RemoveStreamClassHealth(string StreamKindRef);
 public record EmitMetricsMessage;
 public record StreamClassMetric(SortedDictionary<string, string> metricTags, string metricName);
 
@@ -23,13 +23,13 @@ public class StreamClassStatusService : ReceiveActor, IWithTimers
     public StreamClassStatusService(StreamClassStatusServiceConfiguration configuration, MetricsService metricsService)
     {
         this.configuration = configuration;
-        this.Receive<AddStreamClassMetricsMessage>(s =>
+        this.Receive<AddStreamClassHealth>(s =>
         {
-            this.Log.Info("Adding stream class metrics for {streamKindRef}", s.StreamKindRef);
+            this.Log.Debug("Adding stream class metrics for {streamKindRef}", s.StreamKindRef);
             this.streamClassMetrics[s.StreamKindRef] = new StreamClassMetric(s.Metrics, s.MetricName);
         });
 
-        this.Receive<RemoveStreamClassMetricsMessage>(s =>
+        this.Receive<RemoveStreamClassHealth>(s =>
         {
             if (!this.streamClassMetrics.Remove(s.StreamKindRef))
             {
@@ -39,10 +39,10 @@ public class StreamClassStatusService : ReceiveActor, IWithTimers
 
         this.Receive<EmitMetricsMessage>(_ =>
         {
-            this.Log.Info("Start emitting stream class metrics");
+            this.Log.Debug("Start emitting stream class metrics");
             foreach (var (_, metric) in this.streamClassMetrics)
             {
-                metricsService.Count(metric.metricName, 1, metric.metricTags);
+                metricsService.HealthCheck(metric.metricName, 1, metric.metricTags);
             }
         });
     }

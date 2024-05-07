@@ -30,12 +30,11 @@ public class MetricsReporter : IMetricsReporter
     {
         if (arg.Phase.IsFinal())
         {
-            this.statusActor.Tell(new RemoveStreamClassMetricsMessage(arg.StreamClass.KindRef));
+            this.statusActor.Tell(new RemoveStreamClassHealth(arg.StreamClass.KindRef));
         }
         else
         {
-            var msg = new AddStreamClassMetricsMessage(arg.StreamClass.KindRef,
-                DeclaredMetrics.PhaseTransitions("stream_classes"), arg.GetMetricsTags());
+            var msg = new AddStreamClassHealth(arg.StreamClass.KindRef, "stream_class", arg.GetMetricsTags());
             this.statusActor.Tell(msg);
         }
         return arg;

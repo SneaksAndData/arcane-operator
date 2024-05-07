@@ -11,7 +11,6 @@ namespace Arcane.Operator.Models;
 public static class DeclaredMetrics
 {
     public static string PhaseTransitions(string entity) => $"{entity}.phase_transitions";
-    public static string Conditions(string entity) => $"{entity}.conditions";
     public static string TrafficMetric(this WatchEventType eventType)
      => $"objects.{eventType.ToString().ToLowerInvariant()}";
 
