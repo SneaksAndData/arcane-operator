@@ -54,6 +54,9 @@ public class Startup
         services.Configure<StreamingJobOperatorServiceConfiguration>(
                 Configuration.GetSection(nameof(StreamingJobOperatorServiceConfiguration)));
 
+        services.Configure<MetricsReporterConfiguration>(
+                Configuration.GetSection(nameof(MetricsReporterConfiguration)));
+        
         services.Configure<StreamClassOperatorServiceConfiguration>(
                 Configuration.GetSection(nameof(StreamClassOperatorServiceConfiguration)));
 
