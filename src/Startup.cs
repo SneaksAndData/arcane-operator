@@ -56,7 +56,7 @@ public class Startup
 
         services.Configure<MetricsReporterConfiguration>(
                 Configuration.GetSection(nameof(MetricsReporterConfiguration)));
-        
+
         services.Configure<StreamClassOperatorServiceConfiguration>(
                 Configuration.GetSection(nameof(StreamClassOperatorServiceConfiguration)));
 
