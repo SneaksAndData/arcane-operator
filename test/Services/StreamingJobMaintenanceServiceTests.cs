@@ -45,7 +45,7 @@ public class StreamingJobMaintenanceServiceTests : IClassFixture<ServiceFixture>
 
     [Theory]
     [MemberData(nameof(GenerateCompletedJobTestCases))]
-    public async Task HandleCompletedJob(V1Job job, bool definitionExists, bool fullLoad, bool expectRestart)
+    public async Task HandleCompletedJob(V1Job job, bool definitionExists, bool isBackfilling, bool expectRestart)
     {
         // Arrange
         this.serviceFixture.MockStreamingJobOperatorService.Invocations.Clear();
@@ -72,7 +72,7 @@ public class StreamingJobMaintenanceServiceTests : IClassFixture<ServiceFixture>
 
         // Assert
         this.serviceFixture.MockStreamingJobOperatorService
-            .Verify(s => s.StartRegisteredStream(It.IsAny<IStreamDefinition>(), fullLoad, It.IsAny<IStreamClass>()),
+            .Verify(s => s.StartRegisteredStream(It.IsAny<IStreamDefinition>(), isBackfilling, It.IsAny<IStreamClass>()),
                 Times.Exactly(definitionExists && expectRestart ? 1 : 0));
     }
 
@@ -138,7 +138,7 @@ public class StreamingJobMaintenanceServiceTests : IClassFixture<ServiceFixture>
     [Theory]
     [MemberData(nameof(GenerateDeletedJobTestCases))]
     public async Task HandleDeletedJob(V1Job job, IStreamClass streamClass, IStreamDefinition streamDefinition, bool expectToRestart,
-        bool expectFullLoad)
+        bool expectBackfill)
     {
         // Arrange
         this.serviceFixture.MockStreamDefinitionRepository.Invocations.Clear();
@@ -166,7 +166,7 @@ public class StreamingJobMaintenanceServiceTests : IClassFixture<ServiceFixture>
         await service.GetJobEventsGraph(CancellationToken.None).Run(this.akkaFixture.Materializer);
 
         this.serviceFixture.MockStreamingJobOperatorService.Verify(s =>
-                s.StartRegisteredStream(streamDefinition, expectFullLoad, It.IsAny<IStreamClass>()),
+                s.StartRegisteredStream(streamDefinition, expectBackfill, It.IsAny<IStreamClass>()),
             Times.Exactly(expectToRestart ? 1 : 0)
         );
     }

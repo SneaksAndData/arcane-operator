@@ -109,7 +109,7 @@ public class StreamingJobMaintenanceService : IStreamingJobMaintenanceService
 
     private Task<Option<StreamOperatorResponse>> OnJobDelete(V1Job job)
     {
-        var fullLoad = job.IsReloadRequested() || job.IsSchemaMismatch();
+        var isBackfilling = job.IsReloadRequested() || job.IsSchemaMismatch();
         return this.streamDefinitionRepository
             .GetStreamDefinition(job.Namespace(), job.GetStreamKind(), job.GetStreamId())
             .Map(maybeSd => maybeSd switch
@@ -130,7 +130,7 @@ public class StreamingJobMaintenanceService : IStreamingJobMaintenanceService
                     => Task.FromResult(StreamOperatorResponse.CrashLoopDetected(sd.Namespace(), sd.Kind, sd.StreamId)
                         .AsOption()),
                 ({ HasValue: true, Value: var sc }, { HasValue: true, Value: var sd }) when !sd.Suspended
-                    => this.operatorService.StartRegisteredStream(sd, fullLoad, sc),
+                    => this.operatorService.StartRegisteredStream(sd, isBackfilling, sc),
                 (_, { HasValue: false })
                     => Task.FromResult(Option<StreamOperatorResponse>.None),
                 _ => throw new ArgumentOutOfRangeException(nameof(maybeSd), maybeSd, null)

@@ -36,16 +36,6 @@ public interface IStreamDefinition : IKubernetesObject<V1ObjectMeta>
     public bool ReloadRequested { get; }
 
     /// <summary>
-    /// Streaming job template reference
-    /// </summary>
-    public V1TypedLocalObjectReference JobTemplateRef { get; }
-
-    /// <summary>
-    /// Streaming job template reference for full load job mode
-    /// </summary>
-    public V1TypedLocalObjectReference ReloadingJobTemplateRef { get; }
-
-    /// <summary>
     /// Convert stream configuration to Kubernetes environment references
     /// </summary>
     public IEnumerable<V1EnvFromSource> ToV1EnvFromSources(IStreamClass streamClass);
@@ -53,12 +43,19 @@ public interface IStreamDefinition : IKubernetesObject<V1ObjectMeta>
     /// <summary>
     /// Convert stream configuration to environment variables.
     /// </summary>
-    /// <param name="fullLoad">True if stream should run in backfill mode.</param>
+    /// <param name="isBackfilling">True if stream should run in backfill mode.</param>
     /// <param name="streamClass">Stream class object containing stream metadata.</param>
-    public Dictionary<string, string> ToEnvironment(bool fullLoad, IStreamClass streamClass);
+    public Dictionary<string, string> ToEnvironment(bool isBackfilling, IStreamClass streamClass);
 
     /// <summary>
     /// Returns checksum of the stream configuration
     /// </summary>
     public string GetConfigurationChecksum();
+
+    /// <summary>
+    /// Returns the job template for the stream
+    /// </summary>
+    /// <param name="isBackfilling">True if stream is should run in backfill mode, false otherwise</param>
+    /// <returns>Reference to the JobTemplate custom Kubernetes object</returns>
+    public V1TypedLocalObjectReference GetJobTemplate(bool isBackfilling);
 }

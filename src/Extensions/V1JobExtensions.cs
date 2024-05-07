@@ -9,16 +9,15 @@ public static class V1JobExtensions
 {
     public const string STREAM_KIND_LABEL = "arcane/stream-kind";
     public const string STREAM_ID_LABEL = "arcane/stream-id";
-    public const string FULL_LOAD_LABEL = "arcane/full-load";
+    public const string BACK_FILL_LABEL = "arcane/backfilling";
 
-    public static V1Job WithStreamingJobLabels(this V1Job job, string streamId,
-        bool fullLoadOnStart, string streamKind)
+    public static V1Job WithStreamingJobLabels(this V1Job job, string streamId, bool isBackfilling, string streamKind)
     {
         return job.WithLabels(new Dictionary<string, string>
         {
             { STREAM_ID_LABEL, streamId },
             { STREAM_KIND_LABEL, streamKind },
-            { FULL_LOAD_LABEL, fullLoadOnStart.ToString().ToLowerInvariant() }
+            { BACK_FILL_LABEL, isBackfilling.ToString().ToLowerInvariant() }
         });
     }
 
@@ -81,7 +80,7 @@ public static class V1JobExtensions
     public static bool IsReloading(this V1Job job)
     {
         return job.Labels() != null
-               && job.Labels().TryGetValue(FULL_LOAD_LABEL, out var value)
+               && job.Labels().TryGetValue(BACK_FILL_LABEL, out var value)
                && value == "true";
     }
 

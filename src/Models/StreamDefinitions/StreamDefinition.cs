@@ -58,16 +58,13 @@ public class StreamDefinition : IStreamDefinition
             && this.Metadata.Annotations.TryGetValue(Annotations.STATE_ANNOTATION_KEY, out var value)
             && value == Annotations.RELOADING_STATE_ANNOTATION_VALUE;
 
-    /// <inheritdoc cref="IStreamDefinition"/>
-    [JsonIgnore]
-    public V1TypedLocalObjectReference JobTemplateRef =>
-        this.Spec.GetProperty("jobTemplateRef").Deserialize<V1TypedLocalObjectReference>();
 
-    /// <inheritdoc cref="IStreamDefinition"/>
+    /// <summary>
+    /// Stream identifier
+    /// </summary>
     [JsonIgnore]
-    public V1TypedLocalObjectReference ReloadingJobTemplateRef =>
-        this.Spec.GetProperty("reloadingJobTemplateRef").Deserialize<V1TypedLocalObjectReference>();
-
+    public string StreamId => this.Metadata.Name;
+    
     /// <inheritdoc cref="IStreamDefinition"/>
     public IEnumerable<V1EnvFromSource> ToV1EnvFromSources(IStreamClass streamDefinition) =>
         this.Spec.EnumerateObject()
@@ -75,13 +72,14 @@ public class StreamDefinition : IStreamDefinition
             .Select(p => new V1EnvFromSource(secretRef: p.Value.Deserialize<V1SecretEnvSource>()));
 
     /// <summary>
-    /// Encode Stream runner configuration to dictionary that can be passed as environment variables
+    /// Encode Stream runner configuration to dictionary that can be passed as environment variables.
     /// </summary>
-    /// <param name="fullLoad"></param>
+    /// <param name="isBackfilling">True if stream runner should run in backfill mode.</param>
+    /// <param name="streamClass">Stream class associated with the stream definition.</param>
     /// <returns>Dictionary of strings</returns>
-    public Dictionary<string, string> ToEnvironment(bool fullLoad, IStreamClass streamClass)
+    public Dictionary<string, string> ToEnvironment(bool isBackfilling, IStreamClass streamClass)
     {
-        return this.SelfToEnvironment(fullLoad)
+        return this.SelfToEnvironment(isBackfilling)
             .Concat(this.SpecToEnvironment(streamClass))
             .ToDictionary(x => x.Key, x => x.Value);
     }
@@ -107,17 +105,25 @@ public class StreamDefinition : IStreamDefinition
         };
     }
 
+    /// <inheritdoc cref="IStreamDefinition.GetConfigurationChecksum"/>
     public string GetConfigurationChecksum()
     {
         var base64Hash = Convert.ToBase64String(this.GetSpecHash());
         return base64Hash[..7].ToLowerInvariant();
     }
 
-    /// <summary>
-    /// Stream identifier
-    /// </summary>
-    [JsonIgnore]
-    public string StreamId => this.Metadata.Name;
+    /// <inheritdoc cref="IStreamDefinition.GetJobTemplate"/>
+    public V1TypedLocalObjectReference GetJobTemplate(bool isBackfilling)
+    {
+        return isBackfilling ? this.BackfillingJobTemplateRef : this.JobTemplateRef;
+    }
+    
+    private V1TypedLocalObjectReference JobTemplateRef =>
+        this.Spec.GetProperty("jobTemplateRef").Deserialize<V1TypedLocalObjectReference>();
+
+    private V1TypedLocalObjectReference BackfillingJobTemplateRef =>
+        this.Spec.GetProperty("reloadingJobTemplateRef").Deserialize<V1TypedLocalObjectReference>();
+
 
     private byte[] GetSpecHash()
     {

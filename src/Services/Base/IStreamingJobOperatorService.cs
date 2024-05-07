@@ -18,10 +18,10 @@ public interface IStreamingJobOperatorService
     /// Starts a new stream using an existing stream definition in Kubernetes database.
     /// </summary>
     /// <param name="streamDefinition">Stream definition</param>
-    /// <param name="fullLoad">Whether to perform a full reload for this stream.</param>
+    /// <param name="isBackfilling">Whether to perform a full reload for this stream.</param>
     /// <param name="streamClass"></param>
     /// <returns>StreamInfo if stream was created or None if an error occured</returns>
-    Task<Option<StreamOperatorResponse>> StartRegisteredStream(IStreamDefinition streamDefinition, bool fullLoad,
+    Task<Option<StreamOperatorResponse>> StartRegisteredStream(IStreamDefinition streamDefinition, bool isBackfilling,
         IStreamClass streamClass);
 
     /// <summary>

@@ -43,19 +43,24 @@ public class FailedStreamDefinition : IStreamDefinition
     public V1TypedLocalObjectReference ReloadingJobTemplateRef => throw this.exception;
     public IEnumerable<V1EnvFromSource> ToV1EnvFromSources(IStreamClass streamDefinition) => throw this.exception;
 
-    public Dictionary<string, string> ToEnvironment(bool fullLoad, IStreamClass streamDefinition) => throw this.exception;
+    public Dictionary<string, string> ToEnvironment(bool isBackfilling, IStreamClass streamDefinition) => throw this.exception;
 
     public IEnumerable<V1EnvFromSource> ToV1EnvFromSources()
     {
         throw this.exception;
     }
 
-    public Dictionary<string, string> ToEnvironment(bool fullLoad)
+    public Dictionary<string, string> ToEnvironment(bool isBackfilling)
     {
         throw this.exception;
     }
 
     public string GetConfigurationChecksum()
+    {
+        throw this.exception;
+    }
+
+    public V1TypedLocalObjectReference GetJobTemplate(bool isBackfilling)
     {
         throw this.exception;
     }
