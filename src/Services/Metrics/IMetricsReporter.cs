@@ -16,14 +16,14 @@ public interface IMetricsReporter
     /// <param name="streamClass">StreamClassOperatorResponse object with StreamClass status information</param>
     /// <returns>The same object for processing in the next stages of operator state machine.</returns>
     StreamClassOperatorResponse ReportStatusMetrics(StreamClassOperatorResponse streamClass);
-    
+
     /// <summary>
     /// Reports Count metric for a V1Job object
     /// </summary>
     /// <param name="jobEvent">Job event type and job object</param>
     /// <returns>The same object for processing in the next stages of operator state machine.</returns>
     (WatchEventType, V1Job) ReportTrafficMetrics((WatchEventType, V1Job) jobEvent);
-    
+
     /// <summary>
     /// Reports Count metric for a Kubernetes custom resource object
     /// </summary>

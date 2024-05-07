@@ -39,13 +39,13 @@ public class StreamClassMetric
     /// <summary>
     /// Name of the metric to report.
     /// </summary>
-    public string MetricName { get; init;  }
-    
-    
+    public string MetricName { get; init; }
+
+
     /// <summary>
     /// Tags of the metric to report.
     /// </summary>
-    public SortedDictionary<string, string> MetricTags { get; init;  }
+    public SortedDictionary<string, string> MetricTags { get; init; }
 
     /// <summary>
     /// Metric Value
