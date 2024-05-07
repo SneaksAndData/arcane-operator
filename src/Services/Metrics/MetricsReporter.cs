@@ -1,4 +1,6 @@
-﻿using Arcane.Operator.Models;
+﻿using System;
+using Akka.Actor;
+using Arcane.Operator.Models;
 using Arcane.Operator.Services.Models;
 using k8s;
 using k8s.Models;
@@ -9,15 +11,33 @@ namespace Arcane.Operator.Services.Metrics;
 public class MetricsReporter : IMetricsReporter
 {
     private readonly MetricsService metricsService;
+    private readonly ActorSystem actorSystem;
+    private readonly IActorRef statusActor;
 
-    public MetricsReporter(MetricsService metricsService)
+    public MetricsReporter(MetricsService metricsService, ActorSystem actorSystem)
     {
         this.metricsService = metricsService;
+        this.actorSystem = actorSystem;
+        var config = new StreamClassStatusServiceConfiguration
+        {
+            InitialDelay = TimeSpan.FromSeconds(30),
+            UpdateInterval = TimeSpan.FromSeconds(10)
+        };
+        this.statusActor = actorSystem.ActorOf(Props.Create(() => new StreamClassStatusService(config, metricsService)), nameof(StreamClassStatusService));
     }
 
     public StreamClassOperatorResponse ReportStatusMetrics(StreamClassOperatorResponse arg)
     {
-        this.metricsService.Count(DeclaredMetrics.PhaseTransitions("stream_classes"), 1, arg.GetMetricsTags());
+        if (arg.Phase.IsFinal())
+        {
+            this.statusActor.Tell(new RemoveStreamClassMetricsMessage(arg.StreamClass.KindRef));
+        }
+        else
+        {
+            var msg = new AddStreamClassMetricsMessage(arg.StreamClass.KindRef,
+                DeclaredMetrics.PhaseTransitions("stream_classes"), arg.GetMetricsTags());
+            this.statusActor.Tell(msg);
+        }
         return arg;
     }
 
@@ -36,6 +56,12 @@ public class MetricsReporter : IMetricsReporter
     public ResourceEvent<TResource> ReportTrafficMetrics<TResource>(ResourceEvent<TResource> ev) where TResource : IKubernetesObject<V1ObjectMeta>
     {
         this.metricsService.Count(ev.EventType.TrafficMetric(), 1, ev.kubernetesObject.GetMetricsTags());
+        return ev;
+    }
+
+    public ResourceEvent<TResource> ReportErrorMetrics<TResource>(ResourceEvent<TResource> ev) where TResource : IKubernetesObject<V1ObjectMeta>
+    {
+        this.metricsService.Count(DeclaredMetrics.ErrorMetric, 1, ev.kubernetesObject.GetMetricsTags());
         return ev;
     }
 }
