@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Akka.Actor;
 using Akka.Streams;
 using Akka.Streams.Dsl;
 using Akka.Util;
@@ -36,6 +37,8 @@ public class StreamingJobMaintenanceServiceTests : IClassFixture<ServiceFixture>
     private readonly AkkaFixture akkaFixture;
     private readonly LoggerFixture loggerFixture;
     private readonly ServiceFixture serviceFixture;
+    private readonly ActorSystem actorSystem;
+    private readonly IMaterializer materializer;
 
     public StreamingJobMaintenanceServiceTests(ServiceFixture serviceFixture, LoggerFixture loggerFixture,
         AkkaFixture akkaFixture)
@@ -43,6 +46,8 @@ public class StreamingJobMaintenanceServiceTests : IClassFixture<ServiceFixture>
         this.serviceFixture = serviceFixture;
         this.loggerFixture = loggerFixture;
         this.akkaFixture = akkaFixture;
+        this.actorSystem = ActorSystem.Create(nameof(StreamingJobMaintenanceServiceTests));
+        this.materializer = this.actorSystem.Materializer();
     }
 
     [Theory]
@@ -236,7 +241,8 @@ public class StreamingJobMaintenanceServiceTests : IClassFixture<ServiceFixture>
             }))
             .AddSingleton(Options.Create(new StreamingJobOperatorServiceConfiguration()))
             .AddSingleton<HostedStreamingJobMaintenanceService>()
-            .AddSingleton(this.akkaFixture.Materializer)
+            .AddSingleton(this.materializer)
+            .AddSingleton(this.actorSystem)
             .BuildServiceProvider()
             .GetRequiredService<StreamingJobMaintenanceService>();
     }

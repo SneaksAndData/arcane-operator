@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Akka.Actor;
 using Akka.Streams;
 using Akka.Streams.Dsl;
 using Arcane.Operator.Configurations;
@@ -36,6 +37,8 @@ public class StreamClassOperatorServiceTests : IClassFixture<ServiceFixture>, IC
     private readonly ServiceFixture serviceFixture;
     private readonly Mock<IStreamingJobOperatorService> streamingJobOperatorServiceMock;
     private readonly Mock<IStreamClassRepository> streamClassStateRepository;
+    private readonly ActorSystem actorSystem;
+    private readonly ActorMaterializer materializer;
 
     public StreamClassOperatorServiceTests(ServiceFixture serviceFixture, LoggerFixture loggerFixture,
         AkkaFixture akkaFixture)
@@ -45,6 +48,8 @@ public class StreamClassOperatorServiceTests : IClassFixture<ServiceFixture>, IC
         this.akkaFixture = akkaFixture;
         this.streamingJobOperatorServiceMock = new Mock<IStreamingJobOperatorService>();
         this.streamClassStateRepository = new Mock<IStreamClassRepository>();
+        this.actorSystem = ActorSystem.Create(nameof(StreamClassOperatorServiceTests));
+        this.materializer = this.actorSystem.Materializer();
     }
 
     [Fact]
@@ -136,7 +141,8 @@ public class StreamClassOperatorServiceTests : IClassFixture<ServiceFixture>, IC
             .Setup(m => m.Get(It.IsAny<string>()))
             .Returns(new CustomResourceConfiguration());
         return new ServiceCollection()
-            .AddSingleton(this.akkaFixture.Materializer)
+            .AddSingleton<IMaterializer>(this.materializer)
+            .AddSingleton(this.actorSystem)
             .AddSingleton(this.serviceFixture.MockKubeCluster.Object)
             .AddSingleton(this.streamingJobOperatorServiceMock.Object)
             .AddSingleton(this.serviceFixture.MockStreamDefinitionRepository.Object)
