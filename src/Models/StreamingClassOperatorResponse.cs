@@ -30,7 +30,7 @@ public enum StreamClassPhase
     /// The stream class is stopped and new Streams of this class can not be created.
     /// </summary>
     STOPPED,
-    
+
 }
 
 /// <summary>

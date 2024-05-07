@@ -49,7 +49,7 @@ public class StreamClassStatusService : ReceiveActor, IWithTimers
 
     protected override void PreStart()
     {
-        this.Timers.StartPeriodicTimer(nameof(EmitMetricsMessage), 
+        this.Timers.StartPeriodicTimer(nameof(EmitMetricsMessage),
             new EmitMetricsMessage(),
             this.configuration.InitialDelay,
             this.configuration.UpdateInterval);
