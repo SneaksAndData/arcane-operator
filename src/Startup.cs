@@ -26,6 +26,8 @@ namespace Arcane.Operator;
 [ExcludeFromCodeCoverage]
 public class Startup
 {
+    public const string ApplicationName = $"{nameof(Arcane)}.{nameof(Operator)}";
+    
     public Startup(IConfiguration configuration)
     {
         this.Configuration = configuration;
@@ -41,7 +43,7 @@ public class Startup
 
         services.AddAzureBlob(AzureStorageConfiguration.CreateDefault());
         services.AddAzureTable<TableEntity>(AzureStorageConfiguration.CreateDefault());
-        services.AddDatadogMetrics(DatadogConfiguration.UnixDomainSocket($"{nameof(Arcane)}.{nameof(Operator)}"));
+        services.AddDatadogMetrics(DatadogConfiguration.UnixDomainSocket(ApplicationName));
         services.AddSingleton<IMetricsReporter, MetricsReporter>();
 
         var config = Configuration.GetSection(nameof(StreamingJobMaintenanceServiceConfiguration));
@@ -71,6 +73,7 @@ public class Startup
         services.AddControllers().AddJsonOptions(options =>
             options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
     }
+
 
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env,
         IHostApplicationLifetime hostApplicationLifetime)

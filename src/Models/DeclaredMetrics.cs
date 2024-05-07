@@ -1,8 +1,10 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using Arcane.Operator.Extensions;
+using IdentityModel;
 using k8s;
 using k8s.Models;
+using Snd.Sdk.Helpers;
 
 namespace Arcane.Operator.Models;
 
@@ -13,6 +15,8 @@ public static class DeclaredMetrics
     public static string TrafficMetric(this WatchEventType eventType)
      => $"objects.{eventType.ToString().ToLowerInvariant()}";
 
+    public static string ErrorMetric = "errors";
+    
     public static SortedDictionary<string, string> GetMetricsTags(this IKubernetesObject<V1ObjectMeta> job) => new()
     {
         { "namespace", job.Namespace() },
@@ -38,7 +42,7 @@ public static class DeclaredMetrics
     public static SortedDictionary<string, string> GetMetricsTags(this StreamClassOperatorResponse s) => new()
     {
         { "namespace", s.StreamClass?.Namespace().ToLowerInvariant() },
-        { "kind", s.StreamClass?.KindRef?.ToLowerInvariant() },
+        { "kind", CodeExtensions.CamelCaseToSnakeCase(s.StreamClass?.KindRef ?? "unknown") },
         { "phase", s.Phase.ToString().ToLowerInvariant() }
     };
 }

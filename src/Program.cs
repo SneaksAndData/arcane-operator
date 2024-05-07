@@ -16,7 +16,7 @@ public class Program
 {
     public static int Main(string[] args)
     {
-        Log.Logger = DefaultLoggingProvider.CreateBootstrapLogger(nameof(Arcane));
+        Log.Logger = DefaultLoggingProvider.CreateBootstrapLogger(Startup.ApplicationName);
         try
         {
             Log.Information("Starting web host");
@@ -37,7 +37,7 @@ public class Program
     public static IHostBuilder CreateHostBuilder(string[] args)
     {
         return Host.CreateDefaultBuilder(args)
-            .AddSerilogLogger(nameof(Arcane), loggerConfiguration => loggerConfiguration.Default().AddDatadog())
+            .AddSerilogLogger(Startup.ApplicationName, loggerConfiguration => loggerConfiguration.Default().AddDatadog())
             .ConfigureWebHostDefaults(webBuilder => { webBuilder.UseStartup<Startup>(); })
             .ConfigureServices(services =>
             {
