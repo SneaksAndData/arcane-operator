@@ -226,6 +226,9 @@ public class StreamingJobMaintenanceServiceTests : IClassFixture<ServiceFixture>
 
     private StreamingJobMaintenanceService CreateService()
     {
+        var options = Options.Create(new MetricsReporterConfiguration(new StreamClassStatusActorConfiguration(
+            TimeSpan.FromSeconds(30),
+            TimeSpan.FromSeconds(10))));
         return new ServiceCollection()
             .AddSingleton(this.serviceFixture.MockKubeCluster.Object)
             .AddSingleton(this.serviceFixture.MockStreamDefinitionRepository.Object)
@@ -239,6 +242,7 @@ public class StreamingJobMaintenanceServiceTests : IClassFixture<ServiceFixture>
             {
                 MaxBufferCapacity = 1000
             }))
+            .AddSingleton(options)
             .AddSingleton(Options.Create(new StreamingJobOperatorServiceConfiguration()))
             .AddSingleton<HostedStreamingJobMaintenanceService>()
             .AddSingleton(this.materializer)

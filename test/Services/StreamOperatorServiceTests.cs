@@ -8,6 +8,7 @@ using Akka.Streams;
 using Akka.Streams.Dsl;
 using Akka.Util;
 using Akka.Util.Extensions;
+using Arcane.Operator.Configurations;
 using Arcane.Operator.Configurations.Common;
 using Arcane.Operator.Models.StreamClass;
 using Arcane.Operator.Models.StreamClass.Base;
@@ -350,6 +351,9 @@ public class StreamOperatorServiceTests : IClassFixture<ServiceFixture>, IClassF
         optionsMock
             .Setup(m => m.Get(It.IsAny<string>()))
             .Returns(new CustomResourceConfiguration());
+        var options = Options.Create(new MetricsReporterConfiguration(new StreamClassStatusActorConfiguration(
+            TimeSpan.FromSeconds(30),
+            TimeSpan.FromSeconds(10))));
         return new ServiceCollection()
             .AddSingleton(this.materializer)
             .AddSingleton(this.actorSystem)
@@ -359,6 +363,7 @@ public class StreamOperatorServiceTests : IClassFixture<ServiceFixture>, IClassF
             .AddSingleton(Mock.Of<IStreamClassRepository>())
             .AddSingleton<IMetricsReporter, MetricsReporter>()
             .AddSingleton(Mock.Of<MetricsService>())
+            .AddSingleton(options)
             .AddSingleton(this.loggerFixture.Factory.CreateLogger<StreamOperatorService>())
             .AddSingleton(this.loggerFixture.Factory.CreateLogger<StreamDefinitionRepository>())
             .AddSingleton(this.serviceFixture.MockStreamingJobOperatorService.Object)
