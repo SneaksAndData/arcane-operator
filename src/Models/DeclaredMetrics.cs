@@ -16,7 +16,7 @@ public static class DeclaredMetrics
      => $"objects.{eventType.ToString().ToLowerInvariant()}";
 
     public static string ErrorMetric = "errors";
-    
+
     public static SortedDictionary<string, string> GetMetricsTags(this IKubernetesObject<V1ObjectMeta> job) => new()
     {
         { "namespace", job.Namespace() },

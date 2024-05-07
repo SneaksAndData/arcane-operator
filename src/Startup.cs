@@ -27,7 +27,7 @@ namespace Arcane.Operator;
 public class Startup
 {
     public const string ApplicationName = $"{nameof(Arcane)}.{nameof(Operator)}";
-    
+
     public Startup(IConfiguration configuration)
     {
         this.Configuration = configuration;
