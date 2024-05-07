@@ -22,7 +22,7 @@ public class MetricsReporter : IMetricsReporter
     {
         this.metricsService = metricsService;
         this.statusActor = actorSystem.ActorOf(Props.Create(() => new StreamClassServiceActor(
-                metricsReporterConfiguration.Value.PeriodicMetricsUpdateConfiguration,
+                metricsReporterConfiguration.Value.StreamClassStatusActorConfiguration,
                 metricsService)),
             nameof(StreamClassServiceActor));
     }

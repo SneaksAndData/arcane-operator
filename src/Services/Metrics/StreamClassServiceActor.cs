@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Akka.Actor;
 using Akka.Event;
+using Arcane.Operator.Configurations;
 using Snd.Sdk.Metrics.Base;
 
 namespace Arcane.Operator.Services.Metrics;
@@ -53,11 +54,6 @@ public class StreamClassMetric
     public int MetricValue { get; set; } = 1;
 }
 
-
-/// <summary>
-/// The configuration for the stream class status actor.
-/// </summary>
-public record StreamClassStatusActorConfiguration(TimeSpan UpdateInterval, TimeSpan InitialDelay);
 
 /// <summary>
 /// Stream class service actor. This actor is responsible for collecting metrics for stream classes

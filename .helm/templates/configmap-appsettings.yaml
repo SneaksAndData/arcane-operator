@@ -28,6 +28,12 @@ data:
           "Version": "v1",
           "Plural": "streaming-job-templates"
         }
+      },
+      "MetricsReporterConfiguration": {
+        "StreamClassStatusActorConfiguration": {
+          "UpdateInterval": "00:00:10",
+          "InitialDelay": "00:00:10"
+        }
       }
     }
     

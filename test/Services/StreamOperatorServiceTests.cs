@@ -351,9 +351,14 @@ public class StreamOperatorServiceTests : IClassFixture<ServiceFixture>, IClassF
         optionsMock
             .Setup(m => m.Get(It.IsAny<string>()))
             .Returns(new CustomResourceConfiguration());
-        var options = Options.Create(new MetricsReporterConfiguration(new StreamClassStatusActorConfiguration(
-            TimeSpan.FromSeconds(30),
-            TimeSpan.FromSeconds(10))));
+        var metricsReporterConfiguration = Options.Create(new MetricsReporterConfiguration
+        {
+            StreamClassStatusActorConfiguration = new StreamClassStatusActorConfiguration
+            {
+                InitialDelay = TimeSpan.FromSeconds(30),
+                UpdateInterval = TimeSpan.FromSeconds(10)
+            }
+        });
         return new ServiceCollection()
             .AddSingleton(this.materializer)
             .AddSingleton(this.actorSystem)
@@ -363,7 +368,7 @@ public class StreamOperatorServiceTests : IClassFixture<ServiceFixture>, IClassF
             .AddSingleton(Mock.Of<IStreamClassRepository>())
             .AddSingleton<IMetricsReporter, MetricsReporter>()
             .AddSingleton(Mock.Of<MetricsService>())
-            .AddSingleton(options)
+            .AddSingleton(metricsReporterConfiguration)
             .AddSingleton(this.loggerFixture.Factory.CreateLogger<StreamOperatorService>())
             .AddSingleton(this.loggerFixture.Factory.CreateLogger<StreamDefinitionRepository>())
             .AddSingleton(this.serviceFixture.MockStreamingJobOperatorService.Object)
