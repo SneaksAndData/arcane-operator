@@ -1,9 +1,12 @@
+using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
+using Akka.Actor;
 using Arcane.Operator.Configurations;
 using Arcane.Operator.Services;
 using Arcane.Operator.Services.Base;
 using Arcane.Operator.Services.Maintenance;
+using Arcane.Operator.Services.Metrics;
 using Arcane.Operator.Services.Operator;
 using Arcane.Operator.Services.Repositories;
 using Arcane.Operator.Services.Streams;
@@ -40,13 +43,17 @@ public class Startup
 
         services.AddAzureBlob(AzureStorageConfiguration.CreateDefault());
         services.AddAzureTable<TableEntity>(AzureStorageConfiguration.CreateDefault());
-        services.AddDatadogMetrics(DatadogConfiguration.Default(nameof(Arcane)));
+        services.AddDatadogMetrics(DatadogConfiguration.UnixDomainSocket(AppDomain.CurrentDomain.FriendlyName));
+        services.AddSingleton<IMetricsReporter, MetricsReporter>();
 
         var config = Configuration.GetSection(nameof(StreamingJobMaintenanceServiceConfiguration));
         services.Configure<StreamingJobMaintenanceServiceConfiguration>(config);
 
         services.Configure<StreamingJobOperatorServiceConfiguration>(
                 Configuration.GetSection(nameof(StreamingJobOperatorServiceConfiguration)));
+
+        services.Configure<MetricsReporterConfiguration>(
+                Configuration.GetSection(nameof(MetricsReporterConfiguration)));
 
         services.Configure<StreamClassOperatorServiceConfiguration>(
                 Configuration.GetSection(nameof(StreamClassOperatorServiceConfiguration)));
@@ -69,6 +76,7 @@ public class Startup
         services.AddControllers().AddJsonOptions(options =>
             options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
     }
+
 
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env,
         IHostApplicationLifetime hostApplicationLifetime)

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Akka.Actor;
 using Akka.Streams;
 using Akka.Streams.Dsl;
 using Arcane.Operator.Configurations;
@@ -11,6 +12,7 @@ using Arcane.Operator.Models.StreamClass.Base;
 using Arcane.Operator.Models.StreamDefinitions;
 using Arcane.Operator.Models.StreamDefinitions.Base;
 using Arcane.Operator.Services.Base;
+using Arcane.Operator.Services.Metrics;
 using Arcane.Operator.Services.Models;
 using Arcane.Operator.Services.Operator;
 using Arcane.Operator.Services.Repositories;
@@ -21,6 +23,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Logging;
 using Moq;
+using Snd.Sdk.Metrics.Base;
 using Xunit;
 using static Arcane.Operator.Tests.Services.TestCases.StreamClassTestCases;
 
@@ -34,6 +37,8 @@ public class StreamClassOperatorServiceTests : IClassFixture<ServiceFixture>, IC
     private readonly ServiceFixture serviceFixture;
     private readonly Mock<IStreamingJobOperatorService> streamingJobOperatorServiceMock;
     private readonly Mock<IStreamClassRepository> streamClassStateRepository;
+    private readonly ActorSystem actorSystem;
+    private readonly ActorMaterializer materializer;
 
     public StreamClassOperatorServiceTests(ServiceFixture serviceFixture, LoggerFixture loggerFixture,
         AkkaFixture akkaFixture)
@@ -43,6 +48,8 @@ public class StreamClassOperatorServiceTests : IClassFixture<ServiceFixture>, IC
         this.akkaFixture = akkaFixture;
         this.streamingJobOperatorServiceMock = new Mock<IStreamingJobOperatorService>();
         this.streamClassStateRepository = new Mock<IStreamClassRepository>();
+        this.actorSystem = ActorSystem.Create(nameof(StreamClassOperatorServiceTests));
+        this.materializer = this.actorSystem.Materializer();
     }
 
     [Fact]
@@ -133,17 +140,29 @@ public class StreamClassOperatorServiceTests : IClassFixture<ServiceFixture>, IC
         optionsMock
             .Setup(m => m.Get(It.IsAny<string>()))
             .Returns(new CustomResourceConfiguration());
+        var metricsReporterConfiguration = Options.Create(new MetricsReporterConfiguration
+        {
+            MetricsPublisherActorConfiguration = new MetricsPublisherActorConfiguration
+            {
+                InitialDelay = TimeSpan.FromSeconds(30),
+                UpdateInterval = TimeSpan.FromSeconds(10)
+            }
+        });
         return new ServiceCollection()
-            .AddSingleton(this.akkaFixture.Materializer)
+            .AddSingleton<IMaterializer>(this.materializer)
+            .AddSingleton(this.actorSystem)
             .AddSingleton(this.serviceFixture.MockKubeCluster.Object)
             .AddSingleton(this.streamingJobOperatorServiceMock.Object)
             .AddSingleton(this.serviceFixture.MockStreamDefinitionRepository.Object)
             .AddSingleton<IStreamClassRepository, StreamClassRepository>()
             .AddMemoryCache()
+            .AddSingleton<IMetricsReporter, MetricsReporter>()
+            .AddSingleton(Mock.Of<MetricsService>())
             .AddSingleton(this.loggerFixture.Factory.CreateLogger<StreamOperatorService>())
             .AddSingleton(this.loggerFixture.Factory.CreateLogger<StreamClassOperatorService>())
             .AddSingleton(this.loggerFixture.Factory)
             .AddSingleton(optionsMock.Object)
+            .AddSingleton(metricsReporterConfiguration)
             .AddSingleton(Options.Create(new StreamClassOperatorServiceConfiguration
             {
                 MaxBufferCapacity = 100
