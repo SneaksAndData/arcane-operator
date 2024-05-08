@@ -29,7 +29,8 @@ public static class DeclaredMetrics
     public static SortedDictionary<string, string> GetMetricsTags(this StreamClassOperatorResponse s) => new()
     {
         { $"{TAG_PREFIX}/namespace", s.StreamClass?.Namespace().ToLowerInvariant() },
-        { $"{TAG_PREFIX}/kind", CodeExtensions.CamelCaseToSnakeCase(s.StreamClass?.KindRef ?? "unknown") },
+        { $"{TAG_PREFIX}/kindRef", CodeExtensions.CamelCaseToSnakeCase(s.StreamClass?.KindRef ?? "unknown") },
+        { $"{TAG_PREFIX}/kind", CodeExtensions.CamelCaseToSnakeCase(s.StreamClass?.Kind ?? "unknown") },
         { $"{TAG_PREFIX}/phase", s.Phase.ToString().ToLowerInvariant() }
     };
 }
