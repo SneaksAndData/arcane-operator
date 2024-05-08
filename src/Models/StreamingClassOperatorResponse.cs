@@ -32,6 +32,7 @@ public enum StreamClassPhase
     STOPPED
 }
 
+
 /// <summary>
 /// The StreamClassPhase extension methods.
 /// </summary>
