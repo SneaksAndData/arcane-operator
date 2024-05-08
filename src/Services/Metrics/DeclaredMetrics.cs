@@ -9,26 +9,27 @@ namespace Arcane.Operator.Services.Metrics;
 
 public static class DeclaredMetrics
 {
+    private const string TAG_PREFIX = "arcane.sneaksanddata.com";
     public static string TrafficMetricName(this WatchEventType eventType) => $"objects.{eventType.ToString().ToLowerInvariant()}";
 
     public static SortedDictionary<string, string> GetMetricsTags(this IKubernetesObject<V1ObjectMeta> job) => new()
     {
-        { "namespace", job.Namespace() },
-        { "kind", job.Kind },
-        { "name", job.Name() },
+        { $"{TAG_PREFIX}/namespace", job.Namespace() },
+        { $"{TAG_PREFIX}/kind", job.Kind },
+        { $"{TAG_PREFIX}/name", job.Name() },
     };
 
     public static SortedDictionary<string, string> GetMetricsTags(this V1Job job) => new()
     {
-        { "namespace", job.Namespace() },
-        { "kind", job.GetStreamKind() },
-        { "streamId", job.GetStreamId() }
+        { $"{TAG_PREFIX}/namespace", job.Namespace() },
+        { $"{TAG_PREFIX}/kind", job.GetStreamKind() },
+        { $"{TAG_PREFIX}/streamId", job.GetStreamId() }
     };
 
     public static SortedDictionary<string, string> GetMetricsTags(this StreamClassOperatorResponse s) => new()
     {
-        { "namespace", s.StreamClass?.Namespace().ToLowerInvariant() },
-        { "kind", CodeExtensions.CamelCaseToSnakeCase(s.StreamClass?.KindRef ?? "unknown") },
-        { "phase", s.Phase.ToString().ToLowerInvariant() }
+        { $"{TAG_PREFIX}/namespace", s.StreamClass?.Namespace().ToLowerInvariant() },
+        { $"{TAG_PREFIX}/kind", CodeExtensions.CamelCaseToSnakeCase(s.StreamClass?.KindRef ?? "unknown") },
+        { $"{TAG_PREFIX}/phase", s.Phase.ToString().ToLowerInvariant() }
     };
 }
