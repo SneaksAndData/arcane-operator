@@ -49,23 +49,6 @@ public static class StreamClassPhaseExtensions
     }
 }
 
-
-/// <summary>
-/// The StreamClassPhase extension methods.
-/// </summary>
-public static class StreamClassPhaseExtensions
-{
-    /// <summary>
-    /// Returns True if the lifecycle phase is final.
-    /// </summary>
-    /// <param name="phase">Phase</param>
-    /// <returns></returns>
-    public static bool IsFinal(this StreamClassPhase phase)
-    {
-        return phase is StreamClassPhase.FAILED or StreamClassPhase.STOPPED;
-    }
-}
-
 /// <summary>
 /// Contains response from stream operator that can be used by other services inside the application
 /// </summary>

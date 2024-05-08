@@ -13,6 +13,7 @@ using Arcane.Operator.Models;
 using Arcane.Operator.Models.StreamClass.Base;
 using Arcane.Operator.Models.StreamDefinitions.Base;
 using Arcane.Operator.Models.StreamStatuses.StreamStatus.V1Beta1;
+using Arcane.Operator.Services.Base;
 using Arcane.Operator.Services.Maintenance;
 using Arcane.Operator.Services.Metrics;
 using Arcane.Operator.Services.Streams;
@@ -228,7 +229,7 @@ public class StreamingJobMaintenanceServiceTests : IClassFixture<ServiceFixture>
     {
         var metricsReporterConfiguration = Options.Create(new MetricsReporterConfiguration
         {
-            StreamClassStatusActorConfiguration = new StreamClassStatusActorConfiguration
+            StreamClassStatusActorConfiguration = new MetricsPublisherActorConfiguration
             {
                 InitialDelay = TimeSpan.FromSeconds(30),
                 UpdateInterval = TimeSpan.FromSeconds(10)
