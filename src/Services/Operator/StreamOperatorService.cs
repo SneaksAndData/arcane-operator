@@ -12,6 +12,7 @@ using Arcane.Operator.Models;
 using Arcane.Operator.Models.StreamClass.Base;
 using Arcane.Operator.Models.StreamDefinitions.Base;
 using Arcane.Operator.Services.Base;
+using Arcane.Operator.Services.Metrics;
 using Arcane.Operator.Services.Models;
 using k8s;
 using k8s.Models;
@@ -29,16 +30,19 @@ public class StreamOperatorService : IStreamOperatorService
     private readonly IStreamingJobOperatorService operatorService;
     private readonly IStreamDefinitionRepository streamDefinitionRepository;
     private readonly IStreamClass streamClass;
+    private readonly IMetricsReporter metricsReporter;
 
     public StreamOperatorService(IStreamClass streamClass,
         IStreamingJobOperatorService operatorService,
         IStreamDefinitionRepository streamDefinitionRepository,
+        IMetricsReporter metricsReporter,
         ILogger<StreamOperatorService> logger)
     {
         this.streamClass = streamClass;
         this.streamDefinitionRepository = streamDefinitionRepository;
         this.operatorService = operatorService;
         this.logger = logger;
+        this.metricsReporter = metricsReporter;
     }
 
     public IRunnableGraph<Task> GetStreamDefinitionEventsGraph(CancellationToken cancellationToken)
@@ -53,6 +57,7 @@ public class StreamOperatorService : IStreamOperatorService
             JsonSerializer.Serialize(request));
         return this.streamDefinitionRepository.GetEvents(request, this.streamClass.MaxBufferCapacity)
             .Via(cancellationToken.AsFlow<ResourceEvent<IStreamDefinition>>(true))
+            .Select(this.metricsReporter.ReportTrafficMetrics)
             .SelectAsync(parallelism, this.OnEvent)
             .WithAttributes(ActorAttributes.CreateSupervisionStrategy(this.HandleError))
             .CollectOption()

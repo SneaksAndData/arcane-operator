@@ -1,4 +1,5 @@
 using k8s;
+using k8s.Models;
 
 namespace Arcane.Operator.Services.Models;
 
@@ -8,4 +9,5 @@ namespace Arcane.Operator.Services.Models;
 /// <param name="EventType">The type of the event</param>
 /// <param name="kubernetesObject">Deserialized object</param>
 /// <typeparam name="TUpdatedObject">Object type</typeparam>
-public record ResourceEvent<TUpdatedObject>(WatchEventType EventType, TUpdatedObject kubernetesObject);
+public record ResourceEvent<TUpdatedObject>(WatchEventType EventType, TUpdatedObject kubernetesObject)
+    where TUpdatedObject : IKubernetesObject<V1ObjectMeta>;

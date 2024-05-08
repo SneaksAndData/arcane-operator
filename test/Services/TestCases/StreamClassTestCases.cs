@@ -15,7 +15,8 @@ public static class StreamClassTestCases
         },
         Metadata = new V1ObjectMeta
         {
-            Name = "StreamClass"
+            Name = "StreamClass",
+            NamespaceProperty = "default"
         }
     };
 }
