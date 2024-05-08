@@ -14,7 +14,6 @@ public class MetricsPublisherActorConfiguration
     /// </summary>
     public TimeSpan UpdateInterval { get; set; }
 
-
     /// <summary>
     /// Initial delay for the first metrics publication
     /// </summary>
