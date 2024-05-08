@@ -142,7 +142,7 @@ public class StreamClassOperatorServiceTests : IClassFixture<ServiceFixture>, IC
             .Returns(new CustomResourceConfiguration());
         var metricsReporterConfiguration = Options.Create(new MetricsReporterConfiguration
         {
-            StreamClassStatusActorConfiguration = new MetricsPublisherActorConfiguration 
+            StreamClassStatusActorConfiguration = new MetricsPublisherActorConfiguration
             {
                 InitialDelay = TimeSpan.FromSeconds(30),
                 UpdateInterval = TimeSpan.FromSeconds(10)
