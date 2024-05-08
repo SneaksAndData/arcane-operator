@@ -47,7 +47,6 @@ public static class StreamClassPhaseExtensions
     {
         return phase is StreamClassPhase.FAILED or StreamClassPhase.STOPPED;
     }
-    
 }
 
 /// <summary>
