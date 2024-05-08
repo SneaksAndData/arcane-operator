@@ -1,10 +1,12 @@
 ﻿using Akka;
 using Akka.Streams.Dsl;
 using Arcane.Operator.Services.Models;
+using k8s;
+using k8s.Models;
 
 namespace Arcane.Operator.Services.Base;
 
-public interface IReactiveResourceCollection<TResourceType>
+public interface IReactiveResourceCollection<TResourceType> where TResourceType : IKubernetesObject<V1ObjectMeta>
 {
     /// <summary>
     /// Subscribe to a stream class updates

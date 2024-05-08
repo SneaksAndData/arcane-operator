@@ -1,11 +1,9 @@
 ﻿using Akka.Streams;
-using Arcane.Operator.Configurations;
-using Arcane.Operator.Configurations.Common;
 using Arcane.Operator.Models.StreamClass.Base;
-using Arcane.Operator.Models.StreamDefinitions;
 using Arcane.Operator.Services.Base;
+using Arcane.Operator.Services.Metrics;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
+using Snd.Sdk.Metrics.Base;
 
 namespace Arcane.Operator.Services.Operator;
 
@@ -16,9 +14,11 @@ public class StreamOperatorServiceWorkerFactory : IStreamOperatorServiceWorkerFa
     private readonly IMaterializer materializer;
     private readonly IStreamingJobOperatorService jobOperatorService;
     private readonly IStreamDefinitionRepository streamDefinitionRepository;
+    private readonly IMetricsReporter metricsService;
 
     public StreamOperatorServiceWorkerFactory(ILoggerFactory loggerFactory,
         IMaterializer materializer,
+        IMetricsReporter metricsService,
         IStreamingJobOperatorService jobOperatorService,
         IStreamDefinitionRepository streamDefinitionRepository)
     {
@@ -26,6 +26,7 @@ public class StreamOperatorServiceWorkerFactory : IStreamOperatorServiceWorkerFa
         this.materializer = materializer;
         this.jobOperatorService = jobOperatorService;
         this.streamDefinitionRepository = streamDefinitionRepository;
+        this.metricsService = metricsService;
     }
 
     /// <inheritdoc cref="IStreamOperatorServiceWorkerFactory.Create"/>
@@ -35,6 +36,7 @@ public class StreamOperatorServiceWorkerFactory : IStreamOperatorServiceWorkerFa
             streamClass,
             this.jobOperatorService,
             this.streamDefinitionRepository,
+            this.metricsService,
             this.loggerFactory.CreateLogger<StreamOperatorService>()
         );
         return new StreamOperatorServiceWorker(

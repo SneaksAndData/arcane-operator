@@ -10,6 +10,7 @@ using Arcane.Operator.Extensions;
 using Arcane.Operator.Models;
 using Arcane.Operator.Models.StreamDefinitions.Base;
 using Arcane.Operator.Services.Base;
+using Arcane.Operator.Services.Metrics;
 using k8s;
 using k8s.Models;
 using Microsoft.Extensions.Logging;
@@ -29,11 +30,13 @@ public class StreamingJobMaintenanceService : IStreamingJobMaintenanceService
     private readonly ILogger<StreamingJobMaintenanceService> logger;
     private readonly IStreamingJobOperatorService operatorService;
     private readonly IStreamDefinitionRepository streamDefinitionRepository;
+    private readonly IMetricsReporter metricsReporter;
 
     public StreamingJobMaintenanceService(
         ILogger<StreamingJobMaintenanceService> logger,
         IOptions<StreamingJobMaintenanceServiceConfiguration> options,
         IKubeCluster kubeCluster,
+        IMetricsReporter metricsReporter,
         IStreamDefinitionRepository streamDefinitionRepository,
         IStreamingJobOperatorService operatorService)
     {
@@ -42,6 +45,7 @@ public class StreamingJobMaintenanceService : IStreamingJobMaintenanceService
         this.streamDefinitionRepository = streamDefinitionRepository;
         this.operatorService = operatorService;
         this.logger = logger;
+        this.metricsReporter = metricsReporter;
     }
 
 
@@ -51,6 +55,7 @@ public class StreamingJobMaintenanceService : IStreamingJobMaintenanceService
             .StreamJobEvents(this.operatorService.StreamJobNamespace, this.configuration.MaxBufferCapacity,
                 OverflowStrategy.Fail)
             .Via(cancellationToken.AsFlow<(WatchEventType, V1Job)>(true))
+            .Select(this.metricsReporter.ReportTrafficMetrics)
             .SelectAsync(parallelism, this.OnJobEvent)
             .CollectOption()
             .SelectAsync(parallelism, this.HandleStreamOperatorResponse)
