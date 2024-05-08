@@ -7,5 +7,5 @@ namespace Arcane.Operator.Configurations;
 /// </summary>
 public class MetricsReporterConfiguration
 {
-    public MetricsPublisherActorConfiguration StreamClassStatusActorConfiguration { get; set; }
+    public MetricsPublisherActorConfiguration MetricsPublisherActorConfiguration { get; set; }
 };

@@ -229,7 +229,7 @@ public class StreamingJobMaintenanceServiceTests : IClassFixture<ServiceFixture>
     {
         var metricsReporterConfiguration = Options.Create(new MetricsReporterConfiguration
         {
-            StreamClassStatusActorConfiguration = new MetricsPublisherActorConfiguration
+            MetricsPublisherActorConfiguration = new MetricsPublisherActorConfiguration
             {
                 InitialDelay = TimeSpan.FromSeconds(30),
                 UpdateInterval = TimeSpan.FromSeconds(10)
