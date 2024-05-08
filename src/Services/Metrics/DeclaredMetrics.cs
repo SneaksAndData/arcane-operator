@@ -9,6 +9,9 @@ namespace Arcane.Operator.Services.Metrics;
 
 public static class DeclaredMetrics
 {
+    /// <summary>
+    /// Prefix for metrics published by the Arcane Operator
+    /// </summary>
     private const string TAG_PREFIX = "arcane.sneaksanddata.com";
     public static string TrafficMetricName(this WatchEventType eventType) => $"objects.{eventType.ToString().ToLowerInvariant()}";
 

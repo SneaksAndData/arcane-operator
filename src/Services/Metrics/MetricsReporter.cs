@@ -1,6 +1,7 @@
 ﻿using Akka.Actor;
 using Arcane.Operator.Configurations;
 using Arcane.Operator.Models;
+using Arcane.Operator.Services.Base;
 using Arcane.Operator.Services.Metrics.Actors;
 using Arcane.Operator.Services.Models;
 using k8s;
