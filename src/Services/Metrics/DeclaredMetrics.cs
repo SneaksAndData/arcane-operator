@@ -26,13 +26,13 @@ public static class DeclaredMetrics
     {
         { $"{TAG_PREFIX}/namespace", job.Namespace() },
         { $"{TAG_PREFIX}/kind", job.GetStreamKind() },
-        { $"{TAG_PREFIX}/streamId", job.GetStreamId() }
+        { $"{TAG_PREFIX}/stream_id", job.GetStreamId() }
     };
 
     public static SortedDictionary<string, string> GetMetricsTags(this StreamClassOperatorResponse s) => new()
     {
         { $"{TAG_PREFIX}/namespace", s.StreamClass?.Namespace().ToLowerInvariant() },
-        { $"{TAG_PREFIX}/kindRef", CodeExtensions.CamelCaseToSnakeCase(s.StreamClass?.KindRef ?? "unknown") },
+        { $"{TAG_PREFIX}/kind_ref", CodeExtensions.CamelCaseToSnakeCase(s.StreamClass?.KindRef ?? "unknown") },
         { $"{TAG_PREFIX}/kind", CodeExtensions.CamelCaseToSnakeCase(s.StreamClass?.Kind ?? "unknown") },
         { $"{TAG_PREFIX}/phase", s.Phase.ToString().ToLowerInvariant() }
     };
