@@ -30,7 +30,7 @@ data:
         }
       },
       "MetricsReporterConfiguration": {
-        "StreamClassStatusActorConfiguration": {
+        "MetricsPublisherActorConfiguration": {
           "UpdateInterval": "00:00:10",
           "InitialDelay": "00:00:10"
         }

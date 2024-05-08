@@ -1,6 +1,7 @@
 ﻿using Akka.Actor;
 using Arcane.Operator.Configurations;
 using Arcane.Operator.Models;
+using Arcane.Operator.Services.Metrics.Actors;
 using Arcane.Operator.Services.Models;
 using k8s;
 using k8s.Models;
@@ -21,10 +22,10 @@ public class MetricsReporter : IMetricsReporter
         IOptions<MetricsReporterConfiguration> metricsReporterConfiguration)
     {
         this.metricsService = metricsService;
-        this.statusActor = actorSystem.ActorOf(Props.Create(() => new StreamClassServiceActor(
+        this.statusActor = actorSystem.ActorOf(Props.Create(() => new MetricsPublisherActor(
                 metricsReporterConfiguration.Value.StreamClassStatusActorConfiguration,
                 metricsService)),
-            nameof(StreamClassServiceActor));
+            nameof(MetricsPublisherActor));
     }
 
     /// <inheritdoc cref="IMetricsReporter.ReportStatusMetrics"/>
