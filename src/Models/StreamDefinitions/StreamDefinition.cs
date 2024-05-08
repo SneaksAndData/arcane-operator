@@ -64,7 +64,7 @@ public class StreamDefinition : IStreamDefinition
     /// </summary>
     [JsonIgnore]
     public string StreamId => this.Metadata.Name;
-    
+
     /// <inheritdoc cref="IStreamDefinition"/>
     public IEnumerable<V1EnvFromSource> ToV1EnvFromSources(IStreamClass streamDefinition) =>
         this.Spec.EnumerateObject()
@@ -117,7 +117,7 @@ public class StreamDefinition : IStreamDefinition
     {
         return isBackfilling ? this.BackfillingJobTemplateRef : this.JobTemplateRef;
     }
-    
+
     private V1TypedLocalObjectReference JobTemplateRef =>
         this.Spec.GetProperty("jobTemplateRef").Deserialize<V1TypedLocalObjectReference>();
 
