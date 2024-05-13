@@ -39,7 +39,7 @@ public class StreamingJobMaintenanceServiceTests : IClassFixture<LoggerFixture>
     private readonly ActorSystem actorSystem = ActorSystem.Create(nameof(StreamingJobMaintenanceServiceTests));
     private readonly LoggerFixture loggerFixture;
     private readonly ActorMaterializer materializer;
-    
+
     // Mocks
     private readonly Mock<IKubeCluster> kubeClusterMock = new();
     private readonly Mock<IStreamingJobOperatorService> streamingJobOperatorServiceMock = new();
@@ -143,16 +143,16 @@ public class StreamingJobMaintenanceServiceTests : IClassFixture<LoggerFixture>
         {
             (WatchEventType.Deleted, job)
         });
-this.kubeClusterMock
-            .Setup(cluster =>
-                cluster.StreamJobEvents(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<OverflowStrategy>(),
-                    It.IsAny<TimeSpan?>()))
-            .Returns(mockSource);
+        this.kubeClusterMock
+                    .Setup(cluster =>
+                        cluster.StreamJobEvents(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<OverflowStrategy>(),
+                            It.IsAny<TimeSpan?>()))
+                    .Returns(mockSource);
 
-this.streamDefinitionRepositoryMock
-            .Setup(service =>
-                service.GetStreamDefinition(job.Namespace(), job.GetStreamKind(), job.GetStreamId()))
-            .ReturnsAsync((streamClass.AsOption(), streamDefinition.AsOption()));
+        this.streamDefinitionRepositoryMock
+                    .Setup(service =>
+                        service.GetStreamDefinition(job.Namespace(), job.GetStreamKind(), job.GetStreamId()))
+                    .ReturnsAsync((streamClass.AsOption(), streamDefinition.AsOption()));
 
 
         var service = this.CreateService();

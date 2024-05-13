@@ -37,7 +37,7 @@ public class StreamClassOperatorServiceTests : IClassFixture<LoggerFixture>, ICl
     private readonly ActorSystem actorSystem = ActorSystem.Create(nameof(StreamClassOperatorServiceTests));
     private readonly LoggerFixture loggerFixture;
     private readonly ActorMaterializer materializer;
-    
+
     // Mocks
     private readonly Mock<IKubeCluster> kubeClusterMock = new();
     private readonly Mock<IStreamingJobOperatorService> streamingJobOperatorServiceMock = new();
@@ -45,10 +45,10 @@ public class StreamClassOperatorServiceTests : IClassFixture<LoggerFixture>, ICl
 
     public StreamClassOperatorServiceTests(LoggerFixture loggerFixture)
     {
-       this.loggerFixture = loggerFixture;
-       this.materializer = this.actorSystem.Materializer();
+        this.loggerFixture = loggerFixture;
+        this.materializer = this.actorSystem.Materializer();
     }
-    
+
     [Fact]
     public async Task TestStreamAdded()
     {
