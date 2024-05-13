@@ -1,4 +1,5 @@
-﻿using System.Threading;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Threading;
 using System.Threading.Tasks;
 using Akka.Streams;
 using Arcane.Operator.Services.Base;
@@ -7,6 +8,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Arcane.Operator.Services.Operator;
 
+[ExcludeFromCodeCoverage(Justification = "Trivial")]
 public class HostedStreamingClassOperatorService : BackgroundService
 {
     private readonly ILogger<HostedStreamingClassOperatorService> logger;
@@ -28,7 +30,7 @@ public class HostedStreamingClassOperatorService : BackgroundService
         this.logger.LogInformation("Activated {service}", nameof(HostedStreamingClassOperatorService));
         while (!stoppingToken.IsCancellationRequested)
         {
-            this.logger.LogInformation("Activated GetStreamClassEventsGraph");
+            this.logger.LogInformation("Started listening for stream class events");
             await this.streamClassOperatorService
                 .GetStreamClassEventsGraph(stoppingToken)
                 .Run(this.materializer);
