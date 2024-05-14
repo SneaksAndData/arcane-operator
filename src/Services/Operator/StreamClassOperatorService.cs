@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Akka.Streams;
@@ -11,14 +10,12 @@ using Arcane.Operator.Configurations;
 using Arcane.Operator.Models;
 using Arcane.Operator.Models.StreamClass.Base;
 using Arcane.Operator.Services.Base;
-using Arcane.Operator.Services.Metrics;
 using Arcane.Operator.Services.Models;
 using k8s;
 using k8s.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Snd.Sdk.ActorProviders;
-using Snd.Sdk.Metrics.Base;
 
 namespace Arcane.Operator.Services.Operator;
 
@@ -82,7 +79,6 @@ public class StreamClassOperatorService : IStreamClassOperatorService
         return resourceEvent switch
         {
             (WatchEventType.Added, var streamClass) => this.OnAdded(streamClass),
-            (WatchEventType.Modified, var streamClass) => this.OnModified(streamClass),
             (WatchEventType.Deleted, var streamClass) => this.OnDeleted(streamClass),
             _ => Option<StreamClassOperatorResponse>.None
         };
@@ -101,12 +97,6 @@ public class StreamClassOperatorService : IStreamClassOperatorService
     private Option<StreamClassOperatorResponse> OnAdded(IStreamClass streamClass) => this.StartStreamWorker(streamClass);
 
     private Option<StreamClassOperatorResponse> OnDeleted(IStreamClass streamClass) => this.StopStreamWorker(streamClass);
-
-    private Option<StreamClassOperatorResponse> OnModified(IStreamClass streamClass)
-    {
-        this.StopStreamWorker(streamClass);
-        return this.StartStreamWorker(streamClass);
-    }
 
     private Option<StreamClassOperatorResponse> StartStreamWorker(IStreamClass streamClass)
     {
