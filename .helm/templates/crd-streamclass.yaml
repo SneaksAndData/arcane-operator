@@ -23,7 +23,7 @@ spec:
           description: The plural name of the stream class to watch for.
           type: string
           jsonPath: .spec.pluralName
-        - name: ApiGroup
+        - name: ApiGroupRef
           description: The api group of the stream class to watch for.
           type: string
           jsonPath: .spec.apiGroup
