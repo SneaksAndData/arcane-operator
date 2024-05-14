@@ -59,17 +59,17 @@ public class StreamOperatorService : IStreamOperatorService
             TimeSpan.FromSeconds(10),
             TimeSpan.FromMinutes(3),
             0.2);
-        
+
         var eventsSource = this.streamDefinitionRepository.GetEvents(request, this.streamClass.MaxBufferCapacity)
             .RecoverWithRetries(exception =>
             {
-                if (exception is HttpOperationException {Response.StatusCode: System.Net.HttpStatusCode.NotFound })
+                if (exception is HttpOperationException { Response.StatusCode: System.Net.HttpStatusCode.NotFound })
                 {
                     this.logger.LogWarning("The resource definition {@streamClass} not found", request);
                 }
                 throw exception;
             }, 1);
-        
+
         return RestartSource.OnFailuresWithBackoff(() => eventsSource, restartSettings)
             .Via(cancellationToken.AsFlow<ResourceEvent<IStreamDefinition>>(true))
             .Select(this.metricsReporter.ReportTrafficMetrics)
