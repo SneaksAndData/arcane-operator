@@ -50,17 +50,12 @@ public class StreamingJobOperatorService : IStreamingJobOperatorService
             });
     }
 
-    public Task<Option<StreamOperatorResponse>> StartRegisteredStream(IStreamDefinition streamDefinition, bool fullLoad,
+    public Task<Option<StreamOperatorResponse>> StartRegisteredStream(IStreamDefinition streamDefinition, bool isBackfilling,
         IStreamClass streamClass)
     {
-        var templateRefKind = fullLoad
-            ? streamDefinition.ReloadingJobTemplateRef.Kind
-            : streamDefinition.JobTemplateRef.Kind;
-        var templateRefName = fullLoad
-            ? streamDefinition.ReloadingJobTemplateRef.Name
-            : streamDefinition.JobTemplateRef.Name;
+        var template = streamDefinition.GetJobTemplate(isBackfilling);
         return this.streamingJobTemplateRepository
-            .GetStreamingJobTemplate(templateRefKind, streamDefinition.Namespace(), templateRefName)
+            .GetStreamingJobTemplate(template.Kind, streamDefinition.Namespace(), template.Name)
             .Map(jobTemplate =>
             {
                 if (!jobTemplate.HasValue)
@@ -68,17 +63,17 @@ public class StreamingJobOperatorService : IStreamingJobOperatorService
                     return Task.FromResult(StreamOperatorResponse.OperationFailed(streamDefinition.Metadata.Namespace(),
                             streamDefinition.Kind,
                             streamDefinition.StreamId,
-                            $"Failed to find job template with kind {templateRefKind} and name {templateRefName}")
+                            $"Failed to find job template with kind {template.Kind} and name {template.Name}")
                         .AsOption());
                 }
 
                 var job = jobTemplate
                     .Value
                     .GetJob()
-                    .WithStreamingJobLabels(streamDefinition.StreamId, fullLoad, streamDefinition.Kind)
+                    .WithStreamingJobLabels(streamDefinition.StreamId, isBackfilling, streamDefinition.Kind)
                     .WithStreamingJobAnnotations(streamDefinition.GetConfigurationChecksum())
                     .WithCustomEnvironment(streamDefinition.ToV1EnvFromSources(streamClass))
-                    .WithCustomEnvironment(streamDefinition.ToEnvironment(fullLoad, streamClass))
+                    .WithCustomEnvironment(streamDefinition.ToEnvironment(isBackfilling, streamClass))
                     .WithOwnerReference(streamDefinition)
                     .WithName(streamDefinition.StreamId);
                 this.logger.LogInformation("Starting a new stream job with an id {streamId}",
@@ -86,7 +81,7 @@ public class StreamingJobOperatorService : IStreamingJobOperatorService
                 return this.kubernetesService
                     .SendJob(job, streamDefinition.Metadata.Namespace(), CancellationToken.None)
                     .TryMap(
-                        _ => fullLoad
+                        _ => isBackfilling
                             ? StreamOperatorResponse.Reloading(streamDefinition.Metadata.Namespace(),
                                 streamDefinition.Kind,
                                 streamDefinition.StreamId)
@@ -108,14 +103,6 @@ public class StreamingJobOperatorService : IStreamingJobOperatorService
             .Map(maybeSi
                 => maybeSi.Select(job
                     => StreamOperatorResponse.Restarting(this.StreamJobNamespace, job.GetStreamKind(), streamId)));
-    }
-
-    public Task<Option<StreamOperatorResponse>> RequestStreamingJobTermination(string streamId)
-    {
-        return this.SetStreamingJobAnnotation(streamId, Annotations.TERMINATE_REQUESTED_STATE_ANNOTATION_VALUE)
-            .Map(maybeSi
-                => maybeSi.Select(job
-                    => StreamOperatorResponse.Terminating(this.StreamJobNamespace, job.GetStreamKind(), streamId)));
     }
 
     public Task<Option<StreamOperatorResponse>> RequestStreamingJobReload(string streamId)

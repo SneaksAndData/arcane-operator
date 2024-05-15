@@ -74,7 +74,7 @@ public class StreamOperatorServiceTests : IClassFixture<LoggerFixture>
     [MemberData(nameof(GenerateSynchronizationTestCases))]
     public async Task TestHandleAddedStreamEvent(WatchEventType eventType,
         StreamDefinition streamDefinition,
-        bool expectFullLoad,
+        bool expectBackfill,
         bool expectRestart,
         bool streamingJobExists,
         bool expectTermination)
@@ -96,7 +96,7 @@ public class StreamOperatorServiceTests : IClassFixture<LoggerFixture>
         streamingJobOperatorServiceMock.Verify(service
                 => service.StartRegisteredStream(
                     It.IsAny<StreamDefinition>(), true, It.IsAny<IStreamClass>()),
-            Times.Exactly(expectFullLoad ? 1 : 0));
+            Times.Exactly(expectBackfill ? 1 : 0));
 
         streamingJobOperatorServiceMock.Verify(service
                 => service.RequestStreamingJobRestart(streamDefinition.StreamId),
