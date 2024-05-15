@@ -53,7 +53,7 @@ public class StreamingJobMaintenanceServiceTests : IClassFixture<LoggerFixture>
 
     [Theory]
     [MemberData(nameof(GenerateCompletedJobTestCases))]
-    public async Task HandleCompletedJob(V1Job job, bool definitionExists, bool fullLoad, bool expectRestart)
+    public async Task HandleCompletedJob(V1Job job, bool definitionExists, bool isBackfilling, bool expectRestart)
     {
         // Arrange
         var mockSource = Source.From(new List<(WatchEventType, V1Job)>
@@ -76,8 +76,7 @@ public class StreamingJobMaintenanceServiceTests : IClassFixture<LoggerFixture>
 
         // Assert
         this.streamingJobOperatorServiceMock
-            .Verify(s => s.StartRegisteredStream(It.IsAny<IStreamDefinition>(), fullLoad, It.IsAny<IStreamClass>()),
-                Times.Exactly(definitionExists && expectRestart ? 1 : 0));
+            .Verify(s => s.StartRegisteredStream(It.IsAny<IStreamDefinition>(), isBackfilling, It.IsAny<IStreamClass>()), Times.Exactly(definitionExists && expectRestart ? 1 : 0));
     }
 
     [Theory]
@@ -136,7 +135,7 @@ public class StreamingJobMaintenanceServiceTests : IClassFixture<LoggerFixture>
     [Theory]
     [MemberData(nameof(GenerateDeletedJobTestCases))]
     public async Task HandleDeletedJob(V1Job job, IStreamClass streamClass, IStreamDefinition streamDefinition, bool expectToRestart,
-        bool expectFullLoad)
+        bool expectBackfill)
     {
         // Arrange
         var mockSource = Source.From(new List<(WatchEventType, V1Job)>
@@ -161,7 +160,7 @@ public class StreamingJobMaintenanceServiceTests : IClassFixture<LoggerFixture>
         await service.GetJobEventsGraph(CancellationToken.None).Run(this.materializer);
 
         this.streamingJobOperatorServiceMock.Verify(s =>
-                s.StartRegisteredStream(streamDefinition, expectFullLoad, It.IsAny<IStreamClass>()),
+                s.StartRegisteredStream(streamDefinition, expectBackfill, It.IsAny<IStreamClass>()),
             Times.Exactly(expectToRestart ? 1 : 0)
         );
     }
