@@ -1,7 +1,7 @@
 ﻿using System;
-using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using Akka;
 using Akka.Streams;
 using Akka.Streams.Dsl;
 using Akka.Streams.Supervision;
@@ -12,9 +12,9 @@ using Arcane.Operator.Models;
 using Arcane.Operator.Models.StreamClass.Base;
 using Arcane.Operator.Models.StreamDefinitions.Base;
 using Arcane.Operator.Services.Base;
-using Arcane.Operator.Services.Metrics;
 using Arcane.Operator.Services.Models;
 using k8s;
+using k8s.Autorest;
 using k8s.Models;
 using Microsoft.Extensions.Logging;
 using Snd.Sdk.ActorProviders;
@@ -53,9 +53,24 @@ public class StreamOperatorService : IStreamOperatorService
             this.streamClass.VersionRef,
             this.streamClass.PluralNameRef
         );
-        this.logger.LogInformation("Start listening to event stream for {streamClass}",
-            JsonSerializer.Serialize(request));
-        return this.streamDefinitionRepository.GetEvents(request, this.streamClass.MaxBufferCapacity)
+        this.logger.LogInformation("Start listening to event stream for {@streamClass}", request);
+
+        var restartSettings = RestartSettings.Create(
+            TimeSpan.FromSeconds(10),
+            TimeSpan.FromMinutes(3),
+            0.2);
+
+        var eventsSource = this.streamDefinitionRepository.GetEvents(request, this.streamClass.MaxBufferCapacity)
+            .RecoverWithRetries(exception =>
+            {
+                if (exception is HttpOperationException { Response.StatusCode: System.Net.HttpStatusCode.NotFound })
+                {
+                    this.logger.LogWarning("The resource definition {@streamClass} not found", request);
+                }
+                throw exception;
+            }, 1);
+
+        return RestartSource.OnFailuresWithBackoff(() => eventsSource, restartSettings)
             .Via(cancellationToken.AsFlow<ResourceEvent<IStreamDefinition>>(true))
             .Select(this.metricsReporter.ReportTrafficMetrics)
             .SelectAsync(parallelism, this.OnEvent)
