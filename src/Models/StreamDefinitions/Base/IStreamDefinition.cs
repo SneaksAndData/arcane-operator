@@ -58,4 +58,12 @@ public interface IStreamDefinition : IKubernetesObject<V1ObjectMeta>
     /// <param name="isBackfilling">True if stream is should run in backfill mode, false otherwise</param>
     /// <returns>Reference to the JobTemplate custom Kubernetes object</returns>
     public V1TypedLocalObjectReference GetJobTemplate(bool isBackfilling);
+
+    /// <summary>
+    /// Deconstruct the stream definition into its parts for pattern matching
+    /// </summary>
+    /// <param name="nameSpace">Namespace where stream definition is located</param>
+    /// <param name="kind">Stream definition object kind</param>
+    /// <param name="streamId">Stream ID of the stream definition</param>
+    public void Deconstruct(out string nameSpace, out string kind, out string streamId);
 }

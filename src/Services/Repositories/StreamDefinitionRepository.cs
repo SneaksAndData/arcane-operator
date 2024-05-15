@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Akka;
@@ -12,6 +13,7 @@ using Arcane.Operator.Models.StreamDefinitions;
 using Arcane.Operator.Models.StreamDefinitions.Base;
 using Arcane.Operator.Models.StreamStatuses.StreamStatus.V1Beta1;
 using Arcane.Operator.Services.Base;
+using Arcane.Operator.Services.Commands;
 using Arcane.Operator.Services.Models;
 using Microsoft.Extensions.Logging;
 using Snd.Sdk.Kubernetes.Base;
@@ -54,8 +56,7 @@ public class StreamDefinitionRepository : IStreamDefinitionRepository
             }
         );
 
-    public Task<Option<IStreamDefinition>> SetStreamStatus(string nameSpace, string kind, string streamId,
-        V1Beta1StreamStatus streamStatus) =>
+    public Task<Option<IStreamDefinition>> SetStreamStatus(string nameSpace, string kind, string streamId, V1Beta1StreamStatus streamStatus) =>
         this.streamClassRepository.Get(nameSpace, kind).FlatMap(crdConf =>
         {
             if (crdConf is { HasValue: false })
@@ -93,24 +94,6 @@ public class StreamDefinitionRepository : IStreamDefinitionRepository
             return this.kubeCluster
                 .RemoveObjectAnnotation(crdConf.Value.ToNamespacedCrd(),
                     Annotations.STATE_ANNOTATION_KEY,
-                    streamId,
-                    nameSpace)
-                .Map(result => ((JsonElement)result).AsOptionalStreamDefinition());
-        });
-
-    public Task<Option<IStreamDefinition>> SetCrashLoopAnnotation(string nameSpace, string kind, string streamId) =>
-        this.streamClassRepository.Get(nameSpace, kind).FlatMap(crdConf =>
-        {
-            if (crdConf is { HasValue: false })
-            {
-                this.logger.LogError("Failed to get configuration for kind {kind}", kind);
-                return Task.FromResult(Option<IStreamDefinition>.None);
-            }
-
-            return this.kubeCluster
-                .AnnotateObject(crdConf.Value.ToNamespacedCrd(),
-                    Annotations.STATE_ANNOTATION_KEY,
-                    Annotations.CRASH_LOOP_STATE_ANNOTATION_VALUE,
                     streamId,
                     nameSpace)
                 .Map(result => ((JsonElement)result).AsOptionalStreamDefinition());

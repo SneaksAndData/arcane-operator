@@ -37,13 +37,4 @@ public interface IStreamDefinitionRepository : IReactiveResourceCollection<IStre
     /// <param name="streamId">Stream identifier</param>
     /// <returns>IStreamDefinition or None, it it does not exit</returns>
     public Task<Option<IStreamDefinition>> RemoveReloadingAnnotation(string nameSpace, string kind, string streamId);
-
-    /// <summary>
-    /// Set suspended annotation on stream definition for the given stream id
-    /// </summary>
-    /// <param name="nameSpace">Stream definition namespace</param>
-    /// <param name="kind">Stream definition kind to update</param>
-    /// <param name="streamId">Stream identifier</param>
-    /// <returns>IStreamDefinition or None, it it does not exit</returns>
-    public Task<Option<IStreamDefinition>> SetCrashLoopAnnotation(string nameSpace, string kind, string streamId);
 }

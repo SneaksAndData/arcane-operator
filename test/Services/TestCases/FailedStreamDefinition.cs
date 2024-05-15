@@ -64,4 +64,9 @@ public class FailedStreamDefinition : IStreamDefinition
     {
         throw this.exception;
     }
+
+    public void Deconstruct(out string nameSpace, out string kind, out string streamId)
+    {
+        throw this.exception;
+    }
 }

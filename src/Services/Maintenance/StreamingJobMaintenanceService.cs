@@ -4,13 +4,10 @@ using System.Threading.Tasks;
 using Akka.Streams;
 using Akka.Streams.Dsl;
 using Akka.Util;
-using Akka.Util.Extensions;
 using Arcane.Operator.Configurations;
 using Arcane.Operator.Extensions;
-using Arcane.Operator.Models;
-using Arcane.Operator.Models.StreamDefinitions.Base;
 using Arcane.Operator.Services.Base;
-using Arcane.Operator.Services.Metrics;
+using Arcane.Operator.Services.Commands;
 using k8s;
 using k8s.Models;
 using Microsoft.Extensions.Logging;
@@ -31,6 +28,8 @@ public class StreamingJobMaintenanceService : IStreamingJobMaintenanceService
     private readonly IStreamingJobOperatorService operatorService;
     private readonly IStreamDefinitionRepository streamDefinitionRepository;
     private readonly IMetricsReporter metricsReporter;
+    private readonly ICommandHandler<UpdateStatusCommand> streamDefinitionCommandHandler;
+    private readonly ICommandHandler<StreamingJobCommand> streamingJobCommandHandler;
 
     public StreamingJobMaintenanceService(
         ILogger<StreamingJobMaintenanceService> logger,
@@ -38,6 +37,8 @@ public class StreamingJobMaintenanceService : IStreamingJobMaintenanceService
         IKubeCluster kubeCluster,
         IMetricsReporter metricsReporter,
         IStreamDefinitionRepository streamDefinitionRepository,
+        ICommandHandler<UpdateStatusCommand> streamDefinitionCommandHandler,
+        ICommandHandler<StreamingJobCommand> streamingJobCommandHandler,
         IStreamingJobOperatorService operatorService)
     {
         this.configuration = options.Value;
@@ -46,107 +47,70 @@ public class StreamingJobMaintenanceService : IStreamingJobMaintenanceService
         this.operatorService = operatorService;
         this.logger = logger;
         this.metricsReporter = metricsReporter;
+        this.streamDefinitionCommandHandler = streamDefinitionCommandHandler;
+        this.streamingJobCommandHandler = streamingJobCommandHandler;
     }
 
 
     public IRunnableGraph<Task> GetJobEventsGraph(CancellationToken cancellationToken)
     {
         return this.kubeCluster
-            .StreamJobEvents(this.operatorService.StreamJobNamespace, this.configuration.MaxBufferCapacity,
-                OverflowStrategy.Fail)
+            .StreamJobEvents(this.operatorService.StreamJobNamespace, this.configuration.MaxBufferCapacity, OverflowStrategy.Fail)
             .Via(cancellationToken.AsFlow<(WatchEventType, V1Job)>(true))
             .Select(this.metricsReporter.ReportTrafficMetrics)
             .SelectAsync(parallelism, this.OnJobEvent)
             .CollectOption()
-            .SelectAsync(parallelism, this.HandleStreamOperatorResponse)
-            .ToMaterialized(Sink.Ignore<Option<IStreamDefinition>>(), Keep.Right);
+            .ToMaterialized(Sink.ForEachAsync<KubernetesCommand>(parallelism, this.HandleCommand), Keep.Right);
     }
 
-    private Task<Option<StreamOperatorResponse>> OnJobEvent((WatchEventType, V1Job) valueTuple)
+    private Task<Option<KubernetesCommand>> OnJobEvent((WatchEventType, V1Job) valueTuple)
     {
         return valueTuple switch
         {
             (WatchEventType.Deleted, var job) => this.OnJobDelete(job),
-            (WatchEventType.Added, var job) => this.OnJobAdded(job),
-            (WatchEventType.Modified, var job) => this.OnJobModified(job),
-            _ => Task.FromResult(Option<StreamOperatorResponse>.None)
+            (WatchEventType.Modified, var job) => Task.FromResult(this.OnJobModified(job)),
+            _ => Task.FromResult(Option<KubernetesCommand>.None)
         };
     }
 
-    private Task<Option<StreamOperatorResponse>> OnJobModified(V1Job job)
+    private Option<KubernetesCommand> OnJobModified(V1Job job)
     {
         var streamId = job.GetStreamId();
         if (job.IsStopping())
         {
             this.logger.LogInformation("Streaming job for stream with id {streamId} is already stopping",
                 streamId);
-            return Task.FromResult(Option<StreamOperatorResponse>.None);
+            return Option<KubernetesCommand>.None;
         }
 
         if (job.IsReloadRequested() || job.IsRestartRequested())
         {
-            return this.operatorService.DeleteJob(job.GetStreamKind(), streamId);
+            return new StopJob(job.GetStreamKind(), streamId);
         }
 
-        return Task.FromResult(Option<StreamOperatorResponse>.None);
+        return Option<KubernetesCommand>.None;
     }
 
-    private Task<Option<StreamOperatorResponse>> OnJobAdded(V1Job job)
-    {
-        var streamId = job.GetStreamId();
-        if (job.IsReloading())
-        {
-            return Task.FromResult(StreamOperatorResponse.Reloading(job.Namespace(), job.GetStreamKind(), streamId)
-                .AsOption());
-        }
-
-        if (job.IsRunning())
-        {
-            return Task.FromResult(StreamOperatorResponse.Running(job.Namespace(), job.GetStreamKind(), streamId)
-                .AsOption());
-        }
-
-        this.logger.LogError(
-            "{handler} handler triggered for the streaming job {streamId}, but the job is not in a running state",
-            nameof(this.OnJobAdded), streamId);
-        return Task.FromResult(Option<StreamOperatorResponse>.None);
-    }
-
-    private Task<Option<StreamOperatorResponse>> OnJobDelete(V1Job job)
+    private Task<Option<KubernetesCommand>> OnJobDelete(V1Job job)
     {
         var isBackfilling = job.IsReloadRequested() || job.IsSchemaMismatch();
         return this.streamDefinitionRepository
             .GetStreamDefinition(job.Namespace(), job.GetStreamKind(), job.GetStreamId())
             .Map(maybeSd => maybeSd switch
             {
-                ({ HasValue: true }, { HasValue: true, Value: var sd }) when job.IsFailed()
-                    => this.streamDefinitionRepository
-                        .SetCrashLoopAnnotation(sd.Namespace(), sd.Kind, sd.StreamId)
-                        .Map(maybeUpdatedSd => maybeUpdatedSd.HasValue
-                            ? StreamOperatorResponse.CrashLoopDetected(maybeUpdatedSd.Value.Namespace(),
-                                    maybeUpdatedSd.Value.Kind,
-                                    maybeUpdatedSd.Value.StreamId)
-                                .AsOption()
-                            : Option<StreamOperatorResponse>.None),
-                (_, { HasValue: true, Value: var sd }) when sd.Suspended
-                    => Task.FromResult(
-                        StreamOperatorResponse.Suspended(sd.Namespace(), sd.Kind, sd.StreamId).AsOption()),
-                (_, { HasValue: true, Value: var sd }) when sd.CrashLoopDetected
-                    => Task.FromResult(StreamOperatorResponse.CrashLoopDetected(sd.Namespace(), sd.Kind, sd.StreamId)
-                        .AsOption()),
-                ({ HasValue: true, Value: var sc }, { HasValue: true, Value: var sd }) when !sd.Suspended
-                    => this.operatorService.StartRegisteredStream(sd, isBackfilling, sc),
-                (_, { HasValue: false })
-                    => Task.FromResult(Option<StreamOperatorResponse>.None),
+                ({ HasValue: true }, { HasValue: true, Value: var sd }) when job.IsFailed() => new CrashLoopDetected(sd),
+                (_, { HasValue: true, Value: var sd }) when sd.Suspended => new Suspended(sd),
+                (_, { HasValue: true, Value: var sd }) when sd.CrashLoopDetected => new CrashLoopDetected(sd),
+                ({ HasValue: true, Value: var sc }, { HasValue: true, Value: var sd }) when !sd.Suspended => new StartJob(sd, isBackfilling),
+                (_, { HasValue: false }) => Option<KubernetesCommand>.None,
                 _ => throw new ArgumentOutOfRangeException(nameof(maybeSd), maybeSd, null)
-            }).Flatten();
+            });
     }
 
-    private Task<Option<IStreamDefinition>> HandleStreamOperatorResponse(StreamOperatorResponse response)
+    private Task HandleCommand(KubernetesCommand response) => response switch
     {
-        return this.streamDefinitionRepository.SetStreamStatus(response.Namespace,
-            response.Kind,
-            response.Id,
-            response.ToStatus());
-    }
+        UpdateStatusCommand sdc => this.streamDefinitionCommandHandler.Handle(sdc),
+        StreamingJobCommand sjc => this.streamingJobCommandHandler.Handle(sjc),
+        _ => throw new ArgumentOutOfRangeException(nameof(response), response, null)
+    };
 }
