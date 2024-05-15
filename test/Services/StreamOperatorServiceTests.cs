@@ -28,6 +28,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
+using Snd.Sdk.Kubernetes.Base;
 using Snd.Sdk.Metrics.Base;
 using Xunit;
 using static Arcane.Operator.Tests.Services.TestCases.JobTestCases;
@@ -36,22 +37,21 @@ using FailedStreamDefinition = Arcane.Operator.Tests.Services.TestCases.FailedSt
 
 namespace Arcane.Operator.Tests.Services;
 
-public class StreamOperatorServiceTests : IClassFixture<ServiceFixture>, IClassFixture<LoggerFixture>,
-    IClassFixture<AkkaFixture>
+public class StreamOperatorServiceTests : IClassFixture<LoggerFixture>
 {
-    private readonly AkkaFixture akkaFixture;
+    // Akka service and test helpers
+    private readonly ActorSystem actorSystem = ActorSystem.Create(nameof(StreamClassOperatorServiceTests));
     private readonly LoggerFixture loggerFixture;
-    private readonly ServiceFixture serviceFixture;
-    private readonly ActorSystem actorSystem;
-    private readonly IMaterializer materializer;
+    private readonly ActorMaterializer materializer;
 
-    public StreamOperatorServiceTests(ServiceFixture serviceFixture, LoggerFixture loggerFixture,
-        AkkaFixture akkaFixture)
+    // Mocks
+    private readonly Mock<IKubeCluster> kubeClusterMock = new();
+    private readonly Mock<IStreamingJobOperatorService> streamingJobOperatorServiceMock = new();
+    private readonly Mock<IStreamDefinitionRepository> streamDefinitionRepositoryMock = new();
+
+    public StreamOperatorServiceTests(LoggerFixture loggerFixture)
     {
-        this.serviceFixture = serviceFixture;
         this.loggerFixture = loggerFixture;
-        this.akkaFixture = akkaFixture;
-        this.actorSystem = ActorSystem.Create(nameof(StreamingJobMaintenanceServiceTests));
         this.materializer = this.actorSystem.Materializer();
     }
 
@@ -80,9 +80,8 @@ public class StreamOperatorServiceTests : IClassFixture<ServiceFixture>, IClassF
         bool expectTermination)
     {
         // Arrange
-        this.serviceFixture.MockStreamingJobOperatorService.Invocations.Clear();
         this.SetupEventMock(eventType, streamDefinition);
-        this.serviceFixture.MockStreamingJobOperatorService
+        streamingJobOperatorServiceMock
             .Setup(service => service.GetStreamingJob(It.IsAny<string>()))
             .ReturnsAsync(streamingJobExists ? JobWithChecksum("checksum").AsOption() : Option<V1Job>.None);
 
@@ -90,25 +89,25 @@ public class StreamOperatorServiceTests : IClassFixture<ServiceFixture>, IClassF
         var sp = this.CreateServiceProvider();
         await sp.GetRequiredService<IStreamOperatorService>()
             .GetStreamDefinitionEventsGraph(CancellationToken.None)
-            .Run(this.akkaFixture.Materializer);
+            .Run(this.materializer);
 
         // Assert
 
-        this.serviceFixture.MockStreamingJobOperatorService.Verify(service
+        streamingJobOperatorServiceMock.Verify(service
                 => service.StartRegisteredStream(
                     It.IsAny<StreamDefinition>(), true, It.IsAny<IStreamClass>()),
             Times.Exactly(expectBackfill ? 1 : 0));
 
-        this.serviceFixture.MockStreamingJobOperatorService.Verify(service
+        streamingJobOperatorServiceMock.Verify(service
                 => service.RequestStreamingJobRestart(streamDefinition.StreamId),
             Times.Exactly(expectRestart && streamingJobExists ? 1 : 0));
 
-        this.serviceFixture.MockStreamingJobOperatorService.Verify(service
+        streamingJobOperatorServiceMock.Verify(service
                 => service.StartRegisteredStream(
                     It.IsAny<StreamDefinition>(), false, It.IsAny<IStreamClass>()),
             Times.Exactly(expectRestart && !streamingJobExists ? 1 : 0));
 
-        this.serviceFixture.MockStreamingJobOperatorService.Verify(service
+        streamingJobOperatorServiceMock.Verify(service
                 => service.DeleteJob(It.IsAny<string>(), It.IsAny<string>()),
             Times.Exactly(expectTermination ? 1 : 0));
     }
@@ -125,10 +124,9 @@ public class StreamOperatorServiceTests : IClassFixture<ServiceFixture>, IClassF
         bool jobChecksumChanged, bool expectRestart)
     {
         // Arrange
-        this.serviceFixture.MockStreamingJobOperatorService.Invocations.Clear();
         this.SetupEventMock(WatchEventType.Modified, streamDefinition);
         var mockJob = JobWithChecksum(jobChecksumChanged ? "checksum" : streamDefinition.GetConfigurationChecksum());
-        this.serviceFixture.MockStreamingJobOperatorService
+        streamingJobOperatorServiceMock
             .Setup(service => service.GetStreamingJob(It.IsAny<string>()))
             .ReturnsAsync(mockJob.AsOption());
 
@@ -136,11 +134,11 @@ public class StreamOperatorServiceTests : IClassFixture<ServiceFixture>, IClassF
         var sp = this.CreateServiceProvider();
         await sp.GetRequiredService<IStreamOperatorService>()
             .GetStreamDefinitionEventsGraph(CancellationToken.None)
-            .Run(this.akkaFixture.Materializer);
+            .Run(this.materializer);
 
         // Assert
 
-        this.serviceFixture.MockStreamingJobOperatorService.Verify(service
+        streamingJobOperatorServiceMock.Verify(service
             => service.RequestStreamingJobRestart(It.IsAny<string>()), Times.Exactly(expectRestart ? 1 : 0));
     }
 
@@ -156,16 +154,14 @@ public class StreamOperatorServiceTests : IClassFixture<ServiceFixture>, IClassF
     public async Task TestStreamReload(StreamDefinition streamDefinition, bool jobExists, bool expectReload)
     {
         // Arrange
-        this.serviceFixture.MockStreamingJobOperatorService.Invocations.Clear();
-        this.serviceFixture.MockStreamDefinitionRepository.Invocations.Clear();
-        this.serviceFixture.MockStreamDefinitionRepository
+        this.streamDefinitionRepositoryMock
             .Setup(sdr
                 => sdr.RemoveReloadingAnnotation(streamDefinition.Namespace(), streamDefinition.Kind,
                     streamDefinition.StreamId))
             .ReturnsAsync(((IStreamDefinition)streamDefinition).AsOption());
         this.SetupEventMock(WatchEventType.Modified, streamDefinition);
         var mockJob = JobWithChecksum(streamDefinition.GetConfigurationChecksum());
-        this.serviceFixture.MockStreamingJobOperatorService
+        streamingJobOperatorServiceMock
             .Setup(service => service.GetStreamingJob(It.IsAny<string>()))
             .ReturnsAsync(jobExists ? mockJob.AsOption() : Option<V1Job>.None);
 
@@ -173,16 +169,17 @@ public class StreamOperatorServiceTests : IClassFixture<ServiceFixture>, IClassF
         var sp = this.CreateServiceProvider();
         await sp.GetRequiredService<IStreamOperatorService>()
             .GetStreamDefinitionEventsGraph(CancellationToken.None)
-            .Run(this.akkaFixture.Materializer);
+            .Run(this.materializer);
 
         // Assert
-        this.serviceFixture.MockStreamingJobOperatorService.Verify(service
+        streamingJobOperatorServiceMock.Verify(service
             => service.RequestStreamingJobReload(It.IsAny<string>()), Times.Exactly(expectReload ? 1 : 0));
 
-        this.serviceFixture.MockStreamingJobOperatorService.Verify(service
-            => service.StartRegisteredStream(It.IsAny<IStreamDefinition>(), true, It.IsAny<IStreamClass>()), Times.Exactly(expectReload ? 0 : 1));
+        streamingJobOperatorServiceMock.Verify(service
+                => service.StartRegisteredStream(It.IsAny<IStreamDefinition>(), true, It.IsAny<IStreamClass>()),
+            Times.Exactly(expectReload ? 0 : 1));
 
-        this.serviceFixture.MockStreamDefinitionRepository.Verify(service
+        this.streamDefinitionRepositoryMock.Verify(service
             => service.RemoveReloadingAnnotation(streamDefinition.Namespace(), streamDefinition.Kind,
                 streamDefinition.StreamId));
     }
@@ -208,15 +205,13 @@ public class StreamOperatorServiceTests : IClassFixture<ServiceFixture>, IClassF
         bool expectStart)
     {
         // Arrange
-        this.serviceFixture.MockStreamingJobOperatorService.Invocations.Clear();
-        this.serviceFixture.MockStreamDefinitionRepository.Invocations.Clear();
-        this.serviceFixture.MockStreamDefinitionRepository
+        this.streamDefinitionRepositoryMock
             .Setup(sdr
                 => sdr.RemoveReloadingAnnotation(streamDefinition.Namespace(), streamDefinition.Kind,
                     streamDefinition.StreamId))
             .ReturnsAsync(((IStreamDefinition)streamDefinition).AsOption());
         this.SetupEventMock(WatchEventType.Added, streamDefinition);
-        this.serviceFixture.MockStreamingJobOperatorService
+        streamingJobOperatorServiceMock
             .Setup(service => service.GetStreamingJob(It.IsAny<string>()))
             .ReturnsAsync(jobExists ? jobIsReloading ? ReloadingJob : RunningJob : Option<V1Job>.None);
 
@@ -224,14 +219,15 @@ public class StreamOperatorServiceTests : IClassFixture<ServiceFixture>, IClassF
         var sp = this.CreateServiceProvider();
         await sp.GetRequiredService<IStreamOperatorService>()
             .GetStreamDefinitionEventsGraph(CancellationToken.None)
-            .Run(this.akkaFixture.Materializer);
+            .Run(this.materializer);
 
         // Assert
-        this.serviceFixture.MockStreamingJobOperatorService.Verify(service
+        streamingJobOperatorServiceMock.Verify(service
             => service.RequestStreamingJobReload(It.IsAny<string>()), Times.Exactly(0));
 
-        this.serviceFixture.MockStreamingJobOperatorService.Verify(service
-            => service.StartRegisteredStream(It.IsAny<IStreamDefinition>(), true, It.IsAny<IStreamClass>()), Times.Exactly(expectStart ? 1 : 0));
+        streamingJobOperatorServiceMock.Verify(service
+                => service.StartRegisteredStream(It.IsAny<IStreamDefinition>(), true, It.IsAny<IStreamClass>()),
+            Times.Exactly(expectStart ? 1 : 0));
     }
 
     public static IEnumerable<object[]> GenerateRecoverableTestCases()
@@ -244,13 +240,11 @@ public class StreamOperatorServiceTests : IClassFixture<ServiceFixture>, IClassF
     public async Task HandleBrokenStreamDefinition(FailedStreamDefinition streamDefinition)
     {
         // Arrange
-        this.serviceFixture.MockStreamingJobOperatorService.Invocations.Clear();
-        this.serviceFixture
-            .MockStreamDefinitionRepository.Setup(
+        this.streamDefinitionRepositoryMock.Setup(
                 cluster => cluster.GetEvents(It.IsAny<CustomResourceApiRequest>(), It.IsAny<int>()))
             .Returns(Source.Single(new ResourceEvent<IStreamDefinition>(WatchEventType.Added, streamDefinition)));
 
-        this.serviceFixture.MockStreamingJobOperatorService
+        streamingJobOperatorServiceMock
             .Setup(service => service.GetStreamingJob(It.IsAny<string>()))
             .ReturnsAsync(FailedJob.AsOption());
 
@@ -258,11 +252,10 @@ public class StreamOperatorServiceTests : IClassFixture<ServiceFixture>, IClassF
         var sp = this.CreateServiceProvider();
         await sp.GetRequiredService<IStreamOperatorService>()
             .GetStreamDefinitionEventsGraph(CancellationToken.None)
-            .Run(this.akkaFixture.Materializer);
+            .Run(this.materializer);
 
         // Assert
-
-        this.serviceFixture.MockStreamingJobOperatorService.Verify(service
+        streamingJobOperatorServiceMock.Verify(service
             => service.GetStreamingJob(It.IsAny<string>()), Times.Never);
     }
 
@@ -276,13 +269,11 @@ public class StreamOperatorServiceTests : IClassFixture<ServiceFixture>, IClassF
     public async Task HandleFatalException(FailedStreamDefinition streamDefinition)
     {
         // Arrange
-        this.serviceFixture.MockStreamingJobOperatorService.Invocations.Clear();
-        this.serviceFixture
-            .MockStreamDefinitionRepository.Setup(s =>
-                    s.GetEvents(It.IsAny<CustomResourceApiRequest>(), It.IsAny<int>()))
+        this.streamDefinitionRepositoryMock.Setup(s =>
+                s.GetEvents(It.IsAny<CustomResourceApiRequest>(), It.IsAny<int>()))
             .Returns(Source.Single(new ResourceEvent<IStreamDefinition>(WatchEventType.Added, streamDefinition)));
 
-        this.serviceFixture.MockStreamingJobOperatorService
+        streamingJobOperatorServiceMock
             .Setup(service => service.GetStreamingJob(It.IsAny<string>()))
             .ReturnsAsync(FailedJob.AsOption());
 
@@ -292,10 +283,9 @@ public class StreamOperatorServiceTests : IClassFixture<ServiceFixture>, IClassF
             var sp = this.CreateServiceProvider();
             await sp.GetRequiredService<IStreamOperatorService>()
                 .GetStreamDefinitionEventsGraph(CancellationToken.None)
-                .Run(this.akkaFixture.Materializer);
+                .Run(this.materializer);
         });
         // Assert
-
         Assert.Equal("test", exception.Message);
     }
 
@@ -303,20 +293,17 @@ public class StreamOperatorServiceTests : IClassFixture<ServiceFixture>, IClassF
     public async Task HandleBrokenStreamRepository()
     {
         // Arrange
-        this.serviceFixture.MockStreamingJobOperatorService.Invocations.Clear();
-        this.serviceFixture.MockStreamDefinitionRepository.Invocations.Clear();
-        this.serviceFixture
-            .MockStreamDefinitionRepository.Setup(s
+        this.streamDefinitionRepositoryMock.Setup(s
                 => s.GetEvents(It.IsAny<CustomResourceApiRequest>(), It.IsAny<int>()))
             .Returns(
                 Source.Single(new ResourceEvent<IStreamDefinition>(WatchEventType.Added,
                     StreamDefinitionTestCases.StreamDefinition)));
 
-        this.serviceFixture.MockStreamingJobOperatorService
+        streamingJobOperatorServiceMock
             .Setup(service => service.GetStreamingJob(It.IsAny<string>()))
             .ReturnsAsync(FailedJob.AsOption());
 
-        this.serviceFixture.MockStreamDefinitionRepository
+        this.streamDefinitionRepositoryMock
             .Setup(service
                 => service.SetStreamStatus(
                     It.IsAny<string>(),
@@ -329,7 +316,7 @@ public class StreamOperatorServiceTests : IClassFixture<ServiceFixture>, IClassF
         var sp = this.CreateServiceProvider();
         await sp.GetRequiredService<IStreamOperatorService>()
             .GetStreamDefinitionEventsGraph(CancellationToken.None)
-            .Run(this.akkaFixture.Materializer);
+            .Run(this.materializer);
 
         // Assert that code above didn't throw
         Assert.True(true);
@@ -338,9 +325,8 @@ public class StreamOperatorServiceTests : IClassFixture<ServiceFixture>, IClassF
 
     private void SetupEventMock(WatchEventType eventType, IStreamDefinition streamDefinition)
     {
-        this.serviceFixture
-            .MockStreamDefinitionRepository.Setup(service =>
-                    service.GetEvents(It.IsAny<CustomResourceApiRequest>(), It.IsAny<int>()))
+        this.streamDefinitionRepositoryMock.Setup(service =>
+                service.GetEvents(It.IsAny<CustomResourceApiRequest>(), It.IsAny<int>()))
             .Returns(Source.Single(new ResourceEvent<IStreamDefinition>(eventType, streamDefinition)));
     }
 
@@ -362,16 +348,16 @@ public class StreamOperatorServiceTests : IClassFixture<ServiceFixture>, IClassF
         return new ServiceCollection()
             .AddSingleton(this.materializer)
             .AddSingleton(this.actorSystem)
-            .AddSingleton(this.serviceFixture.MockKubeCluster.Object)
-            .AddSingleton(this.serviceFixture.MockStreamingJobOperatorService.Object)
-            .AddSingleton(this.serviceFixture.MockStreamDefinitionRepository.Object)
+            .AddSingleton(this.kubeClusterMock.Object)
+            .AddSingleton(streamingJobOperatorServiceMock.Object)
+            .AddSingleton(this.streamDefinitionRepositoryMock.Object)
             .AddSingleton(Mock.Of<IStreamClassRepository>())
             .AddSingleton<IMetricsReporter, MetricsReporter>()
             .AddSingleton(Mock.Of<MetricsService>())
             .AddSingleton(metricsReporterConfiguration)
             .AddSingleton(this.loggerFixture.Factory.CreateLogger<StreamOperatorService>())
             .AddSingleton(this.loggerFixture.Factory.CreateLogger<StreamDefinitionRepository>())
-            .AddSingleton(this.serviceFixture.MockStreamingJobOperatorService.Object)
+            .AddSingleton(streamingJobOperatorServiceMock.Object)
             .AddSingleton(optionsMock.Object)
             // In read code StreamClass is not registered as a service, but it is used in StreamOperatorService
             .AddSingleton<IStreamClass>(new V1Beta1StreamClass

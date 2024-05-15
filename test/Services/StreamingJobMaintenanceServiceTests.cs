@@ -24,6 +24,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
+using Snd.Sdk.Kubernetes.Base;
 using Snd.Sdk.Metrics.Base;
 using Xunit;
 using static Arcane.Operator.Tests.Services.TestCases.JobTestCases;
@@ -32,22 +33,21 @@ using static Arcane.Operator.Tests.Services.TestCases.StreamClassTestCases;
 
 namespace Arcane.Operator.Tests.Services;
 
-public class StreamingJobMaintenanceServiceTests : IClassFixture<ServiceFixture>, IClassFixture<LoggerFixture>,
-    IClassFixture<AkkaFixture>
+public class StreamingJobMaintenanceServiceTests : IClassFixture<LoggerFixture>
 {
-    private readonly AkkaFixture akkaFixture;
+    // Akka service and test helpers
+    private readonly ActorSystem actorSystem = ActorSystem.Create(nameof(StreamingJobMaintenanceServiceTests));
     private readonly LoggerFixture loggerFixture;
-    private readonly ServiceFixture serviceFixture;
-    private readonly ActorSystem actorSystem;
-    private readonly IMaterializer materializer;
+    private readonly ActorMaterializer materializer;
 
-    public StreamingJobMaintenanceServiceTests(ServiceFixture serviceFixture, LoggerFixture loggerFixture,
-        AkkaFixture akkaFixture)
+    // Mocks
+    private readonly Mock<IKubeCluster> kubeClusterMock = new();
+    private readonly Mock<IStreamingJobOperatorService> streamingJobOperatorServiceMock = new();
+    private readonly Mock<IStreamDefinitionRepository> streamDefinitionRepositoryMock = new();
+
+    public StreamingJobMaintenanceServiceTests(LoggerFixture loggerFixture)
     {
-        this.serviceFixture = serviceFixture;
         this.loggerFixture = loggerFixture;
-        this.akkaFixture = akkaFixture;
-        this.actorSystem = ActorSystem.Create(nameof(StreamingJobMaintenanceServiceTests));
         this.materializer = this.actorSystem.Materializer();
     }
 
@@ -56,32 +56,27 @@ public class StreamingJobMaintenanceServiceTests : IClassFixture<ServiceFixture>
     public async Task HandleCompletedJob(V1Job job, bool definitionExists, bool isBackfilling, bool expectRestart)
     {
         // Arrange
-        this.serviceFixture.MockStreamingJobOperatorService.Invocations.Clear();
-        this.serviceFixture.MockStreamDefinitionRepository.Invocations.Clear();
         var mockSource = Source.From(new List<(WatchEventType, V1Job)>
         {
             (WatchEventType.Deleted, job)
         });
-        this.serviceFixture
-            .MockKubeCluster.Setup(cluster =>
+        this.kubeClusterMock.Setup(cluster =>
                 cluster.StreamJobEvents(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<OverflowStrategy>(),
                     It.IsAny<TimeSpan?>()))
             .Returns(mockSource);
 
-        this.serviceFixture
-            .MockStreamDefinitionRepository
+        this.streamDefinitionRepositoryMock
             .Setup(s => s.GetStreamDefinition(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
             .ReturnsAsync(() =>
                 definitionExists ? (Mock.Of<IStreamClass>().AsOption(), Mock.Of<IStreamDefinition>().AsOption()) : (Option<IStreamClass>.None, Option<IStreamDefinition>.None));
         var service = this.CreateService();
 
         // Act
-        await service.GetJobEventsGraph(CancellationToken.None).Run(this.akkaFixture.Materializer);
+        await service.GetJobEventsGraph(CancellationToken.None).Run(this.materializer);
 
         // Assert
-        this.serviceFixture.MockStreamingJobOperatorService
-            .Verify(s => s.StartRegisteredStream(It.IsAny<IStreamDefinition>(), isBackfilling, It.IsAny<IStreamClass>()),
-                Times.Exactly(definitionExists && expectRestart ? 1 : 0));
+        this.streamingJobOperatorServiceMock
+            .Verify(s => s.StartRegisteredStream(It.IsAny<IStreamDefinition>(), isBackfilling, It.IsAny<IStreamClass>()), Times.Exactly(definitionExists && expectRestart ? 1 : 0));
     }
 
     [Theory]
@@ -89,13 +84,11 @@ public class StreamingJobMaintenanceServiceTests : IClassFixture<ServiceFixture>
     public async Task HandleIntermediateJobModifiedEvent(V1Job job, bool expectToStopJob)
     {
         // Arrange
-        this.serviceFixture.MockStreamingJobOperatorService.Invocations.Clear();
         var mockSource = Source.From(new List<(WatchEventType, V1Job)>
         {
             (WatchEventType.Modified, job)
         });
-        this.serviceFixture
-            .MockKubeCluster.Setup(cluster =>
+        this.kubeClusterMock.Setup(cluster =>
                 cluster.StreamJobEvents(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<OverflowStrategy>(),
                     It.IsAny<TimeSpan?>()))
             .Returns(mockSource);
@@ -103,10 +96,9 @@ public class StreamingJobMaintenanceServiceTests : IClassFixture<ServiceFixture>
         var service = this.CreateService();
 
         // Act
-        await service.GetJobEventsGraph(CancellationToken.None).Run(this.akkaFixture.Materializer);
+        await service.GetJobEventsGraph(CancellationToken.None).Run(this.materializer);
 
-        this.serviceFixture
-            .MockStreamingJobOperatorService
+        this.streamingJobOperatorServiceMock
             .Verify(s => s.DeleteJob(It.IsAny<string>(), It.IsAny<string>()),
                 Times.Exactly(expectToStopJob ? 1 : 0)
             );
@@ -117,13 +109,11 @@ public class StreamingJobMaintenanceServiceTests : IClassFixture<ServiceFixture>
     public async Task HandleAddedJob(string expectedPhase, V1Job job, bool expectToChangeState)
     {
         // Arrange
-        this.serviceFixture.MockStreamDefinitionRepository.Invocations.Clear();
         var mockSource = Source.From(new List<(WatchEventType, V1Job)>
         {
             (WatchEventType.Added, job)
         });
-        this.serviceFixture
-            .MockKubeCluster.Setup(cluster =>
+        this.kubeClusterMock.Setup(cluster =>
                 cluster.StreamJobEvents(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<OverflowStrategy>(),
                     It.IsAny<TimeSpan?>()))
             .Returns(mockSource);
@@ -131,10 +121,9 @@ public class StreamingJobMaintenanceServiceTests : IClassFixture<ServiceFixture>
         var service = this.CreateService();
 
         // Act
-        await service.GetJobEventsGraph(CancellationToken.None).Run(this.akkaFixture.Materializer);
+        await service.GetJobEventsGraph(CancellationToken.None).Run(this.materializer);
 
-        this.serviceFixture
-            .MockStreamDefinitionRepository
+        this.streamDefinitionRepositoryMock
             .Verify(s => s.SetStreamStatus(
                     It.IsAny<string>(),
                     It.IsAny<string>(),
@@ -149,31 +138,28 @@ public class StreamingJobMaintenanceServiceTests : IClassFixture<ServiceFixture>
         bool expectBackfill)
     {
         // Arrange
-        this.serviceFixture.MockStreamDefinitionRepository.Invocations.Clear();
         var mockSource = Source.From(new List<(WatchEventType, V1Job)>
         {
             (WatchEventType.Deleted, job)
         });
-        this.serviceFixture
-            .MockKubeCluster
-            .Setup(cluster =>
-                cluster.StreamJobEvents(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<OverflowStrategy>(),
-                    It.IsAny<TimeSpan?>()))
-            .Returns(mockSource);
+        this.kubeClusterMock
+                    .Setup(cluster =>
+                        cluster.StreamJobEvents(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<OverflowStrategy>(),
+                            It.IsAny<TimeSpan?>()))
+                    .Returns(mockSource);
 
-        this.serviceFixture
-            .MockStreamDefinitionRepository
-            .Setup(service =>
-                service.GetStreamDefinition(job.Namespace(), job.GetStreamKind(), job.GetStreamId()))
-            .ReturnsAsync((streamClass.AsOption(), streamDefinition.AsOption()));
+        this.streamDefinitionRepositoryMock
+                    .Setup(service =>
+                        service.GetStreamDefinition(job.Namespace(), job.GetStreamKind(), job.GetStreamId()))
+                    .ReturnsAsync((streamClass.AsOption(), streamDefinition.AsOption()));
 
 
         var service = this.CreateService();
 
         // Act
-        await service.GetJobEventsGraph(CancellationToken.None).Run(this.akkaFixture.Materializer);
+        await service.GetJobEventsGraph(CancellationToken.None).Run(this.materializer);
 
-        this.serviceFixture.MockStreamingJobOperatorService.Verify(s =>
+        this.streamingJobOperatorServiceMock.Verify(s =>
                 s.StartRegisteredStream(streamDefinition, expectBackfill, It.IsAny<IStreamClass>()),
             Times.Exactly(expectToRestart ? 1 : 0)
         );
@@ -236,9 +222,9 @@ public class StreamingJobMaintenanceServiceTests : IClassFixture<ServiceFixture>
             }
         });
         return new ServiceCollection()
-            .AddSingleton(this.serviceFixture.MockKubeCluster.Object)
-            .AddSingleton(this.serviceFixture.MockStreamDefinitionRepository.Object)
-            .AddSingleton(this.serviceFixture.MockStreamingJobOperatorService.Object)
+            .AddSingleton(this.kubeClusterMock.Object)
+            .AddSingleton(this.streamDefinitionRepositoryMock.Object)
+            .AddSingleton(this.streamingJobOperatorServiceMock.Object)
             .AddSingleton(this.loggerFixture.Factory.CreateLogger<StreamingJobMaintenanceService>())
             .AddSingleton(this.loggerFixture.Factory.CreateLogger<StreamingJobOperatorService>())
             .AddSingleton<IMetricsReporter, MetricsReporter>()
