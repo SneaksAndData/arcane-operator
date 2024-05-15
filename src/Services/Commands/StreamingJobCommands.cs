@@ -6,7 +6,7 @@ namespace Arcane.Operator.Services.Commands;
 /// <summary>
 /// Base class for streaming job commands
 /// </summary>
-public abstract record StreamingJobCommand: KubernetesCommand;
+public abstract record StreamingJobCommand : KubernetesCommand;
 
 /// <summary>
 /// Start a streaming job

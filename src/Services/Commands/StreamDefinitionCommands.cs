@@ -9,7 +9,7 @@ namespace Arcane.Operator.Services.Commands;
 /// <summary>
 /// Abstract class for stream definition commands
 /// </summary>
-public abstract record StreamDefinitionCommand: KubernetesCommand;
+public abstract record StreamDefinitionCommand : KubernetesCommand;
 
 /// <summary>
 /// Update the stream definition status

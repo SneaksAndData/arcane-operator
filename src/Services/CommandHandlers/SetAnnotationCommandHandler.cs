@@ -7,7 +7,7 @@ using Snd.Sdk.Tasks;
 
 namespace Arcane.Operator.Services.CommandHandlers;
 
-public class SetAnnotationCommandHandler: ICommandHandler<SetAnnotationCommand>
+public class SetAnnotationCommandHandler : ICommandHandler<SetAnnotationCommand>
 {
     private readonly IStreamClassRepository streamClassRepository;
     private readonly IKubeCluster kubeCluster;
@@ -24,7 +24,7 @@ public class SetAnnotationCommandHandler: ICommandHandler<SetAnnotationCommand>
     }
     public Task Handle(SetAnnotationCommand command)
     {
-        var ( (nameSpace, kind, streamId), annotationKey, annotationValue) = command;
+        var ((nameSpace, kind, streamId), annotationKey, annotationValue) = command;
         return this.streamClassRepository.Get(nameSpace, kind).Map(crdConf =>
         {
             if (crdConf is { HasValue: false })

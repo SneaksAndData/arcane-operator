@@ -27,7 +27,7 @@ public class V1Beta1StreamCondition
     /// </summary>
     [JsonPropertyName("message")]
     public string Message { get; set; }
-    
+
     public static V1Beta1StreamCondition[] ErrorCondition =>
         new[]
         {

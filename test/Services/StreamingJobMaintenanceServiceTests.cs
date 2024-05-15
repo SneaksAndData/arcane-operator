@@ -50,7 +50,7 @@ public class StreamingJobMaintenanceServiceTests : IClassFixture<LoggerFixture>
     {
         this.loggerFixture = loggerFixture;
         this.materializer = this.actorSystem.Materializer();
-        
+
         this.streamClassRepositoryMock
             .Setup(m => m.Get(It.IsAny<string>(), It.IsAny<string>()))
             .ReturnsAsync(StreamClass.AsOption());
@@ -157,16 +157,16 @@ public class StreamingJobMaintenanceServiceTests : IClassFixture<LoggerFixture>
     {
         yield return new object[] { FailedJob, true, false, false };
         yield return new object[] { FailedJob, false, false, false };
-        
+
         yield return new object[] { CompletedJob, true, false, true };
         yield return new object[] { CompletedJob, false, false, true };
-        
+
         yield return new object[] { RunningJob, true, false, true };
         yield return new object[] { RunningJob, false, false, true };
-        
+
         yield return new object[] { SchemaMismatchJob, true, true, true };
         yield return new object[] { SchemaMismatchJob, false, true, true };
-        
+
         yield return new object[] { ReloadRequestedJob, true, true, true };
         yield return new object[] { ReloadRequestedJob, false, true, true };
     }

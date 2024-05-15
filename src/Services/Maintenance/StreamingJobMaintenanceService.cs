@@ -74,7 +74,7 @@ public class StreamingJobMaintenanceService : IStreamingJobMaintenanceService
         return valueTuple switch
         {
             (WatchEventType.Deleted, var job) => this.OnJobDelete(job),
-            (WatchEventType.Modified, var job) => Task.FromResult(new List<Option<KubernetesCommand>>{this.OnJobModified(job)}),
+            (WatchEventType.Modified, var job) => Task.FromResult(new List<Option<KubernetesCommand>> { this.OnJobModified(job) }),
             _ => Task.FromResult(new List<Option<KubernetesCommand>>())
         };
     }
@@ -104,10 +104,10 @@ public class StreamingJobMaintenanceService : IStreamingJobMaintenanceService
             .GetStreamDefinition(job.Namespace(), job.GetStreamKind(), job.GetStreamId())
             .Map(maybeSd => maybeSd switch
             {
-                ({ HasValue: true }, { HasValue: true, Value: var sd }) when job.IsFailed() => new List<Option<KubernetesCommand>>{new SetCrashLoopStatusCommand(sd)},
-                (_, { HasValue: true, Value: var sd }) when sd.Suspended => new List<Option<KubernetesCommand>>{new Suspended(sd)},
-                (_, { HasValue: true, Value: var sd }) when sd.CrashLoopDetected => new List<Option<KubernetesCommand>>{new SetCrashLoopStatusCommand(sd)},
-                ({ HasValue: true, Value: var sc }, { HasValue: true, Value: var sd }) when !sd.Suspended => new List<Option<KubernetesCommand>>{new StartJob(sd, isBackfilling)},
+                ({ HasValue: true }, { HasValue: true, Value: var sd }) when job.IsFailed() => new List<Option<KubernetesCommand>> { new SetCrashLoopStatusCommand(sd) },
+                (_, { HasValue: true, Value: var sd }) when sd.Suspended => new List<Option<KubernetesCommand>> { new Suspended(sd) },
+                (_, { HasValue: true, Value: var sd }) when sd.CrashLoopDetected => new List<Option<KubernetesCommand>> { new SetCrashLoopStatusCommand(sd) },
+                ({ HasValue: true, Value: var sc }, { HasValue: true, Value: var sd }) when !sd.Suspended => new List<Option<KubernetesCommand>> { new StartJob(sd, isBackfilling) },
                 (_, { HasValue: false }) => new List<Option<KubernetesCommand>>(),
                 _ => throw new ArgumentOutOfRangeException(nameof(maybeSd), maybeSd, null)
             });

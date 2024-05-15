@@ -8,7 +8,7 @@ using Snd.Sdk.Tasks;
 namespace Arcane.Operator.Services.CommandHandlers;
 
 /// <inheritdoc cref="ICommandHandler{T}" />
-public class StreamingJobCommandHandler: ICommandHandler<StreamingJobCommand>
+public class StreamingJobCommandHandler : ICommandHandler<StreamingJobCommand>
 {
     private readonly IStreamClassRepository streamClassRepository;
     private readonly IStreamingJobOperatorService streamingJobOperatorService;
@@ -20,11 +20,11 @@ public class StreamingJobCommandHandler: ICommandHandler<StreamingJobCommand>
         this.streamClassRepository = streamClassRepository;
         this.streamingJobOperatorService = streamingJobOperatorService;
     }
-    
+
     /// <inheritdoc cref="ICommandHandler{T}.Handle" />
     public Task Handle(StreamingJobCommand command) => command switch
     {
-        StartJob startJob =>  this.streamClassRepository
+        StartJob startJob => this.streamClassRepository
             .Get(startJob.streamDefinition.Namespace(), startJob.streamDefinition.Kind)
             .Map(maybeSc => maybeSc switch
             {
