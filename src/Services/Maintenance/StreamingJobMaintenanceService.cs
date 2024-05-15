@@ -104,7 +104,11 @@ public class StreamingJobMaintenanceService : IStreamingJobMaintenanceService
             .GetStreamDefinition(job.Namespace(), job.GetStreamKind(), job.GetStreamId())
             .Map(maybeSd => maybeSd switch
             {
-                ({ HasValue: true }, { HasValue: true, Value: var sd }) when job.IsFailed() => new List<Option<KubernetesCommand>> { new SetCrashLoopStatusCommand(sd) },
+                ({ HasValue: true }, { HasValue: true, Value: var sd }) when job.IsFailed() => new List<Option<KubernetesCommand>>
+                {
+                    new SetCrashLoopStatusCommand(sd),
+                    new SetCrashLoopStatusAnnotationCommand(sd)
+                },
                 (_, { HasValue: true, Value: var sd }) when sd.Suspended => new List<Option<KubernetesCommand>> { new Suspended(sd) },
                 (_, { HasValue: true, Value: var sd }) when sd.CrashLoopDetected => new List<Option<KubernetesCommand>> { new SetCrashLoopStatusCommand(sd) },
                 ({ HasValue: true, Value: var sc }, { HasValue: true, Value: var sd }) when !sd.Suspended => new List<Option<KubernetesCommand>> { new StartJob(sd, isBackfilling) },

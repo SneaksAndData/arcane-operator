@@ -48,6 +48,19 @@ public record SetCrashLoopStatusCommand(IStreamDefinition affectedResource) : Se
 /// <param name="affectedResource"></param>
 public record Suspended(IStreamDefinition affectedResource) : SetWarningStatus(affectedResource, StreamPhase.SUSPENDED);
 
+/// <summary>
+/// Abstract class for setting annotation on a stream definition Kubernetes object
+/// </summary>
+/// <param name="affectedResource">The resource to update</param>
+/// <param name="annotationKey">Annotation key</param>
+/// <param name="annotationValue">Annotation value</param>
 public abstract record SetAnnotationCommand(IStreamDefinition affectedResource, string annotationKey, string annotationValue) : StreamDefinitionCommand;
 
-public record SetCrashLoopStatusAnnotationCommand(IStreamDefinition affectedResource) : SetAnnotationCommand(affectedResource, Annotations.STATE_ANNOTATION_KEY, Annotations.CRASH_LOOP_STATE_ANNOTATION_VALUE);
+/// <summary>
+/// Sets the stream definition annotation to indicate that the stream is in a crash loop
+/// </summary>
+/// <param name="affectedResource">The resource to update</param>
+public record SetCrashLoopStatusAnnotationCommand(IStreamDefinition affectedResource) : SetAnnotationCommand(
+    affectedResource,
+    Annotations.STATE_ANNOTATION_KEY,
+    Annotations.CRASH_LOOP_STATE_ANNOTATION_VALUE);
