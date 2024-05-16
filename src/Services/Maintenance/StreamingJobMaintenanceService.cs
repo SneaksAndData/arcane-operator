@@ -9,7 +9,6 @@ using Arcane.Operator.Configurations;
 using Arcane.Operator.Extensions;
 using Arcane.Operator.Services.Base;
 using Arcane.Operator.Services.Commands;
-using Google.Protobuf.WellKnownTypes;
 using k8s;
 using k8s.Models;
 using Microsoft.Extensions.Logging;

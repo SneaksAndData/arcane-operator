@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Arcane.Operator.Services.Base;
 
@@ -19,4 +20,15 @@ public interface ICommandHandler<in T> where T : KubernetesCommand
     /// <param name="command">Command instance</param>
     /// <returns>Type of the command</returns>
     public Task Handle(T command);
+}
+
+public static class KubernetesCommandExtensions
+{
+    /// <summary>
+    /// Handle the command asynchronously
+    /// </summary>
+    /// <param name="handler">Command handler</param>
+    /// <param name="command">Command instance</param>
+    /// <returns>Type of the command</returns>
+    public static List<KubernetesCommand> AsList(this KubernetesCommand command) => new() { command };
 }

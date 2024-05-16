@@ -16,10 +16,14 @@ using Arcane.Operator.Models.StreamDefinitions;
 using Arcane.Operator.Models.StreamDefinitions.Base;
 using Arcane.Operator.Models.StreamStatuses.StreamStatus.V1Beta1;
 using Arcane.Operator.Services.Base;
+using Arcane.Operator.Services.CommandHandlers;
+using Arcane.Operator.Services.Commands;
+using Arcane.Operator.Services.Maintenance;
 using Arcane.Operator.Services.Metrics;
 using Arcane.Operator.Services.Models;
 using Arcane.Operator.Services.Operator;
 using Arcane.Operator.Services.Repositories;
+using Arcane.Operator.Services.Streams;
 using Arcane.Operator.Tests.Fixtures;
 using Arcane.Operator.Tests.Services.TestCases;
 using k8s;
@@ -33,6 +37,7 @@ using Snd.Sdk.Metrics.Base;
 using Xunit;
 using static Arcane.Operator.Tests.Services.TestCases.JobTestCases;
 using static Arcane.Operator.Tests.Services.TestCases.StreamDefinitionTestCases;
+using static Arcane.Operator.Tests.Services.TestCases.StreamClassTestCases;
 using FailedStreamDefinition = Arcane.Operator.Tests.Services.TestCases.FailedStreamDefinition;
 
 namespace Arcane.Operator.Tests.Services;
@@ -48,6 +53,7 @@ public class StreamOperatorServiceTests : IClassFixture<LoggerFixture>
     private readonly Mock<IKubeCluster> kubeClusterMock = new();
     private readonly Mock<IStreamingJobOperatorService> streamingJobOperatorServiceMock = new();
     private readonly Mock<IStreamDefinitionRepository> streamDefinitionRepositoryMock = new();
+    private readonly Mock<IStreamClassRepository> streamClassRepositoryMock = new();
 
     public StreamOperatorServiceTests(LoggerFixture loggerFixture)
     {
@@ -85,6 +91,10 @@ public class StreamOperatorServiceTests : IClassFixture<LoggerFixture>
             .Setup(service => service.GetStreamingJob(It.IsAny<string>()))
             .ReturnsAsync(streamingJobExists ? JobWithChecksum("checksum").AsOption() : Option<V1Job>.None);
 
+        this.streamClassRepositoryMock
+            .Setup(c => c.Get(It.IsAny<string>(), It.IsAny<string>()))
+            .ReturnsAsync(StreamClass.AsOption());
+            
         // Act
         var sp = this.CreateServiceProvider();
         await sp.GetRequiredService<IStreamOperatorService>()
@@ -351,12 +361,18 @@ public class StreamOperatorServiceTests : IClassFixture<LoggerFixture>
             .AddSingleton(this.kubeClusterMock.Object)
             .AddSingleton(streamingJobOperatorServiceMock.Object)
             .AddSingleton(this.streamDefinitionRepositoryMock.Object)
-            .AddSingleton(Mock.Of<IStreamClassRepository>())
+            .AddSingleton<ICommandHandler<UpdateStatusCommand>, UpdateStatusCommandHandler>()
+            .AddSingleton<ICommandHandler<SetAnnotationCommand>, SetAnnotationCommandHandler>()
+            .AddSingleton<ICommandHandler<StreamingJobCommand>, StreamingJobCommandHandler>()
+            .AddSingleton(this.streamClassRepositoryMock.Object)
             .AddSingleton<IMetricsReporter, MetricsReporter>()
             .AddSingleton(Mock.Of<MetricsService>())
             .AddSingleton(metricsReporterConfiguration)
             .AddSingleton(this.loggerFixture.Factory.CreateLogger<StreamOperatorService>())
             .AddSingleton(this.loggerFixture.Factory.CreateLogger<StreamDefinitionRepository>())
+            .AddSingleton(this.loggerFixture.Factory.CreateLogger<StreamingJobMaintenanceService>())
+            .AddSingleton(this.loggerFixture.Factory.CreateLogger<StreamingJobOperatorService>())
+            .AddSingleton(this.loggerFixture.Factory.CreateLogger<SetAnnotationCommandHandler>())
             .AddSingleton(streamingJobOperatorServiceMock.Object)
             .AddSingleton(optionsMock.Object)
             // In read code StreamClass is not registered as a service, but it is used in StreamOperatorService

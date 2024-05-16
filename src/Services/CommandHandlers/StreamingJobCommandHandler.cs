@@ -29,7 +29,7 @@ public class StreamingJobCommandHandler : ICommandHandler<StreamingJobCommand>
             .Map(maybeSc => maybeSc switch
             {
                 { HasValue: true, Value: var sc } => this.streamingJobOperatorService.StartRegisteredStream(startJob.streamDefinition, startJob.IsBackfilling, sc),
-                _ => throw new ArgumentOutOfRangeException(nameof(command), command, null)
+                { HasValue: false } => throw new InvalidOperationException($"Stream class not found for {startJob.streamDefinition.Kind}"),
             }),
         StopJob stopJob => this.streamingJobOperatorService.DeleteJob(stopJob.streamKind, stopJob.streamId),
         _ => throw new ArgumentOutOfRangeException(nameof(command), command, null)
