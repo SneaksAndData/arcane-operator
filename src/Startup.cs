@@ -67,7 +67,6 @@ public class Startup
         services.AddSingleton<IStreamingJobTemplateRepository, StreamingJobTemplateRepository>();
         services.AddSingleton<IStreamClassRepository, StreamClassRepository>();
         services.AddSingleton<IStreamClassOperatorService, StreamClassOperatorService>();
-        services.AddSingleton<IStreamOperatorServiceWorkerFactory, StreamOperatorServiceWorkerFactory>();
         services.AddMemoryCache();
         services.AddKubernetes();
 

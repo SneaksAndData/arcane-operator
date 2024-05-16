@@ -14,6 +14,7 @@ using Arcane.Operator.Services.Base;
 using Arcane.Operator.Services.Models;
 using k8s;
 using k8s.Models;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Snd.Sdk.ActorProviders;
@@ -32,21 +33,21 @@ public class StreamClassOperatorService : IStreamClassOperatorService
     private readonly Dictionary<string, StreamOperatorServiceWorker> streams = new();
     private readonly ILogger<StreamClassOperatorService> logger;
     private readonly IStreamClassRepository streamClassRepository;
-    private readonly IStreamOperatorServiceWorkerFactory streamOperatorServiceWorkerFactory;
     private readonly IMetricsReporter metricsService;
     private readonly ActorSystem actorSystem;
+    private readonly IServiceProvider sp;
 
     public StreamClassOperatorService(IOptions<StreamClassOperatorServiceConfiguration> streamOperatorServiceOptions,
-        IStreamOperatorServiceWorkerFactory streamOperatorServiceWorkerFactory,
         IStreamClassRepository streamClassRepository,
         IMetricsReporter metricsService,
         ILogger<StreamClassOperatorService> logger,
+        IServiceProvider sp,
         ActorSystem actorSystem)
     {
         this.configuration = streamOperatorServiceOptions.Value;
         this.logger = logger;
         this.streamClassRepository = streamClassRepository;
-        this.streamOperatorServiceWorkerFactory = streamOperatorServiceWorkerFactory;
+        this.sp = sp;
         this.metricsService = metricsService;
         this.actorSystem = actorSystem;
     }
@@ -105,7 +106,7 @@ public class StreamClassOperatorService : IStreamClassOperatorService
         .ActorSelection(streamClass.ToStreamClassId()).ResolveOne(TimeSpan.FromSeconds(10))
         .TryMap(success => success, exception => exception switch
         {
-            ActorNotFoundException => this.actorSystem.ActorOf(Props.Create(() => new StreamClassActor(this.streamOperatorServiceWorkerFactory)), streamClass.ToStreamClassId()),
+            ActorNotFoundException => this.actorSystem.ActorOf(Props.Create(() => new StreamClassActor(this.sp.GetRequiredService<IStreamOperatorService>())), streamClass.ToStreamClassId()),
             _ => throw exception
         });
 }

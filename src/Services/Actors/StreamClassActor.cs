@@ -1,9 +1,10 @@
-﻿using Akka.Actor;
+﻿using System.Threading;
+using Akka.Actor;
 using Akka.Event;
+using Akka.Streams;
 using Arcane.Operator.Models;
 using Arcane.Operator.Models.StreamClass.Base;
 using Arcane.Operator.Services.Base;
-using Arcane.Operator.Services.Operator;
 
 namespace Arcane.Operator.Services.Actors;
 
@@ -32,26 +33,32 @@ public class StreamClassActor : ReceiveActor
 {
     private readonly ILoggingAdapter Log = Context.GetLogger();
 
-    private StreamOperatorServiceWorker worker;
+    private CancellationTokenSource cts;
 
-    public StreamClassActor(IStreamOperatorServiceWorkerFactory streamOperatorServiceWorkerFactory)
+    public StreamClassActor(IStreamOperatorService streamOperatorService)
     {
         this.Receive<StartListeningMessage>(message =>
         {
-            this.worker = streamOperatorServiceWorkerFactory.Create(message.streamClass);
-            this.worker.Start(message.streamClass.ToStreamClassId());
+            this.cts ??= new CancellationTokenSource();
+            streamOperatorService
+                .GetStreamDefinitionEventsGraph(this.cts.Token)
+                .Run(Context.Materializer())
+                .PipeTo(this.Sender, this.Self,
+                    success: () => new StartListeningMessage(message.streamClass),
+                    failure: exception =>
+                    {
+                        this.Log.Error(exception, "Failed to start listening for {streamClassId} events",
+                            message.streamClass.ToStreamClassId());
+                        return new StartListeningMessage(message.streamClass);
+                    });
             Context.Sender.Tell(StreamClassOperatorResponse.Ready(message.streamClass));
         });
 
         this.Receive<StopListeningMessage>(message =>
         {
-            if (this.worker == null)
-            {
-                this.Log.Error("Attempt to stop listening for a stream class that is not started: {@streamClass}", message.streamClass);
-            }
-            this.worker?.Stop();
+            this.cts?.Cancel();
+            this.cts = null;
             Context.Sender.Tell(StreamClassOperatorResponse.Stopped(message.streamClass));
         });
     }
-
 }

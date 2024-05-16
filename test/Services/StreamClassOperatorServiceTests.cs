@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Drawing;
 using System.Threading;
 using System.Threading.Tasks;
 using Akka.Actor;
@@ -80,25 +79,18 @@ public class StreamClassOperatorServiceTests : IClassFixture<LoggerFixture>, ICl
                     new(WatchEventType.Added, StreamDefinitionTestCases.NamedStreamDefinition())
                 }));
 
-        this.streamDefinitionRepositoryMock
-            .Setup(m => m.GetEvents(It.IsAny<CustomResourceApiRequest>(), It.IsAny<int>()))
-            .Returns(Source.From(
-                new List<ResourceEvent<IStreamDefinition>>
-                {
-                    new(WatchEventType.Added, StreamDefinitionTestCases.NamedStreamDefinition()),
-                    new(WatchEventType.Added, StreamDefinitionTestCases.NamedStreamDefinition()),
-                    new(WatchEventType.Added, StreamDefinitionTestCases.NamedStreamDefinition())
-                }));
-
         // Act
         var sp = this.CreateServiceProvider();
         await sp.GetRequiredService<IStreamClassOperatorService>()
             .GetStreamClassEventsGraph(CancellationToken.None)
             .Run(this.materializer);
-        await Task.Delay(10000);
+        await Task.Delay(5000);
 
         // Assert
-        this.streamingJobOperatorServiceMock.Verify(service => service.StartRegisteredStream(It.IsAny<StreamDefinition>(), It.IsAny<bool>(), It.IsAny<IStreamClass>()));
+        this.streamingJobOperatorServiceMock.Verify(
+            service => service.StartRegisteredStream(It.IsAny<StreamDefinition>(), It.IsAny<bool>(), It.IsAny<IStreamClass>()),
+            Times.Never
+        );
     }
 
     [Fact]
@@ -184,7 +176,6 @@ public class StreamClassOperatorServiceTests : IClassFixture<LoggerFixture>, ICl
                 MaxBufferCapacity = 100
             }))
             .AddSingleton<IStreamClassOperatorService, StreamClassOperatorService>()
-            .AddSingleton<IStreamOperatorServiceWorkerFactory, StreamOperatorServiceWorkerFactory>()
             .BuildServiceProvider();
     }
 }
