@@ -37,7 +37,7 @@ public class V1Beta1StreamClass : IStreamClass
     /// <inheritdoc cref="IKubernetesObject.Kind"/>
     public string ToStreamClassId()
     {
-        return $"{this.Namespace()}/{this.Name()}";
+        return $"{this.Namespace()}.{this.Name()}";
     }
 
     /// <inheritdoc cref="IStreamClass.ApiGroupRef"/>

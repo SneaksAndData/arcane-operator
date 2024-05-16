@@ -100,20 +100,28 @@ public class StreamingJobMaintenanceService : IStreamingJobMaintenanceService
 
     private Task<List<Option<KubernetesCommand>>> OnJobDelete(V1Job job)
     {
-        var isBackfilling = job.IsReloadRequested() || job.IsSchemaMismatch();
         return this.streamDefinitionRepository
             .GetStreamDefinition(job.Namespace(), job.GetStreamKind(), job.GetStreamId())
             .Map(maybeSd => maybeSd switch
             {
-                ({ HasValue: true }, { HasValue: true, Value: var sd }) when job.IsFailed() => new List<Option<KubernetesCommand>>
+                { HasValue: true, Value: var sd } when job.IsFailed() => new List<Option<KubernetesCommand>>
                 {
                     new SetCrashLoopStatusCommand(sd),
                     new SetCrashLoopStatusAnnotationCommand(sd)
                 },
-                (_, { HasValue: true, Value: var sd }) when sd.Suspended => new List<Option<KubernetesCommand>> { new Suspended(sd) },
-                (_, { HasValue: true, Value: var sd }) when sd.CrashLoopDetected => new List<Option<KubernetesCommand>> { new SetCrashLoopStatusCommand(sd) },
-                ({ HasValue: true, Value: var sc }, { HasValue: true, Value: var sd }) when !sd.Suspended => new List<Option<KubernetesCommand>> { new StartJob(sd, isBackfilling) },
-                (_, { HasValue: false }) => new List<Option<KubernetesCommand>>(),
+                { HasValue: true, Value: var sd } when sd.Suspended => new List<Option<KubernetesCommand>>
+                {
+                    new Suspended(sd)
+                },
+                { HasValue: true, Value: var sd } when sd.CrashLoopDetected => new List<Option<KubernetesCommand>>
+                {
+                    new SetCrashLoopStatusCommand(sd)
+                },
+                { HasValue: true, Value: var sd } when !sd.Suspended => new List<Option<KubernetesCommand>>
+                {
+                    new StartJob(sd, job.IsReloadRequested() || job.IsSchemaMismatch())
+                },
+                { HasValue: false } => new List<Option<KubernetesCommand>>(),
                 _ => throw new ArgumentOutOfRangeException(nameof(maybeSd), maybeSd, null)
             });
     }
