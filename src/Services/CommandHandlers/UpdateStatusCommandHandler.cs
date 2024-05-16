@@ -24,7 +24,7 @@ public class UpdateStatusCommandHandler : ICommandHandler<UpdateStatusCommand>
     {
         var ((nameSpace, kind, streamId), streamStatus, phase) = command;
         var status = new V1Beta1StreamStatus { Conditions = streamStatus, Phase = phase.ToString() };
-        return this.streamDefinitionRepository.SetStreamStatus(nameSpace, kind, streamId,status)
+        return this.streamDefinitionRepository.SetStreamStatus(nameSpace, kind, streamId, status)
             .TryMap(success => success, exception =>
             {
                 this.logger.LogError(exception, "Failed to update status for {kind} {streamId}", kind, streamId);

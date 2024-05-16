@@ -9,7 +9,7 @@ using Snd.Sdk.Tasks;
 
 namespace Arcane.Operator.Services.CommandHandlers;
 
-public class AnnotationCommandHandler:
+public class AnnotationCommandHandler :
    ICommandHandler<SetAnnotationCommand<IStreamDefinition>>,
    ICommandHandler<RemoveAnnotationCommand<IStreamDefinition>>,
    ICommandHandler<SetAnnotationCommand<V1Job>>

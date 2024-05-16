@@ -69,7 +69,7 @@ public class StreamOperatorServiceTests : IClassFixture<LoggerFixture>
         yield return new object[] { WatchEventType.Added, StreamDefinitionTestCases.StreamDefinition, true, false, false, false };
         yield return new object[] { WatchEventType.Modified, StreamDefinitionTestCases.StreamDefinition, false, true, true, false };
         yield return new object[] { WatchEventType.Modified, StreamDefinitionTestCases.StreamDefinition, false, true, false, false };
-        
+
         yield return new object[] { WatchEventType.Added, SuspendedStreamDefinition, false, false, false, false };
         yield return new object[] { WatchEventType.Deleted, SuspendedStreamDefinition, false, false, false, false };
         yield return new object[] { WatchEventType.Modified, SuspendedStreamDefinition, false, false, true, true };

@@ -119,7 +119,7 @@ public class StreamOperatorService : IStreamOperatorService
         {
             { HasValue: true, Value: var job } when job.IsReloading() => new Reloading(streamDefinition),
             { HasValue: true, Value: var job } when !job.IsReloading() => new Running(streamDefinition),
-            { HasValue: true, Value: var job } when streamDefinition.Suspended => new StopJob(job.GetStreamId(),job.GetStreamKind()),
+            { HasValue: true, Value: var job } when streamDefinition.Suspended => new StopJob(job.GetStreamId(), job.GetStreamKind()),
             { HasValue: false } when streamDefinition.Suspended => new Suspended(streamDefinition),
             { HasValue: false } when !streamDefinition.Suspended => new StartJob(streamDefinition, true),
             _ => throw new ArgumentOutOfRangeException(nameof(maybeJob), maybeJob, null)
@@ -140,7 +140,7 @@ public class StreamOperatorService : IStreamOperatorService
                 new Reloading(streamDefinition)
             },
             { HasValue: false } => new StartJob(streamDefinition, false).AsList(),
-            
+
             { HasValue: true, Value: var job } when streamDefinition.CrashLoopDetected => new StopJob(job.GetStreamId(), job.GetStreamKind()).AsList(),
             { HasValue: true, Value: var job } when streamDefinition.Suspended => new StopJob(job.GetStreamId(), job.GetStreamKind()).AsList(),
             { HasValue: true, Value: var job } when !job.ConfigurationMatches(streamDefinition) => new
@@ -159,7 +159,7 @@ public class StreamOperatorService : IStreamOperatorService
             _ => new List<KubernetesCommand>()
         };
     }
-    
+
     private Task HandleCommand(KubernetesCommand response) => response switch
     {
         UpdateStatusCommand sdc => this.updateStatusCommandHandler.Handle(sdc),

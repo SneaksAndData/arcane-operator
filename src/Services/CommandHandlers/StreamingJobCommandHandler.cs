@@ -40,7 +40,7 @@ public class StreamingJobCommandHandler : IStreamingJobCommandHandler
     {
         return this.streamingJobOperatorService.RequestStreamingJobRestart(command.affectedResource.GetStreamId());
     }
-    
+
     public Task Handle(RequestJobReloadCommand command)
     {
         return this.streamingJobOperatorService.RequestStreamingJobReload(command.affectedResource.GetStreamId());

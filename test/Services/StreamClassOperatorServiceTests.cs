@@ -79,7 +79,7 @@ public class StreamClassOperatorServiceTests : IClassFixture<LoggerFixture>, ICl
                     new(WatchEventType.Added, StreamDefinitionTestCases.NamedStreamDefinition()),
                     new(WatchEventType.Added, StreamDefinitionTestCases.NamedStreamDefinition())
                 }));
-        
+
         this.streamDefinitionRepositoryMock
             .Setup(m => m.GetEvents(It.IsAny<CustomResourceApiRequest>(), It.IsAny<int>()))
             .Returns(Source.From(
