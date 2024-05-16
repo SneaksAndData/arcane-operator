@@ -30,7 +30,6 @@ public class StreamClassOperatorService : IStreamClassOperatorService
 
     private readonly StreamClassOperatorServiceConfiguration configuration;
 
-    private readonly Dictionary<string, StreamOperatorServiceWorker> streams = new();
     private readonly ILogger<StreamClassOperatorService> logger;
     private readonly IStreamClassRepository streamClassRepository;
     private readonly IMetricsReporter metricsService;
