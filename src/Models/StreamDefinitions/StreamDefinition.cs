@@ -118,6 +118,14 @@ public class StreamDefinition : IStreamDefinition
         return isBackfilling ? this.BackfillingJobTemplateRef : this.JobTemplateRef;
     }
 
+    /// <inheritdoc cref="IStreamDefinition.Deconstruct"/>
+    public void Deconstruct(out string nameSpace, out string kind, out string streamId)
+    {
+        nameSpace = this.Metadata.NamespaceProperty;
+        kind = this.Kind;
+        streamId = this.StreamId;
+    }
+
     private V1TypedLocalObjectReference JobTemplateRef =>
         this.Spec.GetProperty("jobTemplateRef").Deserialize<V1TypedLocalObjectReference>();
 

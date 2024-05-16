@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
+using Arcane.Operator.Models.Common;
 
 namespace Arcane.Operator.Models.StreamStatuses.StreamStatus.V1Beta1;
 
@@ -26,4 +27,32 @@ public class V1Beta1StreamCondition
     /// </summary>
     [JsonPropertyName("message")]
     public string Message { get; set; }
+
+    public static V1Beta1StreamCondition[] ErrorCondition =>
+        new[]
+        {
+            new V1Beta1StreamCondition
+            {
+                Type = ResourceStatus.ERROR.ToString(),
+                Status = "True"
+            }
+        };
+    public static V1Beta1StreamCondition[] WarningCondition =>
+        new[]
+        {
+            new V1Beta1StreamCondition
+            {
+                Type = ResourceStatus.WARNING.ToString(),
+                Status = "True"
+            }
+        };
+    public static V1Beta1StreamCondition[] ReadyCondition =>
+        new[]
+        {
+            new V1Beta1StreamCondition
+            {
+                Type = ResourceStatus.READY.ToString(),
+                Status = "True"
+            }
+        };
 }

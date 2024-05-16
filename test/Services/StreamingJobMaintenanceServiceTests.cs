@@ -9,11 +9,11 @@ using Akka.Util;
 using Akka.Util.Extensions;
 using Arcane.Operator.Configurations;
 using Arcane.Operator.Extensions;
-using Arcane.Operator.Models;
 using Arcane.Operator.Models.StreamClass.Base;
 using Arcane.Operator.Models.StreamDefinitions.Base;
-using Arcane.Operator.Models.StreamStatuses.StreamStatus.V1Beta1;
 using Arcane.Operator.Services.Base;
+using Arcane.Operator.Services.CommandHandlers;
+using Arcane.Operator.Services.Commands;
 using Arcane.Operator.Services.Maintenance;
 using Arcane.Operator.Services.Metrics;
 using Arcane.Operator.Services.Streams;
@@ -44,11 +44,16 @@ public class StreamingJobMaintenanceServiceTests : IClassFixture<LoggerFixture>
     private readonly Mock<IKubeCluster> kubeClusterMock = new();
     private readonly Mock<IStreamingJobOperatorService> streamingJobOperatorServiceMock = new();
     private readonly Mock<IStreamDefinitionRepository> streamDefinitionRepositoryMock = new();
+    private readonly Mock<IStreamClassRepository> streamClassRepositoryMock = new();
 
     public StreamingJobMaintenanceServiceTests(LoggerFixture loggerFixture)
     {
         this.loggerFixture = loggerFixture;
         this.materializer = this.actorSystem.Materializer();
+
+        this.streamClassRepositoryMock
+            .Setup(m => m.Get(It.IsAny<string>(), It.IsAny<string>()))
+            .ReturnsAsync(StreamClass.AsOption());
     }
 
     [Theory]
@@ -68,7 +73,7 @@ public class StreamingJobMaintenanceServiceTests : IClassFixture<LoggerFixture>
         this.streamDefinitionRepositoryMock
             .Setup(s => s.GetStreamDefinition(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
             .ReturnsAsync(() =>
-                definitionExists ? (Mock.Of<IStreamClass>().AsOption(), Mock.Of<IStreamDefinition>().AsOption()) : (Option<IStreamClass>.None, Option<IStreamDefinition>.None));
+                definitionExists ? Mock.Of<IStreamDefinition>().AsOption() : Option<IStreamDefinition>.None);
         var service = this.CreateService();
 
         // Act
@@ -105,37 +110,8 @@ public class StreamingJobMaintenanceServiceTests : IClassFixture<LoggerFixture>
     }
 
     [Theory]
-    [MemberData(nameof(GenerateAddedJobTestCases))]
-    public async Task HandleAddedJob(string expectedPhase, V1Job job, bool expectToChangeState)
-    {
-        // Arrange
-        var mockSource = Source.From(new List<(WatchEventType, V1Job)>
-        {
-            (WatchEventType.Added, job)
-        });
-        this.kubeClusterMock.Setup(cluster =>
-                cluster.StreamJobEvents(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<OverflowStrategy>(),
-                    It.IsAny<TimeSpan?>()))
-            .Returns(mockSource);
-
-        var service = this.CreateService();
-
-        // Act
-        await service.GetJobEventsGraph(CancellationToken.None).Run(this.materializer);
-
-        this.streamDefinitionRepositoryMock
-            .Verify(s => s.SetStreamStatus(
-                    It.IsAny<string>(),
-                    It.IsAny<string>(),
-                    It.IsAny<string>(),
-                    It.Is<V1Beta1StreamStatus>(cs => cs.Phase == expectedPhase)),
-                Times.Exactly(expectToChangeState ? 1 : 0));
-    }
-
-    [Theory]
     [MemberData(nameof(GenerateDeletedJobTestCases))]
-    public async Task HandleDeletedJob(V1Job job, IStreamClass streamClass, IStreamDefinition streamDefinition, bool expectToRestart,
-        bool expectBackfill)
+    public async Task HandleDeletedJob(V1Job job, IStreamDefinition streamDefinition, bool expectToRestart, bool expectBackfill)
     {
         // Arrange
         var mockSource = Source.From(new List<(WatchEventType, V1Job)>
@@ -151,7 +127,7 @@ public class StreamingJobMaintenanceServiceTests : IClassFixture<LoggerFixture>
         this.streamDefinitionRepositoryMock
                     .Setup(service =>
                         service.GetStreamDefinition(job.Namespace(), job.GetStreamKind(), job.GetStreamId()))
-                    .ReturnsAsync((streamClass.AsOption(), streamDefinition.AsOption()));
+                    .ReturnsAsync(streamDefinition.AsOption());
 
 
         var service = this.CreateService();
@@ -167,19 +143,13 @@ public class StreamingJobMaintenanceServiceTests : IClassFixture<LoggerFixture>
 
     public static IEnumerable<object[]> GenerateDeletedJobTestCases()
     {
-        yield return new object[] { CompletedJob, StreamClass, StreamDefinition, true, false };
-        yield return new object[] { ReloadRequestedJob, StreamClass, StreamDefinition, true, true };
-        yield return new object[] { SchemaMismatchJob, StreamClass, StreamDefinition, true, true };
+        yield return new object[] { CompletedJob, StreamDefinition, true, false };
+        yield return new object[] { ReloadRequestedJob, StreamDefinition, true, true };
+        yield return new object[] { SchemaMismatchJob, StreamDefinition, true, true };
 
-        yield return new object[] { CompletedJob, StreamClass, SuspendedStreamDefinition, false, false };
-        yield return new object[] { ReloadRequestedJob, StreamClass, SuspendedStreamDefinition, false, true };
-        yield return new object[] { SchemaMismatchJob, StreamClass, SuspendedStreamDefinition, false, true };
-    }
-
-    public static IEnumerable<object[]> GenerateAddedJobTestCases()
-    {
-        yield return new object[] { StreamPhase.RUNNING.ToString(), RunningJob, true };
-        yield return new object[] { StreamPhase.RELOADING.ToString(), ReloadingJob, true };
+        yield return new object[] { CompletedJob, SuspendedStreamDefinition, false, false };
+        yield return new object[] { ReloadRequestedJob, SuspendedStreamDefinition, false, true };
+        yield return new object[] { SchemaMismatchJob, SuspendedStreamDefinition, false, true };
     }
 
     public static IEnumerable<object[]> GenerateCompletedJobTestCases()
@@ -224,9 +194,14 @@ public class StreamingJobMaintenanceServiceTests : IClassFixture<LoggerFixture>
         return new ServiceCollection()
             .AddSingleton(this.kubeClusterMock.Object)
             .AddSingleton(this.streamDefinitionRepositoryMock.Object)
+            .AddSingleton(this.streamClassRepositoryMock.Object)
+            .AddSingleton<ICommandHandler<UpdateStatusCommand>, UpdateStatusCommandHandler>()
+            .AddSingleton<ICommandHandler<SetAnnotationCommand>, SetAnnotationCommandHandler>()
             .AddSingleton(this.streamingJobOperatorServiceMock.Object)
+            .AddSingleton<ICommandHandler<StreamingJobCommand>, StreamingJobCommandHandler>()
             .AddSingleton(this.loggerFixture.Factory.CreateLogger<StreamingJobMaintenanceService>())
             .AddSingleton(this.loggerFixture.Factory.CreateLogger<StreamingJobOperatorService>())
+            .AddSingleton(this.loggerFixture.Factory.CreateLogger<SetAnnotationCommandHandler>())
             .AddSingleton<IMetricsReporter, MetricsReporter>()
             .AddSingleton(Mock.Of<MetricsService>())
             .AddSingleton<StreamingJobMaintenanceService>()

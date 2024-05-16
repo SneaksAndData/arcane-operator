@@ -7,7 +7,6 @@ using Akka.Streams.Dsl;
 using Akka.Util;
 using Arcane.Models.StreamingJobLifecycle;
 using Arcane.Operator.Extensions;
-using Arcane.Operator.Models.StreamClass.Base;
 using Arcane.Operator.Models.StreamDefinitions;
 using Arcane.Operator.Models.StreamDefinitions.Base;
 using Arcane.Operator.Models.StreamStatuses.StreamStatus.V1Beta1;
@@ -34,13 +33,13 @@ public class StreamDefinitionRepository : IStreamDefinitionRepository
         this.streamClassRepository = streamClassRepository;
     }
 
-    public Task<(Option<IStreamClass>, Option<IStreamDefinition>)> GetStreamDefinition(string nameSpace, string kind, string streamId) =>
+    public Task<Option<IStreamDefinition>> GetStreamDefinition(string nameSpace, string kind, string streamId) =>
         this.streamClassRepository.Get(nameSpace, kind).FlatMap(crdConf =>
             {
                 if (crdConf is { HasValue: false })
                 {
                     this.logger.LogError("Failed to get configuration for kind {kind}", kind);
-                    return Task.FromResult((Option<IStreamClass>.None, Option<IStreamDefinition>.None));
+                    return Task.FromResult(Option<IStreamDefinition>.None);
                 }
 
                 return this.kubeCluster
@@ -50,12 +49,11 @@ public class StreamDefinitionRepository : IStreamDefinitionRepository
                         crdConf.Value.PluralNameRef,
                         nameSpace,
                         streamId,
-                        element => (crdConf, element.AsOptionalStreamDefinition()));
+                        element => element.AsOptionalStreamDefinition());
             }
         );
 
-    public Task<Option<IStreamDefinition>> SetStreamStatus(string nameSpace, string kind, string streamId,
-        V1Beta1StreamStatus streamStatus) =>
+    public Task<Option<IStreamDefinition>> SetStreamStatus(string nameSpace, string kind, string streamId, V1Beta1StreamStatus streamStatus) =>
         this.streamClassRepository.Get(nameSpace, kind).FlatMap(crdConf =>
         {
             if (crdConf is { HasValue: false })
@@ -93,24 +91,6 @@ public class StreamDefinitionRepository : IStreamDefinitionRepository
             return this.kubeCluster
                 .RemoveObjectAnnotation(crdConf.Value.ToNamespacedCrd(),
                     Annotations.STATE_ANNOTATION_KEY,
-                    streamId,
-                    nameSpace)
-                .Map(result => ((JsonElement)result).AsOptionalStreamDefinition());
-        });
-
-    public Task<Option<IStreamDefinition>> SetCrashLoopAnnotation(string nameSpace, string kind, string streamId) =>
-        this.streamClassRepository.Get(nameSpace, kind).FlatMap(crdConf =>
-        {
-            if (crdConf is { HasValue: false })
-            {
-                this.logger.LogError("Failed to get configuration for kind {kind}", kind);
-                return Task.FromResult(Option<IStreamDefinition>.None);
-            }
-
-            return this.kubeCluster
-                .AnnotateObject(crdConf.Value.ToNamespacedCrd(),
-                    Annotations.STATE_ANNOTATION_KEY,
-                    Annotations.CRASH_LOOP_STATE_ANNOTATION_VALUE,
                     streamId,
                     nameSpace)
                 .Map(result => ((JsonElement)result).AsOptionalStreamDefinition());
