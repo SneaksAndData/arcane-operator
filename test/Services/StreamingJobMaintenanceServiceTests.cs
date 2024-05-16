@@ -73,7 +73,7 @@ public class StreamingJobMaintenanceServiceTests : IClassFixture<LoggerFixture>
         this.streamDefinitionRepositoryMock
             .Setup(s => s.GetStreamDefinition(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
             .ReturnsAsync(() =>
-                definitionExists ? (Mock.Of<IStreamClass>().AsOption(), Mock.Of<IStreamDefinition>().AsOption()) : (Option<IStreamClass>.None, Option<IStreamDefinition>.None));
+                definitionExists ? Mock.Of<IStreamDefinition>().AsOption() : Option<IStreamDefinition>.None);
         var service = this.CreateService();
 
         // Act
@@ -111,8 +111,7 @@ public class StreamingJobMaintenanceServiceTests : IClassFixture<LoggerFixture>
 
     [Theory]
     [MemberData(nameof(GenerateDeletedJobTestCases))]
-    public async Task HandleDeletedJob(V1Job job, IStreamClass streamClass, IStreamDefinition streamDefinition, bool expectToRestart,
-        bool expectBackfill)
+    public async Task HandleDeletedJob(V1Job job, IStreamDefinition streamDefinition, bool expectToRestart, bool expectBackfill)
     {
         // Arrange
         var mockSource = Source.From(new List<(WatchEventType, V1Job)>
@@ -128,7 +127,7 @@ public class StreamingJobMaintenanceServiceTests : IClassFixture<LoggerFixture>
         this.streamDefinitionRepositoryMock
                     .Setup(service =>
                         service.GetStreamDefinition(job.Namespace(), job.GetStreamKind(), job.GetStreamId()))
-                    .ReturnsAsync((streamClass.AsOption(), streamDefinition.AsOption()));
+                    .ReturnsAsync(streamDefinition.AsOption());
 
 
         var service = this.CreateService();
@@ -144,13 +143,13 @@ public class StreamingJobMaintenanceServiceTests : IClassFixture<LoggerFixture>
 
     public static IEnumerable<object[]> GenerateDeletedJobTestCases()
     {
-        yield return new object[] { CompletedJob, StreamClass, StreamDefinition, true, false };
-        yield return new object[] { ReloadRequestedJob, StreamClass, StreamDefinition, true, true };
-        yield return new object[] { SchemaMismatchJob, StreamClass, StreamDefinition, true, true };
+        yield return new object[] { CompletedJob, StreamDefinition, true, false };
+        yield return new object[] { ReloadRequestedJob, StreamDefinition, true, true };
+        yield return new object[] { SchemaMismatchJob, StreamDefinition, true, true };
 
-        yield return new object[] { CompletedJob, StreamClass, SuspendedStreamDefinition, false, false };
-        yield return new object[] { ReloadRequestedJob, StreamClass, SuspendedStreamDefinition, false, true };
-        yield return new object[] { SchemaMismatchJob, StreamClass, SuspendedStreamDefinition, false, true };
+        yield return new object[] { CompletedJob, SuspendedStreamDefinition, false, false };
+        yield return new object[] { ReloadRequestedJob, SuspendedStreamDefinition, false, true };
+        yield return new object[] { SchemaMismatchJob, SuspendedStreamDefinition, false, true };
     }
 
     public static IEnumerable<object[]> GenerateCompletedJobTestCases()
