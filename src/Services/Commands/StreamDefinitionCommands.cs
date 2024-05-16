@@ -3,6 +3,8 @@ using Arcane.Operator.Models;
 using Arcane.Operator.Models.StreamDefinitions.Base;
 using Arcane.Operator.Models.StreamStatuses.StreamStatus.V1Beta1;
 using Arcane.Operator.Services.Base;
+using k8s;
+using k8s.Models;
 
 namespace Arcane.Operator.Services.Commands;
 
@@ -67,26 +69,14 @@ public record Reloading(IStreamDefinition affectedResource) : SetReadyStatus(aff
 /// <param name="affectedResource"></param>
 public record Running(IStreamDefinition affectedResource) : SetReadyStatus(affectedResource, StreamPhase.RELOADING);
 
-/// <summary>
-/// Abstract class for setting annotation on a stream definition Kubernetes object
-/// </summary>
-/// <param name="affectedResource">The resource to update</param>
-/// <param name="annotationKey">Annotation key</param>
-/// <param name="annotationValue">Annotation value</param>
-public abstract record SetAnnotationCommand(IStreamDefinition affectedResource, string annotationKey, string annotationValue) : StreamDefinitionCommand;
 
-/// <summary>
-/// Abstract class for setting annotation on a stream definition Kubernetes object
-/// </summary>
-/// <param name="affectedResource">The resource to update</param>
-/// <param name="annotationKey">Annotation key</param>
-public abstract record RemoveAnnotationCommand(IStreamDefinition affectedResource, string annotationKey) : StreamDefinitionCommand;
 
 /// <summary>
 /// Sets the stream definition annotation to indicate that the stream is in a crash loop
 /// </summary>
 /// <param name="affectedResource">The resource to update</param>
-public record SetCrashLoopStatusAnnotationCommand(IStreamDefinition affectedResource) : SetAnnotationCommand(
+public record SetCrashLoopStatusAnnotationCommand(IStreamDefinition affectedResource) :
+    SetAnnotationCommand<IStreamDefinition>(
     affectedResource,
     Annotations.STATE_ANNOTATION_KEY,
     Annotations.CRASH_LOOP_STATE_ANNOTATION_VALUE);
@@ -95,6 +85,7 @@ public record SetCrashLoopStatusAnnotationCommand(IStreamDefinition affectedReso
 /// Sets the stream definition annotation to indicate that the stream is in a crash loop
 /// </summary>
 /// <param name="affectedResource">The resource to update</param>
-public record RemoveReloadRequestedAnnotation(IStreamDefinition affectedResource) : RemoveAnnotationCommand(
+public record RemoveReloadRequestedAnnotation(IStreamDefinition affectedResource) :
+    RemoveAnnotationCommand<IStreamDefinition>(
     affectedResource,
     Annotations.STATE_ANNOTATION_KEY);

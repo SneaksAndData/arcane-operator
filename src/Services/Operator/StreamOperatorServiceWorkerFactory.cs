@@ -1,10 +1,11 @@
 ﻿using Akka.Streams;
 using Arcane.Operator.Models.StreamClass.Base;
+using Arcane.Operator.Models.StreamDefinitions.Base;
 using Arcane.Operator.Services.Base;
+using Arcane.Operator.Services.CommandHandlers;
 using Arcane.Operator.Services.Commands;
-using Arcane.Operator.Services.Metrics;
+using k8s.Models;
 using Microsoft.Extensions.Logging;
-using Snd.Sdk.Metrics.Base;
 
 namespace Arcane.Operator.Services.Operator;
 
@@ -17,8 +18,9 @@ public class StreamOperatorServiceWorkerFactory : IStreamOperatorServiceWorkerFa
     private readonly IStreamDefinitionRepository streamDefinitionRepository;
     private readonly IMetricsReporter metricsService;
     private readonly ICommandHandler<UpdateStatusCommand> updateStatusCommandHandler;
-    private readonly ICommandHandler<StreamingJobCommand> streamingJobCommandHandler;
-    private readonly ICommandHandler<SetAnnotationCommand> setAnnotationCommandHandler;
+    private readonly IStreamingJobCommandHandler streamingJobCommandHandler;
+    private readonly ICommandHandler<SetAnnotationCommand<V1Job>> setAnnotationCommandHandler;
+    private readonly ICommandHandler<RemoveAnnotationCommand<IStreamDefinition>> removeAnnotationCommandHandler;
 
     public StreamOperatorServiceWorkerFactory(ILoggerFactory loggerFactory,
         IMaterializer materializer,
@@ -26,8 +28,9 @@ public class StreamOperatorServiceWorkerFactory : IStreamOperatorServiceWorkerFa
         IStreamingJobOperatorService jobOperatorService,
         IStreamDefinitionRepository streamDefinitionRepository,
         ICommandHandler<UpdateStatusCommand> updateStatusCommandHandler,
-        ICommandHandler<SetAnnotationCommand> setAnnotationCommandHandler,
-        ICommandHandler<StreamingJobCommand> streamingJobCommandHandler)
+        ICommandHandler<SetAnnotationCommand<V1Job>> setAnnotationCommandHandler,
+        ICommandHandler<RemoveAnnotationCommand<IStreamDefinition>> removeAnnotationCommandHandler,
+        IStreamingJobCommandHandler streamingJobCommandHandler)
     {
         this.loggerFactory = loggerFactory;
         this.materializer = materializer;
@@ -37,6 +40,7 @@ public class StreamOperatorServiceWorkerFactory : IStreamOperatorServiceWorkerFa
         this.updateStatusCommandHandler = updateStatusCommandHandler;
         this.streamingJobCommandHandler = streamingJobCommandHandler;
         this.setAnnotationCommandHandler = setAnnotationCommandHandler;
+        this.removeAnnotationCommandHandler = removeAnnotationCommandHandler;
     }
 
     /// <inheritdoc cref="IStreamOperatorServiceWorkerFactory.Create"/>
@@ -49,6 +53,7 @@ public class StreamOperatorServiceWorkerFactory : IStreamOperatorServiceWorkerFa
             this.metricsService,
             this.updateStatusCommandHandler,
             this.setAnnotationCommandHandler,
+            this.removeAnnotationCommandHandler,
             this.streamingJobCommandHandler,
             this.loggerFactory.CreateLogger<StreamOperatorService>()
         );

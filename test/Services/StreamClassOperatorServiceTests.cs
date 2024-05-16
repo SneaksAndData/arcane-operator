@@ -24,6 +24,7 @@ using Arcane.Operator.Services.Streams;
 using Arcane.Operator.Tests.Fixtures;
 using Arcane.Operator.Tests.Services.TestCases;
 using k8s;
+using k8s.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Logging;
@@ -69,6 +70,16 @@ public class StreamClassOperatorServiceTests : IClassFixture<LoggerFixture>, ICl
             .Returns(Source.Single<(WatchEventType, V1Beta1StreamClass)>((WatchEventType.Added,
                 (V1Beta1StreamClass)StreamClass)));
 
+        this.streamDefinitionRepositoryMock
+            .Setup(m => m.GetEvents(It.IsAny<CustomResourceApiRequest>(), It.IsAny<int>()))
+            .Returns(Source.From(
+                new List<ResourceEvent<IStreamDefinition>>
+                {
+                    new(WatchEventType.Added, StreamDefinitionTestCases.NamedStreamDefinition()),
+                    new(WatchEventType.Added, StreamDefinitionTestCases.NamedStreamDefinition()),
+                    new(WatchEventType.Added, StreamDefinitionTestCases.NamedStreamDefinition())
+                }));
+        
         this.streamDefinitionRepositoryMock
             .Setup(m => m.GetEvents(It.IsAny<CustomResourceApiRequest>(), It.IsAny<int>()))
             .Returns(Source.From(
@@ -153,15 +164,18 @@ public class StreamClassOperatorServiceTests : IClassFixture<LoggerFixture>, ICl
             .AddSingleton<IStreamClassRepository, StreamClassRepository>()
             .AddMemoryCache()
             .AddSingleton<ICommandHandler<UpdateStatusCommand>, UpdateStatusCommandHandler>()
-            .AddSingleton<ICommandHandler<SetAnnotationCommand>, SetAnnotationCommandHandler>()
-            .AddSingleton<ICommandHandler<StreamingJobCommand>, StreamingJobCommandHandler>()
+            .AddSingleton<ICommandHandler<SetAnnotationCommand<IStreamDefinition>>, AnnotationCommandHandler>()
+            .AddSingleton<ICommandHandler<RemoveAnnotationCommand<IStreamDefinition>>, AnnotationCommandHandler>()
+            .AddSingleton<ICommandHandler<SetAnnotationCommand<V1Job>>, AnnotationCommandHandler>()
+            .AddSingleton<IStreamingJobCommandHandler, StreamingJobCommandHandler>()
             .AddSingleton<IMetricsReporter, MetricsReporter>()
             .AddSingleton(Mock.Of<MetricsService>())
             .AddSingleton(loggerFixture.Factory.CreateLogger<StreamOperatorService>())
             .AddSingleton(loggerFixture.Factory.CreateLogger<StreamClassOperatorService>())
             .AddSingleton(this.loggerFixture.Factory.CreateLogger<StreamingJobMaintenanceService>())
             .AddSingleton(this.loggerFixture.Factory.CreateLogger<StreamingJobOperatorService>())
-            .AddSingleton(this.loggerFixture.Factory.CreateLogger<SetAnnotationCommandHandler>())
+            .AddSingleton(this.loggerFixture.Factory.CreateLogger<AnnotationCommandHandler>())
+            .AddSingleton(this.loggerFixture.Factory.CreateLogger<UpdateStatusCommandHandler>())
             .AddSingleton(loggerFixture.Factory)
             .AddSingleton(optionsMock.Object)
             .AddSingleton(metricsReporterConfiguration)

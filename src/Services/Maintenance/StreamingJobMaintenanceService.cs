@@ -7,6 +7,7 @@ using Akka.Streams.Dsl;
 using Akka.Util;
 using Arcane.Operator.Configurations;
 using Arcane.Operator.Extensions;
+using Arcane.Operator.Models.StreamDefinitions.Base;
 using Arcane.Operator.Services.Base;
 using Arcane.Operator.Services.Commands;
 using k8s;
@@ -30,7 +31,7 @@ public class StreamingJobMaintenanceService : IStreamingJobMaintenanceService
     private readonly IStreamDefinitionRepository streamDefinitionRepository;
     private readonly IMetricsReporter metricsReporter;
     private readonly ICommandHandler<UpdateStatusCommand> updateStatusCommandHandler;
-    private readonly ICommandHandler<SetAnnotationCommand> setAnnotationCommandHandler;
+    private readonly ICommandHandler<SetAnnotationCommand<IStreamDefinition>> setAnnotationCommandHandler;
     private readonly ICommandHandler<StreamingJobCommand> streamingJobCommandHandler;
 
     public StreamingJobMaintenanceService(
@@ -40,7 +41,7 @@ public class StreamingJobMaintenanceService : IStreamingJobMaintenanceService
         IMetricsReporter metricsReporter,
         IStreamDefinitionRepository streamDefinitionRepository,
         ICommandHandler<UpdateStatusCommand> updateStatusCommandHandler,
-        ICommandHandler<SetAnnotationCommand> setAnnotationCommandHandler,
+        ICommandHandler<SetAnnotationCommand<IStreamDefinition>> setAnnotationCommandHandler,
         ICommandHandler<StreamingJobCommand> streamingJobCommandHandler,
         IStreamingJobOperatorService operatorService)
     {
@@ -120,7 +121,7 @@ public class StreamingJobMaintenanceService : IStreamingJobMaintenanceService
     {
         UpdateStatusCommand sdc => this.updateStatusCommandHandler.Handle(sdc),
         StreamingJobCommand sjc => this.streamingJobCommandHandler.Handle(sjc),
-        SetAnnotationCommand sac => this.setAnnotationCommandHandler.Handle(sac),
+        SetAnnotationCommand<IStreamDefinition> sac => this.setAnnotationCommandHandler.Handle(sac),
         _ => throw new ArgumentOutOfRangeException(nameof(response), response, null)
     };
 }

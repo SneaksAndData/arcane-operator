@@ -55,9 +55,11 @@ public static class StreamDefinitionTestCases
     public static IStreamDefinition NamedStreamDefinition(string name = null) => new StreamDefinition
     {
         Spec = JsonDocument.Parse(StreamSpec).RootElement,
+        Kind = "StreamDefinition",
         Metadata = new V1ObjectMeta
         {
-            Name = name ?? Guid.NewGuid().ToString()
+            Name = name ?? Guid.NewGuid().ToString(),
+            NamespaceProperty = "namespace"
         }
     };
 }

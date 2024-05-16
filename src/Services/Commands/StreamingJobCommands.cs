@@ -1,5 +1,7 @@
-﻿using Arcane.Operator.Models.StreamDefinitions.Base;
+﻿using Arcane.Models.StreamingJobLifecycle;
+using Arcane.Operator.Models.StreamDefinitions.Base;
 using Arcane.Operator.Services.Base;
+using k8s.Models;
 
 namespace Arcane.Operator.Services.Commands;
 
@@ -22,3 +24,18 @@ public record StartJob(IStreamDefinition streamDefinition, bool IsBackfilling) :
 /// <param name="streamId">Id of the stream</param>
 public record StopJob(string streamKind, string streamId) : StreamingJobCommand;
 
+/// <summary>
+/// Stop a streaming job
+/// </summary>
+/// <param name="affectedResource">Job object</param>
+public record RequestJobRestartCommand(V1Job affectedResource) : SetAnnotationCommand<V1Job>(affectedResource,
+    Annotations.STATE_ANNOTATION_KEY,
+    Annotations.RESTARTING_STATE_ANNOTATION_VALUE);
+
+/// <summary>
+/// Stop a streaming job
+/// </summary>
+/// <param name="affectedResource">Job object</param>
+public record RequestJobReloadCommand(V1Job affectedResource) : SetAnnotationCommand<V1Job>(affectedResource,
+    Annotations.STATE_ANNOTATION_KEY,
+    Annotations.RELOADING_STATE_ANNOTATION_VALUE);

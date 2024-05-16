@@ -57,7 +57,10 @@ public static class JobTestCases
     {
         var job = new V1Job
         {
-            Metadata = new V1ObjectMeta(),
+            Metadata = new V1ObjectMeta
+            {
+                Name = "stream"
+            },
             Spec = new V1JobSpec
             {
                 Template = new V1PodTemplateSpec

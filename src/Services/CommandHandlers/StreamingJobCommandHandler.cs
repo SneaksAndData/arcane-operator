@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Arcane.Operator.Extensions;
 using Arcane.Operator.Services.Base;
 using Arcane.Operator.Services.Commands;
 using k8s.Models;
@@ -7,8 +8,15 @@ using Snd.Sdk.Tasks;
 
 namespace Arcane.Operator.Services.CommandHandlers;
 
+public interface IStreamingJobCommandHandler : ICommandHandler<StreamingJobCommand>,
+    ICommandHandler<RequestJobRestartCommand>,
+    ICommandHandler<RequestJobReloadCommand>
+{
+
+}
+
 /// <inheritdoc cref="ICommandHandler{T}" />
-public class StreamingJobCommandHandler : ICommandHandler<StreamingJobCommand>
+public class StreamingJobCommandHandler : IStreamingJobCommandHandler
 {
     private readonly IStreamClassRepository streamClassRepository;
     private readonly IStreamingJobOperatorService streamingJobOperatorService;
@@ -34,4 +42,14 @@ public class StreamingJobCommandHandler : ICommandHandler<StreamingJobCommand>
         StopJob stopJob => this.streamingJobOperatorService.DeleteJob(stopJob.streamKind, stopJob.streamId),
         _ => throw new ArgumentOutOfRangeException(nameof(command), command, null)
     };
+
+    public Task Handle(RequestJobRestartCommand command)
+    {
+        return this.streamingJobOperatorService.RequestStreamingJobRestart(command.affectedResource.GetStreamId());
+    }
+    
+    public Task Handle(RequestJobReloadCommand command)
+    {
+        return this.streamingJobOperatorService.RequestStreamingJobReload(command.affectedResource.GetStreamId());
+    }
 }

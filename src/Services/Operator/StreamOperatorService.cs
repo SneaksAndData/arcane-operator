@@ -2,24 +2,21 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Akka;
 using Akka.Streams;
 using Akka.Streams.Dsl;
 using Akka.Streams.Supervision;
 using Akka.Util;
-using Akka.Util.Extensions;
 using Arcane.Operator.Extensions;
-using Arcane.Operator.Models;
 using Arcane.Operator.Models.StreamClass.Base;
 using Arcane.Operator.Models.StreamDefinitions.Base;
 using Arcane.Operator.Services.Base;
+using Arcane.Operator.Services.CommandHandlers;
 using Arcane.Operator.Services.Commands;
 using Arcane.Operator.Services.Models;
 using k8s;
 using k8s.Autorest;
 using k8s.Models;
 using Microsoft.Extensions.Logging;
-using Snd.Sdk.ActorProviders;
 using Snd.Sdk.Tasks;
 
 namespace Arcane.Operator.Services.Operator;
@@ -34,16 +31,18 @@ public class StreamOperatorService : IStreamOperatorService
     private readonly IStreamClass streamClass;
     private readonly IMetricsReporter metricsReporter;
     private readonly ICommandHandler<UpdateStatusCommand> updateStatusCommandHandler;
-    private readonly ICommandHandler<SetAnnotationCommand> setAnnotationCommandHandler;
-    private readonly ICommandHandler<StreamingJobCommand> streamingJobCommandHandler;
+    private readonly ICommandHandler<SetAnnotationCommand<V1Job>> setAnnotationCommandHandler;
+    private readonly ICommandHandler<RemoveAnnotationCommand<IStreamDefinition>> removeAnnotationCommandHandler;
+    private readonly IStreamingJobCommandHandler streamingJobCommandHandler;
 
     public StreamOperatorService(IStreamClass streamClass,
         IStreamingJobOperatorService operatorService,
         IStreamDefinitionRepository streamDefinitionRepository,
         IMetricsReporter metricsReporter,
         ICommandHandler<UpdateStatusCommand> updateStatusCommandHandler,
-        ICommandHandler<SetAnnotationCommand> setAnnotationCommandHandler,
-        ICommandHandler<StreamingJobCommand> streamingJobCommandHandler,
+        ICommandHandler<SetAnnotationCommand<V1Job>> setAnnotationCommandHandler,
+        ICommandHandler<RemoveAnnotationCommand<IStreamDefinition>> removeAnnotationCommandHandler,
+        IStreamingJobCommandHandler streamingJobCommandHandler,
         ILogger<StreamOperatorService> logger)
     {
         this.streamClass = streamClass;
@@ -54,6 +53,7 @@ public class StreamOperatorService : IStreamOperatorService
         this.updateStatusCommandHandler = updateStatusCommandHandler;
         this.streamingJobCommandHandler = streamingJobCommandHandler;
         this.setAnnotationCommandHandler = setAnnotationCommandHandler;
+        this.removeAnnotationCommandHandler = removeAnnotationCommandHandler;
     }
 
     public IRunnableGraph<Task> GetStreamDefinitionEventsGraph(CancellationToken cancellationToken)
@@ -143,21 +143,19 @@ public class StreamOperatorService : IStreamOperatorService
             
             { HasValue: true, Value: var job } when streamDefinition.CrashLoopDetected => new StopJob(job.GetStreamId(), job.GetStreamKind()).AsList(),
             { HasValue: true, Value: var job } when streamDefinition.Suspended => new StopJob(job.GetStreamId(), job.GetStreamKind()).AsList(),
-            { HasValue: true, Value: var job } when job.ConfigurationMatches(streamDefinition) => new List<KubernetesCommand>(),
             { HasValue: true, Value: var job } when !job.ConfigurationMatches(streamDefinition) => new
                 List<KubernetesCommand>
                 {
-                    new StopJob(job.GetStreamId(), job.GetStreamKind()),
-                    new StartJob(streamDefinition, false)
+                    new RequestJobRestartCommand(job),
                 },
             { HasValue: true, Value: var job } when streamDefinition.ReloadRequested => new
                 List<KubernetesCommand>
                 {
                     new RemoveReloadRequestedAnnotation(streamDefinition),
-                    new StartJob(streamDefinition, true),
-                    new StopJob(job.GetStreamId(), job.GetStreamKind()),
+                    new RequestJobReloadCommand(job),
                     new Reloading(streamDefinition)
                 },
+            { HasValue: true, Value: var job } when job.ConfigurationMatches(streamDefinition) => new List<KubernetesCommand>(),
             _ => new List<KubernetesCommand>()
         };
     }
@@ -166,7 +164,10 @@ public class StreamOperatorService : IStreamOperatorService
     {
         UpdateStatusCommand sdc => this.updateStatusCommandHandler.Handle(sdc),
         StreamingJobCommand sjc => this.streamingJobCommandHandler.Handle(sjc),
-        SetAnnotationCommand sac => this.setAnnotationCommandHandler.Handle(sac),
+        RequestJobRestartCommand rrc => this.streamingJobCommandHandler.Handle(rrc),
+        RequestJobReloadCommand rrc => this.streamingJobCommandHandler.Handle(rrc),
+        SetAnnotationCommand<V1Job> sac => this.setAnnotationCommandHandler.Handle(sac),
+        RemoveAnnotationCommand<IStreamDefinition> rac => this.removeAnnotationCommandHandler.Handle(rac),
         _ => throw new ArgumentOutOfRangeException(nameof(response), response, null)
     };
 }
