@@ -2,13 +2,14 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Akka.Actor;
 using Akka.Streams;
 using Akka.Streams.Dsl;
-using Akka.Streams.Supervision;
 using Akka.Util;
 using Arcane.Operator.Configurations;
 using Arcane.Operator.Models;
 using Arcane.Operator.Models.StreamClass.Base;
+using Arcane.Operator.Services.Actors;
 using Arcane.Operator.Services.Base;
 using Arcane.Operator.Services.Models;
 using k8s;
@@ -16,6 +17,8 @@ using k8s.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Snd.Sdk.ActorProviders;
+using Snd.Sdk.Tasks;
+using Directive = Akka.Streams.Supervision.Directive;
 
 namespace Arcane.Operator.Services.Operator;
 
@@ -31,18 +34,21 @@ public class StreamClassOperatorService : IStreamClassOperatorService
     private readonly IStreamClassRepository streamClassRepository;
     private readonly IStreamOperatorServiceWorkerFactory streamOperatorServiceWorkerFactory;
     private readonly IMetricsReporter metricsService;
+    private readonly ActorSystem actorSystem;
 
     public StreamClassOperatorService(IOptions<StreamClassOperatorServiceConfiguration> streamOperatorServiceOptions,
         IStreamOperatorServiceWorkerFactory streamOperatorServiceWorkerFactory,
         IStreamClassRepository streamClassRepository,
         IMetricsReporter metricsService,
-        ILogger<StreamClassOperatorService> logger)
+        ILogger<StreamClassOperatorService> logger,
+        ActorSystem actorSystem)
     {
         this.configuration = streamOperatorServiceOptions.Value;
         this.logger = logger;
         this.streamClassRepository = streamClassRepository;
         this.streamOperatorServiceWorkerFactory = streamOperatorServiceWorkerFactory;
         this.metricsService = metricsService;
+        this.actorSystem = actorSystem;
     }
 
     /// <inheritdoc cref="IStreamClassOperatorService.GetStreamClassEventsGraph"/>
@@ -67,20 +73,21 @@ public class StreamClassOperatorService : IStreamClassOperatorService
         return this.streamClassRepository.GetEvents(request, this.configuration.MaxBufferCapacity)
             .Via(cancellationToken.AsFlow<ResourceEvent<IStreamClass>>(true))
             .Select(this.metricsService.ReportTrafficMetrics)
-            .Select(this.OnEvent)
-            .WithAttributes(ActorAttributes.CreateSupervisionStrategy(this.HandleError))
+            .Select(OnEvent)
             .CollectOption()
+            .SelectAsync(1, msg => this.GetOrCreate(msg.streamClass).FlatMap(actor => actor.Ask<StreamClassOperatorResponse>(msg)))
+            .WithAttributes(ActorAttributes.CreateSupervisionStrategy(this.HandleError))
             .Select(this.metricsService.ReportStatusMetrics)
             .ToMaterialized(sink, Keep.Right);
     }
 
-    private Option<StreamClassOperatorResponse> OnEvent(ResourceEvent<IStreamClass> resourceEvent)
+    private static Option<StreamClassManagementMessage> OnEvent(ResourceEvent<IStreamClass> resourceEvent)
     {
         return resourceEvent switch
         {
-            (WatchEventType.Added, var streamClass) => this.OnAdded(streamClass),
-            (WatchEventType.Deleted, var streamClass) => this.OnDeleted(streamClass),
-            _ => Option<StreamClassOperatorResponse>.None
+            (WatchEventType.Added, var streamClass) => new StartListeningMessage(streamClass),
+            (WatchEventType.Deleted, var streamClass) => new StopListeningMessage(streamClass),
+            _ => Option<StreamClassManagementMessage>.None
         };
     }
 
@@ -94,27 +101,11 @@ public class StreamClassOperatorService : IStreamClassOperatorService
         };
     }
 
-    private Option<StreamClassOperatorResponse> OnAdded(IStreamClass streamClass) => this.StartStreamWorker(streamClass);
-
-    private Option<StreamClassOperatorResponse> OnDeleted(IStreamClass streamClass) => this.StopStreamWorker(streamClass);
-
-    private Option<StreamClassOperatorResponse> StartStreamWorker(IStreamClass streamClass)
-    {
-        if (!this.streams.ContainsKey(streamClass.ToStreamClassId()))
+    private Task<IActorRef> GetOrCreate(IStreamClass streamClass) => this.actorSystem
+        .ActorSelection(streamClass.ToStreamClassId()).ResolveOne(TimeSpan.FromSeconds(10))
+        .TryMap(success => success, exception => exception switch
         {
-            var listener = this.streamOperatorServiceWorkerFactory.Create(streamClass);
-            this.streams[streamClass.ToStreamClassId()] = listener;
-            this.streams[streamClass.ToStreamClassId()].Start(streamClass.ToStreamClassId());
-        }
-        return StreamClassOperatorResponse.Ready(streamClass);
-    }
-
-    private Option<StreamClassOperatorResponse> StopStreamWorker(IStreamClass streamClass)
-    {
-        if (this.streams.ContainsKey(streamClass.ToStreamClassId()))
-        {
-            this.streams[streamClass.ToStreamClassId()].Stop();
-        }
-        return StreamClassOperatorResponse.Stopped(streamClass);
-    }
+            ActorNotFoundException => this.actorSystem.ActorOf(Props.Create(() => new StreamClassActor(this.streamOperatorServiceWorkerFactory)), streamClass.ToStreamClassId()),
+            _ => throw exception
+        });
 }
