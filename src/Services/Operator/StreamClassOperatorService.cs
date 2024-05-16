@@ -102,7 +102,7 @@ public class StreamClassOperatorService : IStreamClassOperatorService
     }
 
     private Task<IActorRef> GetOrCreate(IStreamClass streamClass) => this.actorSystem
-        .ActorSelection(streamClass.ToStreamClassId()).ResolveOne(TimeSpan.Zero)
+        .ActorSelection(streamClass.ToStreamClassId()).ResolveOne(TimeSpan.FromSeconds(10))
         .TryMap(success => success, exception => exception switch
         {
             ActorNotFoundException => this.actorSystem.ActorOf(Props.Create(() => new StreamClassActor(this.streamOperatorServiceWorkerFactory)), streamClass.ToStreamClassId()),
