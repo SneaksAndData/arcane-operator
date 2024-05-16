@@ -69,8 +69,6 @@ public record Reloading(IStreamDefinition affectedResource) : SetReadyStatus(aff
 /// <param name="affectedResource"></param>
 public record Running(IStreamDefinition affectedResource) : SetReadyStatus(affectedResource, StreamPhase.RELOADING);
 
-
-
 /// <summary>
 /// Sets the stream definition annotation to indicate that the stream is in a crash loop
 /// </summary>
@@ -82,7 +80,7 @@ public record SetCrashLoopStatusAnnotationCommand(IStreamDefinition affectedReso
     Annotations.CRASH_LOOP_STATE_ANNOTATION_VALUE);
 
 /// <summary>
-/// Sets the stream definition annotation to indicate that the stream is in a crash loop
+/// Removes the stream definition annotation to indicate that the stream is should restart in backfill mode
 /// </summary>
 /// <param name="affectedResource">The resource to update</param>
 public record RemoveReloadRequestedAnnotation(IStreamDefinition affectedResource) :

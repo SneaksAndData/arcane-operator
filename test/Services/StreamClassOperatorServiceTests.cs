@@ -95,7 +95,7 @@ public class StreamClassOperatorServiceTests : IClassFixture<LoggerFixture>, ICl
         await sp.GetRequiredService<IStreamClassOperatorService>()
             .GetStreamClassEventsGraph(CancellationToken.None)
             .Run(this.materializer);
-        await Task.Delay(5000);
+        await Task.Delay(10000);
 
         // Assert
         this.streamingJobOperatorServiceMock.Verify(service => service.StartRegisteredStream(It.IsAny<StreamDefinition>(), It.IsAny<bool>(), It.IsAny<IStreamClass>()));

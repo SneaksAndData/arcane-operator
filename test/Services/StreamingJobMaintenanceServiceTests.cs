@@ -203,6 +203,7 @@ public class StreamingJobMaintenanceServiceTests : IClassFixture<LoggerFixture>
             .AddSingleton(this.loggerFixture.Factory.CreateLogger<StreamingJobMaintenanceService>())
             .AddSingleton(this.loggerFixture.Factory.CreateLogger<StreamingJobOperatorService>())
             .AddSingleton(this.loggerFixture.Factory.CreateLogger<AnnotationCommandHandler>())
+            .AddSingleton(this.loggerFixture.Factory.CreateLogger<UpdateStatusCommandHandler>())
             .AddSingleton<IMetricsReporter, MetricsReporter>()
             .AddSingleton(Mock.Of<MetricsService>())
             .AddSingleton<StreamingJobMaintenanceService>()

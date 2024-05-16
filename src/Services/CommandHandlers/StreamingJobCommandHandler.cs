@@ -8,13 +8,6 @@ using Snd.Sdk.Tasks;
 
 namespace Arcane.Operator.Services.CommandHandlers;
 
-public interface IStreamingJobCommandHandler : ICommandHandler<StreamingJobCommand>,
-    ICommandHandler<RequestJobRestartCommand>,
-    ICommandHandler<RequestJobReloadCommand>
-{
-
-}
-
 /// <inheritdoc cref="ICommandHandler{T}" />
 public class StreamingJobCommandHandler : IStreamingJobCommandHandler
 {

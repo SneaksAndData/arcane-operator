@@ -25,7 +25,7 @@ public record StartJob(IStreamDefinition streamDefinition, bool IsBackfilling) :
 public record StopJob(string streamKind, string streamId) : StreamingJobCommand;
 
 /// <summary>
-/// Stop a streaming job
+/// Request a streaming job to restart
 /// </summary>
 /// <param name="affectedResource">Job object</param>
 public record RequestJobRestartCommand(V1Job affectedResource) : SetAnnotationCommand<V1Job>(affectedResource,
@@ -33,7 +33,7 @@ public record RequestJobRestartCommand(V1Job affectedResource) : SetAnnotationCo
     Annotations.RESTARTING_STATE_ANNOTATION_VALUE);
 
 /// <summary>
-/// Stop a streaming job
+/// Request a streaming job to restart in backfill mode
 /// </summary>
 /// <param name="affectedResource">Job object</param>
 public record RequestJobReloadCommand(V1Job affectedResource) : SetAnnotationCommand<V1Job>(affectedResource,
