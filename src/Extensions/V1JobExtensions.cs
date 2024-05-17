@@ -1,5 +1,7 @@
 ﻿using System.Collections.Generic;
 using Arcane.Models.StreamingJobLifecycle;
+using Arcane.Operator.Models.StreamDefinitions;
+using Arcane.Operator.Models.StreamDefinitions.Base;
 using k8s.Models;
 using Snd.Sdk.Kubernetes;
 
@@ -55,6 +57,10 @@ public static class V1JobExtensions
 
         return string.Empty;
     }
+
+    public static bool ConfigurationMatches(this V1Job job, IStreamDefinition streamDefinition) =>
+        job.GetConfigurationChecksum() == streamDefinition.GetConfigurationChecksum();
+
 
     public static bool IsStopRequested(this V1Job job)
     {

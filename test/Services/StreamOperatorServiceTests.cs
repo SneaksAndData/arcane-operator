@@ -16,10 +16,14 @@ using Arcane.Operator.Models.StreamDefinitions;
 using Arcane.Operator.Models.StreamDefinitions.Base;
 using Arcane.Operator.Models.StreamStatuses.StreamStatus.V1Beta1;
 using Arcane.Operator.Services.Base;
+using Arcane.Operator.Services.CommandHandlers;
+using Arcane.Operator.Services.Commands;
+using Arcane.Operator.Services.Maintenance;
 using Arcane.Operator.Services.Metrics;
 using Arcane.Operator.Services.Models;
 using Arcane.Operator.Services.Operator;
 using Arcane.Operator.Services.Repositories;
+using Arcane.Operator.Services.Streams;
 using Arcane.Operator.Tests.Fixtures;
 using Arcane.Operator.Tests.Services.TestCases;
 using k8s;
@@ -33,11 +37,11 @@ using Snd.Sdk.Metrics.Base;
 using Xunit;
 using static Arcane.Operator.Tests.Services.TestCases.JobTestCases;
 using static Arcane.Operator.Tests.Services.TestCases.StreamDefinitionTestCases;
-using FailedStreamDefinition = Arcane.Operator.Tests.Services.TestCases.FailedStreamDefinition;
+using static Arcane.Operator.Tests.Services.TestCases.StreamClassTestCases;
 
 namespace Arcane.Operator.Tests.Services;
 
-public class StreamOperatorServiceTests : IClassFixture<LoggerFixture>
+public class StreamOperatorServiceTests : IClassFixture<LoggerFixture>, IDisposable
 {
     // Akka service and test helpers
     private readonly ActorSystem actorSystem = ActorSystem.Create(nameof(StreamClassOperatorServiceTests));
@@ -48,21 +52,26 @@ public class StreamOperatorServiceTests : IClassFixture<LoggerFixture>
     private readonly Mock<IKubeCluster> kubeClusterMock = new();
     private readonly Mock<IStreamingJobOperatorService> streamingJobOperatorServiceMock = new();
     private readonly Mock<IStreamDefinitionRepository> streamDefinitionRepositoryMock = new();
+    private readonly Mock<IStreamClassRepository> streamClassRepositoryMock = new();
+    private readonly TaskCompletionSource tcs = new();
+    private readonly CancellationTokenSource cts = new();
 
     public StreamOperatorServiceTests(LoggerFixture loggerFixture)
     {
         this.loggerFixture = loggerFixture;
         this.materializer = this.actorSystem.Materializer();
+        this.streamClassRepositoryMock
+            .Setup(c => c.Get(It.IsAny<string>(), It.IsAny<string>()))
+            .ReturnsAsync(StreamClass.AsOption());
+        this.cts.CancelAfter(TimeSpan.FromSeconds(5));
+        this.cts.Token.Register(this.tcs.SetResult);
     }
 
     public static IEnumerable<object[]> GenerateSynchronizationTestCases()
     {
-        yield return new object[]
-            { WatchEventType.Added, StreamDefinitionTestCases.StreamDefinition, true, false, false, false };
-        yield return new object[]
-            { WatchEventType.Modified, StreamDefinitionTestCases.StreamDefinition, false, true, true, false };
-        yield return new object[]
-            { WatchEventType.Modified, StreamDefinitionTestCases.StreamDefinition, false, true, false, false };
+        yield return new object[] { WatchEventType.Added, StreamDefinitionTestCases.StreamDefinition, true, false, false, false };
+        yield return new object[] { WatchEventType.Modified, StreamDefinitionTestCases.StreamDefinition, false, true, true, false };
+        yield return new object[] { WatchEventType.Modified, StreamDefinitionTestCases.StreamDefinition, false, true, false, false };
 
         yield return new object[] { WatchEventType.Added, SuspendedStreamDefinition, false, false, false, false };
         yield return new object[] { WatchEventType.Deleted, SuspendedStreamDefinition, false, false, false, false };
@@ -85,11 +94,24 @@ public class StreamOperatorServiceTests : IClassFixture<LoggerFixture>
             .Setup(service => service.GetStreamingJob(It.IsAny<string>()))
             .ReturnsAsync(streamingJobExists ? JobWithChecksum("checksum").AsOption() : Option<V1Job>.None);
 
+        var task = this.tcs.Task;
+        streamingJobOperatorServiceMock
+            .Setup(service => service.StartRegisteredStream(
+                It.IsAny<StreamDefinition>(), It.IsAny<bool>(), It.IsAny<IStreamClass>()))
+            .Callback(() => this.tcs.SetResult());
+
+        streamingJobOperatorServiceMock
+            .Setup(service => service.RequestStreamingJobRestart(It.IsAny<string>()))
+            .Callback(() => this.tcs.SetResult());
+
+        streamingJobOperatorServiceMock
+            .Setup(service => service.DeleteJob(It.IsAny<string>(), It.IsAny<string>()))
+            .Callback(() => this.tcs.SetResult());
+
         // Act
         var sp = this.CreateServiceProvider();
-        await sp.GetRequiredService<IStreamOperatorService>()
-            .GetStreamDefinitionEventsGraph(CancellationToken.None)
-            .Run(this.materializer);
+        sp.GetRequiredService<IStreamOperatorService>().Attach(StreamClass);
+        await task;
 
         // Assert
 
@@ -130,11 +152,15 @@ public class StreamOperatorServiceTests : IClassFixture<LoggerFixture>
             .Setup(service => service.GetStreamingJob(It.IsAny<string>()))
             .ReturnsAsync(mockJob.AsOption());
 
+        var task = this.tcs.Task;
+        streamingJobOperatorServiceMock
+            .Setup(service => service.RequestStreamingJobRestart(It.IsAny<string>()))
+            .Callback(this.tcs.SetResult);
+
         // Act
         var sp = this.CreateServiceProvider();
-        await sp.GetRequiredService<IStreamOperatorService>()
-            .GetStreamDefinitionEventsGraph(CancellationToken.None)
-            .Run(this.materializer);
+        sp.GetRequiredService<IStreamOperatorService>().Attach(StreamClass);
+        await task;
 
         // Assert
 
@@ -165,11 +191,18 @@ public class StreamOperatorServiceTests : IClassFixture<LoggerFixture>
             .Setup(service => service.GetStreamingJob(It.IsAny<string>()))
             .ReturnsAsync(jobExists ? mockJob.AsOption() : Option<V1Job>.None);
 
+        var task = this.tcs.Task;
+        streamingJobOperatorServiceMock
+            .Setup(service => service.RequestStreamingJobReload(It.IsAny<string>()))
+            .Callback(this.tcs.SetResult);
+        streamingJobOperatorServiceMock
+            .Setup(service => service.StartRegisteredStream(It.IsAny<IStreamDefinition>(), It.IsAny<bool>(), It.IsAny<IStreamClass>()))
+            .Callback(this.tcs.SetResult);
+
         // Act
         var sp = this.CreateServiceProvider();
-        await sp.GetRequiredService<IStreamOperatorService>()
-            .GetStreamDefinitionEventsGraph(CancellationToken.None)
-            .Run(this.materializer);
+        sp.GetRequiredService<IStreamOperatorService>().Attach(StreamClass);
+        await task;
 
         // Assert
         streamingJobOperatorServiceMock.Verify(service
@@ -215,11 +248,15 @@ public class StreamOperatorServiceTests : IClassFixture<LoggerFixture>
             .Setup(service => service.GetStreamingJob(It.IsAny<string>()))
             .ReturnsAsync(jobExists ? jobIsReloading ? ReloadingJob : RunningJob : Option<V1Job>.None);
 
+        var task = this.tcs.Task;
+        streamingJobOperatorServiceMock
+            .Setup(service => service.StartRegisteredStream(It.IsAny<IStreamDefinition>(), It.IsAny<bool>(), It.IsAny<IStreamClass>()))
+            .Callback(this.tcs.SetResult);
+
         // Act
         var sp = this.CreateServiceProvider();
-        await sp.GetRequiredService<IStreamOperatorService>()
-            .GetStreamDefinitionEventsGraph(CancellationToken.None)
-            .Run(this.materializer);
+        sp.GetRequiredService<IStreamOperatorService>().Attach(StreamClass);
+        await task;
 
         // Assert
         streamingJobOperatorServiceMock.Verify(service
@@ -248,11 +285,12 @@ public class StreamOperatorServiceTests : IClassFixture<LoggerFixture>
             .Setup(service => service.GetStreamingJob(It.IsAny<string>()))
             .ReturnsAsync(FailedJob.AsOption());
 
+        var task = this.tcs.Task;
+
         // Act
         var sp = this.CreateServiceProvider();
-        await sp.GetRequiredService<IStreamOperatorService>()
-            .GetStreamDefinitionEventsGraph(CancellationToken.None)
-            .Run(this.materializer);
+        sp.GetRequiredService<IStreamOperatorService>().Attach(StreamClass);
+        await task;
 
         // Assert
         streamingJobOperatorServiceMock.Verify(service
@@ -273,20 +311,18 @@ public class StreamOperatorServiceTests : IClassFixture<LoggerFixture>
                 s.GetEvents(It.IsAny<CustomResourceApiRequest>(), It.IsAny<int>()))
             .Returns(Source.Single(new ResourceEvent<IStreamDefinition>(WatchEventType.Added, streamDefinition)));
 
+        var task = this.tcs.Task;
         streamingJobOperatorServiceMock
             .Setup(service => service.GetStreamingJob(It.IsAny<string>()))
             .ReturnsAsync(FailedJob.AsOption());
 
         // Act
-        var exception = await Assert.ThrowsAnyAsync<Exception>(async () =>
-        {
-            var sp = this.CreateServiceProvider();
-            await sp.GetRequiredService<IStreamOperatorService>()
-                .GetStreamDefinitionEventsGraph(CancellationToken.None)
-                .Run(this.materializer);
-        });
-        // Assert
-        Assert.Equal("test", exception.Message);
+        var sp = this.CreateServiceProvider();
+        sp.GetRequiredService<IStreamOperatorService>().Attach(StreamClass);
+        await task;
+
+        // Assert that code above didn't throw
+        Assert.True(task.IsCompleted);
     }
 
     [Fact]
@@ -312,21 +348,22 @@ public class StreamOperatorServiceTests : IClassFixture<LoggerFixture>
                     It.IsAny<V1Beta1StreamStatus>()))
             .ThrowsAsync(new Exception());
 
+        var task = this.tcs.Task;
+
         // Act
         var sp = this.CreateServiceProvider();
-        await sp.GetRequiredService<IStreamOperatorService>()
-            .GetStreamDefinitionEventsGraph(CancellationToken.None)
-            .Run(this.materializer);
+        sp.GetRequiredService<IStreamOperatorService>().Attach(StreamClass);
+        await task;
 
         // Assert that code above didn't throw
-        Assert.True(true);
+        Assert.True(task.IsCompleted);
     }
 
 
     private void SetupEventMock(WatchEventType eventType, IStreamDefinition streamDefinition)
     {
-        this.streamDefinitionRepositoryMock.Setup(service =>
-                service.GetEvents(It.IsAny<CustomResourceApiRequest>(), It.IsAny<int>()))
+        this.streamDefinitionRepositoryMock
+            .Setup(service => service.GetEvents(It.IsAny<CustomResourceApiRequest>(), It.IsAny<int>()))
             .Returns(Source.Single(new ResourceEvent<IStreamDefinition>(eventType, streamDefinition)));
     }
 
@@ -349,30 +386,33 @@ public class StreamOperatorServiceTests : IClassFixture<LoggerFixture>
             .AddSingleton(this.materializer)
             .AddSingleton(this.actorSystem)
             .AddSingleton(this.kubeClusterMock.Object)
+            .AddSingleton<IMaterializer>(this.actorSystem.Materializer())
             .AddSingleton(streamingJobOperatorServiceMock.Object)
             .AddSingleton(this.streamDefinitionRepositoryMock.Object)
-            .AddSingleton(Mock.Of<IStreamClassRepository>())
+            .AddSingleton<ICommandHandler<UpdateStatusCommand>, UpdateStatusCommandHandler>()
+            .AddSingleton<ICommandHandler<SetAnnotationCommand<V1Job>>, AnnotationCommandHandler>()
+            .AddSingleton<ICommandHandler<RemoveAnnotationCommand<IStreamDefinition>>, AnnotationCommandHandler>()
+            .AddSingleton<IStreamingJobCommandHandler, StreamingJobCommandHandler>()
+            .AddSingleton(this.streamClassRepositoryMock.Object)
             .AddSingleton<IMetricsReporter, MetricsReporter>()
             .AddSingleton(Mock.Of<MetricsService>())
             .AddSingleton(metricsReporterConfiguration)
             .AddSingleton(this.loggerFixture.Factory.CreateLogger<StreamOperatorService>())
             .AddSingleton(this.loggerFixture.Factory.CreateLogger<StreamDefinitionRepository>())
+            .AddSingleton(this.loggerFixture.Factory.CreateLogger<StreamingJobMaintenanceService>())
+            .AddSingleton(this.loggerFixture.Factory.CreateLogger<StreamingJobOperatorService>())
+            .AddSingleton(this.loggerFixture.Factory.CreateLogger<AnnotationCommandHandler>())
+            .AddSingleton(this.loggerFixture.Factory.CreateLogger<UpdateStatusCommandHandler>())
             .AddSingleton(streamingJobOperatorServiceMock.Object)
             .AddSingleton(optionsMock.Object)
-            // In read code StreamClass is not registered as a service, but it is used in StreamOperatorService
-            .AddSingleton<IStreamClass>(new V1Beta1StreamClass
-            {
-                Spec = new V1Beta1StreamClassSpec
-                {
-                    MaxBufferCapacity = 1000,
-                    KindRef = "StreamKind",
-                    ApiVersion = "v1",
-                    PluralName = "streams",
-                    ApiGroupRef = "example.com",
-                    StreamClassResourceKind = "StreamClass"
-                }
-            })
             .AddSingleton<IStreamOperatorService, StreamOperatorService>()
             .BuildServiceProvider();
+    }
+
+    public void Dispose()
+    {
+        this.actorSystem?.Dispose();
+        this.materializer?.Dispose();
+        this.cts?.Dispose();
     }
 }

@@ -4,6 +4,7 @@ using System.Text.Json;
 using Arcane.Models.StreamingJobLifecycle;
 using Arcane.Operator.Models.StreamDefinitions;
 using Arcane.Operator.Models.StreamDefinitions.Base;
+using Avro.IO.Parsing;
 using k8s.Models;
 
 namespace Arcane.Operator.Tests.Services.TestCases;
@@ -11,10 +12,12 @@ namespace Arcane.Operator.Tests.Services.TestCases;
 public static class StreamDefinitionTestCases
 {
     private static readonly string StreamSpec = "{\"jobTemplateRef\": {\"name\": \"jobTemplate\"}, \"reloadingJobTemplateRef\": {\"name\": \"jobTemplate\"}}";
+    public static readonly string Kind = "StreamDefinition";
 
     public static IStreamDefinition StreamDefinition => new StreamDefinition
     {
         Spec = JsonDocument.Parse(StreamSpec).RootElement,
+        Kind = Kind,
         Metadata = new V1ObjectMeta
         {
             Name = "stream"
@@ -24,6 +27,7 @@ public static class StreamDefinitionTestCases
     public static IStreamDefinition SuspendedStreamDefinition => new StreamDefinition
     {
         Spec = JsonDocument.Parse(StreamSpec).RootElement,
+        Kind = Kind,
         Metadata = new V1ObjectMeta
         {
             Name = "stream",
@@ -37,6 +41,7 @@ public static class StreamDefinitionTestCases
     public static IStreamDefinition ReloadRequestedStreamDefinition => new StreamDefinition
     {
         Spec = JsonDocument.Parse(StreamSpec).RootElement,
+        Kind = Kind,
         Metadata = new V1ObjectMeta
         {
             Name = "stream",
@@ -55,9 +60,11 @@ public static class StreamDefinitionTestCases
     public static IStreamDefinition NamedStreamDefinition(string name = null) => new StreamDefinition
     {
         Spec = JsonDocument.Parse(StreamSpec).RootElement,
+        Kind = Kind,
         Metadata = new V1ObjectMeta
         {
-            Name = name ?? Guid.NewGuid().ToString()
+            Name = name ?? Guid.NewGuid().ToString(),
+            NamespaceProperty = "namespace"
         }
     };
 }

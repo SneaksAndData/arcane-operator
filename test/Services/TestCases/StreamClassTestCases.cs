@@ -11,7 +11,7 @@ public static class StreamClassTestCases
         Spec = new V1Beta1StreamClassSpec
         {
             MaxBufferCapacity = 100,
-            KindRef = "StreamClass",
+            KindRef = StreamDefinitionTestCases.Kind,
         },
         Metadata = new V1ObjectMeta
         {
