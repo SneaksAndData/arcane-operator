@@ -52,14 +52,14 @@ public class StreamClassOperatorService : IStreamClassOperatorService
             this.configuration.Version,
             this.configuration.Plural
         );
-        
-        var sink = Sink.ForEachAsync<StreamClassOperatorResponse>(parallelism, response =>	
-        {	
-            this.logger.LogInformation("The phase of the stream class {namespace}/{name} changed to {status}",	
-                response.StreamClass.Metadata.Namespace(),	
-                response.StreamClass.Metadata.Name,	
-                response.Phase);	
-            return this.streamClassRepository.InsertOrUpdate(response.StreamClass, response.Phase, response.Conditions, this.configuration.Plural);	
+
+        var sink = Sink.ForEachAsync<StreamClassOperatorResponse>(parallelism, response =>
+        {
+            this.logger.LogInformation("The phase of the stream class {namespace}/{name} changed to {status}",
+                response.StreamClass.Metadata.Namespace(),
+                response.StreamClass.Metadata.Name,
+                response.Phase);
+            return this.streamClassRepository.InsertOrUpdate(response.StreamClass, response.Phase, response.Conditions, this.configuration.Plural);
         });
 
         return this.streamClassRepository.GetEvents(request, this.configuration.MaxBufferCapacity)
@@ -67,18 +67,18 @@ public class StreamClassOperatorService : IStreamClassOperatorService
             .Select(this.OnEvent)
             .CollectOption()
             .Select(this.metricsService.ReportStatusMetrics)
-            .WithAttributes(ActorAttributes.CreateSupervisionStrategy(this.HandleError)) 
+            .WithAttributes(ActorAttributes.CreateSupervisionStrategy(this.HandleError))
             .ToMaterialized(sink, Keep.Right);
     }
 
     private Option<StreamClassOperatorResponse> OnEvent(ResourceEvent<IStreamClass> resourceEvent)
-    {	
-        return resourceEvent switch	
-        {	
+    {
+        return resourceEvent switch
+        {
             (WatchEventType.Added, var streamClass) => this.Attach(streamClass),
             (WatchEventType.Deleted, var streamClass) => this.Detach(streamClass),
             _ => Option<StreamClassOperatorResponse>.None
-        };	
+        };
     }
 
     private StreamClassOperatorResponse Attach(IStreamClass streamClass)
@@ -86,7 +86,7 @@ public class StreamClassOperatorService : IStreamClassOperatorService
         this.streamOperatorService.Attach(streamClass);
         return StreamClassOperatorResponse.Ready(streamClass);
     }
-    
+
     private StreamClassOperatorResponse Detach(IStreamClass streamClass)
     {
         this.streamOperatorService.Detach(streamClass);
