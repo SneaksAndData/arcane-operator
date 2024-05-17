@@ -1,8 +1,8 @@
-﻿using Arcane.Models.StreamingJobLifecycle;
-using Arcane.Operator.Models;
+﻿using Arcane.Operator.Models;
 using Arcane.Operator.Models.StreamDefinitions.Base;
 using Arcane.Operator.Models.StreamStatuses.StreamStatus.V1Beta1;
 using Arcane.Operator.Services.Base;
+using Arcane.Operator.StreamingJobLifecycle;
 using k8s;
 using k8s.Models;
 

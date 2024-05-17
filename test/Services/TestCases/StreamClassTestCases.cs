@@ -12,6 +12,9 @@ public static class StreamClassTestCases
         {
             MaxBufferCapacity = 100,
             KindRef = StreamDefinitionTestCases.Kind,
+            ApiGroupRef = StreamDefinitionTestCases.ApiGroup,
+            PluralName = StreamDefinitionTestCases.PluralName,
+            ApiVersion = StreamDefinitionTestCases.ApiVersion
         },
         Metadata = new V1ObjectMeta
         {

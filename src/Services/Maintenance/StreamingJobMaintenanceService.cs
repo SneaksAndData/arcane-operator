@@ -29,7 +29,7 @@ public class StreamingJobMaintenanceService : IStreamingJobMaintenanceService
     private readonly IKubeCluster kubeCluster;
     private readonly ILogger<StreamingJobMaintenanceService> logger;
     private readonly IStreamingJobOperatorService operatorService;
-    private readonly IStreamDefinitionRepository streamDefinitionRepository;
+    private readonly IResourceCollection<IStreamDefinition> streamDefinitionCollection;
     private readonly IMetricsReporter metricsReporter;
     private readonly ICommandHandler<UpdateStatusCommand> updateStatusCommandHandler;
     private readonly ICommandHandler<SetAnnotationCommand<IStreamDefinition>> setAnnotationCommandHandler;
@@ -40,7 +40,7 @@ public class StreamingJobMaintenanceService : IStreamingJobMaintenanceService
         IOptions<StreamingJobMaintenanceServiceConfiguration> options,
         IKubeCluster kubeCluster,
         IMetricsReporter metricsReporter,
-        IStreamDefinitionRepository streamDefinitionRepository,
+        IResourceCollection<IStreamDefinition> streamDefinitionCollection,
         ICommandHandler<UpdateStatusCommand> updateStatusCommandHandler,
         ICommandHandler<SetAnnotationCommand<IStreamDefinition>> setAnnotationCommandHandler,
         IStreamingJobCommandHandler streamingJobCommandHandler,
@@ -48,7 +48,7 @@ public class StreamingJobMaintenanceService : IStreamingJobMaintenanceService
     {
         this.configuration = options.Value;
         this.kubeCluster = kubeCluster;
-        this.streamDefinitionRepository = streamDefinitionRepository;
+        this.streamDefinitionCollection = streamDefinitionCollection;
         this.operatorService = operatorService;
         this.logger = logger;
         this.metricsReporter = metricsReporter;
@@ -100,8 +100,8 @@ public class StreamingJobMaintenanceService : IStreamingJobMaintenanceService
 
     private Task<List<Option<KubernetesCommand>>> OnJobDelete(V1Job job)
     {
-        return this.streamDefinitionRepository
-            .GetStreamDefinition(job.Namespace(), job.GetStreamKind(), job.GetStreamId())
+        return this.streamDefinitionCollection
+            .Get(job.Name(), job.ToOwnerApiRequest())
             .Map(maybeSd => maybeSd switch
             {
                 { HasValue: true, Value: var sd } when job.IsFailed() => new List<Option<KubernetesCommand>>

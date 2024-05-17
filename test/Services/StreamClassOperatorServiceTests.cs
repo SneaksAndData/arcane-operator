@@ -46,7 +46,7 @@ public class StreamClassOperatorServiceTests : IClassFixture<LoggerFixture>, ICl
     // Mocks
     private readonly Mock<IKubeCluster> kubeClusterMock = new();
     private readonly Mock<IStreamingJobOperatorService> streamingJobOperatorServiceMock = new();
-    private readonly Mock<IStreamDefinitionRepository> streamDefinitionRepositoryMock = new();
+    private readonly Mock<IReactiveResourceCollection<IStreamDefinition>> streamDefinitionSourceMock = new();
     private readonly Mock<IStreamClassRepository> streamClassRepositoryMock = new();
 
     public StreamClassOperatorServiceTests(LoggerFixture loggerFixture)
@@ -71,7 +71,7 @@ public class StreamClassOperatorServiceTests : IClassFixture<LoggerFixture>, ICl
             .Returns(Source.Single<(WatchEventType, V1Beta1StreamClass)>((WatchEventType.Added,
                 (V1Beta1StreamClass)StreamClass)));
 
-        this.streamDefinitionRepositoryMock
+        this.streamDefinitionSourceMock
             .Setup(m => m.GetEvents(It.IsAny<CustomResourceApiRequest>(), It.IsAny<int>()))
             .Returns(Source.From(
                 new List<ResourceEvent<IStreamDefinition>>
@@ -112,7 +112,7 @@ public class StreamClassOperatorServiceTests : IClassFixture<LoggerFixture>, ICl
             .Returns(Source.Single<(WatchEventType, V1Beta1StreamClass)>((WatchEventType.Deleted,
                 (V1Beta1StreamClass)StreamClass)));
 
-        this.streamDefinitionRepositoryMock
+        this.streamDefinitionSourceMock
             .Setup(m => m.GetEvents(It.IsAny<CustomResourceApiRequest>(), It.IsAny<int>()))
             .Returns(Source.From(
                 new List<ResourceEvent<IStreamDefinition>>
@@ -155,7 +155,7 @@ public class StreamClassOperatorServiceTests : IClassFixture<LoggerFixture>, ICl
             .AddSingleton(this.actorSystem)
             .AddSingleton(this.kubeClusterMock.Object)
             .AddSingleton(this.streamingJobOperatorServiceMock.Object)
-            .AddSingleton(this.streamDefinitionRepositoryMock.Object)
+            .AddSingleton(this.streamDefinitionSourceMock.Object)
             .AddSingleton<IStreamClassRepository, StreamClassRepository>()
             .AddMemoryCache()
             .AddSingleton<IStreamOperatorService, StreamOperatorService>()

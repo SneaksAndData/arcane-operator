@@ -2,13 +2,13 @@ using System.Threading;
 using System.Threading.Tasks;
 using Akka.Util;
 using Akka.Util.Extensions;
-using Arcane.Models.StreamingJobLifecycle;
 using Arcane.Operator.Configurations;
 using Arcane.Operator.Extensions;
 using Arcane.Operator.Models;
 using Arcane.Operator.Models.StreamClass.Base;
 using Arcane.Operator.Models.StreamDefinitions.Base;
 using Arcane.Operator.Services.Base;
+using Arcane.Operator.StreamingJobLifecycle;
 using k8s.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -72,6 +72,7 @@ public class StreamingJobOperatorService : IStreamingJobOperatorService
                     .GetJob()
                     .WithStreamingJobLabels(streamDefinition.StreamId, isBackfilling, streamDefinition.Kind)
                     .WithStreamingJobAnnotations(streamDefinition.GetConfigurationChecksum())
+                    .WithMetadataAnnotations(streamClass)
                     .WithCustomEnvironment(streamDefinition.ToV1EnvFromSources(streamClass))
                     .WithCustomEnvironment(streamDefinition.ToEnvironment(isBackfilling, streamClass))
                     .WithOwnerReference(streamDefinition)

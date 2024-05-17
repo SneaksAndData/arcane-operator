@@ -6,9 +6,9 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Arcane.Models.StreamingJobLifecycle;
 using Arcane.Operator.Models.StreamClass.Base;
 using Arcane.Operator.Models.StreamDefinitions.Base;
+using Arcane.Operator.StreamingJobLifecycle;
 using k8s.Models;
 
 namespace Arcane.Operator.Models.StreamDefinitions;
