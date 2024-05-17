@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Akka.Actor;
 using Akka.Streams;
 using Akka.Streams.Dsl;
+using Akka.Util.Extensions;
 using Arcane.Operator.Configurations;
 using Arcane.Operator.Configurations.Common;
 using Arcane.Operator.Models.StreamClass;
@@ -46,6 +47,7 @@ public class StreamClassOperatorServiceTests : IClassFixture<LoggerFixture>, ICl
     private readonly Mock<IKubeCluster> kubeClusterMock = new();
     private readonly Mock<IStreamingJobOperatorService> streamingJobOperatorServiceMock = new();
     private readonly Mock<IStreamDefinitionRepository> streamDefinitionRepositoryMock = new();
+    private readonly Mock<IStreamClassRepository> streamClassRepositoryMock = new();
 
     public StreamClassOperatorServiceTests(LoggerFixture loggerFixture)
     {
@@ -79,6 +81,10 @@ public class StreamClassOperatorServiceTests : IClassFixture<LoggerFixture>, ICl
                     new(WatchEventType.Added, StreamDefinitionTestCases.NamedStreamDefinition())
                 }));
 
+        this.streamClassRepositoryMock
+            .Setup(m => m.Get(It.IsAny<string>(), It.IsAny<string>()))
+            .ReturnsAsync(StreamClass.AsOption());
+
         // Act
         var sp = this.CreateServiceProvider();
         await sp.GetRequiredService<IStreamClassOperatorService>()
@@ -87,10 +93,7 @@ public class StreamClassOperatorServiceTests : IClassFixture<LoggerFixture>, ICl
         await Task.Delay(5000);
 
         // Assert
-        this.streamingJobOperatorServiceMock.Verify(
-            service => service.StartRegisteredStream(It.IsAny<StreamDefinition>(), It.IsAny<bool>(), It.IsAny<IStreamClass>()),
-            Times.Never
-        );
+        this.streamingJobOperatorServiceMock.Verify(service => service.StartRegisteredStream(It.IsAny<StreamDefinition>(), It.IsAny<bool>(), It.IsAny<IStreamClass>()));
     }
 
     [Fact]

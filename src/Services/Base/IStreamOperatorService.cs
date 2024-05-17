@@ -1,4 +1,5 @@
-﻿using Arcane.Operator.Models.StreamClass.Base;
+﻿using Akka.Streams;
+using Arcane.Operator.Models.StreamClass.Base;
 
 namespace Arcane.Operator.Services.Base;
 
@@ -9,4 +10,10 @@ public interface IStreamOperatorService
     /// </summary>
     /// <param name="streamClass">Stream class event to start processing</param>
     void Attach(IStreamClass streamClass);
+
+    /// <summary>
+    /// Stop processing stream events
+    /// </summary>
+    /// <param name="streamClass">Stream class event to start processing</param>
+    void Detach(IStreamClass streamClass);
 }

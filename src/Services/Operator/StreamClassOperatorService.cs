@@ -1,15 +1,19 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Akka.Actor;
 using Akka.Streams;
 using Akka.Streams.Dsl;
+using Akka.Util;
 using Arcane.Operator.Configurations;
+using Arcane.Operator.Models;
 using Arcane.Operator.Models.StreamClass.Base;
 using Arcane.Operator.Services.Base;
 using Arcane.Operator.Services.Models;
+using k8s;
+using k8s.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Snd.Sdk.ActorProviders;
 using Directive = Akka.Streams.Supervision.Directive;
 
 namespace Arcane.Operator.Services.Operator;
@@ -48,13 +52,45 @@ public class StreamClassOperatorService : IStreamClassOperatorService
             this.configuration.Version,
             this.configuration.Plural
         );
+        
+        var sink = Sink.ForEachAsync<StreamClassOperatorResponse>(parallelism, response =>	
+        {	
+            this.logger.LogInformation("The phase of the stream class {namespace}/{name} changed to {status}",	
+                response.StreamClass.Metadata.Namespace(),	
+                response.StreamClass.Metadata.Name,	
+                response.Phase);	
+            return this.streamClassRepository.InsertOrUpdate(response.StreamClass, response.Phase, response.Conditions, this.configuration.Plural);	
+        });
 
-        var source = this.streamClassRepository.GetEvents(request, this.configuration.MaxBufferCapacity)
+        return this.streamClassRepository.GetEvents(request, this.configuration.MaxBufferCapacity)
             .Via(cancellationToken.AsFlow<ResourceEvent<IStreamClass>>(true))
-            .Select(this.metricsService.ReportTrafficMetrics);
-        var sink = Sink.ForEach<ResourceEvent<IStreamClass>>(re => this.streamOperatorService.Attach(re.kubernetesObject));
+            .Select(this.OnEvent)
+            .CollectOption()
+            .Select(this.metricsService.ReportStatusMetrics)
+            .WithAttributes(ActorAttributes.CreateSupervisionStrategy(this.HandleError)) 
+            .ToMaterialized(sink, Keep.Right);
+    }
 
-        return source.ToMaterialized(sink, Keep.Right);
+    private Option<StreamClassOperatorResponse> OnEvent(ResourceEvent<IStreamClass> resourceEvent)
+    {	
+        return resourceEvent switch	
+        {	
+            (WatchEventType.Added, var streamClass) => this.Attach(streamClass),
+            (WatchEventType.Deleted, var streamClass) => this.Detach(streamClass),
+            _ => Option<StreamClassOperatorResponse>.None
+        };	
+    }
+
+    private StreamClassOperatorResponse Attach(IStreamClass streamClass)
+    {
+        this.streamOperatorService.Attach(streamClass);
+        return StreamClassOperatorResponse.Ready(streamClass);
+    }
+    
+    private StreamClassOperatorResponse Detach(IStreamClass streamClass)
+    {
+        this.streamOperatorService.Detach(streamClass);
+        return StreamClassOperatorResponse.Stopped(streamClass);
     }
 
     private Directive HandleError(Exception exception)

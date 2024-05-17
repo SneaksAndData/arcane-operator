@@ -52,7 +52,7 @@ public class AnnotationCommandHandler :
 
     public Task Handle(SetAnnotationCommand<V1Job> command)
     {
-        var ((nameSpace, _, name), annotationKey, annotationValue) = command;
+        var ((nameSpace, name), annotationKey, annotationValue) = command;
         return this.kubeCluster.AnnotateJob(name, nameSpace, annotationKey, annotationValue);
     }
 

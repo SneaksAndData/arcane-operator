@@ -25,6 +25,7 @@ namespace Arcane.Operator.Services.Operator;
 public class StreamOperatorService : IStreamOperatorService, IDisposable
 {
     private const int parallelism = 1;
+    private const int bufferSize = 1000;
 
     private readonly ILogger<StreamOperatorService> logger;
     private readonly IStreamingJobOperatorService operatorService;
@@ -33,10 +34,10 @@ public class StreamOperatorService : IStreamOperatorService, IDisposable
     private readonly ICommandHandler<SetAnnotationCommand<V1Job>> setAnnotationCommandHandler;
     private readonly ICommandHandler<RemoveAnnotationCommand<IStreamDefinition>> removeAnnotationCommandHandler;
     private readonly IStreamingJobCommandHandler streamingJobCommandHandler;
-    private int bufferSize = 1000;
     private readonly IMaterializer materializer;
     private readonly CancellationTokenSource cancellationTokenSource;
     private readonly IStreamDefinitionRepository streamDefinitionRepository;
+    private Dictionary<string, UniqueKillSwitch> killSwitches = new();
 
     public StreamOperatorService(
         IStreamingJobOperatorService operatorService,
@@ -47,8 +48,7 @@ public class StreamOperatorService : IStreamOperatorService, IDisposable
         IStreamingJobCommandHandler streamingJobCommandHandler,
         ILogger<StreamOperatorService> logger,
         IMaterializer materializer,
-        IStreamDefinitionRepository streamDefinitionRepository 
-    )
+        IStreamDefinitionRepository streamDefinitionRepository)
     {
         this.operatorService = operatorService;
         this.logger = logger;
@@ -75,7 +75,7 @@ public class StreamOperatorService : IStreamOperatorService, IDisposable
             streamClass.VersionRef,
             streamClass.PluralNameRef
         );
-        
+
         var eventsSource = this.streamDefinitionRepository.GetEvents(request, streamClass.MaxBufferCapacity)
             .RecoverWithRetries(exception =>
             {
@@ -85,17 +85,28 @@ public class StreamOperatorService : IStreamOperatorService, IDisposable
                 }
 
                 throw exception;
-            }, 1);
-        
-        eventsSource.RunWith(this.Sink.Value, this.materializer);
+            }, 1)
+            .ViaMaterialized(KillSwitches.Single<ResourceEvent<IStreamDefinition>>(), Keep.Right);
+
+        var ks = eventsSource.ToMaterialized(this.Sink.Value, Keep.Left).Run(this.materializer);
+        this.killSwitches[streamClass.ToStreamClassId()] = ks;
     }
-    
+
+    public void Detach(IStreamClass streamClass)
+    {
+        if (this.killSwitches.TryGetValue(streamClass.ToStreamClassId(), out var ks))
+        {
+            ks.Shutdown();
+            this.killSwitches.Remove(streamClass.ToStreamClassId());
+        }
+    }
+
     private Lazy<Sink<ResourceEvent<IStreamDefinition>, NotUsed>> Sink =>
         new(() => this.BuildSink(this.cancellationTokenSource.Token).Run(this.materializer));
 
     private IRunnableGraph<Sink<ResourceEvent<IStreamDefinition>, NotUsed>> BuildSink(CancellationToken cancellationToken)
     {
-        return MergeHub.Source<ResourceEvent<IStreamDefinition>>(perProducerBufferSize: this.bufferSize)
+        return MergeHub.Source<ResourceEvent<IStreamDefinition>>(perProducerBufferSize: bufferSize)
             .Via(cancellationToken.AsFlow<ResourceEvent<IStreamDefinition>>(true))
             .Select(this.metricsReporter.ReportTrafficMetrics)
             .SelectAsync(parallelism, ev => this.operatorService.GetStreamingJob(ev.kubernetesObject.StreamId).Map(job => (ev, job)))

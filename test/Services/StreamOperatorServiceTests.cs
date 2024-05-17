@@ -99,15 +99,15 @@ public class StreamOperatorServiceTests : IClassFixture<LoggerFixture>, IDisposa
             .Setup(service => service.StartRegisteredStream(
                 It.IsAny<StreamDefinition>(), It.IsAny<bool>(), It.IsAny<IStreamClass>()))
             .Callback(() => this.tcs.SetResult());
-        
+
         streamingJobOperatorServiceMock
             .Setup(service => service.RequestStreamingJobRestart(It.IsAny<string>()))
             .Callback(() => this.tcs.SetResult());
-        
+
         streamingJobOperatorServiceMock
             .Setup(service => service.DeleteJob(It.IsAny<string>(), It.IsAny<string>()))
             .Callback(() => this.tcs.SetResult());
-        
+
         // Act
         var sp = this.CreateServiceProvider();
         sp.GetRequiredService<IStreamOperatorService>().Attach(StreamClass);
@@ -151,19 +151,19 @@ public class StreamOperatorServiceTests : IClassFixture<LoggerFixture>, IDisposa
         streamingJobOperatorServiceMock
             .Setup(service => service.GetStreamingJob(It.IsAny<string>()))
             .ReturnsAsync(mockJob.AsOption());
-            
+
         var task = this.tcs.Task;
         streamingJobOperatorServiceMock
             .Setup(service => service.RequestStreamingJobRestart(It.IsAny<string>()))
             .Callback(this.tcs.SetResult);
-    
+
         // Act
         var sp = this.CreateServiceProvider();
         sp.GetRequiredService<IStreamOperatorService>().Attach(StreamClass);
         await task;
-    
+
         // Assert
-    
+
         streamingJobOperatorServiceMock.Verify(service
             => service.RequestStreamingJobRestart(It.IsAny<string>()), Times.Exactly(expectRestart ? 1 : 0));
     }
@@ -190,7 +190,7 @@ public class StreamOperatorServiceTests : IClassFixture<LoggerFixture>, IDisposa
         streamingJobOperatorServiceMock
             .Setup(service => service.GetStreamingJob(It.IsAny<string>()))
             .ReturnsAsync(jobExists ? mockJob.AsOption() : Option<V1Job>.None);
-    
+
         var task = this.tcs.Task;
         streamingJobOperatorServiceMock
             .Setup(service => service.RequestStreamingJobReload(It.IsAny<string>()))
@@ -198,20 +198,20 @@ public class StreamOperatorServiceTests : IClassFixture<LoggerFixture>, IDisposa
         streamingJobOperatorServiceMock
             .Setup(service => service.StartRegisteredStream(It.IsAny<IStreamDefinition>(), It.IsAny<bool>(), It.IsAny<IStreamClass>()))
             .Callback(this.tcs.SetResult);
-        
+
         // Act
         var sp = this.CreateServiceProvider();
         sp.GetRequiredService<IStreamOperatorService>().Attach(StreamClass);
         await task;
-    
+
         // Assert
         streamingJobOperatorServiceMock.Verify(service
             => service.RequestStreamingJobReload(It.IsAny<string>()), Times.Exactly(expectReload ? 1 : 0));
-    
+
         streamingJobOperatorServiceMock.Verify(service
                 => service.StartRegisteredStream(It.IsAny<IStreamDefinition>(), true, It.IsAny<IStreamClass>()),
             Times.Exactly(expectReload ? 0 : 1));
-    
+
         this.streamDefinitionRepositoryMock.Verify(service
             => service.RemoveReloadingAnnotation(streamDefinition.Namespace(), streamDefinition.Kind,
                 streamDefinition.StreamId));
@@ -247,21 +247,21 @@ public class StreamOperatorServiceTests : IClassFixture<LoggerFixture>, IDisposa
         streamingJobOperatorServiceMock
             .Setup(service => service.GetStreamingJob(It.IsAny<string>()))
             .ReturnsAsync(jobExists ? jobIsReloading ? ReloadingJob : RunningJob : Option<V1Job>.None);
-    
+
         var task = this.tcs.Task;
         streamingJobOperatorServiceMock
             .Setup(service => service.StartRegisteredStream(It.IsAny<IStreamDefinition>(), It.IsAny<bool>(), It.IsAny<IStreamClass>()))
             .Callback(this.tcs.SetResult);
-        
+
         // Act
         var sp = this.CreateServiceProvider();
         sp.GetRequiredService<IStreamOperatorService>().Attach(StreamClass);
         await task;
-    
+
         // Assert
         streamingJobOperatorServiceMock.Verify(service
             => service.RequestStreamingJobReload(It.IsAny<string>()), Times.Exactly(0));
-    
+
         streamingJobOperatorServiceMock.Verify(service
                 => service.StartRegisteredStream(It.IsAny<IStreamDefinition>(), true, It.IsAny<IStreamClass>()),
             Times.Exactly(expectStart ? 1 : 0));
@@ -280,18 +280,18 @@ public class StreamOperatorServiceTests : IClassFixture<LoggerFixture>, IDisposa
         this.streamDefinitionRepositoryMock.Setup(
                 cluster => cluster.GetEvents(It.IsAny<CustomResourceApiRequest>(), It.IsAny<int>()))
             .Returns(Source.Single(new ResourceEvent<IStreamDefinition>(WatchEventType.Added, streamDefinition)));
-    
+
         streamingJobOperatorServiceMock
             .Setup(service => service.GetStreamingJob(It.IsAny<string>()))
             .ReturnsAsync(FailedJob.AsOption());
-    
+
         var task = this.tcs.Task;
-        
+
         // Act
         var sp = this.CreateServiceProvider();
         sp.GetRequiredService<IStreamOperatorService>().Attach(StreamClass);
         await task;
-    
+
         // Assert
         streamingJobOperatorServiceMock.Verify(service
             => service.GetStreamingJob(It.IsAny<string>()), Times.Never);
@@ -310,17 +310,17 @@ public class StreamOperatorServiceTests : IClassFixture<LoggerFixture>, IDisposa
         this.streamDefinitionRepositoryMock.Setup(s =>
                 s.GetEvents(It.IsAny<CustomResourceApiRequest>(), It.IsAny<int>()))
             .Returns(Source.Single(new ResourceEvent<IStreamDefinition>(WatchEventType.Added, streamDefinition)));
-    
+
         var task = this.tcs.Task;
         streamingJobOperatorServiceMock
             .Setup(service => service.GetStreamingJob(It.IsAny<string>()))
             .ReturnsAsync(FailedJob.AsOption());
-    
+
         // Act
         var sp = this.CreateServiceProvider();
         sp.GetRequiredService<IStreamOperatorService>().Attach(StreamClass);
         await task;
-        
+
         // Assert that code above didn't throw
         Assert.True(task.IsCompleted);
     }
@@ -334,11 +334,11 @@ public class StreamOperatorServiceTests : IClassFixture<LoggerFixture>, IDisposa
             .Returns(
                 Source.Single(new ResourceEvent<IStreamDefinition>(WatchEventType.Added,
                     StreamDefinitionTestCases.StreamDefinition)));
-    
+
         streamingJobOperatorServiceMock
             .Setup(service => service.GetStreamingJob(It.IsAny<string>()))
             .ReturnsAsync(FailedJob.AsOption());
-    
+
         this.streamDefinitionRepositoryMock
             .Setup(service
                 => service.SetStreamStatus(
@@ -347,14 +347,14 @@ public class StreamOperatorServiceTests : IClassFixture<LoggerFixture>, IDisposa
                     It.IsAny<string>(),
                     It.IsAny<V1Beta1StreamStatus>()))
             .ThrowsAsync(new Exception());
-    
+
         var task = this.tcs.Task;
-        
+
         // Act
         var sp = this.CreateServiceProvider();
         sp.GetRequiredService<IStreamOperatorService>().Attach(StreamClass);
         await task;
-    
+
         // Assert that code above didn't throw
         Assert.True(task.IsCompleted);
     }
