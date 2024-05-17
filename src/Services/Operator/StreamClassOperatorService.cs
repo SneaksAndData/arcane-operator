@@ -1,7 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Akka;
 using Akka.Actor;
 using Akka.Streams;
 using Akka.Streams.Dsl;
@@ -9,11 +9,9 @@ using Akka.Util;
 using Arcane.Operator.Configurations;
 using Arcane.Operator.Models;
 using Arcane.Operator.Models.StreamClass.Base;
-using Arcane.Operator.Services.Actors;
 using Arcane.Operator.Services.Base;
 using Arcane.Operator.Services.Models;
 using k8s;
-using k8s.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -35,13 +33,16 @@ public class StreamClassOperatorService : IStreamClassOperatorService
     private readonly IMetricsReporter metricsService;
     private readonly ActorSystem actorSystem;
     private readonly IServiceProvider sp;
+    private readonly IStreamOperatorService streamOperatorService;
+    private IMaterializer materializer;
 
     public StreamClassOperatorService(IOptions<StreamClassOperatorServiceConfiguration> streamOperatorServiceOptions,
         IStreamClassRepository streamClassRepository,
         IMetricsReporter metricsService,
         ILogger<StreamClassOperatorService> logger,
         IServiceProvider sp,
-        ActorSystem actorSystem)
+        ActorSystem actorSystem,
+        IStreamOperatorService streamOperatorService)
     {
         this.configuration = streamOperatorServiceOptions.Value;
         this.logger = logger;
@@ -49,20 +50,12 @@ public class StreamClassOperatorService : IStreamClassOperatorService
         this.sp = sp;
         this.metricsService = metricsService;
         this.actorSystem = actorSystem;
+        this.streamOperatorService = streamOperatorService;
     }
 
     /// <inheritdoc cref="IStreamClassOperatorService.GetStreamClassEventsGraph"/>
-    public IRunnableGraph<Task> GetStreamClassEventsGraph(CancellationToken cancellationToken)
+    public IRunnableGraph<Task<Done>> GetStreamClassEventsGraph(CancellationToken cancellationToken)
     {
-        var sink = Sink.ForEachAsync<StreamClassOperatorResponse>(parallelism, response =>
-        {
-            this.logger.LogInformation("The phase of the stream class {namespace}/{name} changed to {status}",
-                response.StreamClass.Metadata.Namespace(),
-                response.StreamClass.Metadata.Name,
-                response.Phase);
-            return this.streamClassRepository.InsertOrUpdate(response.StreamClass, response.Phase, response.Conditions, this.configuration.Plural);
-        });
-
         var request = new CustomResourceApiRequest(
             this.configuration.NameSpace,
             this.configuration.ApiGroup,
@@ -70,25 +63,12 @@ public class StreamClassOperatorService : IStreamClassOperatorService
             this.configuration.Plural
         );
 
-        return this.streamClassRepository.GetEvents(request, this.configuration.MaxBufferCapacity)
+        var source = this.streamClassRepository.GetEvents(request, this.configuration.MaxBufferCapacity)
             .Via(cancellationToken.AsFlow<ResourceEvent<IStreamClass>>(true))
-            .Select(this.metricsService.ReportTrafficMetrics)
-            .Select(OnEvent)
-            .CollectOption()
-            .SelectAsync(1, msg => this.GetOrCreate(msg.streamClass).FlatMap(actor => actor.Ask<StreamClassOperatorResponse>(msg)))
-            .WithAttributes(ActorAttributes.CreateSupervisionStrategy(this.HandleError))
-            .Select(this.metricsService.ReportStatusMetrics)
-            .ToMaterialized(sink, Keep.Right);
-    }
+            .Select(this.metricsService.ReportTrafficMetrics);
+        var sink = Sink.ForEach<ResourceEvent<IStreamClass>>(re => this.streamOperatorService.Attach(re.kubernetesObject));
 
-    private static Option<StreamClassManagementMessage> OnEvent(ResourceEvent<IStreamClass> resourceEvent)
-    {
-        return resourceEvent switch
-        {
-            (WatchEventType.Added, var streamClass) => new StartListeningMessage(streamClass),
-            (WatchEventType.Deleted, var streamClass) => new StopListeningMessage(streamClass),
-            _ => Option<StreamClassManagementMessage>.None
-        };
+        return source.ToMaterialized(sink, Keep.Right);
     }
 
     private Directive HandleError(Exception exception)
@@ -100,12 +80,4 @@ public class StreamClassOperatorService : IStreamClassOperatorService
             _ => Directive.Resume
         };
     }
-
-    private Task<IActorRef> GetOrCreate(IStreamClass streamClass) => this.actorSystem
-        .ActorSelection(streamClass.ToStreamClassId()).ResolveOne(TimeSpan.FromSeconds(10))
-        .TryMap(success => success, exception => exception switch
-        {
-            ActorNotFoundException => this.actorSystem.ActorOf(Props.Create(() => new StreamClassActor(this.sp.GetRequiredService<IStreamOperatorService>())), streamClass.ToStreamClassId()),
-            _ => throw exception
-        });
 }

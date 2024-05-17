@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Akka;
 using Akka.Streams;
 using Akka.Streams.Dsl;
 using Akka.Streams.Supervision;
@@ -21,32 +22,34 @@ using Snd.Sdk.Tasks;
 
 namespace Arcane.Operator.Services.Operator;
 
-public class StreamOperatorService : IStreamOperatorService
+public class StreamOperatorService : IStreamOperatorService, IDisposable
 {
     private const int parallelism = 1;
 
     private readonly ILogger<StreamOperatorService> logger;
     private readonly IStreamingJobOperatorService operatorService;
-    private readonly IStreamDefinitionRepository streamDefinitionRepository;
-    private readonly IStreamClass streamClass;
     private readonly IMetricsReporter metricsReporter;
     private readonly ICommandHandler<UpdateStatusCommand> updateStatusCommandHandler;
     private readonly ICommandHandler<SetAnnotationCommand<V1Job>> setAnnotationCommandHandler;
     private readonly ICommandHandler<RemoveAnnotationCommand<IStreamDefinition>> removeAnnotationCommandHandler;
     private readonly IStreamingJobCommandHandler streamingJobCommandHandler;
+    private int bufferSize = 1000;
+    private readonly IMaterializer materializer;
+    private readonly CancellationTokenSource cancellationTokenSource;
+    private readonly IStreamDefinitionRepository streamDefinitionRepository;
 
-    public StreamOperatorService(IStreamClass streamClass,
+    public StreamOperatorService(
         IStreamingJobOperatorService operatorService,
-        IStreamDefinitionRepository streamDefinitionRepository,
         IMetricsReporter metricsReporter,
         ICommandHandler<UpdateStatusCommand> updateStatusCommandHandler,
         ICommandHandler<SetAnnotationCommand<V1Job>> setAnnotationCommandHandler,
         ICommandHandler<RemoveAnnotationCommand<IStreamDefinition>> removeAnnotationCommandHandler,
         IStreamingJobCommandHandler streamingJobCommandHandler,
-        ILogger<StreamOperatorService> logger)
+        ILogger<StreamOperatorService> logger,
+        IMaterializer materializer,
+        IStreamDefinitionRepository streamDefinitionRepository 
+    )
     {
-        this.streamClass = streamClass;
-        this.streamDefinitionRepository = streamDefinitionRepository;
         this.operatorService = operatorService;
         this.logger = logger;
         this.metricsReporter = metricsReporter;
@@ -54,24 +57,29 @@ public class StreamOperatorService : IStreamOperatorService
         this.streamingJobCommandHandler = streamingJobCommandHandler;
         this.setAnnotationCommandHandler = setAnnotationCommandHandler;
         this.removeAnnotationCommandHandler = removeAnnotationCommandHandler;
+        this.materializer = materializer;
+        this.cancellationTokenSource = new CancellationTokenSource();
+        this.streamDefinitionRepository = streamDefinitionRepository;
     }
 
-    public IRunnableGraph<Task> GetStreamDefinitionEventsGraph(CancellationToken cancellationToken)
+    public virtual void Dispose()
+    {
+        this.cancellationTokenSource?.Cancel();
+    }
+
+    public Lazy<Sink<ResourceEvent<IStreamDefinition>, NotUsed>> CommonSink =>
+        new(() => this.BuildSink(this.cancellationTokenSource.Token).Run(this.materializer));
+
+    public void Attach(IStreamClass streamClass)
     {
         var request = new CustomResourceApiRequest(
             this.operatorService.StreamJobNamespace,
-            this.streamClass.ApiGroupRef,
-            this.streamClass.VersionRef,
-            this.streamClass.PluralNameRef
+            streamClass.ApiGroupRef,
+            streamClass.VersionRef,
+            streamClass.PluralNameRef
         );
-        this.logger.LogInformation("Start listening to event stream for {@streamClass}", request);
-
-        var restartSettings = RestartSettings.Create(
-            TimeSpan.FromSeconds(10),
-            TimeSpan.FromMinutes(3),
-            0.2);
-
-        var eventsSource = this.streamDefinitionRepository.GetEvents(request, this.streamClass.MaxBufferCapacity)
+        
+        var eventsSource = this.streamDefinitionRepository.GetEvents(request, streamClass.MaxBufferCapacity)
             .RecoverWithRetries(exception =>
             {
                 if (exception is HttpOperationException { Response.StatusCode: System.Net.HttpStatusCode.NotFound })
@@ -81,16 +89,27 @@ public class StreamOperatorService : IStreamOperatorService
 
                 throw exception;
             }, 1);
+        
+        eventsSource.RunWith(this.CommonSink.Value, this.materializer);
+    }
 
-        return RestartSource.OnFailuresWithBackoff(() => eventsSource, restartSettings)
+    private IRunnableGraph<Sink<ResourceEvent<IStreamDefinition>, NotUsed>> BuildSink(CancellationToken cancellationToken)
+    {
+        return MergeHub.Source<ResourceEvent<IStreamDefinition>>(perProducerBufferSize: this.bufferSize)
             .Via(cancellationToken.AsFlow<ResourceEvent<IStreamDefinition>>(true))
             .Select(this.metricsReporter.ReportTrafficMetrics)
             .SelectAsync(parallelism, ev => this.operatorService.GetStreamingJob(ev.kubernetesObject.StreamId).Map(job => (ev, job)))
             .Select(this.OnEvent)
             .SelectMany(e => e)
-            .WithAttributes(ActorAttributes.CreateSupervisionStrategy(this.HandleError))
-            .ToMaterialized(Sink.ForEachAsync<KubernetesCommand>(parallelism, this.HandleCommand), Keep.Right);
+            .To(Sink.ForEachAsync<KubernetesCommand>(parallelism, this.HandleCommand))
+            .WithAttributes(new Attributes(new ActorAttributes.SupervisionStrategy(this.LogAndResumeDecider)));
     }
+
+    private Decider LogAndResumeDecider => cause =>
+    {
+        this.logger.LogWarning(cause, "Queue element dropped due to exception in processing code.");
+        return Directive.Resume;
+    };
 
     private List<KubernetesCommand> OnEvent((ResourceEvent<IStreamDefinition>, Option<V1Job>) resourceEvent)
     {
@@ -102,16 +121,6 @@ public class StreamOperatorService : IStreamOperatorService
         };
     }
 
-    private Directive HandleError(Exception exception)
-    {
-        this.logger.LogError(exception, "Failed to handle stream definition event");
-        return exception switch
-        {
-            BufferOverflowException => Directive.Stop,
-            _ => Directive.Resume
-        };
-    }
-
     private KubernetesCommand OnAdded(IStreamDefinition streamDefinition, Option<V1Job> maybeJob)
     {
         this.logger.LogInformation("Added a stream definition with id {streamId}", streamDefinition.StreamId);
@@ -119,7 +128,8 @@ public class StreamOperatorService : IStreamOperatorService
         {
             { HasValue: true, Value: var job } when job.IsReloading() => new Reloading(streamDefinition),
             { HasValue: true, Value: var job } when !job.IsReloading() => new Running(streamDefinition),
-            { HasValue: true, Value: var job } when streamDefinition.Suspended => new StopJob(job.GetStreamId(), job.GetStreamKind()),
+            { HasValue: true, Value: var job } when streamDefinition.Suspended => new StopJob(job.GetStreamId(),
+                job.GetStreamKind()),
             { HasValue: false } when streamDefinition.Suspended => new Suspended(streamDefinition),
             { HasValue: false } when !streamDefinition.Suspended => new StartJob(streamDefinition, true),
             _ => throw new ArgumentOutOfRangeException(nameof(maybeJob), maybeJob, null)
@@ -131,7 +141,8 @@ public class StreamOperatorService : IStreamOperatorService
         this.logger.LogInformation("Modified a stream definition with id {streamId}", streamDefinition.StreamId);
         return maybeJob switch
         {
-            { HasValue: false } when streamDefinition.CrashLoopDetected => new SetCrashLoopStatusCommand(streamDefinition).AsList(),
+            { HasValue: false } when streamDefinition.CrashLoopDetected => new SetCrashLoopStatusCommand(
+                streamDefinition).AsList(),
             { HasValue: false } when streamDefinition.Suspended => new Suspended(streamDefinition).AsList(),
             { HasValue: false } when streamDefinition.ReloadRequested => new List<KubernetesCommand>
             {
@@ -141,8 +152,10 @@ public class StreamOperatorService : IStreamOperatorService
             },
             { HasValue: false } => new StartJob(streamDefinition, false).AsList(),
 
-            { HasValue: true, Value: var job } when streamDefinition.CrashLoopDetected => new StopJob(job.GetStreamId(), job.GetStreamKind()).AsList(),
-            { HasValue: true, Value: var job } when streamDefinition.Suspended => new StopJob(job.GetStreamId(), job.GetStreamKind()).AsList(),
+            { HasValue: true, Value: var job } when streamDefinition.CrashLoopDetected => new StopJob(job.GetStreamId(),
+                job.GetStreamKind()).AsList(),
+            { HasValue: true, Value: var job } when streamDefinition.Suspended => new StopJob(job.GetStreamId(),
+                job.GetStreamKind()).AsList(),
             { HasValue: true, Value: var job } when !job.ConfigurationMatches(streamDefinition) => new
                 List<KubernetesCommand>
                 {
@@ -155,7 +168,8 @@ public class StreamOperatorService : IStreamOperatorService
                     new RequestJobReloadCommand(job),
                     new Reloading(streamDefinition)
                 },
-            { HasValue: true, Value: var job } when job.ConfigurationMatches(streamDefinition) => new List<KubernetesCommand>(),
+            { HasValue: true, Value: var job } when job.ConfigurationMatches(streamDefinition) =>
+                new List<KubernetesCommand>(),
             _ => new List<KubernetesCommand>()
         };
     }
