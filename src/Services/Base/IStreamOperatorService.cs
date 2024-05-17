@@ -1,16 +1,12 @@
-﻿using System;
-using System.Threading;
-using System.Threading.Tasks;
-using Akka;
-using Akka.Streams.Dsl;
-using Arcane.Operator.Models.StreamClass.Base;
-using Arcane.Operator.Models.StreamDefinitions.Base;
-using Arcane.Operator.Services.Models;
+﻿using Arcane.Operator.Models.StreamClass.Base;
 
 namespace Arcane.Operator.Services.Base;
 
 public interface IStreamOperatorService
 {
-    Lazy<Sink<ResourceEvent<IStreamDefinition>, NotUsed>> CommonSink { get; }
+    /// <summary>
+    /// Attach the StreamClass to the StreamOperatorService
+    /// </summary>
+    /// <param name="streamClass">Stream class event to start processing</param>
     void Attach(IStreamClass streamClass);
 }

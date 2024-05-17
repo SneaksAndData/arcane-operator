@@ -67,9 +67,6 @@ public class StreamOperatorService : IStreamOperatorService, IDisposable
         this.cancellationTokenSource?.Cancel();
     }
 
-    public Lazy<Sink<ResourceEvent<IStreamDefinition>, NotUsed>> CommonSink =>
-        new(() => this.BuildSink(this.cancellationTokenSource.Token).Run(this.materializer));
-
     public void Attach(IStreamClass streamClass)
     {
         var request = new CustomResourceApiRequest(
@@ -90,8 +87,11 @@ public class StreamOperatorService : IStreamOperatorService, IDisposable
                 throw exception;
             }, 1);
         
-        eventsSource.RunWith(this.CommonSink.Value, this.materializer);
+        eventsSource.RunWith(this.Sink.Value, this.materializer);
     }
+    
+    private Lazy<Sink<ResourceEvent<IStreamDefinition>, NotUsed>> Sink =>
+        new(() => this.BuildSink(this.cancellationTokenSource.Token).Run(this.materializer));
 
     private IRunnableGraph<Sink<ResourceEvent<IStreamDefinition>, NotUsed>> BuildSink(CancellationToken cancellationToken)
     {
@@ -101,7 +101,7 @@ public class StreamOperatorService : IStreamOperatorService, IDisposable
             .SelectAsync(parallelism, ev => this.operatorService.GetStreamingJob(ev.kubernetesObject.StreamId).Map(job => (ev, job)))
             .Select(this.OnEvent)
             .SelectMany(e => e)
-            .To(Sink.ForEachAsync<KubernetesCommand>(parallelism, this.HandleCommand))
+            .To(Akka.Streams.Dsl.Sink.ForEachAsync<KubernetesCommand>(parallelism, this.HandleCommand))
             .WithAttributes(new Attributes(new ActorAttributes.SupervisionStrategy(this.LogAndResumeDecider)));
     }
 
