@@ -69,7 +69,7 @@ public class Startup
         services.AddSingleton<StreamDefinitionRepository>();
         services.AddSingleton<IResourceCollection<IStreamDefinition>>(sp => sp.GetRequiredService<StreamDefinitionRepository>());
         services.AddSingleton<IReactiveResourceCollection<IStreamDefinition>>(sp => sp.GetRequiredService<StreamDefinitionRepository>());
-        
+
         services.AddSingleton<IStreamingJobTemplateRepository, StreamingJobTemplateRepository>();
         services.AddSingleton<IStreamClassRepository, StreamClassRepository>();
         services.AddSingleton<IStreamClassOperatorService, StreamClassOperatorService>();
