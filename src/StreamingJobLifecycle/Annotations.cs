@@ -1,4 +1,4 @@
-﻿namespace Arcane.Models.StreamingJobLifecycle;
+﻿namespace Arcane.Operator.StreamingJobLifecycle;
 
 public static class Annotations
 {
@@ -12,4 +12,9 @@ public static class Annotations
     public const string SCHEMA_MISMATCH_STATE_ANNOTATION_VALUE = "schema-mismatch";
 
     public const string CONFIGURATION_CHECKSUM_ANNOTATION_KEY = "arcane/configuration-checksum";
+
+    public const string ARCANE_STREAM_API_GROUP = "arcane.sneaksanddata.com/stream/api-group";
+    public const string ARCANE_STREAM_API_VERSION = "arcane.sneaksanddata.com/stream/api-version";
+    public const string ARCANE_STREAM_API_PLURAL_NAME = "arcane.sneaksanddata.com/stream/api-plural-name";
+
 }

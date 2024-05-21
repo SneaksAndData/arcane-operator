@@ -3,6 +3,8 @@ using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
 using Akka.Actor;
 using Arcane.Operator.Configurations;
+using Arcane.Operator.Models.StreamDefinitions;
+using Arcane.Operator.Models.StreamDefinitions.Base;
 using Arcane.Operator.Services;
 using Arcane.Operator.Services.Base;
 using Arcane.Operator.Services.Maintenance;
@@ -63,7 +65,11 @@ public class Startup
 
         services.AddSingleton<IStreamingJobOperatorService, StreamingJobOperatorService>();
         services.AddSingleton<IStreamingJobMaintenanceService, StreamingJobMaintenanceService>();
-        services.AddSingleton<IStreamDefinitionRepository, StreamDefinitionRepository>();
+
+        services.AddSingleton<StreamDefinitionRepository>();
+        services.AddSingleton<IResourceCollection<IStreamDefinition>>(sp => sp.GetRequiredService<StreamDefinitionRepository>());
+        services.AddSingleton<IReactiveResourceCollection<IStreamDefinition>>(sp => sp.GetRequiredService<StreamDefinitionRepository>());
+
         services.AddSingleton<IStreamingJobTemplateRepository, StreamingJobTemplateRepository>();
         services.AddSingleton<IStreamClassRepository, StreamClassRepository>();
         services.AddSingleton<IStreamClassOperatorService, StreamClassOperatorService>();

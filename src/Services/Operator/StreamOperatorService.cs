@@ -36,7 +36,7 @@ public class StreamOperatorService : IStreamOperatorService, IDisposable
     private readonly IStreamingJobCommandHandler streamingJobCommandHandler;
     private readonly IMaterializer materializer;
     private readonly CancellationTokenSource cancellationTokenSource;
-    private readonly IStreamDefinitionRepository streamDefinitionRepository;
+    private readonly IReactiveResourceCollection<IStreamDefinition> streamDefinitionSource;
     private Dictionary<string, UniqueKillSwitch> killSwitches = new();
 
     public StreamOperatorService(
@@ -48,7 +48,7 @@ public class StreamOperatorService : IStreamOperatorService, IDisposable
         IStreamingJobCommandHandler streamingJobCommandHandler,
         ILogger<StreamOperatorService> logger,
         IMaterializer materializer,
-        IStreamDefinitionRepository streamDefinitionRepository)
+        IReactiveResourceCollection<IStreamDefinition> streamDefinitionSource)
     {
         this.operatorService = operatorService;
         this.logger = logger;
@@ -59,7 +59,7 @@ public class StreamOperatorService : IStreamOperatorService, IDisposable
         this.removeAnnotationCommandHandler = removeAnnotationCommandHandler;
         this.materializer = materializer;
         this.cancellationTokenSource = new CancellationTokenSource();
-        this.streamDefinitionRepository = streamDefinitionRepository;
+        this.streamDefinitionSource = streamDefinitionSource;
     }
 
     public virtual void Dispose()
@@ -76,7 +76,7 @@ public class StreamOperatorService : IStreamOperatorService, IDisposable
             streamClass.PluralNameRef
         );
 
-        var eventsSource = this.streamDefinitionRepository.GetEvents(request, streamClass.MaxBufferCapacity)
+        var eventsSource = this.streamDefinitionSource.GetEvents(request, streamClass.MaxBufferCapacity)
             .RecoverWithRetries(exception =>
             {
                 if (exception is HttpOperationException { Response.StatusCode: System.Net.HttpStatusCode.NotFound })

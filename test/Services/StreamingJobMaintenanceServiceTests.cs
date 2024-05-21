@@ -43,7 +43,7 @@ public class StreamingJobMaintenanceServiceTests : IClassFixture<LoggerFixture>
     // Mocks
     private readonly Mock<IKubeCluster> kubeClusterMock = new();
     private readonly Mock<IStreamingJobOperatorService> streamingJobOperatorServiceMock = new();
-    private readonly Mock<IStreamDefinitionRepository> streamDefinitionRepositoryMock = new();
+    private readonly Mock<IResourceCollection<IStreamDefinition>> streamDefinitionRepositoryMock = new();
     private readonly Mock<IStreamClassRepository> streamClassRepositoryMock = new();
 
     public StreamingJobMaintenanceServiceTests(LoggerFixture loggerFixture)
@@ -71,9 +71,8 @@ public class StreamingJobMaintenanceServiceTests : IClassFixture<LoggerFixture>
             .Returns(mockSource);
 
         this.streamDefinitionRepositoryMock
-            .Setup(s => s.GetStreamDefinition(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
-            .ReturnsAsync(() =>
-                definitionExists ? Mock.Of<IStreamDefinition>().AsOption() : Option<IStreamDefinition>.None);
+            .Setup(service => service.Get(job.Name(), job.ToOwnerApiRequest()))
+            .ReturnsAsync(() => definitionExists ? Mock.Of<IStreamDefinition>().AsOption() : Option<IStreamDefinition>.None);
         var service = this.CreateService();
 
         // Act
@@ -125,9 +124,8 @@ public class StreamingJobMaintenanceServiceTests : IClassFixture<LoggerFixture>
                     .Returns(mockSource);
 
         this.streamDefinitionRepositoryMock
-                    .Setup(service =>
-                        service.GetStreamDefinition(job.Namespace(), job.GetStreamKind(), job.GetStreamId()))
-                    .ReturnsAsync(streamDefinition.AsOption());
+            .Setup(service => service.Get(job.Name(), job.ToOwnerApiRequest()))
+            .ReturnsAsync(streamDefinition.AsOption());
 
 
         var service = this.CreateService();

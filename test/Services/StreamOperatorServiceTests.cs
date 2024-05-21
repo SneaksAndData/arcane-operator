@@ -10,11 +10,9 @@ using Akka.Util;
 using Akka.Util.Extensions;
 using Arcane.Operator.Configurations;
 using Arcane.Operator.Configurations.Common;
-using Arcane.Operator.Models.StreamClass;
 using Arcane.Operator.Models.StreamClass.Base;
 using Arcane.Operator.Models.StreamDefinitions;
 using Arcane.Operator.Models.StreamDefinitions.Base;
-using Arcane.Operator.Models.StreamStatuses.StreamStatus.V1Beta1;
 using Arcane.Operator.Services.Base;
 using Arcane.Operator.Services.CommandHandlers;
 using Arcane.Operator.Services.Commands;
@@ -24,6 +22,7 @@ using Arcane.Operator.Services.Models;
 using Arcane.Operator.Services.Operator;
 using Arcane.Operator.Services.Repositories;
 using Arcane.Operator.Services.Streams;
+using Arcane.Operator.StreamingJobLifecycle;
 using Arcane.Operator.Tests.Fixtures;
 using Arcane.Operator.Tests.Services.TestCases;
 using k8s;
@@ -32,6 +31,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
+using Snd.Sdk.Kubernetes;
 using Snd.Sdk.Kubernetes.Base;
 using Snd.Sdk.Metrics.Base;
 using Xunit;
@@ -51,7 +51,7 @@ public class StreamOperatorServiceTests : IClassFixture<LoggerFixture>, IDisposa
     // Mocks
     private readonly Mock<IKubeCluster> kubeClusterMock = new();
     private readonly Mock<IStreamingJobOperatorService> streamingJobOperatorServiceMock = new();
-    private readonly Mock<IStreamDefinitionRepository> streamDefinitionRepositoryMock = new();
+    private readonly Mock<IReactiveResourceCollection<IStreamDefinition>> streamDefinitionRepositoryMock = new();
     private readonly Mock<IStreamClassRepository> streamClassRepositoryMock = new();
     private readonly TaskCompletionSource tcs = new();
     private readonly CancellationTokenSource cts = new();
@@ -180,11 +180,6 @@ public class StreamOperatorServiceTests : IClassFixture<LoggerFixture>, IDisposa
     public async Task TestStreamReload(StreamDefinition streamDefinition, bool jobExists, bool expectReload)
     {
         // Arrange
-        this.streamDefinitionRepositoryMock
-            .Setup(sdr
-                => sdr.RemoveReloadingAnnotation(streamDefinition.Namespace(), streamDefinition.Kind,
-                    streamDefinition.StreamId))
-            .ReturnsAsync(((IStreamDefinition)streamDefinition).AsOption());
         this.SetupEventMock(WatchEventType.Modified, streamDefinition);
         var mockJob = JobWithChecksum(streamDefinition.GetConfigurationChecksum());
         streamingJobOperatorServiceMock
@@ -212,9 +207,14 @@ public class StreamOperatorServiceTests : IClassFixture<LoggerFixture>, IDisposa
                 => service.StartRegisteredStream(It.IsAny<IStreamDefinition>(), true, It.IsAny<IStreamClass>()),
             Times.Exactly(expectReload ? 0 : 1));
 
-        this.streamDefinitionRepositoryMock.Verify(service
-            => service.RemoveReloadingAnnotation(streamDefinition.Namespace(), streamDefinition.Kind,
-                streamDefinition.StreamId));
+        var crd = StreamClass.ToNamespacedCrd();
+        this.kubeClusterMock.Verify(service => service.RemoveObjectAnnotation(
+            It.Is<NamespacedCrd>(namespacedCrd => namespacedCrd.Group == crd.Group &&
+                                                  namespacedCrd.Plural == crd.Plural &&
+                                                  namespacedCrd.Version == crd.Version),
+            Annotations.STATE_ANNOTATION_KEY,
+            streamDefinition.StreamId,
+            streamDefinition.Namespace()));
     }
 
     public static IEnumerable<object[]> GenerateAddTestCases()
@@ -238,11 +238,6 @@ public class StreamOperatorServiceTests : IClassFixture<LoggerFixture>, IDisposa
         bool expectStart)
     {
         // Arrange
-        this.streamDefinitionRepositoryMock
-            .Setup(sdr
-                => sdr.RemoveReloadingAnnotation(streamDefinition.Namespace(), streamDefinition.Kind,
-                    streamDefinition.StreamId))
-            .ReturnsAsync(((IStreamDefinition)streamDefinition).AsOption());
         this.SetupEventMock(WatchEventType.Added, streamDefinition);
         streamingJobOperatorServiceMock
             .Setup(service => service.GetStreamingJob(It.IsAny<string>()))
@@ -339,13 +334,17 @@ public class StreamOperatorServiceTests : IClassFixture<LoggerFixture>, IDisposa
             .Setup(service => service.GetStreamingJob(It.IsAny<string>()))
             .ReturnsAsync(FailedJob.AsOption());
 
-        this.streamDefinitionRepositoryMock
+        this.kubeClusterMock
             .Setup(service
-                => service.SetStreamStatus(
+                => service.UpdateCustomResourceStatus(
                     It.IsAny<string>(),
                     It.IsAny<string>(),
                     It.IsAny<string>(),
-                    It.IsAny<V1Beta1StreamStatus>()))
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<It.IsAnyType>(),
+                    It.IsAny<Func<JsonElement, It.IsAnyType>>()
+                    ))
             .ThrowsAsync(new Exception());
 
         var task = this.tcs.Task;

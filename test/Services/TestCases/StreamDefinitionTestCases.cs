@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text.Json;
-using Arcane.Models.StreamingJobLifecycle;
 using Arcane.Operator.Models.StreamDefinitions;
 using Arcane.Operator.Models.StreamDefinitions.Base;
+using Arcane.Operator.StreamingJobLifecycle;
 using Avro.IO.Parsing;
 using k8s.Models;
 
@@ -13,6 +13,10 @@ public static class StreamDefinitionTestCases
 {
     private static readonly string StreamSpec = "{\"jobTemplateRef\": {\"name\": \"jobTemplate\"}, \"reloadingJobTemplateRef\": {\"name\": \"jobTemplate\"}}";
     public static readonly string Kind = "StreamDefinition";
+    public static string ApiGroup = "streaming.sneaksanddata.com";
+    public static string PluralName = "streams";
+    public static string ApiVersion = "v1alpha1";
+
 
     public static IStreamDefinition StreamDefinition => new StreamDefinition
     {

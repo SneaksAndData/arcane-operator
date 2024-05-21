@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
-using Arcane.Models.StreamingJobLifecycle;
 using Arcane.Operator.Models.StreamClass.Base;
+using Arcane.Operator.StreamingJobLifecycle;
 using k8s;
 using k8s.Models;
 using Newtonsoft.Json;

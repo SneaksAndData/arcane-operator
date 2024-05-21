@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using Arcane.Models.StreamingJobLifecycle;
 using Arcane.Operator.Extensions;
+using Arcane.Operator.StreamingJobLifecycle;
 using k8s.Models;
 using Snd.Sdk.Kubernetes;
+using static Arcane.Operator.Tests.Services.TestCases.StreamClassTestCases;
 
 namespace Arcane.Operator.Tests.Services.TestCases;
 
@@ -11,11 +12,14 @@ public static class JobTestCases
 {
     public static V1Job FailedJob => CreateJob(new List<V1JobCondition>
             { new() { Type = "Failed", Status = "True" } })
-        .WithStreamingJobLabels("1", false, string.Empty);
+        .WithStreamingJobLabels("1", false, string.Empty)
+        .WithMetadataAnnotations(StreamClass);
 
     public static V1Job CompletedJob => CreateJob(new List<V1JobCondition>
             { new() { Type = "Complete", Status = "True" } })
-        .WithStreamingJobLabels("1", false, string.Empty);
+        .WithStreamingJobLabels("1", false, string.Empty)
+        .WithMetadataAnnotations(StreamClass);
+
 
     public static V1Job ReloadRequestedJob => CompletedJob
         .Clone()
@@ -34,9 +38,11 @@ public static class JobTestCases
     public static V1Job ReloadingJob => CreateJob(new List<V1JobCondition>
             { new() { Type = "Complete", Status = "True" } })
         .Clone()
+        .WithMetadataAnnotations(StreamClass)
         .WithStreamingJobLabels(Guid.NewGuid().ToString(), true, string.Empty);
 
     public static V1Job RunningJob => CreateJob(null)
+        .WithMetadataAnnotations(StreamClass)
         .WithStreamingJobLabels("1", false, string.Empty);
 
     public static V1Job SchemaMismatchJob => RunningJob
