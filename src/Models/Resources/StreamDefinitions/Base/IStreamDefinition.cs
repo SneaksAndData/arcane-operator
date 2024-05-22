@@ -1,5 +1,5 @@
 ﻿using System.Collections.Generic;
-using Arcane.Operator.Models.StreamClass.Base;
+using Arcane.Operator.Models.Resources.StreamClass.Base;
 using Arcane.Operator.StreamingJobLifecycle;
 using k8s;
 using k8s.Models;

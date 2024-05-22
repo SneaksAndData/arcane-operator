@@ -2,7 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
 using k8s.Models;
 
-namespace Arcane.Operator.Models.JobTemplates.V1Beta1;
+namespace Arcane.Operator.Models.Resources.JobTemplates.V1Beta1;
 
 /// <summary>
 /// Configuration for streaming job template.

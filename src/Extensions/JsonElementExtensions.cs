@@ -1,9 +1,9 @@
 ﻿using System.Text.Json;
 using Akka.Util;
 using Akka.Util.Extensions;
+using Arcane.Operator.Models.Resources.StreamClass.Base;
+using Arcane.Operator.Models.Resources.StreamClass.V1Beta1;
 using Arcane.Operator.Models.Resources.StreamDefinitions;
-using Arcane.Operator.Models.StreamClass;
-using Arcane.Operator.Models.StreamClass.Base;
 using Arcane.Operator.Models.StreamDefinitions;
 using Arcane.Operator.Models.StreamDefinitions.Base;
 

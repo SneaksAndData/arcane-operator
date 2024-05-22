@@ -4,14 +4,10 @@ using Akka.Streams;
 using Akka.Streams.Dsl;
 using Akka.Util;
 using Arcane.Operator.Extensions;
-using Arcane.Operator.Models;
 using Arcane.Operator.Models.Api;
-using Arcane.Operator.Models.Resources;
 using Arcane.Operator.Models.Resources.StreamDefinitions;
-using Arcane.Operator.Models.StreamDefinitions;
 using Arcane.Operator.Models.StreamDefinitions.Base;
 using Arcane.Operator.Services.Base.Repositories.CustomResources;
-using Arcane.Operator.Services.Models;
 using Snd.Sdk.Kubernetes.Base;
 
 namespace Arcane.Operator.Services.Repositories.CustomResources;

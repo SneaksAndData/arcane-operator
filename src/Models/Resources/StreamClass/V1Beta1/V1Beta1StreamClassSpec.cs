@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
-namespace Arcane.Operator.Models.StreamClass;
+namespace Arcane.Operator.Models.Resources.StreamClass.V1Beta1;
 
 public class V1Beta1StreamClassSpec
 {

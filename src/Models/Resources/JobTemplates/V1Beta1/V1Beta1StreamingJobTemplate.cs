@@ -1,10 +1,9 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
-using Arcane.Operator.Models.JobTemplates.Base;
-using k8s;
+using Arcane.Operator.Models.Resources.JobTemplates.Base;
 using k8s.Models;
 
-namespace Arcane.Operator.Models.JobTemplates.V1Beta1;
+namespace Arcane.Operator.Models.Resources.JobTemplates.V1Beta1;
 
 [ExcludeFromCodeCoverage(Justification = "Model")]
 public class V1Beta1StreamingJobTemplate : IStreamingJobTemplate

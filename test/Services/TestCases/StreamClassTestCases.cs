@@ -1,5 +1,5 @@
-﻿using Arcane.Operator.Models.StreamClass;
-using Arcane.Operator.Models.StreamClass.Base;
+﻿using Arcane.Operator.Models.Resources.StreamClass.Base;
+using Arcane.Operator.Models.Resources.StreamClass.V1Beta1;
 using k8s.Models;
 
 namespace Arcane.Operator.Tests.Services.TestCases;

@@ -1,7 +1,7 @@
 ﻿using Arcane.Operator.Models.Api;
 using Arcane.Operator.Models.Resources;
 using Arcane.Operator.Models.Resources.Status.V1Alpha1;
-using Arcane.Operator.Models.StreamClass.Base;
+using Arcane.Operator.Models.Resources.StreamClass.Base;
 using Arcane.Operator.Services.Base;
 
 namespace Arcane.Operator.Models.Commands;

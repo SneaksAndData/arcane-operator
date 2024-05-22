@@ -10,7 +10,7 @@ using Akka.Util;
 using Arcane.Operator.Extensions;
 using Arcane.Operator.Models.Api;
 using Arcane.Operator.Models.Commands;
-using Arcane.Operator.Models.StreamClass.Base;
+using Arcane.Operator.Models.Resources.StreamClass.Base;
 using Arcane.Operator.Models.StreamDefinitions.Base;
 using Arcane.Operator.Services.Base;
 using Arcane.Operator.Services.Base.Repositories.CustomResources;

@@ -10,7 +10,7 @@ using Akka.Util.Extensions;
 using Arcane.Operator.Configurations;
 using Arcane.Operator.Extensions;
 using Arcane.Operator.Models.Commands;
-using Arcane.Operator.Models.JobTemplates.Base;
+using Arcane.Operator.Models.Resources.JobTemplates.Base;
 using Arcane.Operator.Models.StreamDefinitions.Base;
 using Arcane.Operator.Services.Base;
 using Arcane.Operator.Services.Base.Repositories.CustomResources;

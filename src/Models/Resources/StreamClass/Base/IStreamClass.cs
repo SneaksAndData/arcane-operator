@@ -2,7 +2,7 @@
 using k8s.Models;
 using Snd.Sdk.Kubernetes;
 
-namespace Arcane.Operator.Models.StreamClass.Base;
+namespace Arcane.Operator.Models.Resources.StreamClass.Base;
 
 /// <summary>
 /// Base interface for StreamClass objects

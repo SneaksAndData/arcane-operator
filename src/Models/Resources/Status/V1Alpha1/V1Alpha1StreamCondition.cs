@@ -75,7 +75,7 @@ public class V1Alpha1StreamCondition
                 Status = "True"
             }
         };
-    
+
     public static V1Alpha1StreamCondition[] CustomErrorCondition(string message) =>
         new[]
         {

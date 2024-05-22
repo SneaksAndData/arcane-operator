@@ -6,7 +6,7 @@ using Arcane.Operator.Extensions;
 using Arcane.Operator.Models.Api;
 using Arcane.Operator.Models.Commands;
 using Arcane.Operator.Models.Resources.Status.V1Alpha1;
-using Arcane.Operator.Models.StreamClass.Base;
+using Arcane.Operator.Models.Resources.StreamClass.Base;
 using Arcane.Operator.Models.StreamDefinitions.Base;
 using Arcane.Operator.Services.Base;
 using k8s.Models;

@@ -2,8 +2,8 @@
 using Akka.Util;
 using Akka.Util.Extensions;
 using Arcane.Operator.Configurations;
-using Arcane.Operator.Models.JobTemplates.Base;
-using Arcane.Operator.Models.JobTemplates.V1Beta1;
+using Arcane.Operator.Models.Resources.JobTemplates.Base;
+using Arcane.Operator.Models.Resources.JobTemplates.V1Beta1;
 using Arcane.Operator.Services.Base;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;

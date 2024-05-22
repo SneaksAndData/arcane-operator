@@ -1,5 +1,5 @@
 ﻿using System.Collections.Generic;
-using Arcane.Operator.Models.JobTemplates.V1Beta1;
+using Arcane.Operator.Models.Resources.JobTemplates.V1Beta1;
 using k8s.Models;
 
 namespace Arcane.Operator.Tests.Services.TestCases;

@@ -13,7 +13,7 @@ using Arcane.Operator.Configurations.Common;
 using Arcane.Operator.Models;
 using Arcane.Operator.Models.Api;
 using Arcane.Operator.Models.Commands;
-using Arcane.Operator.Models.JobTemplates.Base;
+using Arcane.Operator.Models.Resources.JobTemplates.Base;
 using Arcane.Operator.Models.Resources.StreamDefinitions;
 using Arcane.Operator.Models.StreamDefinitions.Base;
 using Arcane.Operator.Services.Base;
