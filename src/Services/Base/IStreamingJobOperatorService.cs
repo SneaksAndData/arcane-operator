@@ -32,13 +32,6 @@ public interface IStreamingJobOperatorService
     Task<Option<V1Job>> GetStreamingJob(string streamId);
 
     /// <summary>
-    /// Marks streaming job for restart
-    /// </summary>
-    /// <param name="streamId">Stream identifier that should be terminated.</param>
-    /// <returns></returns>
-    Task<Option<StreamOperatorResponse>> RequestStreamingJobRestart(string streamId);
-
-    /// <summary>
     /// Marks streaming job for stop
     /// </summary>
     /// <param name="streamId">Stream identifier that should be terminated.</param>

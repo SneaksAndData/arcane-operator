@@ -173,6 +173,7 @@ public class StreamClassOperatorServiceTests : IClassFixture<LoggerFixture>, ICl
             .AddSingleton(this.loggerFixture.Factory.CreateLogger<StreamingJobOperatorService>())
             .AddSingleton(this.loggerFixture.Factory.CreateLogger<AnnotationCommandHandler>())
             .AddSingleton(this.loggerFixture.Factory.CreateLogger<UpdateStatusCommandHandler>())
+            .AddSingleton(this.loggerFixture.Factory.CreateLogger<StreamingJobCommandHandler>())
             .AddSingleton(loggerFixture.Factory)
             .AddSingleton(optionsMock.Object)
             .AddSingleton(metricsReporterConfiguration)
