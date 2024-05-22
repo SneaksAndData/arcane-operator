@@ -9,15 +9,16 @@ using Arcane.Operator.Configurations;
 using Arcane.Operator.Extensions;
 using Arcane.Operator.Models.StreamDefinitions.Base;
 using Arcane.Operator.Services.Base;
-using Arcane.Operator.Services.CommandHandlers;
+using Arcane.Operator.Services.Base.Repositories.CustomResources;
+using Arcane.Operator.Services.Base.Repositories.StreamingJob;
 using Arcane.Operator.Services.Commands;
+using Arcane.Operator.Services.Models;
 using k8s;
 using k8s.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Snd.Sdk.ActorProviders;
 using Snd.Sdk.Kubernetes;
-using Snd.Sdk.Kubernetes.Base;
 using Snd.Sdk.Tasks;
 
 namespace Arcane.Operator.Services.Maintenance;
@@ -26,43 +27,39 @@ public class StreamingJobMaintenanceService : IStreamingJobMaintenanceService
 {
     private const int parallelism = 1;
     private readonly StreamingJobMaintenanceServiceConfiguration configuration;
-    private readonly IKubeCluster kubeCluster;
     private readonly ILogger<StreamingJobMaintenanceService> logger;
-    private readonly IStreamingJobOperatorService operatorService;
     private readonly IResourceCollection<IStreamDefinition> streamDefinitionCollection;
     private readonly IMetricsReporter metricsReporter;
     private readonly ICommandHandler<UpdateStatusCommand> updateStatusCommandHandler;
     private readonly ICommandHandler<SetAnnotationCommand<IStreamDefinition>> setAnnotationCommandHandler;
     private readonly IStreamingJobCommandHandler streamingJobCommandHandler;
+    private readonly IStreamingJobCollection streamingJobCollection;
 
     public StreamingJobMaintenanceService(
         ILogger<StreamingJobMaintenanceService> logger,
         IOptions<StreamingJobMaintenanceServiceConfiguration> options,
-        IKubeCluster kubeCluster,
         IMetricsReporter metricsReporter,
         IResourceCollection<IStreamDefinition> streamDefinitionCollection,
         ICommandHandler<UpdateStatusCommand> updateStatusCommandHandler,
         ICommandHandler<SetAnnotationCommand<IStreamDefinition>> setAnnotationCommandHandler,
         IStreamingJobCommandHandler streamingJobCommandHandler,
-        IStreamingJobOperatorService operatorService)
+        IStreamingJobCollection streamingJobCollection)
     {
         this.configuration = options.Value;
-        this.kubeCluster = kubeCluster;
         this.streamDefinitionCollection = streamDefinitionCollection;
-        this.operatorService = operatorService;
         this.logger = logger;
         this.metricsReporter = metricsReporter;
         this.updateStatusCommandHandler = updateStatusCommandHandler;
         this.streamingJobCommandHandler = streamingJobCommandHandler;
         this.setAnnotationCommandHandler = setAnnotationCommandHandler;
+        this.streamingJobCollection = streamingJobCollection;
     }
 
 
     public IRunnableGraph<Task> GetJobEventsGraph(CancellationToken cancellationToken)
     {
-        return this.kubeCluster
-            .StreamJobEvents(this.operatorService.StreamJobNamespace, this.configuration.MaxBufferCapacity, OverflowStrategy.Fail)
-            .Via(cancellationToken.AsFlow<(WatchEventType, V1Job)>(true))
+        return this.streamingJobCollection.GetEvents(this.configuration.Namespace, this.configuration.MaxBufferCapacity)
+            .Via(cancellationToken.AsFlow<ResourceEvent<V1Job>>(true))
             .Select(this.metricsReporter.ReportTrafficMetrics)
             .SelectAsync(parallelism, this.OnJobEvent)
             .SelectMany(e => e)
@@ -70,7 +67,7 @@ public class StreamingJobMaintenanceService : IStreamingJobMaintenanceService
             .ToMaterialized(Sink.ForEachAsync<KubernetesCommand>(parallelism, this.HandleCommand), Keep.Right);
     }
 
-    private Task<List<Option<KubernetesCommand>>> OnJobEvent((WatchEventType, V1Job) valueTuple)
+    private Task<List<Option<KubernetesCommand>>> OnJobEvent(ResourceEvent<V1Job> valueTuple)
     {
         return valueTuple switch
         {

@@ -11,6 +11,8 @@ using Arcane.Operator.Extensions;
 using Arcane.Operator.Models.StreamClass.Base;
 using Arcane.Operator.Models.StreamDefinitions.Base;
 using Arcane.Operator.Services.Base;
+using Arcane.Operator.Services.Base.Repositories.CustomResources;
+using Arcane.Operator.Services.Base.Repositories.StreamingJob;
 using Arcane.Operator.Services.Commands;
 using Arcane.Operator.Services.Models;
 using k8s;
@@ -27,7 +29,6 @@ public class StreamOperatorService : IStreamOperatorService, IDisposable
     private const int bufferSize = 1000;
 
     private readonly ILogger<StreamOperatorService> logger;
-    private readonly IStreamingJobOperatorService operatorService;
     private readonly IMetricsReporter metricsReporter;
     private readonly ICommandHandler<UpdateStatusCommand> updateStatusCommandHandler;
     private readonly ICommandHandler<SetAnnotationCommand<V1Job>> setAnnotationCommandHandler;
@@ -36,10 +37,10 @@ public class StreamOperatorService : IStreamOperatorService, IDisposable
     private readonly IMaterializer materializer;
     private readonly CancellationTokenSource cancellationTokenSource;
     private readonly IReactiveResourceCollection<IStreamDefinition> streamDefinitionSource;
-    private Dictionary<string, UniqueKillSwitch> killSwitches = new();
+    private readonly IStreamingJobCollection streamingJobCollection;
+    private readonly Dictionary<string, UniqueKillSwitch> killSwitches = new();
 
     public StreamOperatorService(
-        IStreamingJobOperatorService operatorService,
         IMetricsReporter metricsReporter,
         ICommandHandler<UpdateStatusCommand> updateStatusCommandHandler,
         ICommandHandler<SetAnnotationCommand<V1Job>> setAnnotationCommandHandler,
@@ -47,9 +48,9 @@ public class StreamOperatorService : IStreamOperatorService, IDisposable
         IStreamingJobCommandHandler streamingJobCommandHandler,
         ILogger<StreamOperatorService> logger,
         IMaterializer materializer,
-        IReactiveResourceCollection<IStreamDefinition> streamDefinitionSource)
+        IReactiveResourceCollection<IStreamDefinition> streamDefinitionSource,
+        IStreamingJobCollection streamingJobCollection)
     {
-        this.operatorService = operatorService;
         this.logger = logger;
         this.metricsReporter = metricsReporter;
         this.updateStatusCommandHandler = updateStatusCommandHandler;
@@ -59,6 +60,7 @@ public class StreamOperatorService : IStreamOperatorService, IDisposable
         this.materializer = materializer;
         this.cancellationTokenSource = new CancellationTokenSource();
         this.streamDefinitionSource = streamDefinitionSource;
+        this.streamingJobCollection = streamingJobCollection;
     }
 
     public virtual void Dispose()
@@ -69,7 +71,7 @@ public class StreamOperatorService : IStreamOperatorService, IDisposable
     public void Attach(IStreamClass streamClass)
     {
         var request = new CustomResourceApiRequest(
-            this.operatorService.StreamJobNamespace,
+            streamClass.Namespace(),
             streamClass.ApiGroupRef,
             streamClass.VersionRef,
             streamClass.PluralNameRef
@@ -108,7 +110,10 @@ public class StreamOperatorService : IStreamOperatorService, IDisposable
         return MergeHub.Source<ResourceEvent<IStreamDefinition>>(perProducerBufferSize: bufferSize)
             .Via(cancellationToken.AsFlow<ResourceEvent<IStreamDefinition>>(true))
             .Select(this.metricsReporter.ReportTrafficMetrics)
-            .SelectAsync(parallelism, ev => this.operatorService.GetStreamingJob(ev.kubernetesObject.StreamId).Map(job => (ev, job)))
+            .SelectAsync(parallelism,
+                ev => this.streamingJobCollection.Get(ev.kubernetesObject.Namespace(),
+                        ev.kubernetesObject.StreamId)
+                    .Map(job => (ev, job)))
             .Select(this.OnEvent)
             .SelectMany(e => e)
             .To(Akka.Streams.Dsl.Sink.ForEachAsync<KubernetesCommand>(parallelism, this.HandleCommand))

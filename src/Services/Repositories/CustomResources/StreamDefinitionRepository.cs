@@ -7,6 +7,7 @@ using Arcane.Operator.Extensions;
 using Arcane.Operator.Models.StreamDefinitions;
 using Arcane.Operator.Models.StreamDefinitions.Base;
 using Arcane.Operator.Services.Base;
+using Arcane.Operator.Services.Base.Repositories.CustomResources;
 using Arcane.Operator.Services.Models;
 using Snd.Sdk.Kubernetes.Base;
 

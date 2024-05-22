@@ -4,6 +4,7 @@ using Akka.Util;
 using Arcane.Operator.Models;
 using Arcane.Operator.Models.StreamClass.Base;
 using Arcane.Operator.Models.StreamStatuses.StreamStatus.V1Beta1;
+using Arcane.Operator.Services.Base.Repositories.CustomResources;
 
 namespace Arcane.Operator.Services.Base;
 
