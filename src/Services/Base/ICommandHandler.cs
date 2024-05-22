@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
+using Arcane.Operator.Services.Models;
 using k8s;
 using k8s.Models;
 
@@ -30,6 +31,17 @@ public abstract record SetAnnotationCommand<TObject>(TObject affectedResource,
 public abstract record RemoveAnnotationCommand<TObject>(TObject affectedResource,
     string annotationKey) : KubernetesCommand where TObject : IKubernetesObject<V1ObjectMeta>;
 
+
+/// <summary>
+/// Update the stream definition status
+/// </summary>
+/// <param name="request"></param>
+/// <param name="conditions"></param>
+/// <param name="phase"></param>
+public abstract record SetResourceStatusCommand<TCondition, TPhase>(CustomResourceApiRequest request,
+    TCondition[] conditions,
+    TPhase phase) : KubernetesCommand;
+
 /// <summary>
 /// Base interface for Kubernetes command handlers
 /// </summary>
@@ -49,7 +61,6 @@ public static class KubernetesCommandExtensions
     /// <summary>
     /// Handle the command asynchronously
     /// </summary>
-    /// <param name="handler">Command handler</param>
     /// <param name="command">Command instance</param>
     /// <returns>Type of the command</returns>
     public static List<KubernetesCommand> AsList(this KubernetesCommand command) => new() { command };

@@ -1,20 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using Akka;
 using Akka.Streams;
 using Akka.Streams.Dsl;
 using Akka.Util;
-using Arcane.Operator.Extensions;
 using Arcane.Operator.Models;
 using Arcane.Operator.Models.StreamClass;
 using Arcane.Operator.Models.StreamClass.Base;
 using Arcane.Operator.Models.StreamStatuses.StreamStatus.V1Beta1;
 using Arcane.Operator.Services.Base;
 using Arcane.Operator.Services.Models;
-using k8s;
-using k8s.Models;
 using Microsoft.Extensions.Caching.Memory;
 using Snd.Sdk.Kubernetes.Base;
 
@@ -41,20 +36,7 @@ public class StreamClassRepository : IStreamClassRepository
     public Task InsertOrUpdate(IStreamClass streamClass, StreamClassPhase phase, IEnumerable<V1Beta1StreamCondition> conditions, string pluralName)
     {
         this.memoryCache.Set(streamClass.KindRef, streamClass);
-
-        var status = new V1Beta1StreamStatus()
-        {
-            Phase = phase.ToString(),
-            Conditions = conditions.ToArray()
-        };
-        return this.kubeCluster.UpdateCustomResourceStatus(
-            streamClass.ApiGroup(),
-            streamClass.ApiGroupVersion(),
-            pluralName,
-            streamClass.Namespace(),
-            streamClass.Name(),
-            status,
-            element => element.AsOptionalStreamClass());
+        return Task.CompletedTask;
     }
 
     /// <inheritdoc cref="IReactiveResourceCollection{TResourceType}.GetEvents"/>>

@@ -1,4 +1,5 @@
 ﻿using Arcane.Operator.Models;
+using Arcane.Operator.Services.Commands;
 using Arcane.Operator.Services.Models;
 using k8s;
 using k8s.Models;
@@ -13,9 +14,9 @@ public interface IMetricsReporter
     /// <summary>
     /// Report status metrics for a StreamClass object
     /// </summary>
-    /// <param name="streamClass">StreamClassOperatorResponse object with StreamClass status information</param>
+    /// <param name="command">StreamClassOperatorResponse object with StreamClass status information</param>
     /// <returns>The same object for processing in the next stages of operator state machine.</returns>
-    StreamClassOperatorResponse ReportStatusMetrics(StreamClassOperatorResponse streamClass);
+    SetStreamClassStatusCommand ReportStatusMetrics(SetStreamClassStatusCommand command);
 
     /// <summary>
     /// Reports Count metric for a V1Job object
