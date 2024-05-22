@@ -12,7 +12,7 @@ namespace Arcane.Operator.Services.Commands;
 /// <param name="request"></param>
 /// <param name="conditions"></param>
 /// <param name="phase"></param>
-public abstract record SetStreamClassStatusCommand(string resourceName, 
+public abstract record SetStreamClassStatusCommand(string resourceName,
     CustomResourceApiRequest request, V1Beta1StreamCondition[] conditions,
     StreamClassPhase phase, IStreamClass streamClass) : SetResourceStatusCommand<V1Beta1StreamCondition, StreamClassPhase>(request, conditions, phase);
 

@@ -90,15 +90,15 @@ public class UpdateStatusCommandHandler : ICommandHandler<UpdateStatusCommand>,
         {
             this.logger.LogError("Failed to get stream definition");
         }
-        
+
         this.logger.LogInformation("The phase of the stream class {namespace}/{name} changed to {status}",
             maybeStreamClass.Value.Metadata.Namespace(),
             maybeStreamClass.Value.Metadata.Name,
             phase);
-            
+
         return maybeStreamClass;
     }
-    
+
     private Option<IStreamClass> OnFailure(Exception exception, CustomResourceApiRequest request)
     {
         this.logger.LogError(exception, "Failed to update stream class status for {@request}", request);

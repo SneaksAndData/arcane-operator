@@ -71,7 +71,7 @@ public class StreamClassOperatorService : IStreamClassOperatorService
             .WithAttributes(ActorAttributes.CreateSupervisionStrategy(this.HandleError))
             .ToMaterialized(sink, Keep.Right);
     }
-    
+
     private Option<SetStreamClassStatusCommand> OnEvent(ResourceEvent<IStreamClass> resourceEvent)
     {
         return resourceEvent switch
