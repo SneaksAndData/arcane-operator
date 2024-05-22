@@ -13,7 +13,7 @@ using Snd.Sdk.Tasks;
 
 namespace Arcane.Operator.Services.Repositories.StreamingJob;
 
-public class StreamingJobRepository: IStreamingJobCollection
+public class StreamingJobRepository : IStreamingJobCollection
 {
     private readonly IKubeCluster kubeCluster;
     private readonly ILogger<StreamingJobRepository> logger;
@@ -23,7 +23,7 @@ public class StreamingJobRepository: IStreamingJobCollection
         this.kubeCluster = kubeCluster;
         this.logger = logger;
     }
-    
+
     public Source<ResourceEvent<V1Job>, NotUsed> GetEvents(string nameSpace, int maxBufferCapacity) =>
         this.kubeCluster
             .StreamJobEvents(nameSpace, maxBufferCapacity, OverflowStrategy.Fail)

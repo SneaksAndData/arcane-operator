@@ -16,7 +16,7 @@ public interface IStreamingJobCollection
     /// <param name="maxBufferCapacity">Maximum capacity of the buffer in the source</param>
     /// <returns>An Akka source that emits a Kubernetes entity updates</returns>
     Source<ResourceEvent<V1Job>, NotUsed> GetEvents(string nameSpace, int maxBufferCapacity);
-    
+
     /// <summary>
     /// Subscribe to a stream class updates
     /// </summary>

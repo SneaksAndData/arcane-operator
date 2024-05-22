@@ -13,7 +13,7 @@ public class StreamingJobMaintenanceServiceConfiguration
     /// Max buffer capacity for job events stream
     /// </summary>
     public int MaxBufferCapacity { get; init; }
-    
+
     /// <summary>
     /// Namespace where the job will be created
     /// </summary>
