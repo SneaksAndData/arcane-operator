@@ -197,7 +197,7 @@ public class StreamOperatorServiceTests : IClassFixture<LoggerFixture>, IDisposa
 
     public static IEnumerable<object[]> GenerateReloadTestCases()
     {
-        // yield return new object[] { ReloadRequestedStreamDefinition, true, true };
+        yield return new object[] { ReloadRequestedStreamDefinition, true, true };
         yield return new object[] { ReloadRequestedStreamDefinition, false, false };
     }
 
