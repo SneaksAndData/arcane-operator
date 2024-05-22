@@ -1,17 +1,24 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Akka.Util;
 using Arcane.Operator.Extensions;
+using Arcane.Operator.Models;
+using Arcane.Operator.Models.StreamClass.Base;
 using Arcane.Operator.Models.StreamDefinitions.Base;
+using Arcane.Operator.Models.StreamStatuses.StreamStatus.V1Beta1;
 using Arcane.Operator.Services.Base;
 using Arcane.Operator.Services.Commands;
+using Arcane.Operator.Services.Models;
+using k8s.Models;
 using Microsoft.Extensions.Logging;
 using Snd.Sdk.Kubernetes.Base;
 using Snd.Sdk.Tasks;
 
 namespace Arcane.Operator.Services.CommandHandlers;
 
-public class UpdateStatusCommandHandler : ICommandHandler<UpdateStatusCommand>
+public class UpdateStatusCommandHandler : ICommandHandler<UpdateStatusCommand>,
+    ICommandHandler<SetStreamClassStatusCommand>
 {
     private readonly ILogger<UpdateStatusCommandHandler> logger;
     private readonly IKubeCluster kubeCluster;
@@ -55,5 +62,46 @@ public class UpdateStatusCommandHandler : ICommandHandler<UpdateStatusCommand>
                 streamStatus,
                 element => element.AsOptionalStreamDefinition());
         });
+    }
+
+    public Task Handle(SetStreamClassStatusCommand command)
+    {
+        var status = new V1Beta1StreamStatus
+        {
+            Phase = command.phase.ToString(),
+            Conditions = command.conditions.ToArray()
+        };
+
+        return this.kubeCluster.UpdateCustomResourceStatus(
+                command.request.ApiGroup,
+                command.request.ApiVersion,
+                command.request.PluralName,
+                command.request.Namespace,
+                command.resourceName,
+                status,
+                element => element.AsOptionalStreamClass())
+            .TryMap(success => this.OnSuccess(success, command.phase),
+                exception => this.OnFailure(exception, command.request));
+    }
+
+    private Option<IStreamClass> OnSuccess(Option<IStreamClass> maybeStreamClass, StreamClassPhase phase)
+    {
+        if (maybeStreamClass is { HasValue: false })
+        {
+            this.logger.LogError("Failed to get stream definition");
+        }
+
+        this.logger.LogInformation("The phase of the stream class {namespace}/{name} changed to {status}",
+            maybeStreamClass.Value.Metadata.Namespace(),
+            maybeStreamClass.Value.Metadata.Name,
+            phase);
+
+        return maybeStreamClass;
+    }
+
+    private Option<IStreamClass> OnFailure(Exception exception, CustomResourceApiRequest request)
+    {
+        this.logger.LogError(exception, "Failed to update stream class status for {@request}", request);
+        return Option<IStreamClass>.None;
     }
 }
