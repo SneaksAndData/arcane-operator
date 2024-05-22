@@ -41,7 +41,7 @@ public class StreamingJobCommandHandler : IStreamingJobCommandHandler
                 { HasValue: true, Value: var sc } => this.streamingJobOperatorService.StartRegisteredStream(startJob.streamDefinition, startJob.IsBackfilling, sc),
                 { HasValue: false } => throw new InvalidOperationException($"Stream class not found for {startJob.streamDefinition.Kind}"),
             }),
-        StopJob stopJob => this.streamingJobOperatorService.DeleteJob(stopJob.streamKind, stopJob.streamId),
+        StopJob stopJob => this.kubeCluster.DeleteJob(stopJob.name, stopJob.nameSpace),
         _ => throw new ArgumentOutOfRangeException(nameof(command), command, null)
     };
 

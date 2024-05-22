@@ -30,12 +30,4 @@ public interface IStreamingJobOperatorService
     /// <param name="streamId">Stream identifier that should be started.</param>
     /// <returns></returns>
     Task<Option<V1Job>> GetStreamingJob(string streamId);
-
-    /// <summary>
-    /// Delete the streaming job
-    /// </summary>
-    /// <param name="kind">Stream definition kind</param>
-    /// <param name="streamId">Stream identifier that should be terminated.</param>
-    /// <returns></returns>
-    Task<Option<StreamOperatorResponse>> DeleteJob(string kind, string streamId);
 }

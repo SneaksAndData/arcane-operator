@@ -11,7 +11,6 @@ using Arcane.Operator.Extensions;
 using Arcane.Operator.Models.StreamClass.Base;
 using Arcane.Operator.Models.StreamDefinitions.Base;
 using Arcane.Operator.Services.Base;
-using Arcane.Operator.Services.CommandHandlers;
 using Arcane.Operator.Services.Commands;
 using Arcane.Operator.Services.Models;
 using k8s;
@@ -139,8 +138,7 @@ public class StreamOperatorService : IStreamOperatorService, IDisposable
         {
             { HasValue: true, Value: var job } when job.IsReloading() => new Reloading(streamDefinition),
             { HasValue: true, Value: var job } when !job.IsReloading() => new Running(streamDefinition),
-            { HasValue: true, Value: var job } when streamDefinition.Suspended => new StopJob(job.GetStreamId(),
-                job.GetStreamKind()),
+            { HasValue: true, Value: var job } when streamDefinition.Suspended => new StopJob(job.Name(), job.Namespace()),
             { HasValue: false } when streamDefinition.Suspended => new Suspended(streamDefinition),
             { HasValue: false } when !streamDefinition.Suspended => new StartJob(streamDefinition, true),
             _ => throw new ArgumentOutOfRangeException(nameof(maybeJob), maybeJob, null)
@@ -163,10 +161,10 @@ public class StreamOperatorService : IStreamOperatorService, IDisposable
             },
             { HasValue: false } => new StartJob(streamDefinition, false).AsList(),
 
-            { HasValue: true, Value: var job } when streamDefinition.CrashLoopDetected => new StopJob(job.GetStreamId(),
-                job.GetStreamKind()).AsList(),
-            { HasValue: true, Value: var job } when streamDefinition.Suspended => new StopJob(job.GetStreamId(),
-                job.GetStreamKind()).AsList(),
+            { HasValue: true, Value: var job } when streamDefinition.CrashLoopDetected => new StopJob(job.Name(),
+                job.Namespace()).AsList(),
+            { HasValue: true, Value: var job } when streamDefinition.Suspended => new StopJob(job.Name(),
+                job.Namespace()).AsList(),
             { HasValue: true, Value: var job } when !job.ConfigurationMatches(streamDefinition) => new
                 List<KubernetesCommand>
                 {

@@ -102,8 +102,12 @@ public class StreamingJobMaintenanceServiceTests : IClassFixture<LoggerFixture>
         // Act
         await service.GetJobEventsGraph(CancellationToken.None).Run(this.materializer);
 
-        this.streamingJobOperatorServiceMock
-            .Verify(s => s.DeleteJob(It.IsAny<string>(), It.IsAny<string>()),
+        this.kubeClusterMock
+            .Verify(s => s.DeleteJob(
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<CancellationToken>(),
+                    It.IsAny<PropagationPolicy>()),
                 Times.Exactly(expectToStopJob ? 1 : 0)
             );
     }
