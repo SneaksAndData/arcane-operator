@@ -106,13 +106,13 @@ public class StreamOperatorServiceTests : IClassFixture<LoggerFixture>, IDisposa
             It.IsAny<string>()))
             .Callback(() => this.tcs.SetResult());
 
-       this.kubeClusterMock 
-            .Setup(service => service.DeleteJob(
-                It.IsAny<string>(),
-                It.IsAny<string>(),
-                It.IsAny<CancellationToken>(),
-                It.IsAny<PropagationPolicy>()))
-            .Callback(() => this.tcs.SetResult());
+        this.kubeClusterMock
+             .Setup(service => service.DeleteJob(
+                 It.IsAny<string>(),
+                 It.IsAny<string>(),
+                 It.IsAny<CancellationToken>(),
+                 It.IsAny<PropagationPolicy>()))
+             .Callback(() => this.tcs.SetResult());
 
         // Act
         var sp = this.CreateServiceProvider();
@@ -125,7 +125,7 @@ public class StreamOperatorServiceTests : IClassFixture<LoggerFixture>, IDisposa
                 => service.StartRegisteredStream(
                     It.IsAny<StreamDefinition>(), true, It.IsAny<IStreamClass>()),
             Times.Exactly(expectBackfill ? 1 : 0));
-        
+
         this.kubeClusterMock
             .Verify(c => c.AnnotateJob(It.IsAny<string>(),
             It.IsAny<string>(),

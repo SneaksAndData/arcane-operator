@@ -52,7 +52,7 @@ public class StreamingJobCommandHandler : IStreamingJobCommandHandler
             .TryMap(job => job.AsOption(),
                 exception =>
                 {
-                    this.logger.LogError(exception, "Failed to annotate {streamId} with {annotationKey}:{annotationValue}", 
+                    this.logger.LogError(exception, "Failed to annotate {streamId} with {annotationKey}:{annotationValue}",
                         command.affectedResource, command.annotationKey, command.annotationValue);
                     return Option<V1Job>.None;
                 });
