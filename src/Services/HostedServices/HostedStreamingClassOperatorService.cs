@@ -6,7 +6,7 @@ using Arcane.Operator.Services.Base;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-namespace Arcane.Operator.Services.Operator;
+namespace Arcane.Operator.Services.HostedServices;
 
 [ExcludeFromCodeCoverage(Justification = "Trivial")]
 public class HostedStreamingClassOperatorService : BackgroundService

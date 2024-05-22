@@ -5,31 +5,31 @@ using Arcane.Operator.Services.Base;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-namespace Arcane.Operator.Services.Maintenance;
+namespace Arcane.Operator.Services.HostedServices;
 
-public class HostedStreamingJobMaintenanceService : BackgroundService
+public class HostedStreamingJobOperatorService : BackgroundService
 {
-    private readonly ILogger<HostedStreamingJobMaintenanceService> logger;
+    private readonly ILogger<HostedStreamingJobOperatorService> logger;
     private readonly IMaterializer materializer;
-    private readonly IStreamingJobMaintenanceService streamingJobMaintenanceService;
+    private readonly IStreamingJobOperatorService streamingJobOperatorService;
 
-    public HostedStreamingJobMaintenanceService(
-        ILogger<HostedStreamingJobMaintenanceService> logger,
-        IStreamingJobMaintenanceService streamingJobMaintenanceService,
+    public HostedStreamingJobOperatorService(
+        ILogger<HostedStreamingJobOperatorService> logger,
+        IStreamingJobOperatorService streamingJobOperatorService,
         IMaterializer materializer)
     {
         this.logger = logger;
-        this.streamingJobMaintenanceService = streamingJobMaintenanceService;
+        this.streamingJobOperatorService = streamingJobOperatorService;
         this.materializer = materializer;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        this.logger.LogInformation("Activated {service}", nameof(HostedStreamingJobMaintenanceService));
+        this.logger.LogInformation("Activated {service}", nameof(HostedStreamingJobOperatorService));
         while (!stoppingToken.IsCancellationRequested)
         {
             this.logger.LogInformation("Activated JobEventGraph");
-            await this.streamingJobMaintenanceService
+            await this.streamingJobOperatorService
                 .GetJobEventsGraph(stoppingToken)
                 .Run(this.materializer);
         }
@@ -37,7 +37,7 @@ public class HostedStreamingJobMaintenanceService : BackgroundService
 
     public override Task StopAsync(CancellationToken cancellationToken)
     {
-        this.logger.LogInformation("Stopping {service}", nameof(HostedStreamingJobMaintenanceService));
+        this.logger.LogInformation("Stopping {service}", nameof(HostedStreamingJobOperatorService));
         return base.StopAsync(cancellationToken);
     }
 }

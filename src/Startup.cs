@@ -8,7 +8,7 @@ using Arcane.Operator.Services.Base.Repositories.CustomResources;
 using Arcane.Operator.Services.Maintenance;
 using Arcane.Operator.Services.Metrics;
 using Arcane.Operator.Services.Operator;
-using Arcane.Operator.Services.Repositories;
+using Arcane.Operator.Services.Repositories.CustomResources;
 using Azure.Data.Tables;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -57,7 +57,7 @@ public class Startup
         services.Configure<StreamingJobTemplateRepositoryConfiguration>(
                 Configuration.GetSection(nameof(StreamingJobTemplateRepositoryConfiguration)));
 
-        services.AddSingleton<IStreamingJobMaintenanceService, StreamingJobMaintenanceService>();
+        services.AddSingleton<IStreamingJobOperatorService, StreamingJobOperatorService>();
 
         services.AddSingleton<StreamDefinitionRepository>();
         services.AddSingleton<IResourceCollection<IStreamDefinition>>(sp => sp.GetRequiredService<StreamDefinitionRepository>());

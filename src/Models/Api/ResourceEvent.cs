@@ -1,7 +1,7 @@
 using k8s;
 using k8s.Models;
 
-namespace Arcane.Operator.Services.Models;
+namespace Arcane.Operator.Models.Api;
 
 /// <summary>
 /// An event that represents an update of a Kubernetes object

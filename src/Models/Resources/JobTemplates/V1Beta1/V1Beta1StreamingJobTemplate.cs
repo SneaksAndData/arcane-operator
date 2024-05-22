@@ -1,12 +1,13 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
+using Arcane.Operator.Models.JobTemplates.Base;
 using k8s;
 using k8s.Models;
 
 namespace Arcane.Operator.Models.JobTemplates.V1Beta1;
 
 [ExcludeFromCodeCoverage(Justification = "Model")]
-public class V1Beta1StreamingJobTemplate : IKubernetesObject<V1ObjectMeta>
+public class V1Beta1StreamingJobTemplate : IStreamingJobTemplate
 {
     /// <summary>
     /// Streaming job configuration
@@ -32,6 +33,7 @@ public class V1Beta1StreamingJobTemplate : IKubernetesObject<V1ObjectMeta>
     [JsonPropertyName("metadata")]
     public V1ObjectMeta Metadata { get; set; }
 
+    /// <inheritdoc cref="IStreamingJobTemplate.GetJob"/>
     public V1Job GetJob()
     {
         return new V1Job

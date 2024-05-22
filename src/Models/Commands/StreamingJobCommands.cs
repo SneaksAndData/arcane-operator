@@ -3,7 +3,7 @@ using Arcane.Operator.Services.Base;
 using Arcane.Operator.StreamingJobLifecycle;
 using k8s.Models;
 
-namespace Arcane.Operator.Services.Commands;
+namespace Arcane.Operator.Models.Commands;
 
 /// <summary>
 /// Base class for streaming job commands

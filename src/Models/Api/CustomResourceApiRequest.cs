@@ -1,4 +1,4 @@
-﻿namespace Arcane.Operator.Services.Models;
+﻿namespace Arcane.Operator.Models.Api;
 
 /// <summary>
 /// A request object that contains required information for a Kubernetes API call

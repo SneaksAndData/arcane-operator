@@ -1,10 +1,31 @@
-﻿using Arcane.Operator.Models;
+﻿using Arcane.Operator.Models.Api;
+using Arcane.Operator.Models.Resources;
+using Arcane.Operator.Models.Resources.Status.V1Beta1;
 using Arcane.Operator.Models.StreamClass.Base;
-using Arcane.Operator.Models.StreamStatuses.StreamStatus.V1Beta1;
 using Arcane.Operator.Services.Base;
-using Arcane.Operator.Services.Models;
 
-namespace Arcane.Operator.Services.Commands;
+namespace Arcane.Operator.Models.Commands;
+
+/// <summary>
+/// Possible stream class lifecycle phases.
+/// </summary>
+public enum StreamClassPhase
+{
+    /// <summary>
+    /// A ready streaming class is ready to be used and new Streams of this class can be created.
+    /// </summary>
+    READY,
+
+    /// <summary>
+    /// An error occured in stream class controller and new Streams of this class can not be created.
+    /// </summary>
+    FAILED,
+
+    /// <summary>
+    /// The stream class is stopped and new Streams of this class can not be created.
+    /// </summary>
+    STOPPED
+}
 
 /// <summary>
 /// Base class for stream class status update commands
@@ -35,3 +56,4 @@ public record SetStreamClassReady(string resourceName, CustomResourceApiRequest 
 /// <param name="streamClass">Affected resource</param>
 public record SetStreamClassStopped(string resourceName, CustomResourceApiRequest request, IStreamClass streamClass)
     : SetStreamClassStatusCommand(resourceName, request, V1Beta1StreamCondition.WarningCondition, StreamClassPhase.STOPPED, streamClass);
+

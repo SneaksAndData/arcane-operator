@@ -4,7 +4,7 @@ using Akka.Streams.Dsl;
 
 namespace Arcane.Operator.Services.Base;
 
-public interface IStreamingJobMaintenanceService
+public interface IStreamingJobOperatorService
 {
     /// <summary>
     /// Return graph that watches for job events and updates stream state accordingly

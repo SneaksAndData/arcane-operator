@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using Arcane.Operator.Configurations.Common;
 using Arcane.Operator.Services.Repositories;
+using Arcane.Operator.Services.Repositories.CustomResources;
 
 namespace Arcane.Operator.Configurations;
 

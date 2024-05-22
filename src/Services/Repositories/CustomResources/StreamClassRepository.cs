@@ -5,16 +5,19 @@ using Akka.Streams;
 using Akka.Streams.Dsl;
 using Akka.Util;
 using Arcane.Operator.Models;
+using Arcane.Operator.Models.Api;
+using Arcane.Operator.Models.Commands;
+using Arcane.Operator.Models.Resources;
+using Arcane.Operator.Models.Resources.Status.V1Beta1;
 using Arcane.Operator.Models.StreamClass;
 using Arcane.Operator.Models.StreamClass.Base;
-using Arcane.Operator.Models.StreamStatuses.StreamStatus.V1Beta1;
 using Arcane.Operator.Services.Base;
 using Arcane.Operator.Services.Base.Repositories.CustomResources;
 using Arcane.Operator.Services.Models;
 using Microsoft.Extensions.Caching.Memory;
 using Snd.Sdk.Kubernetes.Base;
 
-namespace Arcane.Operator.Services.Repositories;
+namespace Arcane.Operator.Services.Repositories.CustomResources;
 
 public class StreamClassRepository : IStreamClassRepository
 {

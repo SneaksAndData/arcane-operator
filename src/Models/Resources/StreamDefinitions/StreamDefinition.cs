@@ -11,7 +11,7 @@ using Arcane.Operator.Models.StreamDefinitions.Base;
 using Arcane.Operator.StreamingJobLifecycle;
 using k8s.Models;
 
-namespace Arcane.Operator.Models.StreamDefinitions;
+namespace Arcane.Operator.Models.Resources.StreamDefinitions;
 
 [ExcludeFromCodeCoverage(Justification = "Model")]
 public class StreamDefinition : IStreamDefinition

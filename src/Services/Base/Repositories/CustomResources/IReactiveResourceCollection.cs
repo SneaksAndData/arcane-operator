@@ -1,5 +1,8 @@
 ﻿using Akka;
 using Akka.Streams.Dsl;
+using Arcane.Operator.Models;
+using Arcane.Operator.Models.Api;
+using Arcane.Operator.Models.Resources;
 using Arcane.Operator.Services.Models;
 using k8s;
 using k8s.Models;

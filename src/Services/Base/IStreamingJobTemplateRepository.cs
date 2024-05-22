@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks;
 using Akka.Util;
-using Arcane.Operator.Models.JobTemplates.V1Beta1;
+using Arcane.Operator.Models.JobTemplates.Base;
 
 namespace Arcane.Operator.Services.Base;
 
@@ -13,6 +13,5 @@ public interface IStreamingJobTemplateRepository
     /// <param name="jobNamespace">Namespace to read from</param>
     /// <param name="templateName">Job template name</param>
     /// <returns></returns>
-    Task<Option<V1Beta1StreamingJobTemplate>> GetStreamingJobTemplate(string kind, string jobNamespace,
-        string templateName);
+    Task<Option<IStreamingJobTemplate>> GetStreamingJobTemplate(string kind, string jobNamespace, string templateName);
 }

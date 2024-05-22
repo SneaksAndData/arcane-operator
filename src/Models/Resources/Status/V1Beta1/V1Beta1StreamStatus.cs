@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace Arcane.Operator.Models.StreamStatuses.StreamStatus.V1Beta1;
+namespace Arcane.Operator.Models.Resources.Status.V1Beta1;
 
 public class V1Beta1StreamStatus
 {

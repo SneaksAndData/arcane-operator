@@ -1,8 +1,28 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
-using Arcane.Operator.Models.Common;
 
-namespace Arcane.Operator.Models.StreamStatuses.StreamStatus.V1Beta1;
+namespace Arcane.Operator.Models.Resources.Status.V1Beta1;
+
+/// <summary>
+/// Represents stream status badge for Lens app.
+/// </summary>
+public enum ResourceStatus
+{
+    /// <summary>
+    /// The stream is in a ready state.
+    /// </summary>
+    READY,
+
+    /// <summary>
+    /// The stream is in an error state.
+    /// </summary>
+    ERROR,
+
+    /// <summary>
+    /// The stream is in a warning state.
+    /// </summary>
+    WARNING
+}
 
 /// <summary>
 /// Represents the status of a stream for Kubernetes CRD
@@ -53,6 +73,17 @@ public class V1Beta1StreamCondition
             {
                 Type = ResourceStatus.READY.ToString(),
                 Status = "True"
+            }
+        };
+    
+    public static V1Beta1StreamCondition[] CustomErrorCondition(string message) =>
+        new[]
+        {
+            new V1Beta1StreamCondition
+            {
+                Type = ResourceStatus.ERROR.ToString(),
+                Status = "True",
+                Message = message
             }
         };
 }

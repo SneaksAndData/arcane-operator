@@ -1,5 +1,7 @@
 ﻿using Arcane.Operator.Models;
-using Arcane.Operator.Services.Commands;
+using Arcane.Operator.Models.Api;
+using Arcane.Operator.Models.Commands;
+using Arcane.Operator.Models.Resources;
 using Arcane.Operator.Services.Models;
 using k8s;
 using k8s.Models;

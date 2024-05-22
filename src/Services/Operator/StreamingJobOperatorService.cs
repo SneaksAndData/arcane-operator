@@ -7,11 +7,14 @@ using Akka.Streams.Dsl;
 using Akka.Util;
 using Arcane.Operator.Configurations;
 using Arcane.Operator.Extensions;
+using Arcane.Operator.Models;
+using Arcane.Operator.Models.Api;
+using Arcane.Operator.Models.Commands;
+using Arcane.Operator.Models.Resources;
 using Arcane.Operator.Models.StreamDefinitions.Base;
 using Arcane.Operator.Services.Base;
 using Arcane.Operator.Services.Base.Repositories.CustomResources;
 using Arcane.Operator.Services.Base.Repositories.StreamingJob;
-using Arcane.Operator.Services.Commands;
 using Arcane.Operator.Services.Models;
 using k8s;
 using k8s.Models;
@@ -23,11 +26,11 @@ using Snd.Sdk.Tasks;
 
 namespace Arcane.Operator.Services.Maintenance;
 
-public class StreamingJobMaintenanceService : IStreamingJobMaintenanceService
+public class StreamingJobOperatorService : IStreamingJobOperatorService
 {
     private const int parallelism = 1;
     private readonly StreamingJobMaintenanceServiceConfiguration configuration;
-    private readonly ILogger<StreamingJobMaintenanceService> logger;
+    private readonly ILogger<StreamingJobOperatorService> logger;
     private readonly IResourceCollection<IStreamDefinition> streamDefinitionCollection;
     private readonly IMetricsReporter metricsReporter;
     private readonly ICommandHandler<UpdateStatusCommand> updateStatusCommandHandler;
@@ -35,8 +38,8 @@ public class StreamingJobMaintenanceService : IStreamingJobMaintenanceService
     private readonly IStreamingJobCommandHandler streamingJobCommandHandler;
     private readonly IStreamingJobCollection streamingJobCollection;
 
-    public StreamingJobMaintenanceService(
-        ILogger<StreamingJobMaintenanceService> logger,
+    public StreamingJobOperatorService(
+        ILogger<StreamingJobOperatorService> logger,
         IOptions<StreamingJobMaintenanceServiceConfiguration> options,
         IMetricsReporter metricsReporter,
         IResourceCollection<IStreamDefinition> streamDefinitionCollection,

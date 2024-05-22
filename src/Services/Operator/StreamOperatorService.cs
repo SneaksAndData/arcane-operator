@@ -8,12 +8,15 @@ using Akka.Streams.Dsl;
 using Akka.Streams.Supervision;
 using Akka.Util;
 using Arcane.Operator.Extensions;
+using Arcane.Operator.Models;
+using Arcane.Operator.Models.Api;
+using Arcane.Operator.Models.Commands;
+using Arcane.Operator.Models.Resources;
 using Arcane.Operator.Models.StreamClass.Base;
 using Arcane.Operator.Models.StreamDefinitions.Base;
 using Arcane.Operator.Services.Base;
 using Arcane.Operator.Services.Base.Repositories.CustomResources;
 using Arcane.Operator.Services.Base.Repositories.StreamingJob;
-using Arcane.Operator.Services.Commands;
 using Arcane.Operator.Services.Models;
 using k8s;
 using k8s.Autorest;
@@ -166,10 +169,17 @@ public class StreamOperatorService : IStreamOperatorService, IDisposable
             },
             { HasValue: false } => new StartJob(streamDefinition, false).AsList(),
 
-            { HasValue: true, Value: var job } when streamDefinition.CrashLoopDetected => new StopJob(job.Name(),
-                job.Namespace()).AsList(),
-            { HasValue: true, Value: var job } when streamDefinition.Suspended => new StopJob(job.Name(),
-                job.Namespace()).AsList(),
+            { HasValue: true, Value: var job } when streamDefinition.CrashLoopDetected => new
+                List<KubernetesCommand>
+                {
+                    new StopJob(job.Name(), job.Namespace()),
+                    new SetCrashLoopStatusCommand(streamDefinition)
+                },
+            { HasValue: true, Value: var job } when streamDefinition.Suspended => new
+                List<KubernetesCommand>
+                {
+                    new StopJob(job.Name(), job.Namespace()),
+                },
             { HasValue: true, Value: var job } when !job.ConfigurationMatches(streamDefinition) => new
                 List<KubernetesCommand>
                 {
