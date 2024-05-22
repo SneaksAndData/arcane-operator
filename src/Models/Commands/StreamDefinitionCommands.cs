@@ -1,4 +1,4 @@
-﻿using Arcane.Operator.Models.Resources.Status.V1Beta1;
+﻿using Arcane.Operator.Models.Resources.Status.V1Alpha1;
 using Arcane.Operator.Models.StreamDefinitions.Base;
 using Arcane.Operator.Services.Base;
 using Arcane.Operator.StreamingJobLifecycle;
@@ -43,7 +43,7 @@ public abstract record StreamDefinitionCommand : KubernetesCommand;
 /// <param name="conditions"></param>
 /// <param name="phase"></param>
 public abstract record UpdateStatusCommand(IStreamDefinition affectedResource,
-    V1Beta1StreamCondition[] conditions,
+    V1Alpha1StreamCondition[] conditions,
     StreamPhase phase) : StreamDefinitionCommand;
 
 /// <summary>
@@ -51,14 +51,14 @@ public abstract record UpdateStatusCommand(IStreamDefinition affectedResource,
 /// </summary>
 /// <param name="affectedResource"></param>
 public abstract record SetErrorStatus(IStreamDefinition affectedResource) : UpdateStatusCommand(affectedResource,
-    V1Beta1StreamCondition.ErrorCondition,
+    V1Alpha1StreamCondition.ErrorCondition,
     StreamPhase.FAILED);
 
 /// <summary>
 /// Abstract class for setting error status
 /// </summary>
 /// <param name="affectedResource"></param>
-public abstract record SetCustomErrorStatus(IStreamDefinition affectedResource, V1Beta1StreamCondition[] conditions) : UpdateStatusCommand(affectedResource,
+public abstract record SetCustomErrorStatus(IStreamDefinition affectedResource, V1Alpha1StreamCondition[] conditions) : UpdateStatusCommand(affectedResource,
     conditions,
     StreamPhase.FAILED);
 
@@ -67,14 +67,14 @@ public abstract record SetCustomErrorStatus(IStreamDefinition affectedResource, 
 /// </summary>
 /// <param name="affectedResource"></param>
 public abstract record SetWarningStatus(IStreamDefinition affectedResource, StreamPhase phase) : UpdateStatusCommand(affectedResource,
-    V1Beta1StreamCondition.WarningCondition, phase);
+    V1Alpha1StreamCondition.WarningCondition, phase);
 
 /// <summary>
 /// Abstract class for setting error status
 /// </summary>
 /// <param name="affectedResource"></param>
 public abstract record SetReadyStatus(IStreamDefinition affectedResource, StreamPhase phase) : UpdateStatusCommand(affectedResource,
-    V1Beta1StreamCondition.ReadyCondition, phase);
+    V1Alpha1StreamCondition.ReadyCondition, phase);
 
 /// <summary>
 /// Sets the stream definition status to CrashLoop
@@ -86,7 +86,7 @@ public record SetCrashLoopStatusCommand(IStreamDefinition affectedResource) : Se
 /// Used to set error statuses in case of internal stream operator errors.
 /// </summary>
 /// <param name="affectedResource"></param>
-public record SetInternalErrorStatus(IStreamDefinition affectedResource, V1Beta1StreamCondition[] conditions) : SetCustomErrorStatus(affectedResource, conditions);
+public record SetInternalErrorStatus(IStreamDefinition affectedResource, V1Alpha1StreamCondition[] conditions) : SetCustomErrorStatus(affectedResource, conditions);
 
 /// <summary>
 /// Sets the stream definition status to Suspended

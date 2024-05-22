@@ -5,7 +5,7 @@ using Akka.Util;
 using Akka.Util.Extensions;
 using Arcane.Operator.Extensions;
 using Arcane.Operator.Models.Commands;
-using Arcane.Operator.Models.Resources.Status.V1Beta1;
+using Arcane.Operator.Models.Resources.Status.V1Alpha1;
 using Arcane.Operator.Models.StreamClass.Base;
 using Arcane.Operator.Models.StreamDefinitions.Base;
 using Arcane.Operator.Services.Base;
@@ -78,7 +78,7 @@ public class StreamingJobCommandHandler : IStreamingJobCommandHandler
                 {
                     var message = $"Failed to find job template with kind {template.Kind} and name {template.Name}";
                     var command = new SetInternalErrorStatus(streamDefinition,
-                        V1Beta1StreamCondition.CustomErrorCondition(message));
+                        V1Alpha1StreamCondition.CustomErrorCondition(message));
                     return this.updateStatusCommandHandler.Handle(command);
                 }
 

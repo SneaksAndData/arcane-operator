@@ -1,7 +1,7 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
 
-namespace Arcane.Operator.Models.Resources.Status.V1Beta1;
+namespace Arcane.Operator.Models.Resources.Status.V1Alpha1;
 
 /// <summary>
 /// Represents stream status badge for Lens app.
@@ -28,7 +28,7 @@ public enum ResourceStatus
 /// Represents the status of a stream for Kubernetes CRD
 /// </summary>
 [ExcludeFromCodeCoverage(Justification = "Model")]
-public class V1Beta1StreamCondition
+public class V1Alpha1StreamCondition
 {
     /// <summary>
     /// Latest observed state of the stream
@@ -48,38 +48,38 @@ public class V1Beta1StreamCondition
     [JsonPropertyName("message")]
     public string Message { get; set; }
 
-    public static V1Beta1StreamCondition[] ErrorCondition =>
+    public static V1Alpha1StreamCondition[] ErrorCondition =>
         new[]
         {
-            new V1Beta1StreamCondition
+            new V1Alpha1StreamCondition
             {
                 Type = ResourceStatus.ERROR.ToString(),
                 Status = "True"
             }
         };
-    public static V1Beta1StreamCondition[] WarningCondition =>
+    public static V1Alpha1StreamCondition[] WarningCondition =>
         new[]
         {
-            new V1Beta1StreamCondition
+            new V1Alpha1StreamCondition
             {
                 Type = ResourceStatus.WARNING.ToString(),
                 Status = "True"
             }
         };
-    public static V1Beta1StreamCondition[] ReadyCondition =>
+    public static V1Alpha1StreamCondition[] ReadyCondition =>
         new[]
         {
-            new V1Beta1StreamCondition
+            new V1Alpha1StreamCondition
             {
                 Type = ResourceStatus.READY.ToString(),
                 Status = "True"
             }
         };
     
-    public static V1Beta1StreamCondition[] CustomErrorCondition(string message) =>
+    public static V1Alpha1StreamCondition[] CustomErrorCondition(string message) =>
         new[]
         {
-            new V1Beta1StreamCondition
+            new V1Alpha1StreamCondition
             {
                 Type = ResourceStatus.ERROR.ToString(),
                 Status = "True",

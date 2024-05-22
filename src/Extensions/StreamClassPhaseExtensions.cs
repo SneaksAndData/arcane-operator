@@ -1,6 +1,6 @@
 ﻿using Arcane.Operator.Models.Commands;
 
-namespace Arcane.Operator.Services.Models.Extensions;
+namespace Arcane.Operator.Extensions;
 
 /// <summary>
 /// The StreamClassPhase extension methods.

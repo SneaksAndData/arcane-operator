@@ -1,6 +1,6 @@
 ﻿using Arcane.Operator.Models.Api;
 using Arcane.Operator.Models.Resources;
-using Arcane.Operator.Models.Resources.Status.V1Beta1;
+using Arcane.Operator.Models.Resources.Status.V1Alpha1;
 using Arcane.Operator.Models.StreamClass.Base;
 using Arcane.Operator.Services.Base;
 
@@ -36,8 +36,8 @@ public enum StreamClassPhase
 /// <param name="phase">Resource phase</param>
 /// <param name="streamClass">Affected resource</param>
 public abstract record SetStreamClassStatusCommand(string resourceName,
-    CustomResourceApiRequest request, V1Beta1StreamCondition[] conditions,
-    StreamClassPhase phase, IStreamClass streamClass) : SetResourceStatusCommand<V1Beta1StreamCondition, StreamClassPhase>(request, conditions, phase);
+    CustomResourceApiRequest request, V1Alpha1StreamCondition[] conditions,
+    StreamClassPhase phase, IStreamClass streamClass) : SetResourceStatusCommand<V1Alpha1StreamCondition, StreamClassPhase>(request, conditions, phase);
 
 /// <summary>
 /// Update the stream class status command to Ready
@@ -46,7 +46,7 @@ public abstract record SetStreamClassStatusCommand(string resourceName,
 /// <param name="request">Resource metadata required for the Kubernetes Custom Resource APIs</param>
 /// <param name="streamClass">Affected resource</param>
 public record SetStreamClassReady(string resourceName, CustomResourceApiRequest request, IStreamClass streamClass)
-    : SetStreamClassStatusCommand(resourceName, request, V1Beta1StreamCondition.ReadyCondition, StreamClassPhase.READY, streamClass);
+    : SetStreamClassStatusCommand(resourceName, request, V1Alpha1StreamCondition.ReadyCondition, StreamClassPhase.READY, streamClass);
 
 /// <summary>
 /// Update the stream class status command to Stopped
@@ -55,5 +55,5 @@ public record SetStreamClassReady(string resourceName, CustomResourceApiRequest 
 /// <param name="request">Resource metadata required for the Kubernetes Custom Resource APIs</param>
 /// <param name="streamClass">Affected resource</param>
 public record SetStreamClassStopped(string resourceName, CustomResourceApiRequest request, IStreamClass streamClass)
-    : SetStreamClassStatusCommand(resourceName, request, V1Beta1StreamCondition.WarningCondition, StreamClassPhase.STOPPED, streamClass);
+    : SetStreamClassStatusCommand(resourceName, request, V1Alpha1StreamCondition.WarningCondition, StreamClassPhase.STOPPED, streamClass);
 
