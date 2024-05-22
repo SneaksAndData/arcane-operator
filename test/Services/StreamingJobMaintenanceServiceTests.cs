@@ -45,7 +45,6 @@ public class StreamingJobMaintenanceServiceTests : IClassFixture<LoggerFixture>
 
     // Mocks
     private readonly Mock<IKubeCluster> kubeClusterMock = new();
-    private readonly Mock<IStreamingJobCollection> streamingJobOperatorServiceMock = new();
     private readonly Mock<IResourceCollection<IStreamDefinition>> streamDefinitionRepositoryMock = new();
     private readonly Mock<IStreamClassRepository> streamClassRepositoryMock = new();
     private readonly Mock<IStreamingJobTemplateRepository> streamingJobTemplateRepositoryMock = new();
@@ -211,7 +210,7 @@ public class StreamingJobMaintenanceServiceTests : IClassFixture<LoggerFixture>
             .AddSingleton<ICommandHandler<UpdateStatusCommand>, UpdateStatusCommandHandler>()
             .AddSingleton<ICommandHandler<SetAnnotationCommand<IStreamDefinition>>, AnnotationCommandHandler>()
             .AddSingleton<IStreamingJobCommandHandler, StreamingJobCommandHandler>()
-            .AddSingleton(this.streamingJobOperatorServiceMock.Object)
+            .AddSingleton<IStreamingJobCollection, StreamingJobRepository>()
             .AddSingleton(this.loggerFixture.Factory.CreateLogger<StreamingJobMaintenanceService>())
             .AddSingleton(this.loggerFixture.Factory.CreateLogger<StreamingJobRepository>())
             .AddSingleton(this.loggerFixture.Factory.CreateLogger<AnnotationCommandHandler>())
