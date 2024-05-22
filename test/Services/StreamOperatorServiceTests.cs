@@ -197,9 +197,11 @@ public class StreamOperatorServiceTests : IClassFixture<LoggerFixture>, IDisposa
             .ReturnsAsync(jobExists ? mockJob.AsOption() : Option<V1Job>.None);
 
         var task = this.tcs.Task;
-        streamingJobOperatorServiceMock
-            .Setup(service => service.RequestStreamingJobReload(It.IsAny<string>()))
-            .Callback(this.tcs.SetResult);
+        this.kubeClusterMock.Setup(c => c.AnnotateJob(It.IsAny<string>(),
+            It.IsAny<string>(),
+            It.IsAny<string>(),
+            It.IsAny<string>()))
+            .Callback(() => this.tcs.SetResult());
         streamingJobOperatorServiceMock
             .Setup(service => service.StartRegisteredStream(It.IsAny<IStreamDefinition>(), It.IsAny<bool>(), It.IsAny<IStreamClass>()))
             .Callback(this.tcs.SetResult);
@@ -210,8 +212,12 @@ public class StreamOperatorServiceTests : IClassFixture<LoggerFixture>, IDisposa
         await task;
 
         // Assert
-        streamingJobOperatorServiceMock.Verify(service
-            => service.RequestStreamingJobReload(It.IsAny<string>()), Times.Exactly(expectReload ? 1 : 0));
+        this.kubeClusterMock
+            .Verify(c => c.AnnotateJob(It.IsAny<string>(),
+            It.IsAny<string>(),
+            It.Is<string>(a => a == Annotations.STATE_ANNOTATION_KEY),
+            It.Is<string>(a => a == Annotations.RELOADING_STATE_ANNOTATION_VALUE)),
+            Times.Exactly(expectReload ? 1 : 0));
 
         streamingJobOperatorServiceMock.Verify(service
                 => service.StartRegisteredStream(It.IsAny<IStreamDefinition>(), true, It.IsAny<IStreamClass>()),
@@ -264,8 +270,12 @@ public class StreamOperatorServiceTests : IClassFixture<LoggerFixture>, IDisposa
         await task;
 
         // Assert
-        streamingJobOperatorServiceMock.Verify(service
-            => service.RequestStreamingJobReload(It.IsAny<string>()), Times.Exactly(0));
+        this.kubeClusterMock
+            .Verify(c => c.AnnotateJob(It.IsAny<string>(),
+            It.IsAny<string>(),
+            It.Is<string>(a => a == Annotations.STATE_ANNOTATION_KEY),
+            It.Is<string>(a => a == Annotations.RELOADING_STATE_ANNOTATION_VALUE)),
+            Times.Exactly(0));
 
         streamingJobOperatorServiceMock.Verify(service
                 => service.StartRegisteredStream(It.IsAny<IStreamDefinition>(), true, It.IsAny<IStreamClass>()),

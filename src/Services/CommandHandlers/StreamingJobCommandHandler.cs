@@ -45,11 +45,6 @@ public class StreamingJobCommandHandler : IStreamingJobCommandHandler
         _ => throw new ArgumentOutOfRangeException(nameof(command), command, null)
     };
 
-    public Task Handle(RequestJobReloadCommand command)
-    {
-        return this.streamingJobOperatorService.RequestStreamingJobReload(command.affectedResource.GetStreamId());
-    }
-
     public Task Handle(SetAnnotationCommand<V1Job> command)
     {
         return this.kubeCluster.AnnotateJob(command.affectedResource.Name(), command.affectedResource.Namespace(),

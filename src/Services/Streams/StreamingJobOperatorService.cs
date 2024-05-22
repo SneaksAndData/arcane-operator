@@ -8,7 +8,6 @@ using Arcane.Operator.Models;
 using Arcane.Operator.Models.StreamClass.Base;
 using Arcane.Operator.Models.StreamDefinitions.Base;
 using Arcane.Operator.Services.Base;
-using Arcane.Operator.StreamingJobLifecycle;
 using k8s.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -98,37 +97,9 @@ public class StreamingJobOperatorService : IStreamingJobOperatorService
             .Flatten();
     }
 
-    public Task<Option<StreamOperatorResponse>> RequestStreamingJobRestart(string streamId)
-    {
-        return this.SetStreamingJobAnnotation(streamId, Annotations.RESTARTING_STATE_ANNOTATION_VALUE)
-            .Map(maybeSi
-                => maybeSi.Select(job
-                    => StreamOperatorResponse.Restarting(this.StreamJobNamespace, job.GetStreamKind(), streamId)));
-    }
-
-    public Task<Option<StreamOperatorResponse>> RequestStreamingJobReload(string streamId)
-    {
-        return this.SetStreamingJobAnnotation(streamId, Annotations.RELOADING_STATE_ANNOTATION_VALUE)
-            .Map(maybeSi
-                => maybeSi.Select(job
-                    => StreamOperatorResponse.Terminating(this.StreamJobNamespace, job.GetStreamKind(), streamId)));
-    }
-
     public Task<Option<StreamOperatorResponse>> DeleteJob(string kind, string streamId)
     {
         return this.kubernetesService.DeleteJob(streamId, this.StreamJobNamespace)
             .Map(_ => StreamOperatorResponse.Suspended(this.StreamJobNamespace, kind, streamId).AsOption());
-    }
-
-    private Task<Option<V1Job>> SetStreamingJobAnnotation(string streamId, string annotationValue)
-    {
-        return this.kubernetesService.AnnotateJob(streamId, this.configuration.Namespace,
-                Annotations.STATE_ANNOTATION_KEY, annotationValue)
-            .TryMap(job => job.AsOption(),
-                exception =>
-                {
-                    this.logger.LogError(exception, "Failed request {streamId} termination", streamId);
-                    return Option<V1Job>.None;
-                });
     }
 }
