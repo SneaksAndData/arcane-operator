@@ -20,9 +20,9 @@ public record StartJob(IStreamDefinition streamDefinition, bool IsBackfilling) :
 /// <summary>
 /// Stop a streaming job
 /// </summary>
-/// <param name="streamKind">Stream kind</param>
-/// <param name="streamId">Id of the stream</param>
-public record StopJob(string streamKind, string streamId) : StreamingJobCommand;
+/// <param name="name">Job name to stop</param>
+/// <param name="nameSpace">Job namespace to stop</param>
+public record StopJob(string name, string nameSpace) : StreamingJobCommand;
 
 /// <summary>
 /// Request a streaming job to restart

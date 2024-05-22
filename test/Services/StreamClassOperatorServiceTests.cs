@@ -9,8 +9,6 @@ using Akka.Util.Extensions;
 using Arcane.Operator.Configurations;
 using Arcane.Operator.Configurations.Common;
 using Arcane.Operator.Models.StreamClass;
-using Arcane.Operator.Models.StreamClass.Base;
-using Arcane.Operator.Models.StreamDefinitions;
 using Arcane.Operator.Models.StreamDefinitions.Base;
 using Arcane.Operator.Services.Base;
 using Arcane.Operator.Services.CommandHandlers;
@@ -33,6 +31,7 @@ using Snd.Sdk.Kubernetes.Base;
 using Snd.Sdk.Metrics.Base;
 using Xunit;
 using static Arcane.Operator.Tests.Services.TestCases.StreamClassTestCases;
+using static Arcane.Operator.Tests.Services.TestCases.StreamingJobTemplateTestCases;
 
 namespace Arcane.Operator.Tests.Services;
 
@@ -48,11 +47,15 @@ public class StreamClassOperatorServiceTests : IClassFixture<LoggerFixture>, ICl
     private readonly Mock<IStreamingJobOperatorService> streamingJobOperatorServiceMock = new();
     private readonly Mock<IReactiveResourceCollection<IStreamDefinition>> streamDefinitionSourceMock = new();
     private readonly Mock<IStreamClassRepository> streamClassRepositoryMock = new();
+    private readonly Mock<IStreamingJobTemplateRepository> streamingJobTemplateRepositoryMock = new();
 
     public StreamClassOperatorServiceTests(LoggerFixture loggerFixture)
     {
         this.loggerFixture = loggerFixture;
         this.materializer = this.actorSystem.Materializer();
+        this.streamingJobTemplateRepositoryMock
+            .Setup(s => s.GetStreamingJobTemplate(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+            .ReturnsAsync(StreamingJobTemplate.AsOption());
     }
 
     [Fact]
@@ -93,7 +96,8 @@ public class StreamClassOperatorServiceTests : IClassFixture<LoggerFixture>, ICl
         await Task.Delay(5000);
 
         // Assert
-        this.streamingJobOperatorServiceMock.Verify(service => service.StartRegisteredStream(It.IsAny<StreamDefinition>(), It.IsAny<bool>(), It.IsAny<IStreamClass>()));
+        this.kubeClusterMock.Verify(
+            service => service.SendJob(It.IsAny<V1Job>(), It.IsAny<string>(), It.IsAny<CancellationToken>()));
     }
 
     [Fact]
@@ -130,8 +134,8 @@ public class StreamClassOperatorServiceTests : IClassFixture<LoggerFixture>, ICl
         await Task.Delay(5000);
 
         // Assert
-        this.streamingJobOperatorServiceMock.Verify(
-                service => service.StartRegisteredStream(It.IsAny<StreamDefinition>(), It.IsAny<bool>(), It.IsAny<IStreamClass>()),
+        this.kubeClusterMock.Verify(
+                service => service.SendJob(It.IsAny<V1Job>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
                 Times.Never
             );
     }
@@ -156,6 +160,7 @@ public class StreamClassOperatorServiceTests : IClassFixture<LoggerFixture>, ICl
             .AddSingleton(this.kubeClusterMock.Object)
             .AddSingleton(this.streamingJobOperatorServiceMock.Object)
             .AddSingleton(this.streamDefinitionSourceMock.Object)
+            .AddSingleton(this.streamingJobTemplateRepositoryMock.Object)
             .AddSingleton<IStreamClassRepository, StreamClassRepository>()
             .AddMemoryCache()
             .AddSingleton<IStreamOperatorService, StreamOperatorService>()
@@ -173,6 +178,7 @@ public class StreamClassOperatorServiceTests : IClassFixture<LoggerFixture>, ICl
             .AddSingleton(this.loggerFixture.Factory.CreateLogger<StreamingJobOperatorService>())
             .AddSingleton(this.loggerFixture.Factory.CreateLogger<AnnotationCommandHandler>())
             .AddSingleton(this.loggerFixture.Factory.CreateLogger<UpdateStatusCommandHandler>())
+            .AddSingleton(this.loggerFixture.Factory.CreateLogger<StreamingJobCommandHandler>())
             .AddSingleton(loggerFixture.Factory)
             .AddSingleton(optionsMock.Object)
             .AddSingleton(metricsReporterConfiguration)
