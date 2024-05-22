@@ -13,6 +13,8 @@ using Arcane.Operator.Configurations.Common;
 using Arcane.Operator.Models.StreamDefinitions;
 using Arcane.Operator.Models.StreamDefinitions.Base;
 using Arcane.Operator.Services.Base;
+using Arcane.Operator.Services.Base.Repositories.CustomResources;
+using Arcane.Operator.Services.Base.Repositories.StreamingJob;
 using Arcane.Operator.Services.CommandHandlers;
 using Arcane.Operator.Services.Commands;
 using Arcane.Operator.Services.Maintenance;
@@ -20,7 +22,7 @@ using Arcane.Operator.Services.Metrics;
 using Arcane.Operator.Services.Models;
 using Arcane.Operator.Services.Operator;
 using Arcane.Operator.Services.Repositories;
-using Arcane.Operator.Services.Streams;
+using Arcane.Operator.Services.Repositories.StreamingJob;
 using Arcane.Operator.StreamingJobLifecycle;
 using Arcane.Operator.Tests.Extensions;
 using Arcane.Operator.Tests.Fixtures;
@@ -51,7 +53,7 @@ public class StreamOperatorServiceTests : IClassFixture<LoggerFixture>, IDisposa
 
     // Mocks
     private readonly Mock<IKubeCluster> kubeClusterMock = new();
-    private readonly Mock<IStreamingJobOperatorService> streamingJobOperatorServiceMock = new();
+    private readonly Mock<IStreamingJobCollection> streamingJobOperatorServiceMock = new();
     private readonly Mock<IReactiveResourceCollection<IStreamDefinition>> streamDefinitionRepositoryMock = new();
     private readonly Mock<IStreamClassRepository> streamClassRepositoryMock = new();
     private readonly TaskCompletionSource tcs = new();
@@ -96,7 +98,7 @@ public class StreamOperatorServiceTests : IClassFixture<LoggerFixture>, IDisposa
         // Arrange
         this.SetupEventMock(eventType, streamDefinition);
         streamingJobOperatorServiceMock
-            .Setup(service => service.GetStreamingJob(It.IsAny<string>()))
+            .Setup(service => service.Get(It.IsAny<string>(), It.IsAny<string>()))
             .ReturnsAsync(streamingJobExists ? JobWithChecksum("checksum").AsOption() : Option<V1Job>.None);
 
         var task = this.tcs.Task;
@@ -170,7 +172,7 @@ public class StreamOperatorServiceTests : IClassFixture<LoggerFixture>, IDisposa
         this.SetupEventMock(WatchEventType.Modified, streamDefinition);
         var mockJob = JobWithChecksum(jobChecksumChanged ? "checksum" : streamDefinition.GetConfigurationChecksum());
         streamingJobOperatorServiceMock
-            .Setup(service => service.GetStreamingJob(It.IsAny<string>()))
+            .Setup(service => service.Get(It.IsAny<string>(), It.IsAny<string>()))
             .ReturnsAsync(mockJob.AsOption());
 
         var task = this.tcs.Task;
@@ -209,7 +211,7 @@ public class StreamOperatorServiceTests : IClassFixture<LoggerFixture>, IDisposa
         this.SetupEventMock(WatchEventType.Modified, streamDefinition);
         var mockJob = JobWithChecksum(streamDefinition.GetConfigurationChecksum());
         streamingJobOperatorServiceMock
-            .Setup(service => service.GetStreamingJob(It.IsAny<string>()))
+            .Setup(service => service.Get(It.IsAny<string>(), It.IsAny<string>()))
             .ReturnsAsync(jobExists ? mockJob.AsOption() : Option<V1Job>.None);
 
         var task = this.tcs.Task;
@@ -273,7 +275,7 @@ public class StreamOperatorServiceTests : IClassFixture<LoggerFixture>, IDisposa
         // Arrange
         this.SetupEventMock(WatchEventType.Added, streamDefinition);
         streamingJobOperatorServiceMock
-            .Setup(service => service.GetStreamingJob(It.IsAny<string>()))
+            .Setup(service => service.Get(It.IsAny<string>(), It.IsAny<string>()))
             .ReturnsAsync(jobExists ? jobIsReloading ? ReloadingJob : RunningJob : Option<V1Job>.None);
 
         var task = this.tcs.Task;
@@ -314,7 +316,7 @@ public class StreamOperatorServiceTests : IClassFixture<LoggerFixture>, IDisposa
             .Returns(Source.Single(new ResourceEvent<IStreamDefinition>(WatchEventType.Added, streamDefinition)));
 
         streamingJobOperatorServiceMock
-            .Setup(service => service.GetStreamingJob(It.IsAny<string>()))
+            .Setup(service => service.Get(It.IsAny<string>(), It.IsAny<string>()))
             .ReturnsAsync(FailedJob.AsOption());
 
         var task = this.tcs.Task;
@@ -326,7 +328,7 @@ public class StreamOperatorServiceTests : IClassFixture<LoggerFixture>, IDisposa
 
         // Assert
         streamingJobOperatorServiceMock.Verify(service
-            => service.GetStreamingJob(It.IsAny<string>()), Times.Never);
+            => service.Get(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
     }
 
     public static IEnumerable<object[]> GenerateFatalTestCases()
@@ -345,7 +347,7 @@ public class StreamOperatorServiceTests : IClassFixture<LoggerFixture>, IDisposa
 
         var task = this.tcs.Task;
         streamingJobOperatorServiceMock
-            .Setup(service => service.GetStreamingJob(It.IsAny<string>()))
+            .Setup(service => service.Get(It.IsAny<string>(), It.IsAny<string>()))
             .ReturnsAsync(FailedJob.AsOption());
 
         // Act
@@ -368,7 +370,7 @@ public class StreamOperatorServiceTests : IClassFixture<LoggerFixture>, IDisposa
                     StreamDefinitionTestCases.StreamDefinition)));
 
         streamingJobOperatorServiceMock
-            .Setup(service => service.GetStreamingJob(It.IsAny<string>()))
+            .Setup(service => service.Get(It.IsAny<string>(), It.IsAny<string>()))
             .ReturnsAsync(FailedJob.AsOption());
 
         this.kubeClusterMock
@@ -437,11 +439,11 @@ public class StreamOperatorServiceTests : IClassFixture<LoggerFixture>, IDisposa
             .AddSingleton(this.loggerFixture.Factory.CreateLogger<StreamOperatorService>())
             .AddSingleton(this.loggerFixture.Factory.CreateLogger<StreamDefinitionRepository>())
             .AddSingleton(this.loggerFixture.Factory.CreateLogger<StreamingJobMaintenanceService>())
-            .AddSingleton(this.loggerFixture.Factory.CreateLogger<StreamingJobOperatorService>())
+            .AddSingleton(this.loggerFixture.Factory.CreateLogger<StreamingJobRepository>())
             .AddSingleton(this.loggerFixture.Factory.CreateLogger<AnnotationCommandHandler>())
             .AddSingleton(this.loggerFixture.Factory.CreateLogger<UpdateStatusCommandHandler>())
             .AddSingleton(this.loggerFixture.Factory.CreateLogger<StreamingJobCommandHandler>())
-            .AddSingleton(streamingJobOperatorServiceMock.Object)
+            .AddSingleton(this.streamingJobOperatorServiceMock.Object)
             .AddSingleton(optionsMock.Object)
             .AddSingleton<IStreamOperatorService, StreamOperatorService>()
             .BuildServiceProvider();

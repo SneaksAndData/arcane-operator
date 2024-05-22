@@ -1,17 +1,14 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
-using Akka.Actor;
 using Arcane.Operator.Configurations;
-using Arcane.Operator.Models.StreamDefinitions;
 using Arcane.Operator.Models.StreamDefinitions.Base;
-using Arcane.Operator.Services;
 using Arcane.Operator.Services.Base;
+using Arcane.Operator.Services.Base.Repositories.CustomResources;
 using Arcane.Operator.Services.Maintenance;
 using Arcane.Operator.Services.Metrics;
 using Arcane.Operator.Services.Operator;
 using Arcane.Operator.Services.Repositories;
-using Arcane.Operator.Services.Streams;
 using Azure.Data.Tables;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -51,9 +48,6 @@ public class Startup
         var config = Configuration.GetSection(nameof(StreamingJobMaintenanceServiceConfiguration));
         services.Configure<StreamingJobMaintenanceServiceConfiguration>(config);
 
-        services.Configure<StreamingJobOperatorServiceConfiguration>(
-                Configuration.GetSection(nameof(StreamingJobOperatorServiceConfiguration)));
-
         services.Configure<MetricsReporterConfiguration>(
                 Configuration.GetSection(nameof(MetricsReporterConfiguration)));
 
@@ -63,7 +57,6 @@ public class Startup
         services.Configure<StreamingJobTemplateRepositoryConfiguration>(
                 Configuration.GetSection(nameof(StreamingJobTemplateRepositoryConfiguration)));
 
-        services.AddSingleton<IStreamingJobOperatorService, StreamingJobOperatorService>();
         services.AddSingleton<IStreamingJobMaintenanceService, StreamingJobMaintenanceService>();
 
         services.AddSingleton<StreamDefinitionRepository>();

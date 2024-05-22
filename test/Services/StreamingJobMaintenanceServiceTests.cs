@@ -11,11 +11,13 @@ using Arcane.Operator.Configurations;
 using Arcane.Operator.Extensions;
 using Arcane.Operator.Models.StreamDefinitions.Base;
 using Arcane.Operator.Services.Base;
+using Arcane.Operator.Services.Base.Repositories.CustomResources;
+using Arcane.Operator.Services.Base.Repositories.StreamingJob;
 using Arcane.Operator.Services.CommandHandlers;
 using Arcane.Operator.Services.Commands;
 using Arcane.Operator.Services.Maintenance;
 using Arcane.Operator.Services.Metrics;
-using Arcane.Operator.Services.Streams;
+using Arcane.Operator.Services.Repositories.StreamingJob;
 using Arcane.Operator.Tests.Extensions;
 using Arcane.Operator.Tests.Fixtures;
 using k8s;
@@ -43,7 +45,7 @@ public class StreamingJobMaintenanceServiceTests : IClassFixture<LoggerFixture>
 
     // Mocks
     private readonly Mock<IKubeCluster> kubeClusterMock = new();
-    private readonly Mock<IStreamingJobOperatorService> streamingJobOperatorServiceMock = new();
+    private readonly Mock<IStreamingJobCollection> streamingJobOperatorServiceMock = new();
     private readonly Mock<IResourceCollection<IStreamDefinition>> streamDefinitionRepositoryMock = new();
     private readonly Mock<IStreamClassRepository> streamClassRepositoryMock = new();
     private readonly Mock<IStreamingJobTemplateRepository> streamingJobTemplateRepositoryMock = new();
@@ -211,7 +213,7 @@ public class StreamingJobMaintenanceServiceTests : IClassFixture<LoggerFixture>
             .AddSingleton<IStreamingJobCommandHandler, StreamingJobCommandHandler>()
             .AddSingleton(this.streamingJobOperatorServiceMock.Object)
             .AddSingleton(this.loggerFixture.Factory.CreateLogger<StreamingJobMaintenanceService>())
-            .AddSingleton(this.loggerFixture.Factory.CreateLogger<StreamingJobOperatorService>())
+            .AddSingleton(this.loggerFixture.Factory.CreateLogger<StreamingJobRepository>())
             .AddSingleton(this.loggerFixture.Factory.CreateLogger<AnnotationCommandHandler>())
             .AddSingleton(this.loggerFixture.Factory.CreateLogger<UpdateStatusCommandHandler>())
             .AddSingleton(this.loggerFixture.Factory.CreateLogger<StreamingJobCommandHandler>())
@@ -223,7 +225,6 @@ public class StreamingJobMaintenanceServiceTests : IClassFixture<LoggerFixture>
                 MaxBufferCapacity = 1000
             }))
             .AddSingleton(metricsReporterConfiguration)
-            .AddSingleton(Options.Create(new StreamingJobOperatorServiceConfiguration()))
             .AddSingleton<HostedStreamingJobMaintenanceService>()
             .AddSingleton(this.materializer)
             .AddSingleton(this.actorSystem)

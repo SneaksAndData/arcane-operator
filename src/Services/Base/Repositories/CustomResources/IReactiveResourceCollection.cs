@@ -4,7 +4,7 @@ using Arcane.Operator.Services.Models;
 using k8s;
 using k8s.Models;
 
-namespace Arcane.Operator.Services.Base;
+namespace Arcane.Operator.Services.Base.Repositories.CustomResources;
 
 public interface IReactiveResourceCollection<TResourceType> where TResourceType : IKubernetesObject<V1ObjectMeta>
 {

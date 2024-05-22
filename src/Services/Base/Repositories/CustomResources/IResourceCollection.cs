@@ -4,7 +4,7 @@ using Arcane.Operator.Services.Models;
 using k8s;
 using k8s.Models;
 
-namespace Arcane.Operator.Services.Base;
+namespace Arcane.Operator.Services.Base.Repositories.CustomResources;
 
 public interface IResourceCollection<TResourceType> where TResourceType : IKubernetesObject<V1ObjectMeta>
 {
@@ -13,7 +13,6 @@ public interface IResourceCollection<TResourceType> where TResourceType : IKuber
     /// </summary>
     /// <param name="name"></param>
     /// <param name="request">An object that contains required information for a Kubernetes API call</param>
-    /// <param name="maxBufferCapacity">Maximum capacity of the buffer in the source</param>
-    /// <returns>An Akka source that emits a Kubernetes entity updates</returns>
+    /// <returns>A task containing optional Resource</returns>
     Task<Option<TResourceType>> Get(string name, CustomResourceApiRequest request);
 }

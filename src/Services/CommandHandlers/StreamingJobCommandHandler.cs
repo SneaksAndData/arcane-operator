@@ -21,20 +21,17 @@ namespace Arcane.Operator.Services.CommandHandlers;
 public class StreamingJobCommandHandler : IStreamingJobCommandHandler
 {
     private readonly IStreamClassRepository streamClassRepository;
-    private readonly IStreamingJobOperatorService streamingJobOperatorService;
     private readonly IKubeCluster kubeCluster;
     private readonly ILogger<StreamingJobCommandHandler> logger;
     private readonly IStreamingJobTemplateRepository streamingJobTemplateRepository;
 
     public StreamingJobCommandHandler(
         IStreamClassRepository streamClassRepository,
-        IStreamingJobOperatorService streamingJobOperatorService,
         IKubeCluster kubeCluster,
         ILogger<StreamingJobCommandHandler> logger,
         IStreamingJobTemplateRepository streamingJobTemplateRepository)
     {
         this.streamClassRepository = streamClassRepository;
-        this.streamingJobOperatorService = streamingJobOperatorService;
         this.kubeCluster = kubeCluster;
         this.logger = logger;
         this.streamingJobTemplateRepository = streamingJobTemplateRepository;
