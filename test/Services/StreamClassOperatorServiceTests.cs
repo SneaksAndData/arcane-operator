@@ -130,7 +130,7 @@ public class StreamClassOperatorServiceTests : IClassFixture<LoggerFixture>, ICl
                 It.IsAny<TimeSpan?>()))
             .Returns(Source.Single<(WatchEventType, V1Beta1StreamClass)>((WatchEventType.Deleted,
                 (V1Beta1StreamClass)StreamClass)));
-        
+
         this.kubeClusterMock.Setup(service => service.SendJob(
                 It.IsAny<V1Job>(),
                 It.IsAny<string>(),
