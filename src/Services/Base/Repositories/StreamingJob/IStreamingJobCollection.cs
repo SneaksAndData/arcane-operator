@@ -2,10 +2,7 @@
 using Akka;
 using Akka.Streams.Dsl;
 using Akka.Util;
-using Arcane.Operator.Models;
 using Arcane.Operator.Models.Api;
-using Arcane.Operator.Models.Resources;
-using Arcane.Operator.Services.Models;
 using k8s.Models;
 
 namespace Arcane.Operator.Services.Base.Repositories.StreamingJob;
