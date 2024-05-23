@@ -3,13 +3,12 @@ using System.Linq;
 using System.Threading.Tasks;
 using Akka.Util;
 using Arcane.Operator.Extensions;
-using Arcane.Operator.Models;
-using Arcane.Operator.Models.StreamClass.Base;
+using Arcane.Operator.Models.Api;
+using Arcane.Operator.Models.Commands;
+using Arcane.Operator.Models.Resources.Status.V1Alpha1;
+using Arcane.Operator.Models.Resources.StreamClass.Base;
 using Arcane.Operator.Models.StreamDefinitions.Base;
-using Arcane.Operator.Models.StreamStatuses.StreamStatus.V1Beta1;
 using Arcane.Operator.Services.Base;
-using Arcane.Operator.Services.Commands;
-using Arcane.Operator.Services.Models;
 using k8s.Models;
 using Microsoft.Extensions.Logging;
 using Snd.Sdk.Kubernetes.Base;
@@ -66,7 +65,7 @@ public class UpdateStatusCommandHandler : ICommandHandler<UpdateStatusCommand>,
 
     public Task Handle(SetStreamClassStatusCommand command)
     {
-        var status = new V1Beta1StreamStatus
+        var status = new V1Alpha1StreamStatus
         {
             Phase = command.phase.ToString(),
             Conditions = command.conditions.ToArray()
