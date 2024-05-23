@@ -27,16 +27,10 @@ jobs:
       - name: Restore dependencies
         run: dotnet clean && dotnet nuget locals all --clear && dotnet restore
 
-      - name: Build
-        run: dotnet build --no-restore
-        
-      - name: Check style
-        run: dotnet format --verify-no-changes
-
       - name: Test
         working-directory: ./test
         run: |
-          dotnet add package coverlet.msbuild &&
+          dotnet add package coverlet.msbuild
           dotnet test ${PROJECT_NAME}.Tests.csproj --configuration Debug --runtime linux-x64 /p:CollectCoverage=true /p:CoverletOutput=Coverage/ /p:CoverletOutputFormat=lcov --logger GitHubActions
 
       - name: Publish Code Coverage
@@ -45,6 +39,9 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           lcov-file: ./test/Coverage/coverage.info
+              
+      - name: Check style
+        run: dotnet format --verify-no-changes
           
   build_image:
     name: Build Docker Image and Helm Charts
