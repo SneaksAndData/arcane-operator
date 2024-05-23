@@ -67,7 +67,7 @@ public class StreamClassOperatorServiceTests : IClassFixture<LoggerFixture>, ICl
     }
 
     [Fact]
-    public async Task TestStreamAdded()
+    public async Task TestStreamClassAdded()
     {
         // Arrange
         this.kubeClusterMock
@@ -112,12 +112,13 @@ public class StreamClassOperatorServiceTests : IClassFixture<LoggerFixture>, ICl
         await task;
 
         // Assert
-        this.kubeClusterMock.Verify(
-            service => service.SendJob(It.IsAny<V1Job>(), It.IsAny<string>(), It.IsAny<CancellationToken>()));
+        this.kubeClusterMock.Verify(service => service.SendJob(It.IsAny<V1Job>(),
+            It.IsAny<string>(),
+            It.IsAny<CancellationToken>()));
     }
 
     [Fact]
-    public async Task TestStreamDeleted()
+    public async Task TestStreamClassDeleted()
     {
         // Arrange
         this.kubeClusterMock
