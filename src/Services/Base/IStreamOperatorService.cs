@@ -1,5 +1,5 @@
 ﻿using Akka.Streams;
-using Arcane.Operator.Models.StreamClass.Base;
+using Arcane.Operator.Models.Resources.StreamClass.Base;
 
 namespace Arcane.Operator.Services.Base;
 

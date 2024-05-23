@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks;
 using Akka.Util;
-using Arcane.Operator.Services.Models;
+using Arcane.Operator.Models.Api;
 using k8s;
 using k8s.Models;
 

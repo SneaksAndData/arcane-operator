@@ -1,4 +1,4 @@
-﻿using Arcane.Operator.Services.Commands;
+﻿using Arcane.Operator.Models.Commands;
 using k8s.Models;
 
 namespace Arcane.Operator.Services.Base;

@@ -4,11 +4,11 @@ using System.Threading.Tasks;
 using Akka.Util;
 using Akka.Util.Extensions;
 using Arcane.Operator.Extensions;
-using Arcane.Operator.Models;
-using Arcane.Operator.Models.StreamClass.Base;
+using Arcane.Operator.Models.Commands;
+using Arcane.Operator.Models.Resources.Status.V1Alpha1;
+using Arcane.Operator.Models.Resources.StreamClass.Base;
 using Arcane.Operator.Models.StreamDefinitions.Base;
 using Arcane.Operator.Services.Base;
-using Arcane.Operator.Services.Commands;
 using k8s.Models;
 using Microsoft.Extensions.Logging;
 using Snd.Sdk.Kubernetes;
@@ -24,17 +24,20 @@ public class StreamingJobCommandHandler : IStreamingJobCommandHandler
     private readonly IKubeCluster kubeCluster;
     private readonly ILogger<StreamingJobCommandHandler> logger;
     private readonly IStreamingJobTemplateRepository streamingJobTemplateRepository;
+    private readonly ICommandHandler<UpdateStatusCommand> updateStatusCommandHandler;
 
     public StreamingJobCommandHandler(
         IStreamClassRepository streamClassRepository,
         IKubeCluster kubeCluster,
         ILogger<StreamingJobCommandHandler> logger,
+        ICommandHandler<UpdateStatusCommand> updateStatusCommandHandler,
         IStreamingJobTemplateRepository streamingJobTemplateRepository)
     {
         this.streamClassRepository = streamClassRepository;
         this.kubeCluster = kubeCluster;
         this.logger = logger;
         this.streamingJobTemplateRepository = streamingJobTemplateRepository;
+        this.updateStatusCommandHandler = updateStatusCommandHandler;
     }
 
     /// <inheritdoc cref="ICommandHandler{T}.Handle" />
@@ -73,11 +76,10 @@ public class StreamingJobCommandHandler : IStreamingJobCommandHandler
             {
                 if (!jobTemplate.HasValue)
                 {
-                    return Task.FromResult(StreamOperatorResponse.OperationFailed(streamDefinition.Metadata.Namespace(),
-                            streamDefinition.Kind,
-                            streamDefinition.StreamId,
-                            $"Failed to find job template with kind {template.Kind} and name {template.Name}")
-                        .AsOption());
+                    var message = $"Failed to find job template with kind {template.Kind} and name {template.Name}";
+                    var command = new SetInternalErrorStatus(streamDefinition,
+                        V1Alpha1StreamCondition.CustomErrorCondition(message));
+                    return this.updateStatusCommandHandler.Handle(command);
                 }
 
                 var job = jobTemplate
@@ -94,20 +96,12 @@ public class StreamingJobCommandHandler : IStreamingJobCommandHandler
                     streamDefinition.StreamId);
                 return this.kubeCluster
                     .SendJob(job, streamDefinition.Metadata.Namespace(), CancellationToken.None)
-                    .TryMap(
-                        _ => isBackfilling
-                            ? StreamOperatorResponse.Reloading(streamDefinition.Metadata.Namespace(),
-                                streamDefinition.Kind,
-                                streamDefinition.StreamId)
-                            : StreamOperatorResponse.Running(streamDefinition.Metadata.Namespace(),
-                                streamDefinition.Kind,
-                                streamDefinition.StreamId),
+                    .TryMap(result => result.AsOption(),
                         exception =>
                         {
                             this.logger.LogError(exception, "Failed to send job");
-                            return Option<StreamOperatorResponse>.None;
+                            return Option<V1JobStatus>.None;
                         });
-            })
-            .Flatten();
+            });
     }
 }

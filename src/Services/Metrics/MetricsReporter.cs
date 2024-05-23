@@ -1,10 +1,10 @@
 ﻿using Akka.Actor;
 using Arcane.Operator.Configurations;
-using Arcane.Operator.Models;
+using Arcane.Operator.Extensions;
+using Arcane.Operator.Models.Api;
+using Arcane.Operator.Models.Commands;
 using Arcane.Operator.Services.Base;
-using Arcane.Operator.Services.Commands;
 using Arcane.Operator.Services.Metrics.Actors;
-using Arcane.Operator.Services.Models;
 using k8s;
 using k8s.Models;
 using Microsoft.Extensions.Options;
@@ -39,7 +39,7 @@ public class MetricsReporter : IMetricsReporter
         }
         else
         {
-            var msg = new AddStreamClassMetricsMessage(command.streamClass.KindRef, "stream_class", command.streamClass.GetMetricsTags());
+            var msg = new AddStreamClassMetricsMessage(command.streamClass.KindRef, "stream_class", command.GetMetricsTags());
             this.statusActor.Tell(msg);
         }
         return command;

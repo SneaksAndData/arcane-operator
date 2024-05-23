@@ -2,14 +2,15 @@
 using Akka.Util;
 using Akka.Util.Extensions;
 using Arcane.Operator.Configurations;
-using Arcane.Operator.Models.JobTemplates.V1Beta1;
+using Arcane.Operator.Models.Resources.JobTemplates.Base;
+using Arcane.Operator.Models.Resources.JobTemplates.V1Beta1;
 using Arcane.Operator.Services.Base;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Snd.Sdk.Kubernetes.Base;
 using Snd.Sdk.Tasks;
 
-namespace Arcane.Operator.Services.Repositories;
+namespace Arcane.Operator.Services.Repositories.CustomResources;
 
 public class StreamingJobTemplateRepository : IStreamingJobTemplateRepository
 {
@@ -26,14 +27,14 @@ public class StreamingJobTemplateRepository : IStreamingJobTemplateRepository
         this.configuration = configuration.Value;
     }
 
-    public Task<Option<V1Beta1StreamingJobTemplate>> GetStreamingJobTemplate(string kind, string jobNamespace,
+    public Task<Option<IStreamingJobTemplate>> GetStreamingJobTemplate(string kind, string jobNamespace,
         string templateName)
     {
         var jobTemplateResourceConfiguration = this.configuration.ResourceConfiguration;
         if (jobTemplateResourceConfiguration is { ApiGroup: null, Version: null, Plural: null })
         {
             this.logger.LogError("Failed to get job template configuration for kind {kind}", kind);
-            return Task.FromResult(Option<V1Beta1StreamingJobTemplate>.None);
+            return Task.FromResult(Option<IStreamingJobTemplate>.None);
         }
 
         return this.kubeCluster
@@ -43,6 +44,6 @@ public class StreamingJobTemplateRepository : IStreamingJobTemplateRepository
                 jobTemplateResourceConfiguration.Plural,
                 jobNamespace,
                 templateName)
-            .Map(resource => resource.AsOption());
+            .Map(resource => resource.AsOption<IStreamingJobTemplate>());
     }
 }
