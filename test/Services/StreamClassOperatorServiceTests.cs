@@ -162,7 +162,7 @@ public class StreamClassOperatorServiceTests : IClassFixture<LoggerFixture>, ICl
                 Times.Never
             );
     }
-    
+
     [Fact]
     public async Task TestFailedStreamClassAdded()
     {
@@ -171,12 +171,12 @@ public class StreamClassOperatorServiceTests : IClassFixture<LoggerFixture>, ICl
             new(WatchEventType.Added, FailedStreamClass(new Exception("Test exception"))),
             new(WatchEventType.Added, StreamClass)
         };
-            
+
         // Arrange
         this.streamClassRepositoryMock.Setup(
                 s => s.GetEvents(It.IsAny<CustomResourceApiRequest>(), It.IsAny<int>()))
             .Returns(Source.From(streamClassMockEvents));
-        
+
         this.streamClassRepositoryMock.Setup(s => s.Get(It.IsAny<string>(), It.IsAny<string>()))
             .ReturnsAsync(StreamClass.AsOption());
 

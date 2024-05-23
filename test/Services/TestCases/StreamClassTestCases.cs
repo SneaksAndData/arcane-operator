@@ -23,7 +23,7 @@ public static class StreamClassTestCases
             NamespaceProperty = "default"
         }
     };
-    
+
     public static IStreamClass FailedStreamClass(Exception exception)
     {
         return new FailedStreamClass(exception);
