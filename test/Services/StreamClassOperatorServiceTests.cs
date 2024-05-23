@@ -241,7 +241,7 @@ public class StreamClassOperatorServiceTests : IClassFixture<LoggerFixture>, ICl
             .AddSingleton<ICommandHandler<SetAnnotationCommand<IStreamDefinition>>, AnnotationCommandHandler>()
             .AddSingleton<ICommandHandler<RemoveAnnotationCommand<IStreamDefinition>>, AnnotationCommandHandler>()
             .AddSingleton<ICommandHandler<SetAnnotationCommand<V1Job>>, AnnotationCommandHandler>()
-            .AddSingleton<IStreamingJobCommandHandler, StreamingJobCommandHandler>()
+            .AddSingleton<ICommandHandler<StreamingJobCommand>, StreamingJobCommandHandler>()
             .AddSingleton<IMetricsReporter, MetricsReporter>()
             .AddSingleton(Mock.Of<MetricsService>())
             .AddSingleton(loggerFixture.Factory.CreateLogger<StreamOperatorService>())
