@@ -1,5 +1,5 @@
 ﻿using System;
-using Arcane.Operator.Models.Resources.StreamClass.V1Beta1;
+using Arcane.Operator.Models.Resources.StreamClass.Base;
 using k8s.Models;
 using Snd.Sdk.Kubernetes;
 
@@ -8,7 +8,7 @@ namespace Arcane.Operator.Tests.Services.TestCases;
 /// <summary>
 /// A stream Class that throws an exception (for tests)
 /// </summary>
-public class FailedStreamClass : V1Beta1StreamClass
+public class FailedStreamClass : IStreamClass
 {
     private readonly Exception exception;
 

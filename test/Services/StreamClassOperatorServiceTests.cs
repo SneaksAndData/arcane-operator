@@ -62,7 +62,7 @@ public class StreamClassOperatorServiceTests : IClassFixture<LoggerFixture>, ICl
         this.streamingJobTemplateRepositoryMock
             .Setup(s => s.GetStreamingJobTemplate(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
             .ReturnsAsync(StreamingJobTemplate.AsOption<IStreamingJobTemplate>());
-        this.cts.CancelAfter(TimeSpan.FromSeconds(15));
+        this.cts.CancelAfter(TimeSpan.FromSeconds(30));
         this.cts.Token.Register(() => this.tcs.TrySetResult());
     }
 

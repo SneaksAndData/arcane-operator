@@ -24,7 +24,7 @@ public static class StreamClassTestCases
         }
     };
     
-    public static FailedStreamClass FailedStreamClass(Exception exception)
+    public static IStreamClass FailedStreamClass(Exception exception)
     {
         return new FailedStreamClass(exception);
     }
