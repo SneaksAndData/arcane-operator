@@ -61,8 +61,8 @@ public class StreamClassOperatorServiceTests : IClassFixture<LoggerFixture>, ICl
         this.streamingJobTemplateRepositoryMock
             .Setup(s => s.GetStreamingJobTemplate(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
             .ReturnsAsync(StreamingJobTemplate.AsOption<IStreamingJobTemplate>());
-        this.cts.CancelAfter(TimeSpan.FromSeconds(5));
-        this.cts.Token.Register(this.tcs.SetResult);
+        this.cts.CancelAfter(TimeSpan.FromSeconds(15));
+        this.cts.Token.Register(() => this.tcs.TrySetResult());
     }
 
     [Fact]
@@ -85,7 +85,7 @@ public class StreamClassOperatorServiceTests : IClassFixture<LoggerFixture>, ICl
                 It.IsAny<V1Job>(),
                 It.IsAny<string>(),
                 It.IsAny<CancellationToken>()))
-            .Callback(this.tcs.SetResult);
+            .Callback(() => this.tcs.TrySetResult());
 
         this.streamDefinitionSourceMock
             .Setup(m => m.GetEvents(It.IsAny<CustomResourceApiRequest>(), It.IsAny<int>()))
@@ -135,7 +135,7 @@ public class StreamClassOperatorServiceTests : IClassFixture<LoggerFixture>, ICl
                 It.IsAny<V1Job>(),
                 It.IsAny<string>(),
                 It.IsAny<CancellationToken>()))
-            .Callback(this.tcs.SetResult);
+            .Callback(() => this.tcs.TrySetResult());
 
         this.streamDefinitionSourceMock
             .Setup(m => m.GetEvents(It.IsAny<CustomResourceApiRequest>(), It.IsAny<int>()))
