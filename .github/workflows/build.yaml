@@ -65,7 +65,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Get project version
-        uses: SneaksAndData/github-actions/generate_version@v0.1.6
+        uses: SneaksAndData/github-actions/generate_version@v0.1.7
         id: version
 
       - name: Extract metadata (tags, labels) for Docker
@@ -93,7 +93,7 @@ jobs:
           platforms: linux/arm64,linux/amd64
 
       - name: Build and Push Chart
-        uses: SneaksAndData/github-actions/build_helm_chart@v0.1.6
+        uses: SneaksAndData/github-actions/build_helm_chart@v0.1.7
         with:
           application: arcane-operator
           container_registry_user: ${{ github.actor }}
