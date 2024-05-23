@@ -1,10 +1,8 @@
-﻿using System.Collections.Generic;
-using System.Threading.Tasks;
-using Arcane.Operator.Models.Api;
+﻿using Arcane.Operator.Models.Api;
 using k8s;
 using k8s.Models;
 
-namespace Arcane.Operator.Services.Base;
+namespace Arcane.Operator.Models.Base;
 
 /// <summary>
 /// Abstract base class for Kubernetes commands
@@ -42,26 +40,3 @@ public abstract record SetResourceStatusCommand<TCondition, TPhase>(CustomResour
     TCondition[] conditions,
     TPhase phase) : KubernetesCommand;
 
-/// <summary>
-/// Base interface for Kubernetes command handlers
-/// </summary>
-/// <typeparam name="T">Typeof the command to handle</typeparam>
-public interface ICommandHandler<in T> where T : KubernetesCommand
-{
-    /// <summary>
-    /// Handle the command asynchronously
-    /// </summary>
-    /// <param name="command">Command instance</param>
-    /// <returns>Type of the command</returns>
-    public Task Handle(T command);
-}
-
-public static class KubernetesCommandExtensions
-{
-    /// <summary>
-    /// Handle the command asynchronously
-    /// </summary>
-    /// <param name="command">Command instance</param>
-    /// <returns>Type of the command</returns>
-    public static List<KubernetesCommand> AsList(this KubernetesCommand command) => new() { command };
-}

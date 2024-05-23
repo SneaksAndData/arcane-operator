@@ -12,7 +12,8 @@ using Snd.Sdk.Kubernetes.Base;
 
 namespace Arcane.Operator.Services.Repositories.CustomResources;
 
-public class StreamDefinitionRepository : IReactiveResourceCollection<IStreamDefinition>, IResourceCollection<IStreamDefinition>
+public class StreamDefinitionRepository : IReactiveResourceCollection<IStreamDefinition>,
+    IResourceCollection<IStreamDefinition>
 {
     private readonly IKubeCluster kubeCluster;
 
