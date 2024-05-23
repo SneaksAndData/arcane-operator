@@ -1,4 +1,5 @@
-﻿using Arcane.Operator.Models.Resources.StreamClass.Base;
+﻿using System;
+using Arcane.Operator.Models.Resources.StreamClass.Base;
 using Arcane.Operator.Models.Resources.StreamClass.V1Beta1;
 using k8s.Models;
 
@@ -22,4 +23,9 @@ public static class StreamClassTestCases
             NamespaceProperty = "default"
         }
     };
+
+    public static IStreamClass FailedStreamClass(Exception exception)
+    {
+        return new FailedStreamClass(exception);
+    }
 }
