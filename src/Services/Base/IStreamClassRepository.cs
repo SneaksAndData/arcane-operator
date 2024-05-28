@@ -2,8 +2,10 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Akka.Util;
 using Arcane.Operator.Models;
-using Arcane.Operator.Models.StreamClass.Base;
-using Arcane.Operator.Models.StreamStatuses.StreamStatus.V1Beta1;
+using Arcane.Operator.Models.Commands;
+using Arcane.Operator.Models.Resources.Status.V1Alpha1;
+using Arcane.Operator.Models.Resources.StreamClass.Base;
+using Arcane.Operator.Services.Base.Repositories.CustomResources;
 
 namespace Arcane.Operator.Services.Base;
 
@@ -29,5 +31,5 @@ public interface IStreamClassRepository : IReactiveResourceCollection<IStreamCla
     /// <param name="pluralName">The stream class plural name</param>
     /// <returns></returns>
     Task InsertOrUpdate(IStreamClass streamClass, StreamClassPhase phase,
-        IEnumerable<V1Beta1StreamCondition> conditions, string pluralName);
+        IEnumerable<V1Alpha1StreamCondition> conditions, string pluralName);
 }

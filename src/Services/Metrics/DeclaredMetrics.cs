@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using Arcane.Operator.Extensions;
 using Arcane.Operator.Models;
+using Arcane.Operator.Models.Commands;
 using k8s;
 using k8s.Models;
 using Snd.Sdk.Helpers;
@@ -29,11 +30,11 @@ public static class DeclaredMetrics
         { $"{TAG_PREFIX}/stream_id", job.GetStreamId() }
     };
 
-    public static SortedDictionary<string, string> GetMetricsTags(this StreamClassOperatorResponse s) => new()
+    public static SortedDictionary<string, string> GetMetricsTags(this SetStreamClassStatusCommand s) => new()
     {
-        { $"{TAG_PREFIX}/namespace", s.StreamClass?.Namespace().ToLowerInvariant() },
-        { $"{TAG_PREFIX}/kind_ref", CodeExtensions.CamelCaseToSnakeCase(s.StreamClass?.KindRef ?? "unknown") },
-        { $"{TAG_PREFIX}/kind", CodeExtensions.CamelCaseToSnakeCase(s.StreamClass?.Kind ?? "unknown") },
-        { $"{TAG_PREFIX}/phase", s.Phase.ToString().ToLowerInvariant() }
+        { $"{TAG_PREFIX}/namespace", s.streamClass?.Namespace().ToLowerInvariant() },
+        { $"{TAG_PREFIX}/kind_ref", CodeExtensions.CamelCaseToSnakeCase(s.streamClass?.KindRef ?? "unknown") },
+        { $"{TAG_PREFIX}/kind", CodeExtensions.CamelCaseToSnakeCase(s.streamClass?.Kind ?? "unknown") },
+        { $"{TAG_PREFIX}/phase", s.phase.ToString().ToLowerInvariant() }
     };
 }

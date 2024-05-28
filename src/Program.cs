@@ -1,7 +1,6 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
-using Arcane.Operator.Services.Maintenance;
-using Arcane.Operator.Services.Operator;
+using Arcane.Operator.Services.HostedServices;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -41,7 +40,7 @@ public class Program
             .ConfigureWebHostDefaults(webBuilder => { webBuilder.UseStartup<Startup>(); })
             .ConfigureServices(services =>
             {
-                services.AddHostedService<HostedStreamingJobMaintenanceService>();
+                services.AddHostedService<HostedStreamingJobOperatorService>();
                 services.AddHostedService<HostedStreamingClassOperatorService>();
             });
     }

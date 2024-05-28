@@ -1,5 +1,9 @@
-﻿using System.Collections.Generic;
-using Arcane.Models.StreamingJobLifecycle;
+﻿using System;
+using System.Collections.Generic;
+using Arcane.Operator.Models.Api;
+using Arcane.Operator.Models.Resources.StreamClass.Base;
+using Arcane.Operator.Models.StreamDefinitions.Base;
+using Arcane.Operator.StreamingJobLifecycle;
 using k8s.Models;
 using Snd.Sdk.Kubernetes;
 
@@ -9,16 +13,15 @@ public static class V1JobExtensions
 {
     public const string STREAM_KIND_LABEL = "arcane/stream-kind";
     public const string STREAM_ID_LABEL = "arcane/stream-id";
-    public const string FULL_LOAD_LABEL = "arcane/full-load";
+    public const string BACK_FILL_LABEL = "arcane/backfilling";
 
-    public static V1Job WithStreamingJobLabels(this V1Job job, string streamId,
-        bool fullLoadOnStart, string streamKind)
+    public static V1Job WithStreamingJobLabels(this V1Job job, string streamId, bool isBackfilling, string streamKind)
     {
         return job.WithLabels(new Dictionary<string, string>
         {
             { STREAM_ID_LABEL, streamId },
             { STREAM_KIND_LABEL, streamKind },
-            { FULL_LOAD_LABEL, fullLoadOnStart.ToString().ToLowerInvariant() }
+            { BACK_FILL_LABEL, isBackfilling.ToString().ToLowerInvariant() }
         });
     }
 
@@ -26,7 +29,17 @@ public static class V1JobExtensions
     {
         return job.WithAnnotations(new Dictionary<string, string>
         {
-            { Annotations.CONFIGURATION_CHECKSUM_ANNOTATION_KEY, configurationChecksum }
+            { Annotations.CONFIGURATION_CHECKSUM_ANNOTATION_KEY, configurationChecksum },
+        });
+    }
+
+    public static V1Job WithMetadataAnnotations(this V1Job job, IStreamClass streamClass)
+    {
+        return job.WithAnnotations(new Dictionary<string, string>
+        {
+            { Annotations.ARCANE_STREAM_API_GROUP, streamClass.ApiGroupRef},
+            { Annotations.ARCANE_STREAM_API_VERSION, streamClass.VersionRef},
+            { Annotations.ARCANE_STREAM_API_PLURAL_NAME, streamClass.PluralNameRef},
         });
     }
 
@@ -45,6 +58,11 @@ public static class V1JobExtensions
         return string.Empty;
     }
 
+    public static CustomResourceApiRequest ToOwnerApiRequest(this V1Job job)
+    {
+        return new CustomResourceApiRequest(job.Namespace(), job.GetApiGroup(), job.GetApiVersion(), job.GetPluralName());
+    }
+
     public static string GetConfigurationChecksum(this V1Job job)
     {
         if (job.Annotations() != null && job.Annotations().TryGetValue(
@@ -56,6 +74,10 @@ public static class V1JobExtensions
 
         return string.Empty;
     }
+
+    public static bool ConfigurationMatches(this V1Job job, IStreamDefinition streamDefinition) =>
+        job.GetConfigurationChecksum() == streamDefinition.GetConfigurationChecksum();
+
 
     public static bool IsStopRequested(this V1Job job)
     {
@@ -81,7 +103,7 @@ public static class V1JobExtensions
     public static bool IsReloading(this V1Job job)
     {
         return job.Labels() != null
-               && job.Labels().TryGetValue(FULL_LOAD_LABEL, out var value)
+               && job.Labels().TryGetValue(BACK_FILL_LABEL, out var value)
                && value == "true";
     }
 
@@ -97,5 +119,35 @@ public static class V1JobExtensions
         return job.Annotations() != null
                && job.Annotations().TryGetValue(Annotations.STATE_ANNOTATION_KEY, out var value)
                && value == Annotations.TERMINATING_STATE_ANNOTATION_VALUE;
+    }
+
+    private static string GetApiGroup(this V1Job job)
+    {
+        if (job.Annotations() != null && job.Annotations().TryGetValue(Annotations.ARCANE_STREAM_API_GROUP, out var value))
+        {
+            return value;
+        }
+
+        throw new InvalidOperationException("Api group not found in job annotations.");
+    }
+
+    private static string GetApiVersion(this V1Job job)
+    {
+        if (job.Annotations() != null && job.Annotations().TryGetValue(Annotations.ARCANE_STREAM_API_VERSION, out var value))
+        {
+            return value;
+        }
+
+        throw new InvalidOperationException("Api version not found in job annotations.");
+    }
+
+    private static string GetPluralName(this V1Job job)
+    {
+        if (job.Annotations() != null && job.Annotations().TryGetValue(Annotations.ARCANE_STREAM_API_PLURAL_NAME, out var value))
+        {
+            return value;
+        }
+
+        throw new InvalidOperationException("Api plural name version not found in job annotations.");
     }
 }

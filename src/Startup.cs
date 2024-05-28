@@ -1,15 +1,13 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
-using Akka.Actor;
 using Arcane.Operator.Configurations;
-using Arcane.Operator.Services;
+using Arcane.Operator.Models.StreamDefinitions.Base;
 using Arcane.Operator.Services.Base;
-using Arcane.Operator.Services.Maintenance;
+using Arcane.Operator.Services.Base.Repositories.CustomResources;
 using Arcane.Operator.Services.Metrics;
 using Arcane.Operator.Services.Operator;
-using Arcane.Operator.Services.Repositories;
-using Arcane.Operator.Services.Streams;
+using Arcane.Operator.Services.Repositories.CustomResources;
 using Azure.Data.Tables;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -49,9 +47,6 @@ public class Startup
         var config = Configuration.GetSection(nameof(StreamingJobMaintenanceServiceConfiguration));
         services.Configure<StreamingJobMaintenanceServiceConfiguration>(config);
 
-        services.Configure<StreamingJobOperatorServiceConfiguration>(
-                Configuration.GetSection(nameof(StreamingJobOperatorServiceConfiguration)));
-
         services.Configure<MetricsReporterConfiguration>(
                 Configuration.GetSection(nameof(MetricsReporterConfiguration)));
 
@@ -62,12 +57,14 @@ public class Startup
                 Configuration.GetSection(nameof(StreamingJobTemplateRepositoryConfiguration)));
 
         services.AddSingleton<IStreamingJobOperatorService, StreamingJobOperatorService>();
-        services.AddSingleton<IStreamingJobMaintenanceService, StreamingJobMaintenanceService>();
-        services.AddSingleton<IStreamDefinitionRepository, StreamDefinitionRepository>();
+
+        services.AddSingleton<StreamDefinitionRepository>();
+        services.AddSingleton<IResourceCollection<IStreamDefinition>>(sp => sp.GetRequiredService<StreamDefinitionRepository>());
+        services.AddSingleton<IReactiveResourceCollection<IStreamDefinition>>(sp => sp.GetRequiredService<StreamDefinitionRepository>());
+
         services.AddSingleton<IStreamingJobTemplateRepository, StreamingJobTemplateRepository>();
         services.AddSingleton<IStreamClassRepository, StreamClassRepository>();
         services.AddSingleton<IStreamClassOperatorService, StreamClassOperatorService>();
-        services.AddSingleton<IStreamOperatorServiceWorkerFactory, StreamOperatorServiceWorkerFactory>();
         services.AddMemoryCache();
         services.AddKubernetes();
 

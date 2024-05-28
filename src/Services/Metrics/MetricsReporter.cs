@@ -1,9 +1,10 @@
 ﻿using Akka.Actor;
 using Arcane.Operator.Configurations;
-using Arcane.Operator.Models;
+using Arcane.Operator.Extensions;
+using Arcane.Operator.Models.Api;
+using Arcane.Operator.Models.Commands;
 using Arcane.Operator.Services.Base;
 using Arcane.Operator.Services.Metrics.Actors;
-using Arcane.Operator.Services.Models;
 using k8s;
 using k8s.Models;
 using Microsoft.Extensions.Options;
@@ -30,18 +31,18 @@ public class MetricsReporter : IMetricsReporter
     }
 
     /// <inheritdoc cref="IMetricsReporter.ReportStatusMetrics"/>
-    public StreamClassOperatorResponse ReportStatusMetrics(StreamClassOperatorResponse streamClass)
+    public SetStreamClassStatusCommand ReportStatusMetrics(SetStreamClassStatusCommand command)
     {
-        if (streamClass.Phase.IsFinal())
+        if (command.phase.IsFinal())
         {
-            this.statusActor.Tell(new RemoveStreamClassMetricsMessage(streamClass.StreamClass.KindRef));
+            this.statusActor.Tell(new RemoveStreamClassMetricsMessage(command.streamClass.KindRef));
         }
         else
         {
-            var msg = new AddStreamClassMetricsMessage(streamClass.StreamClass.KindRef, "stream_class", streamClass.GetMetricsTags());
+            var msg = new AddStreamClassMetricsMessage(command.streamClass.KindRef, "stream_class", command.GetMetricsTags());
             this.statusActor.Tell(msg);
         }
-        return streamClass;
+        return command;
     }
 
     /// <inheritdoc cref="IMetricsReporter.ReportTrafficMetrics"/>

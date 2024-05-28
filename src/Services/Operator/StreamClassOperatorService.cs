@@ -1,24 +1,20 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Akka.Streams;
 using Akka.Streams.Dsl;
-using Akka.Streams.Supervision;
 using Akka.Util;
 using Arcane.Operator.Configurations;
-using Arcane.Operator.Models;
-using Arcane.Operator.Models.StreamClass.Base;
+using Arcane.Operator.Models.Api;
+using Arcane.Operator.Models.Commands;
+using Arcane.Operator.Models.Resources.StreamClass.Base;
 using Arcane.Operator.Services.Base;
-using Arcane.Operator.Services.Metrics;
-using Arcane.Operator.Services.Models;
 using k8s;
 using k8s.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Snd.Sdk.ActorProviders;
-using Snd.Sdk.Metrics.Base;
+using Directive = Akka.Streams.Supervision.Directive;
 
 namespace Arcane.Operator.Services.Operator;
 
@@ -29,63 +25,73 @@ public class StreamClassOperatorService : IStreamClassOperatorService
 
     private readonly StreamClassOperatorServiceConfiguration configuration;
 
-    private readonly Dictionary<string, StreamOperatorServiceWorker> streams = new();
     private readonly ILogger<StreamClassOperatorService> logger;
     private readonly IStreamClassRepository streamClassRepository;
-    private readonly IStreamOperatorServiceWorkerFactory streamOperatorServiceWorkerFactory;
     private readonly IMetricsReporter metricsService;
+    private readonly IStreamOperatorService streamOperatorService;
+    private readonly CustomResourceApiRequest request;
+    private readonly ICommandHandler<SetStreamClassStatusCommand> streamClassStatusCommandHandler;
 
     public StreamClassOperatorService(IOptions<StreamClassOperatorServiceConfiguration> streamOperatorServiceOptions,
-        IStreamOperatorServiceWorkerFactory streamOperatorServiceWorkerFactory,
         IStreamClassRepository streamClassRepository,
         IMetricsReporter metricsService,
-        ILogger<StreamClassOperatorService> logger)
+        ILogger<StreamClassOperatorService> logger,
+        ICommandHandler<SetStreamClassStatusCommand> streamClassStatusCommandHandler,
+        IStreamOperatorService streamOperatorService)
     {
         this.configuration = streamOperatorServiceOptions.Value;
         this.logger = logger;
         this.streamClassRepository = streamClassRepository;
-        this.streamOperatorServiceWorkerFactory = streamOperatorServiceWorkerFactory;
         this.metricsService = metricsService;
-    }
-
-    /// <inheritdoc cref="IStreamClassOperatorService.GetStreamClassEventsGraph"/>
-    public IRunnableGraph<Task> GetStreamClassEventsGraph(CancellationToken cancellationToken)
-    {
-        var sink = Sink.ForEachAsync<StreamClassOperatorResponse>(parallelism, response =>
-        {
-            this.logger.LogInformation("The phase of the stream class {namespace}/{name} changed to {status}",
-                response.StreamClass.Metadata.Namespace(),
-                response.StreamClass.Metadata.Name,
-                response.Phase);
-            return this.streamClassRepository.InsertOrUpdate(response.StreamClass, response.Phase, response.Conditions, this.configuration.Plural);
-        });
-
-        var request = new CustomResourceApiRequest(
+        this.streamOperatorService = streamOperatorService;
+        this.streamClassStatusCommandHandler = streamClassStatusCommandHandler;
+        this.request = new CustomResourceApiRequest(
             this.configuration.NameSpace,
             this.configuration.ApiGroup,
             this.configuration.Version,
             this.configuration.Plural
         );
 
+    }
+
+    /// <inheritdoc cref="IStreamClassOperatorService.GetStreamClassEventsGraph"/>
+    public IRunnableGraph<Task> GetStreamClassEventsGraph(CancellationToken cancellationToken)
+    {
+        var sink = Sink.ForEachAsync<SetStreamClassStatusCommand>(parallelism, command =>
+        {
+            this.streamClassStatusCommandHandler.Handle(command);
+            return this.streamClassRepository.InsertOrUpdate(command.streamClass, command.phase, command.conditions, command.request.PluralName);
+        });
+
         return this.streamClassRepository.GetEvents(request, this.configuration.MaxBufferCapacity)
             .Via(cancellationToken.AsFlow<ResourceEvent<IStreamClass>>(true))
-            .Select(this.metricsService.ReportTrafficMetrics)
             .Select(this.OnEvent)
-            .WithAttributes(ActorAttributes.CreateSupervisionStrategy(this.HandleError))
             .CollectOption()
-            .Select(this.metricsService.ReportStatusMetrics)
+            .Select(streamClass => this.metricsService.ReportStatusMetrics(streamClass))
+            .WithAttributes(ActorAttributes.CreateSupervisionStrategy(this.HandleError))
             .ToMaterialized(sink, Keep.Right);
     }
 
-    private Option<StreamClassOperatorResponse> OnEvent(ResourceEvent<IStreamClass> resourceEvent)
+    private Option<SetStreamClassStatusCommand> OnEvent(ResourceEvent<IStreamClass> resourceEvent)
     {
         return resourceEvent switch
         {
-            (WatchEventType.Added, var streamClass) => this.OnAdded(streamClass),
-            (WatchEventType.Modified, var streamClass) => this.OnModified(streamClass),
-            (WatchEventType.Deleted, var streamClass) => this.OnDeleted(streamClass),
-            _ => Option<StreamClassOperatorResponse>.None
+            (WatchEventType.Added, var streamClass) => this.Attach(streamClass),
+            (WatchEventType.Deleted, var streamClass) => this.Detach(streamClass),
+            _ => Option<SetStreamClassStatusCommand>.None
         };
+    }
+
+    private SetStreamClassReady Attach(IStreamClass streamClass)
+    {
+        this.streamOperatorService.Attach(streamClass);
+        return new SetStreamClassReady(streamClass.Name(), this.request, streamClass);
+    }
+
+    private SetStreamClassStopped Detach(IStreamClass streamClass)
+    {
+        this.streamOperatorService.Detach(streamClass);
+        return new SetStreamClassStopped(streamClass.Name(), this.request, streamClass);
     }
 
     private Directive HandleError(Exception exception)
@@ -96,35 +102,5 @@ public class StreamClassOperatorService : IStreamClassOperatorService
             BufferOverflowException => Directive.Stop,
             _ => Directive.Resume
         };
-    }
-
-    private Option<StreamClassOperatorResponse> OnAdded(IStreamClass streamClass) => this.StartStreamWorker(streamClass);
-
-    private Option<StreamClassOperatorResponse> OnDeleted(IStreamClass streamClass) => this.StopStreamWorker(streamClass);
-
-    private Option<StreamClassOperatorResponse> OnModified(IStreamClass streamClass)
-    {
-        this.StopStreamWorker(streamClass);
-        return this.StartStreamWorker(streamClass);
-    }
-
-    private Option<StreamClassOperatorResponse> StartStreamWorker(IStreamClass streamClass)
-    {
-        if (!this.streams.ContainsKey(streamClass.ToStreamClassId()))
-        {
-            var listener = this.streamOperatorServiceWorkerFactory.Create(streamClass);
-            this.streams[streamClass.ToStreamClassId()] = listener;
-            this.streams[streamClass.ToStreamClassId()].Start(streamClass.ToStreamClassId());
-        }
-        return StreamClassOperatorResponse.Ready(streamClass);
-    }
-
-    private Option<StreamClassOperatorResponse> StopStreamWorker(IStreamClass streamClass)
-    {
-        if (this.streams.ContainsKey(streamClass.ToStreamClassId()))
-        {
-            this.streams[streamClass.ToStreamClassId()].Stop();
-        }
-        return StreamClassOperatorResponse.Stopped(streamClass);
     }
 }

@@ -1,9 +1,10 @@
-﻿using System.Text.Json;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Text.Json;
 using Akka.Util;
 using Akka.Util.Extensions;
-using Arcane.Operator.Models.StreamClass;
-using Arcane.Operator.Models.StreamClass.Base;
-using Arcane.Operator.Models.StreamDefinitions;
+using Arcane.Operator.Models.Resources.StreamClass.Base;
+using Arcane.Operator.Models.Resources.StreamClass.V1Beta1;
+using Arcane.Operator.Models.Resources.StreamDefinitions;
 using Arcane.Operator.Models.StreamDefinitions.Base;
 
 namespace Arcane.Operator.Extensions;
@@ -18,6 +19,7 @@ public static class JsonElementExtensions
     /// </summary>
     /// <param name="jsonElement">Element to deserialize</param>
     /// <returns></returns>
+    [ExcludeFromCodeCoverage(Justification = "Trivial")]
     public static Option<IStreamDefinition> AsOptionalStreamDefinition(this JsonElement jsonElement) =>
         jsonElement.Deserialize<StreamDefinition>().AsOption<IStreamDefinition>();
 
@@ -26,6 +28,7 @@ public static class JsonElementExtensions
     /// </summary>
     /// <param name="jsonElement">Element to deserialize</param>
     /// <returns></returns>
+    [ExcludeFromCodeCoverage(Justification = "Trivial")]
     public static Option<IStreamClass> AsOptionalStreamClass(this JsonElement jsonElement) =>
         jsonElement.Deserialize<V1Beta1StreamClass>().AsOption<IStreamClass>();
 }

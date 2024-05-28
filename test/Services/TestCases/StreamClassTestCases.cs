@@ -1,5 +1,6 @@
-﻿using Arcane.Operator.Models.StreamClass;
-using Arcane.Operator.Models.StreamClass.Base;
+﻿using System;
+using Arcane.Operator.Models.Resources.StreamClass.Base;
+using Arcane.Operator.Models.Resources.StreamClass.V1Beta1;
 using k8s.Models;
 
 namespace Arcane.Operator.Tests.Services.TestCases;
@@ -11,7 +12,10 @@ public static class StreamClassTestCases
         Spec = new V1Beta1StreamClassSpec
         {
             MaxBufferCapacity = 100,
-            KindRef = "StreamClass",
+            KindRef = StreamDefinitionTestCases.Kind,
+            ApiGroupRef = StreamDefinitionTestCases.ApiGroup,
+            PluralName = StreamDefinitionTestCases.PluralName,
+            ApiVersion = StreamDefinitionTestCases.ApiVersion
         },
         Metadata = new V1ObjectMeta
         {
@@ -19,4 +23,9 @@ public static class StreamClassTestCases
             NamespaceProperty = "default"
         }
     };
+
+    public static IStreamClass FailedStreamClass(Exception exception)
+    {
+        return new FailedStreamClass(exception);
+    }
 }
