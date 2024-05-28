@@ -26,7 +26,7 @@ namespace Arcane.Operator.Services.Operator;
 public class StreamingJobOperatorService : IStreamingJobOperatorService
 {
     private const int parallelism = 1;
-    private readonly StreamingJobMaintenanceServiceConfiguration configuration;
+    private readonly StreamingJobOperatorServiceConfiguration configuration;
     private readonly ILogger<StreamingJobOperatorService> logger;
     private readonly IResourceCollection<IStreamDefinition> streamDefinitionCollection;
     private readonly IMetricsReporter metricsReporter;
@@ -37,7 +37,7 @@ public class StreamingJobOperatorService : IStreamingJobOperatorService
 
     public StreamingJobOperatorService(
         ILogger<StreamingJobOperatorService> logger,
-        IOptions<StreamingJobMaintenanceServiceConfiguration> options,
+        IOptions<StreamingJobOperatorServiceConfiguration> options,
         IMetricsReporter metricsReporter,
         IResourceCollection<IStreamDefinition> streamDefinitionCollection,
         ICommandHandler<UpdateStatusCommand> updateStatusCommandHandler,

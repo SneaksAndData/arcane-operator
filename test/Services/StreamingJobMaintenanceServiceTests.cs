@@ -221,7 +221,7 @@ public class StreamingJobMaintenanceServiceTests : IClassFixture<LoggerFixture>
             .AddSingleton<IMetricsReporter, MetricsReporter>()
             .AddSingleton(Mock.Of<MetricsService>())
             .AddSingleton<StreamingJobOperatorService>()
-            .AddSingleton(Options.Create(new StreamingJobMaintenanceServiceConfiguration
+            .AddSingleton(Options.Create(new StreamingJobOperatorServiceConfiguration
             {
                 MaxBufferCapacity = 1000
             }))

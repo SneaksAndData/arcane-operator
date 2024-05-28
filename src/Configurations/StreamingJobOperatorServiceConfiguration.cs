@@ -1,12 +1,13 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using Arcane.Operator.Services.Operator;
 
 namespace Arcane.Operator.Configurations;
 
 /// <summary>
-/// Configuration for the <see cref="StreamingJobMaintenanceService"/>
+/// Configuration for the <see cref="StreamingJobOperatorService"/>
 /// </summary>
 [ExcludeFromCodeCoverage(Justification = "Model")]
-public class StreamingJobMaintenanceServiceConfiguration
+public class StreamingJobOperatorServiceConfiguration
 {
     /// <summary>
     /// Max buffer capacity for job events stream

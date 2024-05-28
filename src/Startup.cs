@@ -2,13 +2,18 @@ using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
 using Arcane.Operator.Configurations;
+using Arcane.Operator.Models.Commands;
 using Arcane.Operator.Models.StreamDefinitions.Base;
 using Arcane.Operator.Services.Base;
 using Arcane.Operator.Services.Base.Repositories.CustomResources;
+using Arcane.Operator.Services.Base.Repositories.StreamingJob;
+using Arcane.Operator.Services.CommandHandlers;
 using Arcane.Operator.Services.Metrics;
 using Arcane.Operator.Services.Operator;
 using Arcane.Operator.Services.Repositories.CustomResources;
+using Arcane.Operator.Services.Repositories.StreamingJob;
 using Azure.Data.Tables;
+using k8s.Models;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -44,23 +49,22 @@ public class Startup
         services.AddDatadogMetrics(DatadogConfiguration.UnixDomainSocket(AppDomain.CurrentDomain.FriendlyName));
         services.AddSingleton<IMetricsReporter, MetricsReporter>();
 
-        var config = Configuration.GetSection(nameof(StreamingJobMaintenanceServiceConfiguration));
-        services.Configure<StreamingJobMaintenanceServiceConfiguration>(config);
-
-        services.Configure<MetricsReporterConfiguration>(
-                Configuration.GetSection(nameof(MetricsReporterConfiguration)));
-
-        services.Configure<StreamClassOperatorServiceConfiguration>(
-                Configuration.GetSection(nameof(StreamClassOperatorServiceConfiguration)));
-
-        services.Configure<StreamingJobTemplateRepositoryConfiguration>(
-                Configuration.GetSection(nameof(StreamingJobTemplateRepositoryConfiguration)));
+        this.AddServiceConfigurations(services);
 
         services.AddSingleton<IStreamingJobOperatorService, StreamingJobOperatorService>();
 
         services.AddSingleton<StreamDefinitionRepository>();
         services.AddSingleton<IResourceCollection<IStreamDefinition>>(sp => sp.GetRequiredService<StreamDefinitionRepository>());
         services.AddSingleton<IReactiveResourceCollection<IStreamDefinition>>(sp => sp.GetRequiredService<StreamDefinitionRepository>());
+
+        services.AddSingleton<ICommandHandler<UpdateStatusCommand>, UpdateStatusCommandHandler>();
+        services.AddSingleton<ICommandHandler<SetStreamClassStatusCommand>, UpdateStatusCommandHandler>();
+        services.AddSingleton<ICommandHandler<SetAnnotationCommand<IStreamDefinition>>, AnnotationCommandHandler>();
+        services.AddSingleton<ICommandHandler<RemoveAnnotationCommand<IStreamDefinition>>, AnnotationCommandHandler>();
+        services.AddSingleton<ICommandHandler<SetAnnotationCommand<V1Job>>, AnnotationCommandHandler>();
+        services.AddSingleton<IStreamingJobCommandHandler, StreamingJobCommandHandler>();
+        services.AddSingleton<IStreamingJobCollection, StreamingJobRepository>();
+        services.AddSingleton<IStreamOperatorService, StreamOperatorService>();
 
         services.AddSingleton<IStreamingJobTemplateRepository, StreamingJobTemplateRepository>();
         services.AddSingleton<IStreamClassRepository, StreamClassRepository>();
@@ -72,6 +76,15 @@ public class Startup
 
         services.AddControllers().AddJsonOptions(options =>
             options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
+    }
+
+    private IServiceCollection AddServiceConfigurations(IServiceCollection services)
+    {
+        return services
+            .Configure<StreamingJobOperatorServiceConfiguration>(this.Configuration.GetSection(nameof(StreamingJobOperatorServiceConfiguration)))
+            .Configure<MetricsReporterConfiguration>( this.Configuration.GetSection(nameof(MetricsReporterConfiguration)))
+            .Configure<StreamClassOperatorServiceConfiguration>(this.Configuration.GetSection(nameof(StreamClassOperatorServiceConfiguration)))
+            .Configure<StreamingJobTemplateRepositoryConfiguration>(this.Configuration.GetSection(nameof(StreamingJobTemplateRepositoryConfiguration)));
     }
 
 

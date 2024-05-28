@@ -155,8 +155,7 @@ public class StreamOperatorService : IStreamOperatorService, IDisposable
         this.logger.LogInformation("Modified a stream definition with id {streamId}", streamDefinition.StreamId);
         return maybeJob switch
         {
-            { HasValue: false } when streamDefinition.CrashLoopDetected => new SetCrashLoopStatusCommand(
-                streamDefinition).AsList(),
+            { HasValue: false } when streamDefinition.CrashLoopDetected => new SetCrashLoopStatusCommand(streamDefinition).AsList(),
             { HasValue: false } when streamDefinition.Suspended => new Suspended(streamDefinition).AsList(),
             { HasValue: false } when streamDefinition.ReloadRequested => new List<KubernetesCommand>
             {

@@ -11,10 +11,6 @@ data:
         "MaxBufferCapacity": {{ .Values.settings.jobMaintenanceController.maxEventBufferCapacity }},
         "Namespace": "{{ default .Release.Namespace .Values.settings.jobMaintenanceController.jobNamespace }}"
       },
-      "StreamingJobMaintenanceServiceConfiguration": {
-        "MaxBufferCapacity": {{ .Values.settings.streamClassController.maxEventBufferCapacity }},
-        "Namespace": "{{ default .Release.Namespace .Values.settings.streamClassController.streamClassesNamespace }}"
-      },
       "StreamClassOperatorServiceConfiguration": {
         "Namespace": "{{ default .Release.Namespace .Values.settings.streamClassController.streamClassesNamespace }}",
         "MaxBufferCapacity": 100,
