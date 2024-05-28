@@ -37,7 +37,7 @@ public class Startup
     public void ConfigureServices(IServiceCollection services)
     {
 
-        // Regiser the configuration
+        // Register the configuration
         services.Configure<StreamingJobOperatorServiceConfiguration>(this.Configuration.GetSection(nameof(StreamingJobOperatorServiceConfiguration)));
         services.Configure<MetricsReporterConfiguration>(
             this.Configuration.GetSection(nameof(MetricsReporterConfiguration)));
@@ -61,12 +61,12 @@ public class Startup
         services.AddSingleton<ICommandHandler<RemoveAnnotationCommand<IStreamDefinition>>, AnnotationCommandHandler>();
         services.AddSingleton<ICommandHandler<SetAnnotationCommand<V1Job>>, AnnotationCommandHandler>();
         services.AddSingleton<ICommandHandler<StreamingJobCommand>, StreamingJobCommandHandler>();
-        
+
         // Register the operator services
         services.AddSingleton<IStreamOperatorService, StreamOperatorService>();
         services.AddSingleton<IStreamingJobOperatorService, StreamingJobOperatorService>();
         services.AddSingleton<IStreamClassOperatorService, StreamClassOperatorService>();
-        
+
         // Register the metrics providers
         services.AddDatadogMetrics(DatadogConfiguration.UnixDomainSocket(AppDomain.CurrentDomain.FriendlyName));
         services.AddSingleton<IMetricsReporter, MetricsReporter>();

@@ -44,7 +44,7 @@ public class UpdateStatusCommandHandler : ICommandHandler<UpdateStatusCommand>,
                 this.logger.LogError("Failed to get configuration for kind {kind}", kind);
                 return Task.FromResult(Option<IStreamDefinition>.None);
             }
-            
+
             var status = new V1Alpha1StreamStatus { Phase = phase.ToString(), Conditions = conditions };
 
             this.logger.LogInformation(
