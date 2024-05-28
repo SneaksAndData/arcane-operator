@@ -6,12 +6,13 @@ on:
     
 jobs:
   remove_old_artifacts:
-    permissions:
-      packages: write
-    
     name: Remove old artifacts
     runs-on: ubuntu-latest
     
+    permissions: 
+      contents: read
+      packages: write
+      
     timeout-minutes: 10 # stop the task if it takes longer
 
     steps:
@@ -20,6 +21,7 @@ jobs:
         with:
           package-name: 'arcane-operator'
           package-type: container
+          token: ${{ secrets.GITHUB_TOKEN }}
           min-versions-to-keep: 10
           delete-only-pre-release-versions: "true"
           
@@ -28,5 +30,6 @@ jobs:
         with:
           package-name: 'helm/arcane-operator'
           package-type: container
+          token: ${{ secrets.GITHUB_TOKEN }}
           min-versions-to-keep: 10
           delete-only-pre-release-versions: "true"
