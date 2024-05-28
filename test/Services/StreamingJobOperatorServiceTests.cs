@@ -38,10 +38,10 @@ using static Arcane.Operator.Tests.Services.TestCases.StreamingJobTemplateTestCa
 
 namespace Arcane.Operator.Tests.Services;
 
-public class StreamingJobMaintenanceServiceTests : IClassFixture<LoggerFixture>
+public class StreamingJobOperatorServiceTests : IClassFixture<LoggerFixture>
 {
     // Akka service and test helpers
-    private readonly ActorSystem actorSystem = ActorSystem.Create(nameof(StreamingJobMaintenanceServiceTests));
+    private readonly ActorSystem actorSystem = ActorSystem.Create(nameof(StreamingJobOperatorServiceTests));
     private readonly LoggerFixture loggerFixture;
     private readonly ActorMaterializer materializer;
 
@@ -51,7 +51,7 @@ public class StreamingJobMaintenanceServiceTests : IClassFixture<LoggerFixture>
     private readonly Mock<IStreamClassRepository> streamClassRepositoryMock = new();
     private readonly Mock<IStreamingJobTemplateRepository> streamingJobTemplateRepositoryMock = new();
 
-    public StreamingJobMaintenanceServiceTests(LoggerFixture loggerFixture)
+    public StreamingJobOperatorServiceTests(LoggerFixture loggerFixture)
     {
         this.loggerFixture = loggerFixture;
         this.materializer = this.actorSystem.Materializer();
@@ -211,7 +211,7 @@ public class StreamingJobMaintenanceServiceTests : IClassFixture<LoggerFixture>
             .AddSingleton(this.streamingJobTemplateRepositoryMock.Object)
             .AddSingleton<ICommandHandler<UpdateStatusCommand>, UpdateStatusCommandHandler>()
             .AddSingleton<ICommandHandler<SetAnnotationCommand<IStreamDefinition>>, AnnotationCommandHandler>()
-            .AddSingleton<IStreamingJobCommandHandler, StreamingJobCommandHandler>()
+            .AddSingleton<ICommandHandler<StreamingJobCommand>, StreamingJobCommandHandler>()
             .AddSingleton<IStreamingJobCollection, StreamingJobRepository>()
             .AddSingleton(this.loggerFixture.Factory.CreateLogger<StreamingJobOperatorService>())
             .AddSingleton(this.loggerFixture.Factory.CreateLogger<StreamingJobRepository>())

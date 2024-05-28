@@ -32,7 +32,7 @@ public class StreamingJobOperatorService : IStreamingJobOperatorService
     private readonly IMetricsReporter metricsReporter;
     private readonly ICommandHandler<UpdateStatusCommand> updateStatusCommandHandler;
     private readonly ICommandHandler<SetAnnotationCommand<IStreamDefinition>> setAnnotationCommandHandler;
-    private readonly IStreamingJobCommandHandler streamingJobCommandHandler;
+    private readonly ICommandHandler<StreamingJobCommand> streamingJobCommandHandler;
     private readonly IStreamingJobCollection streamingJobCollection;
 
     public StreamingJobOperatorService(
@@ -42,7 +42,7 @@ public class StreamingJobOperatorService : IStreamingJobOperatorService
         IResourceCollection<IStreamDefinition> streamDefinitionCollection,
         ICommandHandler<UpdateStatusCommand> updateStatusCommandHandler,
         ICommandHandler<SetAnnotationCommand<IStreamDefinition>> setAnnotationCommandHandler,
-        IStreamingJobCommandHandler streamingJobCommandHandler,
+        ICommandHandler<StreamingJobCommand> streamingJobCommandHandler,
         IStreamingJobCollection streamingJobCollection)
     {
         this.configuration = options.Value;
