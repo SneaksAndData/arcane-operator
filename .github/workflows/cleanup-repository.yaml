@@ -1,7 +1,7 @@
 name: Remove old artifacts
 on:
-#  schedule:
-#    - cron: '0 12 * * *' # every day at 12:00 UTC
+  schedule:
+    - cron: '0 12 * * *' # every day at 12:00 UTC
   workflow_dispatch:
     
 jobs:
@@ -9,6 +9,10 @@ jobs:
     name: Remove old artifacts
     runs-on: ubuntu-latest
     
+    permissions: 
+      contents: read
+      packages: write
+      
     timeout-minutes: 10 # stop the task if it takes longer
 
     steps:
@@ -17,7 +21,7 @@ jobs:
         with:
           package-name: 'arcane-operator'
           package-type: container
-          token: ${{ secrets.GITHUB_PAT }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           min-versions-to-keep: 10
           delete-only-pre-release-versions: "true"
           
@@ -26,6 +30,6 @@ jobs:
         with:
           package-name: 'helm/arcane-operator'
           package-type: container
-          token: ${{ secrets.GITHUB_PAT }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           min-versions-to-keep: 10
           delete-only-pre-release-versions: "true"
