@@ -81,6 +81,7 @@ public class Startup
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env,
         IHostApplicationLifetime hostApplicationLifetime)
     {
+        app.UseRouting();
         app.UseEndpoints(endpoints =>
         {
             endpoints.MapControllers();
