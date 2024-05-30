@@ -93,9 +93,10 @@ jobs:
           platforms: linux/arm64,linux/amd64
 
       - name: Build and Push Chart
-        uses: SneaksAndData/github-actions/build_helm_chart@v0.1.6
+        uses: SneaksAndData/github-actions/build_helm_chart@create_chart_app_version
         with:
           application: arcane-operator
+          app_version: ${{ steps.meta.outputs.tags }}
           container_registry_user: ${{ github.actor }}
           container_registry_token: ${{ secrets.GITHUB_TOKEN }}
           container_registry_address: ghcr.io/sneaksanddata/
