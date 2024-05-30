@@ -96,7 +96,7 @@ jobs:
         uses: SneaksAndData/github-actions/build_helm_chart@create_chart_app_version
         with:
           application: arcane-operator
-          app_version: ${{ steps.meta.outputs.tags }}
+          app_version: ${{ steps.meta.outputs.version }}
           container_registry_user: ${{ github.actor }}
           container_registry_token: ${{ secrets.GITHUB_TOKEN }}
           container_registry_address: ghcr.io/sneaksanddata/
