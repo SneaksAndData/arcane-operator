@@ -48,7 +48,7 @@ public class StreamClassOperatorServiceTests : IClassFixture<LoggerFixture>, ICl
 
     // Mocks
     private readonly Mock<IKubeCluster> kubeClusterMock = new();
-    private readonly Mock<IStreamingJobCollection> streamingJobOperatorServiceMock = new();
+    private readonly Mock<IStreamingJobCollection> streamingJobCollectionMock = new();
     private readonly Mock<IReactiveResourceCollection<IStreamDefinition>> streamDefinitionSourceMock = new();
     private readonly Mock<IStreamClassRepository> streamClassRepositoryMock = new();
     private readonly Mock<IStreamingJobTemplateRepository> streamingJobTemplateRepositoryMock = new();
@@ -213,23 +213,11 @@ public class StreamClassOperatorServiceTests : IClassFixture<LoggerFixture>, ICl
 
     private ServiceProvider CreateServiceProvider(IStreamClassRepository streamClassRepository = null)
     {
-        var optionsMock = new Mock<IOptionsSnapshot<CustomResourceConfiguration>>();
-        optionsMock
-            .Setup(m => m.Get(It.IsAny<string>()))
-            .Returns(new CustomResourceConfiguration());
-        var metricsReporterConfiguration = Options.Create(new MetricsReporterConfiguration
-        {
-            MetricsPublisherActorConfiguration = new MetricsPublisherActorConfiguration
-            {
-                InitialDelay = TimeSpan.FromSeconds(30),
-                UpdateInterval = TimeSpan.FromSeconds(10)
-            }
-        });
         return new ServiceCollection()
             .AddSingleton<IMaterializer>(this.actorSystem.Materializer())
             .AddSingleton(this.actorSystem)
             .AddSingleton(this.kubeClusterMock.Object)
-            .AddSingleton(this.streamingJobOperatorServiceMock.Object)
+            .AddSingleton(this.streamingJobCollectionMock.Object)
             .AddSingleton(this.streamDefinitionSourceMock.Object)
             .AddSingleton(this.streamingJobTemplateRepositoryMock.Object)
             .AddSingleton(sp => streamClassRepository ??
@@ -239,22 +227,16 @@ public class StreamClassOperatorServiceTests : IClassFixture<LoggerFixture>, ICl
             .AddSingleton<IStreamOperatorService, StreamOperatorService>()
             .AddSingleton<ICommandHandler<UpdateStatusCommand>, UpdateStatusCommandHandler>()
             .AddSingleton<ICommandHandler<SetStreamClassStatusCommand>, UpdateStatusCommandHandler>()
-            .AddSingleton<ICommandHandler<SetAnnotationCommand<IStreamDefinition>>, AnnotationCommandHandler>()
             .AddSingleton<ICommandHandler<RemoveAnnotationCommand<IStreamDefinition>>, AnnotationCommandHandler>()
             .AddSingleton<ICommandHandler<SetAnnotationCommand<V1Job>>, AnnotationCommandHandler>()
             .AddSingleton<ICommandHandler<StreamingJobCommand>, StreamingJobCommandHandler>()
             .AddSingleton<IMetricsReporter, MetricsReporter>()
             .AddSingleton(Mock.Of<MetricsService>())
-            .AddSingleton(loggerFixture.Factory.CreateLogger<StreamOperatorService>())
-            .AddSingleton(loggerFixture.Factory.CreateLogger<StreamClassOperatorService>())
-            .AddSingleton(this.loggerFixture.Factory.CreateLogger<StreamingJobOperatorService>())
-            .AddSingleton(this.loggerFixture.Factory.CreateLogger<StreamingJobRepository>())
+            .AddSingleton(this.loggerFixture.Factory.CreateLogger<StreamOperatorService>())
+            .AddSingleton(this.loggerFixture.Factory.CreateLogger<StreamClassOperatorService>())
             .AddSingleton(this.loggerFixture.Factory.CreateLogger<AnnotationCommandHandler>())
             .AddSingleton(this.loggerFixture.Factory.CreateLogger<UpdateStatusCommandHandler>())
             .AddSingleton(this.loggerFixture.Factory.CreateLogger<StreamingJobCommandHandler>())
-            .AddSingleton(loggerFixture.Factory)
-            .AddSingleton(optionsMock.Object)
-            .AddSingleton(metricsReporterConfiguration)
             .AddSingleton(Options.Create(new StreamClassOperatorServiceConfiguration
             {
                 MaxBufferCapacity = 100

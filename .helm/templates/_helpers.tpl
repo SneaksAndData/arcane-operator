@@ -53,7 +53,7 @@ Create the name of the service account to use
 Generage image reference based on image repository and tag
 */}}
 {{- define "app.image" -}}
-{{- printf "%s:%s" .Values.image.repository  (default (printf "v%s" .Chart.AppVersion) .Values.image.tag) }}
+{{- printf "%s:%s" .Values.image.repository  (default (printf "%s" .Chart.AppVersion) .Values.image.tag) }}
 {{- end }}
 
 {{/*
