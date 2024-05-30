@@ -76,6 +76,7 @@ public class Startup
         services.AddMemoryCache();
         services.AddKubernetes();
         services.AddHealthChecks();
+        services.AddControllers();
     }
 
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env,
