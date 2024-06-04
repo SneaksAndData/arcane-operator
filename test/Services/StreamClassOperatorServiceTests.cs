@@ -144,13 +144,7 @@ public class StreamClassOperatorServiceTests : IClassFixture<LoggerFixture>, ICl
 
         this.streamDefinitionSourceMock
             .Setup(m => m.GetEvents(It.IsAny<CustomResourceApiRequest>(), It.IsAny<int>()))
-            .Returns(Source.From(
-                new List<ResourceEvent<IStreamDefinition>>
-                {
-                    new(WatchEventType.Added, StreamDefinitionTestCases.NamedStreamDefinition()),
-                    new(WatchEventType.Added, StreamDefinitionTestCases.NamedStreamDefinition()),
-                    new(WatchEventType.Added, StreamDefinitionTestCases.NamedStreamDefinition())
-                }));
+            .Returns(Source.Repeat(new ResourceEvent<IStreamDefinition>(WatchEventType.Added, StreamDefinitionTestCases.NamedStreamDefinition())));
         var task = this.tcs.Task;
 
         // Act
@@ -163,7 +157,7 @@ public class StreamClassOperatorServiceTests : IClassFixture<LoggerFixture>, ICl
         // Assert
         this.kubeClusterMock.Verify(
                 service => service.SendJob(It.IsAny<V1Job>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
-                Times.Never
+                Times.AtLeast(1)
             );
     }
 
