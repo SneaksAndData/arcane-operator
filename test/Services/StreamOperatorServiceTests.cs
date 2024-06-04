@@ -210,7 +210,7 @@ public class StreamOperatorServiceTests : IClassFixture<LoggerFixture>, IDisposa
         // Arrange
         this.SetupEventMock(WatchEventType.Modified, streamDefinition);
         var mockJob = JobWithChecksum(streamDefinition.GetConfigurationChecksum());
-        streamingJobOperatorServiceMock
+        this.streamingJobOperatorServiceMock
             .Setup(service => service.Get(It.IsAny<string>(), It.IsAny<string>()))
             .ReturnsAsync(jobExists ? mockJob.AsOption() : Option<V1Job>.None);
 
@@ -265,6 +265,7 @@ public class StreamOperatorServiceTests : IClassFixture<LoggerFixture>, IDisposa
         yield return new object[] { SuspendedStreamDefinition, true, true, false };
         yield return new object[] { SuspendedStreamDefinition, false, false, false };
         yield return new object[] { SuspendedStreamDefinition, true, false, false };
+        yield return new object[] { SuspendedStreamDefinition, false, true, false };
     }
 
     [Theory]
