@@ -79,8 +79,7 @@ public class StreamClassOperatorServiceTests : IClassFixture<LoggerFixture>, ICl
                 It.IsAny<int>(),
                 It.IsAny<OverflowStrategy>(),
                 It.IsAny<TimeSpan?>()))
-            .Returns(Source.Single<(WatchEventType, V1Beta1StreamClass)>((WatchEventType.Added,
-                (V1Beta1StreamClass)StreamClass)));
+            .Returns(Source.Single<(WatchEventType, V1Beta1StreamClass)>((WatchEventType.Added, (V1Beta1StreamClass)StreamClass)));
 
         this.kubeClusterMock.Setup(service => service.SendJob(
                 It.IsAny<V1Job>(),
@@ -120,6 +119,11 @@ public class StreamClassOperatorServiceTests : IClassFixture<LoggerFixture>, ICl
     [Fact]
     public async Task TestStreamClassDeleted()
     {
+        var events = new List<(WatchEventType, V1Beta1StreamClass)>
+        {
+                (WatchEventType.Added, (V1Beta1StreamClass)StreamClass),
+                (WatchEventType.Deleted, (V1Beta1StreamClass)StreamClass)
+        };
         // Arrange
         this.kubeClusterMock
             .Setup(m => m.StreamCustomResourceEvents<V1Beta1StreamClass>(
@@ -130,8 +134,7 @@ public class StreamClassOperatorServiceTests : IClassFixture<LoggerFixture>, ICl
                 It.IsAny<int>(),
                 It.IsAny<OverflowStrategy>(),
                 It.IsAny<TimeSpan?>()))
-            .Returns(Source.Single<(WatchEventType, V1Beta1StreamClass)>((WatchEventType.Deleted,
-                (V1Beta1StreamClass)StreamClass)));
+            .Returns(Source.From(events));
 
         this.kubeClusterMock.Setup(service => service.SendJob(
                 It.IsAny<V1Job>(),
