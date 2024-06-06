@@ -1,9 +1,9 @@
-﻿using Arcane.Operator.Models.Base;
+﻿using Arcane.Operator.Contracts;
+using Arcane.Operator.Models.Base;
 using Arcane.Operator.Models.Resources.Status.V1Alpha1;
 using Arcane.Operator.Models.StreamDefinitions.Base;
 using Arcane.Operator.Services.Base;
 using Arcane.Operator.Services.Base.CommandHandlers;
-using Arcane.Operator.StreamingJobLifecycle;
 
 namespace Arcane.Operator.Models.Commands;
 
