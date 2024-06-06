@@ -53,7 +53,14 @@ public class AnnotationCommandHandler :
     public Task Handle(SetAnnotationCommand<V1Job> command)
     {
         var ((nameSpace, name), annotationKey, annotationValue) = command;
-        return this.kubeCluster.AnnotateJob(name, nameSpace, annotationKey, annotationValue);
+        return this.kubeCluster.AnnotateJob(name, nameSpace, annotationKey, annotationValue)
+            .TryMap(job => job.AsOption(),
+                exception =>
+                {
+                    this.logger.LogError(exception, "Failed to annotate {streamId} with {annotationKey}:{annotationValue}",
+                        command.affectedResource, command.annotationKey, command.annotationValue);
+                    return Option<V1Job>.None;
+                });
     }
 
     public Task Handle(RemoveAnnotationCommand<IStreamDefinition> command)

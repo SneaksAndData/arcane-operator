@@ -21,7 +21,7 @@ using Snd.Sdk.Tasks;
 namespace Arcane.Operator.Services.CommandHandlers;
 
 /// <inheritdoc cref="ICommandHandler{T}" />
-public class StreamingJobCommandHandler : IStreamingJobCommandHandler
+public class StreamingJobCommandHandler : ICommandHandler<StreamingJobCommand>
 {
     private readonly IStreamClassRepository streamClassRepository;
     private readonly IKubeCluster kubeCluster;
@@ -56,19 +56,6 @@ public class StreamingJobCommandHandler : IStreamingJobCommandHandler
         StopJob stopJob => this.kubeCluster.DeleteJob(stopJob.name, stopJob.nameSpace),
         _ => throw new ArgumentOutOfRangeException(nameof(command), command, null)
     };
-
-    public Task Handle(SetAnnotationCommand<V1Job> command)
-    {
-        return this.kubeCluster.AnnotateJob(command.affectedResource.Name(), command.affectedResource.Namespace(),
-                command.annotationKey, command.annotationValue)
-            .TryMap(job => job.AsOption(),
-                exception =>
-                {
-                    this.logger.LogError(exception, "Failed to annotate {streamId} with {annotationKey}:{annotationValue}",
-                        command.affectedResource, command.annotationKey, command.annotationValue);
-                    return Option<V1Job>.None;
-                });
-    }
 
     private Task StartJob(IStreamDefinition streamDefinition, bool isBackfilling, IStreamClass streamClass)
     {

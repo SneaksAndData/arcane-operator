@@ -36,7 +36,7 @@ public class StreamOperatorService : IStreamOperatorService, IDisposable
     private readonly ICommandHandler<UpdateStatusCommand> updateStatusCommandHandler;
     private readonly ICommandHandler<SetAnnotationCommand<V1Job>> setAnnotationCommandHandler;
     private readonly ICommandHandler<RemoveAnnotationCommand<IStreamDefinition>> removeAnnotationCommandHandler;
-    private readonly IStreamingJobCommandHandler streamingJobCommandHandler;
+    private readonly ICommandHandler<StreamingJobCommand> streamingJobCommandHandler;
     private readonly IMaterializer materializer;
     private readonly CancellationTokenSource cancellationTokenSource;
     private readonly IReactiveResourceCollection<IStreamDefinition> streamDefinitionSource;
@@ -48,7 +48,7 @@ public class StreamOperatorService : IStreamOperatorService, IDisposable
         ICommandHandler<UpdateStatusCommand> updateStatusCommandHandler,
         ICommandHandler<SetAnnotationCommand<V1Job>> setAnnotationCommandHandler,
         ICommandHandler<RemoveAnnotationCommand<IStreamDefinition>> removeAnnotationCommandHandler,
-        IStreamingJobCommandHandler streamingJobCommandHandler,
+        ICommandHandler<StreamingJobCommand> streamingJobCommandHandler,
         ILogger<StreamOperatorService> logger,
         IMaterializer materializer,
         IReactiveResourceCollection<IStreamDefinition> streamDefinitionSource,
@@ -158,8 +158,7 @@ public class StreamOperatorService : IStreamOperatorService, IDisposable
         this.logger.LogInformation("Modified a stream definition with id {streamId}", streamDefinition.StreamId);
         return maybeJob switch
         {
-            { HasValue: false } when streamDefinition.CrashLoopDetected => new SetCrashLoopStatusCommand(
-                streamDefinition).AsList(),
+            { HasValue: false } when streamDefinition.CrashLoopDetected => new SetCrashLoopStatusCommand(streamDefinition).AsList(),
             { HasValue: false } when streamDefinition.Suspended => new Suspended(streamDefinition).AsList(),
             { HasValue: false } when streamDefinition.ReloadRequested => new List<KubernetesCommand>
             {
@@ -202,8 +201,8 @@ public class StreamOperatorService : IStreamOperatorService, IDisposable
     {
         UpdateStatusCommand sdc => this.updateStatusCommandHandler.Handle(sdc),
         StreamingJobCommand sjc => this.streamingJobCommandHandler.Handle(sjc),
-        RequestJobRestartCommand rrc => this.streamingJobCommandHandler.Handle(rrc),
-        RequestJobReloadCommand rrc => this.streamingJobCommandHandler.Handle(rrc),
+        RequestJobRestartCommand rrc => this.setAnnotationCommandHandler.Handle(rrc),
+        RequestJobReloadCommand rrc => this.setAnnotationCommandHandler.Handle(rrc),
         SetAnnotationCommand<V1Job> sac => this.setAnnotationCommandHandler.Handle(sac),
         RemoveAnnotationCommand<IStreamDefinition> rac => this.removeAnnotationCommandHandler.Handle(rac),
         _ => throw new ArgumentOutOfRangeException(nameof(response), response, null)

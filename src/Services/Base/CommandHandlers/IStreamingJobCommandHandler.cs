@@ -1,14 +1,1 @@
-﻿using Arcane.Operator.Models.Base;
-using Arcane.Operator.Models.Commands;
-using k8s.Models;
-
-namespace Arcane.Operator.Services.Base.CommandHandlers;
-
-/// <summary>
-/// Command handler for streaming job commands
-/// </summary>
-public interface IStreamingJobCommandHandler : ICommandHandler<StreamingJobCommand>,
-    ICommandHandler<SetAnnotationCommand<V1Job>>
-{
-
-}
+﻿

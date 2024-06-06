@@ -29,23 +29,23 @@ namespace Arcane.Operator.Services.Operators;
 public class StreamingJobOperatorService : IStreamingJobOperatorService
 {
     private const int parallelism = 1;
-    private readonly StreamingJobMaintenanceServiceConfiguration configuration;
+    private readonly StreamingJobOperatorServiceConfiguration configuration;
     private readonly ILogger<StreamingJobOperatorService> logger;
     private readonly IResourceCollection<IStreamDefinition> streamDefinitionCollection;
     private readonly IMetricsReporter metricsReporter;
     private readonly ICommandHandler<UpdateStatusCommand> updateStatusCommandHandler;
     private readonly ICommandHandler<SetAnnotationCommand<IStreamDefinition>> setAnnotationCommandHandler;
-    private readonly IStreamingJobCommandHandler streamingJobCommandHandler;
+    private readonly ICommandHandler<StreamingJobCommand> streamingJobCommandHandler;
     private readonly IStreamingJobCollection streamingJobCollection;
 
     public StreamingJobOperatorService(
         ILogger<StreamingJobOperatorService> logger,
-        IOptions<StreamingJobMaintenanceServiceConfiguration> options,
+        IOptions<StreamingJobOperatorServiceConfiguration> options,
         IMetricsReporter metricsReporter,
         IResourceCollection<IStreamDefinition> streamDefinitionCollection,
         ICommandHandler<UpdateStatusCommand> updateStatusCommandHandler,
         ICommandHandler<SetAnnotationCommand<IStreamDefinition>> setAnnotationCommandHandler,
-        IStreamingJobCommandHandler streamingJobCommandHandler,
+        ICommandHandler<StreamingJobCommand> streamingJobCommandHandler,
         IStreamingJobCollection streamingJobCollection)
     {
         this.configuration = options.Value;

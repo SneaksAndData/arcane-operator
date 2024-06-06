@@ -38,7 +38,7 @@ public class UpdateStatusCommandHandler : ICommandHandler<UpdateStatusCommand>,
     /// <inheritdoc cref="ICommandHandler{T}.Handle" />
     public Task Handle(UpdateStatusCommand command)
     {
-        var ((nameSpace, kind, streamId), streamStatus, phase) = command;
+        var ((nameSpace, kind, streamId), conditions, phase) = command;
         return this.streamClassRepository.Get(nameSpace, kind).FlatMap(crdConf =>
         {
             if (crdConf is { HasValue: false })
@@ -47,11 +47,13 @@ public class UpdateStatusCommandHandler : ICommandHandler<UpdateStatusCommand>,
                 return Task.FromResult(Option<IStreamDefinition>.None);
             }
 
+            var status = new V1Alpha1StreamStatus { Phase = phase.ToString(), Conditions = conditions };
+
             this.logger.LogInformation(
                 "Status and phase of stream with kind {kind} and id {streamId} changed to {statuses}, {phase}",
                 kind,
                 streamId,
-                string.Join(", ", streamStatus.Select(sc => sc.Type)),
+                string.Join(", ", conditions.Select(sc => sc.Type)),
                 phase);
 
             return this.kubeCluster.UpdateCustomResourceStatus(
@@ -60,7 +62,7 @@ public class UpdateStatusCommandHandler : ICommandHandler<UpdateStatusCommand>,
                 crdConf.Value.PluralNameRef,
                 nameSpace,
                 streamId,
-                streamStatus,
+                status,
                 element => element.AsOptionalStreamDefinition());
         });
     }
