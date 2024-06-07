@@ -3,7 +3,7 @@ using Arcane.Operator.Models.Commands;
 using k8s;
 using k8s.Models;
 
-namespace Arcane.Operator.Services.Base;
+namespace Arcane.Operator.Services.Base.Metrics;
 
 /// <summary>
 /// Interface for reporting metrics.

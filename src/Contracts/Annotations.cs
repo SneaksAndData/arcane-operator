@@ -1,4 +1,4 @@
-﻿namespace Arcane.Operator.StreamingJobLifecycle;
+﻿namespace Arcane.Operator.Contracts;
 
 public static class Annotations
 {

@@ -8,9 +8,12 @@ using Akka.Util;
 using Arcane.Operator.Configurations;
 using Arcane.Operator.Extensions;
 using Arcane.Operator.Models.Api;
+using Arcane.Operator.Models.Base;
 using Arcane.Operator.Models.Commands;
 using Arcane.Operator.Models.StreamDefinitions.Base;
 using Arcane.Operator.Services.Base;
+using Arcane.Operator.Services.Base.CommandHandlers;
+using Arcane.Operator.Services.Base.Metrics;
 using Arcane.Operator.Services.Base.Repositories.CustomResources;
 using Arcane.Operator.Services.Base.Repositories.StreamingJob;
 using k8s;
@@ -21,7 +24,7 @@ using Snd.Sdk.ActorProviders;
 using Snd.Sdk.Kubernetes;
 using Snd.Sdk.Tasks;
 
-namespace Arcane.Operator.Services.Operator;
+namespace Arcane.Operator.Services.Operators;
 
 public class StreamingJobOperatorService : IStreamingJobOperatorService
 {

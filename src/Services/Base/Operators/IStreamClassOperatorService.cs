@@ -2,7 +2,7 @@
 using System.Threading.Tasks;
 using Akka.Streams.Dsl;
 
-namespace Arcane.Operator.Services.Base;
+namespace Arcane.Operator.Services.Base.Operators;
 
 public interface IStreamClassOperatorService
 {

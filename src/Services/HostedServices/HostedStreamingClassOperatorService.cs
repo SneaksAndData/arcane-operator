@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Akka.Streams;
 using Arcane.Operator.Services.Base;
+using Arcane.Operator.Services.Base.Operators;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
