@@ -9,7 +9,6 @@ using Arcane.Operator.Models.Commands;
 using Arcane.Operator.Models.Resources.Status.V1Alpha1;
 using Arcane.Operator.Models.Resources.StreamClass.Base;
 using Arcane.Operator.Models.Resources.StreamClass.V1Beta1;
-using Arcane.Operator.Services.Base;
 using Arcane.Operator.Services.Base.Repositories.CustomResources;
 using Microsoft.Extensions.Caching.Memory;
 using Snd.Sdk.Kubernetes.Base;
