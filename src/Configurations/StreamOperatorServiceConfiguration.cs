@@ -1,5 +1,4 @@
 ﻿using System.Diagnostics.CodeAnalysis;
-using Arcane.Operator.Services.Operator;
 
 namespace Arcane.Operator.Configurations;
 

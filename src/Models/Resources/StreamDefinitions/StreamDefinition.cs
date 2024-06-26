@@ -6,9 +6,9 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Arcane.Operator.Contracts;
 using Arcane.Operator.Models.Resources.StreamClass.Base;
 using Arcane.Operator.Models.StreamDefinitions.Base;
-using Arcane.Operator.StreamingJobLifecycle;
 using k8s.Models;
 
 namespace Arcane.Operator.Models.Resources.StreamDefinitions;
@@ -130,7 +130,7 @@ public class StreamDefinition : IStreamDefinition
         this.Spec.GetProperty("jobTemplateRef").Deserialize<V1TypedLocalObjectReference>();
 
     private V1TypedLocalObjectReference BackfillingJobTemplateRef =>
-        this.Spec.GetProperty("reloadingJobTemplateRef").Deserialize<V1TypedLocalObjectReference>();
+        this.Spec.GetProperty("backfillingJobTemplateRef").Deserialize<V1TypedLocalObjectReference>();
 
 
     private byte[] GetSpecHash()

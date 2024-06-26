@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using Arcane.Operator.Contracts;
 using Arcane.Operator.Extensions;
-using Arcane.Operator.StreamingJobLifecycle;
 using k8s.Models;
 using Snd.Sdk.Kubernetes;
 using static Arcane.Operator.Tests.Services.TestCases.StreamClassTestCases;

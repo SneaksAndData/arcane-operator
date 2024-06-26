@@ -3,20 +3,24 @@ using System.Threading;
 using System.Threading.Tasks;
 using Akka.Streams;
 using Akka.Streams.Dsl;
+using Akka.Streams.Supervision;
 using Akka.Util;
 using Arcane.Operator.Configurations;
 using Arcane.Operator.Models.Api;
 using Arcane.Operator.Models.Commands;
 using Arcane.Operator.Models.Resources.StreamClass.Base;
 using Arcane.Operator.Services.Base;
+using Arcane.Operator.Services.Base.CommandHandlers;
+using Arcane.Operator.Services.Base.Metrics;
+using Arcane.Operator.Services.Base.Operators;
+using Arcane.Operator.Services.Base.Repositories.CustomResources;
 using k8s;
 using k8s.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Snd.Sdk.ActorProviders;
-using Directive = Akka.Streams.Supervision.Directive;
 
-namespace Arcane.Operator.Services.Operator;
+namespace Arcane.Operator.Services.Operators;
 
 /// <inheritdoc cref="IStreamClassOperatorService"/>
 public class StreamClassOperatorService : IStreamClassOperatorService
@@ -63,7 +67,7 @@ public class StreamClassOperatorService : IStreamClassOperatorService
             return this.streamClassRepository.InsertOrUpdate(command.streamClass, command.phase, command.conditions, command.request.PluralName);
         });
 
-        return this.streamClassRepository.GetEvents(request, this.configuration.MaxBufferCapacity)
+        return this.streamClassRepository.GetEvents(this.request, this.configuration.MaxBufferCapacity)
             .Via(cancellationToken.AsFlow<ResourceEvent<IStreamClass>>(true))
             .Select(this.OnEvent)
             .CollectOption()

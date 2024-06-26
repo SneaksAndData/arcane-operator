@@ -9,10 +9,13 @@ using Akka.Streams.Supervision;
 using Akka.Util;
 using Arcane.Operator.Extensions;
 using Arcane.Operator.Models.Api;
+using Arcane.Operator.Models.Base;
 using Arcane.Operator.Models.Commands;
 using Arcane.Operator.Models.Resources.StreamClass.Base;
 using Arcane.Operator.Models.StreamDefinitions.Base;
-using Arcane.Operator.Services.Base;
+using Arcane.Operator.Services.Base.CommandHandlers;
+using Arcane.Operator.Services.Base.Metrics;
+using Arcane.Operator.Services.Base.Operators;
 using Arcane.Operator.Services.Base.Repositories.CustomResources;
 using Arcane.Operator.Services.Base.Repositories.StreamingJob;
 using k8s;
@@ -21,7 +24,7 @@ using k8s.Models;
 using Microsoft.Extensions.Logging;
 using Snd.Sdk.Tasks;
 
-namespace Arcane.Operator.Services.Operator;
+namespace Arcane.Operator.Services.Operators;
 
 public class StreamOperatorService : IStreamOperatorService, IDisposable
 {

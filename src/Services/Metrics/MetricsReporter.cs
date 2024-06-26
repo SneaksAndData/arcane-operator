@@ -3,7 +3,7 @@ using Arcane.Operator.Configurations;
 using Arcane.Operator.Extensions;
 using Arcane.Operator.Models.Api;
 using Arcane.Operator.Models.Commands;
-using Arcane.Operator.Services.Base;
+using Arcane.Operator.Services.Base.Metrics;
 using Arcane.Operator.Services.Metrics.Actors;
 using k8s;
 using k8s.Models;

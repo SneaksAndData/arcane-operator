@@ -1,7 +1,6 @@
-﻿using Akka.Streams;
-using Arcane.Operator.Models.Resources.StreamClass.Base;
+﻿using Arcane.Operator.Models.Resources.StreamClass.Base;
 
-namespace Arcane.Operator.Services.Base;
+namespace Arcane.Operator.Services.Base.Operators;
 
 public interface IStreamOperatorService
 {

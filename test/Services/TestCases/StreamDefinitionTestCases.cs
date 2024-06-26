@@ -1,16 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text.Json;
+using Arcane.Operator.Contracts;
 using Arcane.Operator.Models.Resources.StreamDefinitions;
 using Arcane.Operator.Models.StreamDefinitions.Base;
-using Arcane.Operator.StreamingJobLifecycle;
 using k8s.Models;
 
 namespace Arcane.Operator.Tests.Services.TestCases;
 
 public static class StreamDefinitionTestCases
 {
-    private static readonly string StreamSpec = "{\"jobTemplateRef\": {\"name\": \"jobTemplate\"}, \"reloadingJobTemplateRef\": {\"name\": \"jobTemplate\"}}";
+    private static readonly string StreamSpec = "{\"jobTemplateRef\": {\"name\": \"jobTemplate\"}, \"backfillingJobTemplateRef\": {\"name\": \"jobTemplate\"}}";
     public static readonly string Kind = "StreamDefinition";
     public static string ApiGroup = "streaming.sneaksanddata.com";
     public static string PluralName = "streams";
