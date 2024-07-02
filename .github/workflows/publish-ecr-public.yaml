@@ -41,7 +41,7 @@ jobs:
           VERSION: ${{ inputs.version }}
           CURRENT_VERSION: ${{steps.current_version.outputs.version}}
         run: |
-          test "$VERSION" == "current" && echo "IMAGE_VERSION=$VERSION" >> ${GITHUB_ENV} || echo "IMAGE_VERSION=$CURRENT_VERSION" >> ${GITHUB_ENV}
+          test "$VERSION" == "current" && echo "IMAGE_VERSION=$CURRENT_VERSION" >> ${GITHUB_ENV} || echo "IMAGE_VERSION=$VERSION" >> ${GITHUB_ENV} 
 
       - name: Import AWS Secrets
         uses: hashicorp/vault-action@v2.7.3
