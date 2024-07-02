@@ -7,7 +7,6 @@ on:
       version:
         description: Version number to publish
         required: false
-        type: environment
         default: "current"
 
 env:
