@@ -5,7 +5,9 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: Version number to publish
+        description: |
+          Version number to publish. Defaults to the latest git tag in the repository. 
+          This version MUST exist in the ghcr.io registry.
         required: false
         default: "current"
 
@@ -18,7 +20,7 @@ jobs:
   publish_image:
     name: Publish Docker Image to ECR Public
     runs-on: ubuntu-latest
-#    if: ${{ startsWith(github.ref, 'refs/tags') }}
+    if: ${{ startsWith(github.ref, 'refs/tags') }}
 
     permissions:
       contents: read
