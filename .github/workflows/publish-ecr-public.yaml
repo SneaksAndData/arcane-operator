@@ -1,0 +1,66 @@
+name: Publish Arcane to ECR public registry
+run-name: Deploy ${{github.ref_name}} to public.ecr.aws by @${{ github.actor }}
+
+on: workflow_dispatch
+
+env:
+  PROJECT_NAME: Arcane.Operator
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+  
+jobs:
+  create_release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    if: ${{ startsWith(github.ref, 'refs/tags') }}
+
+    steps:
+      - name: Import AWS Secrets
+        uses: hashicorp/vault-action@v2.7.3
+        with:
+          url: https://hashicorp-vault.awsp.sneaksanddata.com/
+          role: github
+          method: jwt
+          secrets: |
+            /secret/data/common/package-publishing/aws-ecr-public/production/container-user-public access_key | ACCESS_KEY ;
+            /secret/data/common/package-publishing/aws-ecr-public/production/container-user-public access_key_id | ACCESS_KEY_ID ;
+        id: aws_secrets
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4.0.0
+        with:
+          aws-access-key-id: ${{ env.ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ env.ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Log in to the GitHub Container Registry
+        uses: docker/login-action@v3.1.0
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: Login to Amazon ECR Public
+        uses: aws-actions/amazon-ecr-login@v2
+        with:
+          registry-type: public
+
+      - name: Get project version
+        uses: SneaksAndData/github-actions/generate_version@v0.1.6
+        id: version
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=semver,pattern={{version}},value=${{steps.version.outputs.version}}
+          flavor:
+            latest=false
+          
+      - name: Push image to ECR Public registry
+        uses: akhilerm/tag-push-action@v2.1.0
+        with:
+          src: ${{ steps.meta.outputs.tags }}
+          dst: public.ecr.aws/s0t1h2z6/arcane/${{ github.event.repository.name }}:${{ steps.meta.outputs.version }}
