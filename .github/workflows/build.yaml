@@ -102,38 +102,3 @@ jobs:
           container_registry_user: ${{ github.actor }}
           container_registry_token: ${{ secrets.GITHUB_TOKEN }}
           container_registry_address: ghcr.io/sneaksanddata/
-
-      # AWS ECR Public Registry related steps
-      - name: Import AWS Secrets
-        uses: hashicorp/vault-action@v2.7.3
-        if: ${{ startsWith(github.ref, 'refs/tags') }}
-        with:
-          url: https://hashicorp-vault.awsp.sneaksanddata.com/
-          role: github
-          method: jwt
-          secrets: |
-            /secret/data/common/package-publishing/aws-ecr-public/production/container-user-public access_key | ACCESS_KEY ;
-            /secret/data/common/package-publishing/aws-ecr-public/production/container-user-public access_key_id | ACCESS_KEY_ID ;
-        id: aws_secrets
-
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4.0.0
-        if: ${{ startsWith(github.ref, 'refs/tags') }}
-        with:
-          aws-access-key-id: ${{ env.ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ env.ACCESS_KEY }}
-          aws-region: us-east-1
-
-      - name: Login to Amazon ECR Public
-        if: ${{ startsWith(github.ref, 'refs/tags') }}
-        uses: aws-actions/amazon-ecr-login@v2
-        with:
-          registry-type: public
-
-      - name: Push image to ECR Public registry
-        if: ${{ startsWith(github.ref, 'refs/tags') }}
-        uses: akhilerm/tag-push-action@v2.1.0
-        with:
-          src: ${{ steps.meta.outputs.tags }}
-          dst: public.ecr.aws/s0t1h2z6/arcane/${{ github.event.repository.name }}:${{ steps.meta.outputs.version }}
-      # END AWS ECR Registry related steps
