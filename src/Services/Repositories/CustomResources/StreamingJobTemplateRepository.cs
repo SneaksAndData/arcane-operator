@@ -44,7 +44,7 @@ public class StreamingJobTemplateRepository : IStreamingJobTemplateRepository
                 jobTemplateResourceConfiguration.Plural,
                 jobNamespace,
                 templateName)
-            .TryMap(resource => resource.AsOption<IStreamingJobTemplate>(), 
+            .TryMap(resource => resource.AsOption<IStreamingJobTemplate>(),
                 exception =>
             {
                 this.logger.LogError("Failed to get job template {templateName} for kind {kind} in namespace {jobNamespace}",

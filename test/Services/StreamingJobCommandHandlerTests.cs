@@ -83,7 +83,7 @@ public class StreamingJobCommandHandlerTests(LoggerFixture loggerFixture) : ICla
                 It.IsAny<Func<JsonElement, It.IsAnyType>>()),
             Times.Once);
     }
-    
+
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
@@ -112,7 +112,7 @@ public class StreamingJobCommandHandlerTests(LoggerFixture loggerFixture) : ICla
                 It.IsAny<Func<JsonElement, It.IsAnyType>>()),
             Times.Once);
     }
-    
+
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
@@ -121,11 +121,11 @@ public class StreamingJobCommandHandlerTests(LoggerFixture loggerFixture) : ICla
         // Arrange
         var command = new StartJob(StreamDefinition, isBackfilling);
         var service = this.CreateServiceProvider().GetRequiredService<ICommandHandler<StreamingJobCommand>>();
-        
+
         this.streamClassRepositoryMock
             .Setup(scr => scr.Get(It.IsAny<string>(), It.IsAny<string>()))
             .ReturnsAsync(StreamClass.AsOption());
-        
+
         this.streamingJobTemplateRepositoryMock
             .Setup(sjtr => sjtr.GetStreamingJobTemplate(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
             .ReturnsAsync(((IStreamingJobTemplate)new FailedStreamingJobTemplate(new Exception())).AsOption());
@@ -147,7 +147,7 @@ public class StreamingJobCommandHandlerTests(LoggerFixture loggerFixture) : ICla
                 It.IsAny<Func<JsonElement, It.IsAnyType>>()),
             Times.Once);
     }
-    
+
     private ServiceProvider CreateServiceProvider()
     {
         return new ServiceCollection()

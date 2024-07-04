@@ -7,7 +7,7 @@ namespace Arcane.Operator.Tests.Services.TestCases;
 /// <summary>
 /// A streaming job templatethat throws an exception (for tests)
 /// </summary>
-public class FailedStreamingJobTemplate: IStreamingJobTemplate
+public class FailedStreamingJobTemplate : IStreamingJobTemplate
 {
     private readonly Exception exception;
 
