@@ -64,11 +64,6 @@ public class StreamingJobCommandHandler : ICommandHandler<StreamingJobCommand>
 
         return this.streamingJobTemplateRepository
             .GetStreamingJobTemplate(template.Kind, streamDefinition.Namespace(), template.Name)
-            .TryMap(s => s, e =>
-            {
-                this.logger.LogError(e, "Failed to send job");
-                return Option<IStreamingJobTemplate>.None;
-            })
             .FlatMap(t => this.TryStartJobFromTemplate(t, streamDefinition, streamClass, isBackfilling, template))
             .FlatMap(async command =>
             {
