@@ -12,6 +12,7 @@ using Arcane.Operator.Models.StreamDefinitions.Base;
 using Arcane.Operator.Services.Base;
 using Arcane.Operator.Services.Base.CommandHandlers;
 using Arcane.Operator.Services.Base.Repositories.CustomResources;
+using Google.Protobuf.WellKnownTypes;
 using k8s.Models;
 using Microsoft.Extensions.Logging;
 using Snd.Sdk.Kubernetes;
@@ -48,7 +49,7 @@ public class StreamingJobCommandHandler : ICommandHandler<StreamingJobCommand>
     {
         StartJob startJob => this.streamClassRepository
             .Get(startJob.streamDefinition.Namespace(), startJob.streamDefinition.Kind)
-            .Map(maybeSc => maybeSc switch
+            .TryMap(maybeSc => maybeSc switch
             {
                 { HasValue: true, Value: var sc } => this.StartJob(startJob.streamDefinition, startJob.IsBackfilling, sc),
                 { HasValue: false } => throw new InvalidOperationException($"Stream class not found for {startJob.streamDefinition.Kind}"),
@@ -63,6 +64,11 @@ public class StreamingJobCommandHandler : ICommandHandler<StreamingJobCommand>
 
         return this.streamingJobTemplateRepository
             .GetStreamingJobTemplate(template.Kind, streamDefinition.Namespace(), template.Name)
+            .TryMap(s => s, e =>
+            {
+                this.logger.LogError(e, "Failed to send job");
+                return Option<IStreamingJobTemplate>.None;
+            })
             .FlatMap(t => this.TryStartJobFromTemplate(t, streamDefinition, streamClass, isBackfilling, template))
             .FlatMap(async command =>
             {
@@ -81,8 +87,8 @@ public class StreamingJobCommandHandler : ICommandHandler<StreamingJobCommand>
         {
             var message = $"Failed to find job template with kind {reference.Kind} and name {reference.Name}";
             var condition = V1Alpha1StreamCondition.CustomErrorCondition(message);
-            var command1 = new SetInternalErrorStatus(streamDefinition, condition);
-            return Task.FromResult<UpdateStatusCommand>(command1);
+            var command = new SetInternalErrorStatus(streamDefinition, condition);
+            return Task.FromResult<UpdateStatusCommand>(command);
         }
 
 
@@ -92,7 +98,9 @@ public class StreamingJobCommandHandler : ICommandHandler<StreamingJobCommand>
             this.logger.LogInformation("Starting a new stream job with an id {streamId}", streamDefinition.StreamId);
             return this.kubeCluster
                 .SendJob(job, streamDefinition.Metadata.Namespace(), CancellationToken.None)
-                .TryMap(_ => new Running(streamDefinition), ex => this.HandleError(ex, streamDefinition));
+                .TryMap(
+                    _ => isBackfilling ? new Reloading(streamDefinition) : new Running(streamDefinition),
+                    ex => this.HandleError(ex, streamDefinition));
         }
         catch (Exception ex)
         {
