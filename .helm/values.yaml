@@ -193,3 +193,6 @@ settings:
     # If the number of events exceeds this value, the service throws an exception
     # and will be restarted by the Deployment controller
     maxEventBufferCapacity: 10000
+
+    # Custom logger configuration
+  customLoggingProperties: { }

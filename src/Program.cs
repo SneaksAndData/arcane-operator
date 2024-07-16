@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
+using Arcane.Operator.Extensions;
 using Arcane.Operator.Services.HostedServices;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
@@ -36,7 +37,12 @@ public class Program
     public static IHostBuilder CreateHostBuilder(string[] args)
     {
         return Host.CreateDefaultBuilder(args)
-            .AddSerilogLogger(AppDomain.CurrentDomain.FriendlyName, loggerConfiguration => loggerConfiguration.Default().AddDatadog())
+            .AddSerilogLogger(AppDomain.CurrentDomain.FriendlyName, 
+                (context, provider, loggerConfiguration) => loggerConfiguration
+                    .Default()
+                    .AddDatadog()
+                    .EnrichFromConfiguration(context.Configuration)
+            )
             .ConfigureWebHostDefaults(webBuilder => { webBuilder.UseStartup<Startup>(); })
             .ConfigureServices(services =>
             {
