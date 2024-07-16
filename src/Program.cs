@@ -37,7 +37,7 @@ public class Program
     public static IHostBuilder CreateHostBuilder(string[] args)
     {
         return Host.CreateDefaultBuilder(args)
-            .AddSerilogLogger(AppDomain.CurrentDomain.FriendlyName, 
+            .AddSerilogLogger(AppDomain.CurrentDomain.FriendlyName,
                 (context, provider, loggerConfiguration) => loggerConfiguration
                     .Default()
                     .AddDatadog()

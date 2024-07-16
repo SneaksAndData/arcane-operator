@@ -1,10 +1,12 @@
 ﻿using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using Arcane.Operator.Configurations;
 using Microsoft.Extensions.Configuration;
 using Serilog;
 
 namespace Arcane.Operator.Extensions;
 
+[ExcludeFromCodeCoverage(Justification = "Startup configuration extension methods")]
 internal static class LoggerConfigurationExtensions
 {
     public static LoggerConfiguration EnrichFromConfiguration(this LoggerConfiguration loggerConfiguration, IConfiguration configuration)
