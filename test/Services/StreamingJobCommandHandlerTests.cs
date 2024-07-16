@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Net;
+using System.Net.Http;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -13,6 +15,7 @@ using Arcane.Operator.Services.CommandHandlers;
 using Arcane.Operator.Tests.Extensions;
 using Arcane.Operator.Tests.Fixtures;
 using Arcane.Operator.Tests.Services.TestCases;
+using k8s.Autorest;
 using k8s.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -74,6 +77,42 @@ public class StreamingJobCommandHandlerTests(LoggerFixture loggerFixture) : ICla
         // Assert
         this.kubeClusterMock.Verify(k =>
             k.SendJob(It.Is<V1Job>(job => job.IsBackfilling() == isBackfilling), It.IsAny<string>(), It.IsAny<CancellationToken>()));
+        this.kubeClusterMock.Verify(k => k.UpdateCustomResourceStatus(It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                StreamDefinition.Namespace(),
+                StreamDefinition.Name(),
+                It.Is<V1Alpha1StreamStatus>(s => s.Phase == expectedState),
+                It.IsAny<Func<JsonElement, It.IsAnyType>>()),
+            Times.Once);
+    }
+    
+    [Theory]
+    [InlineData(HttpStatusCode.Conflict, StreamPhase.RUNNING)]
+    [InlineData(HttpStatusCode.InternalServerError, StreamPhase.FAILED)]
+    [InlineData(HttpStatusCode.BadRequest, StreamPhase.FAILED)]
+    public async Task HandleStreamStartFail(HttpStatusCode statusCode, StreamPhase expectedPhase)
+    {
+        // Arrange
+        var command = new StartJob(StreamDefinition, false);
+        var service = this.CreateServiceProvider().GetRequiredService<ICommandHandler<StreamingJobCommand>>();
+        this.kubeClusterMock.Setup(k => k.SendJob(It.IsAny<V1Job>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.FromException<V1JobStatus>(new HttpOperationException
+            {
+                Response = new HttpResponseMessageWrapper(new HttpResponseMessage{StatusCode = statusCode}, "")
+            }));
+        this.streamClassRepositoryMock
+            .Setup(scr => scr.Get(It.IsAny<string>(), It.IsAny<string>()))
+            .ReturnsAsync(StreamClass.AsOption());
+        this.streamingJobTemplateRepositoryMock
+            .Setup(sjtr => sjtr.GetStreamingJobTemplate(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+            .ReturnsAsync(((IStreamingJobTemplate)StreamingJobTemplate).AsOption());
+        var expectedState = expectedPhase.ToString();
+
+        // Act
+        await service.Handle(command);
+
+        // Assert
         this.kubeClusterMock.Verify(k => k.UpdateCustomResourceStatus(It.IsAny<string>(),
                 It.IsAny<string>(),
                 It.IsAny<string>(),
