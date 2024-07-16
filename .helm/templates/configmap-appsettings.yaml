@@ -31,7 +31,7 @@ data:
           "InitialDelay": "00:00:10"
         }
       },
-      "LoggerReporterConfiguration": {
+      "LoggerConfiguration": {
         "CustomProperties": {{ .Values.settings.customLoggingProperties | toJson }}
       }
     }
