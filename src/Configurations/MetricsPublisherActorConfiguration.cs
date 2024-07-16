@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using Arcane.Operator.Services.Metrics;
 using Arcane.Operator.Services.Metrics.Actors;
 
@@ -7,6 +8,7 @@ namespace Arcane.Operator.Configurations;
 /// <summary>
 /// The configuration for the <see cref="MetricsPublisherActor"/>
 /// </summary>
+[ExcludeFromCodeCoverage(Justification = "Model")]
 public class MetricsPublisherActorConfiguration
 {
     /// <summary>
