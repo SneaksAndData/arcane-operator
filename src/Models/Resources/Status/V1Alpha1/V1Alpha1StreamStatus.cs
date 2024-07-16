@@ -2,7 +2,7 @@
 
 namespace Arcane.Operator.Models.Resources.Status.V1Alpha1;
 
-public class V1Alpha1StreamStatus
+public record V1Alpha1StreamStatus
 {
     /// <summary>
     /// List of conditions of the stream
