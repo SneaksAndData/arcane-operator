@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Akka;
@@ -13,6 +14,7 @@ using Arcane.Operator.Services.Base;
 using Arcane.Operator.Services.Base.CommandHandlers;
 using Arcane.Operator.Services.Base.Repositories.CustomResources;
 using Google.Protobuf.WellKnownTypes;
+using k8s.Autorest;
 using k8s.Models;
 using Microsoft.Extensions.Logging;
 using Snd.Sdk.Kubernetes;
@@ -95,7 +97,7 @@ public class StreamingJobCommandHandler : ICommandHandler<StreamingJobCommand>
                 .SendJob(job, streamDefinition.Metadata.Namespace(), CancellationToken.None)
                 .TryMap(
                     _ => isBackfilling ? new Reloading(streamDefinition) : new Running(streamDefinition),
-                    ex => this.HandleError(ex, streamDefinition));
+                    ex => this.HandleError(ex, streamDefinition, isBackfilling));
         }
         catch (Exception ex)
         {
@@ -104,8 +106,13 @@ public class StreamingJobCommandHandler : ICommandHandler<StreamingJobCommand>
         }
     }
 
-    private UpdateStatusCommand HandleError(Exception exception, IStreamDefinition streamDefinition)
+    private UpdateStatusCommand HandleError(Exception exception, IStreamDefinition streamDefinition, bool isBackfilling)
     {
+        if (exception is HttpOperationException { Response.StatusCode: HttpStatusCode.Conflict })
+        {
+            this.logger.LogWarning(exception, "Streaming job with ID {streamId} already exists", streamDefinition.StreamId);
+            return isBackfilling ? new Reloading(streamDefinition) : new Running(streamDefinition);
+        }
         this.logger.LogError(exception, "Failed to send job");
         var condition = V1Alpha1StreamCondition.CustomErrorCondition($"Failed to start job: {exception.Message}");
         return new SetInternalErrorStatus(streamDefinition, condition);
