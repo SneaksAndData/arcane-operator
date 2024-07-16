@@ -86,7 +86,7 @@ public class StreamingJobCommandHandlerTests(LoggerFixture loggerFixture) : ICla
                 It.IsAny<Func<JsonElement, It.IsAnyType>>()),
             Times.Once);
     }
-    
+
     [Theory]
     [InlineData(HttpStatusCode.Conflict, StreamPhase.RUNNING)]
     [InlineData(HttpStatusCode.InternalServerError, StreamPhase.FAILED)]
@@ -99,7 +99,7 @@ public class StreamingJobCommandHandlerTests(LoggerFixture loggerFixture) : ICla
         this.kubeClusterMock.Setup(k => k.SendJob(It.IsAny<V1Job>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .Returns(Task.FromException<V1JobStatus>(new HttpOperationException
             {
-                Response = new HttpResponseMessageWrapper(new HttpResponseMessage{StatusCode = statusCode}, "")
+                Response = new HttpResponseMessageWrapper(new HttpResponseMessage { StatusCode = statusCode }, "")
             }));
         this.streamClassRepositoryMock
             .Setup(scr => scr.Get(It.IsAny<string>(), It.IsAny<string>()))

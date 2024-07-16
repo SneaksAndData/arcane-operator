@@ -108,7 +108,7 @@ public class StreamingJobCommandHandler : ICommandHandler<StreamingJobCommand>
 
     private UpdateStatusCommand HandleError(Exception exception, IStreamDefinition streamDefinition, bool isBackfilling)
     {
-        if (exception is HttpOperationException {Response.StatusCode: HttpStatusCode.Conflict })
+        if (exception is HttpOperationException { Response.StatusCode: HttpStatusCode.Conflict })
         {
             this.logger.LogWarning(exception, "Streaming job with ID {streamId} already exists", streamDefinition.StreamId);
             return isBackfilling ? new Reloading(streamDefinition) : new Running(streamDefinition);
