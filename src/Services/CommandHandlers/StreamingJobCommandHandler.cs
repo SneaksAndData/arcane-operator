@@ -91,6 +91,7 @@ public class StreamingJobCommandHandler : ICommandHandler<StreamingJobCommand>
 
         try
         {
+            var metadata = streamDefinition.Metadata;
             var job = this.BuildJob(jobTemplate, streamDefinition, streamClass, isBackfilling);
             this.logger.LogInformation("Starting a new stream job with an id {streamId}", streamDefinition.StreamId);
             return this.kubeCluster
@@ -128,6 +129,6 @@ public class StreamingJobCommandHandler : ICommandHandler<StreamingJobCommand>
             .WithMetadataAnnotations(streamClass)
             .WithCustomEnvironment(streamDefinition.ToV1EnvFromSources(streamClass))
             .WithCustomEnvironment(streamDefinition.ToEnvironment(isBackfilling, streamClass))
-            .WithOwnerReference(streamDefinition)
+            .WithJobOwnerReference(streamDefinition.Metadata)
             .WithName(streamDefinition.StreamId);
 }

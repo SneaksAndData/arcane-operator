@@ -1,4 +1,5 @@
-﻿using Arcane.Operator.Models.Resources.StreamClass.Base;
+﻿using System.Threading.Tasks;
+using Arcane.Operator.Models.Resources.StreamClass.Base;
 
 namespace Arcane.Operator.Services.Base.Operators;
 

@@ -95,7 +95,8 @@ public class StreamOperatorService : IStreamOperatorService, IDisposable
         var ks = eventsSource.ToMaterialized(this.Sink.Value, Keep.Left).Run(this.materializer);
         this.killSwitches[streamClass.ToStreamClassId()] = ks;
     }
-
+    
+    
     public void Detach(IStreamClass streamClass)
     {
         if (this.killSwitches.TryGetValue(streamClass.ToStreamClassId(), out var ks))
@@ -162,7 +163,6 @@ public class StreamOperatorService : IStreamOperatorService, IDisposable
             { HasValue: false } when streamDefinition.Suspended => new Suspended(streamDefinition).AsList(),
             { HasValue: false } when streamDefinition.ReloadRequested => new List<KubernetesCommand>
             {
-                new RemoveReloadRequestedAnnotation(streamDefinition),
                 new StartJob(streamDefinition, true),
                 new Reloading(streamDefinition)
             },
@@ -187,9 +187,7 @@ public class StreamOperatorService : IStreamOperatorService, IDisposable
             { HasValue: true, Value: var job } when streamDefinition.ReloadRequested => new
                 List<KubernetesCommand>
                 {
-                    new RemoveReloadRequestedAnnotation(streamDefinition),
                     new RequestJobReloadCommand(job),
-                    new Reloading(streamDefinition)
                 },
             { HasValue: true, Value: var job } when job.ConfigurationMatches(streamDefinition) =>
                 new List<KubernetesCommand>(),

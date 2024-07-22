@@ -130,7 +130,7 @@ public class StreamDefinition : IStreamDefinition
         this.Spec.GetProperty("jobTemplateRef").Deserialize<V1TypedLocalObjectReference>();
 
     private V1TypedLocalObjectReference BackfillingJobTemplateRef =>
-        this.Spec.GetProperty("backfillingJobTemplateRef").Deserialize<V1TypedLocalObjectReference>();
+        this.Spec.GetProperty("backfillJobTemplateRef").Deserialize<V1TypedLocalObjectReference>(); // FIXME
 
 
     private byte[] GetSpecHash()
