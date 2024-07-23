@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using Akka;
 using Akka.Streams.Dsl;
 using Akka.Util;
@@ -15,6 +16,7 @@ namespace Arcane.Operator.Services.EventFilters;
 /// Removed events from the stream if the events are related to the same version of the resource.
 /// </summary>
 /// <typeparam name="TResourceType">Resource type</typeparam>
+[ExcludeFromCodeCoverage(Justification = "Requires integration testing")]
 public class ResourceVersionDuplicateFilter<TResourceType> : IEventFilter<TResourceType> where TResourceType : IKubernetesObject<V1ObjectMeta>
 {
     private readonly IMemoryCache memoryCache;
