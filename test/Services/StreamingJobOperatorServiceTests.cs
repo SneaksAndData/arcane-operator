@@ -15,6 +15,7 @@ using Arcane.Operator.Models.Resources.JobTemplates.Base;
 using Arcane.Operator.Models.StreamDefinitions.Base;
 using Arcane.Operator.Services.Base;
 using Arcane.Operator.Services.Base.CommandHandlers;
+using Arcane.Operator.Services.Base.EventFilters;
 using Arcane.Operator.Services.Base.Metrics;
 using Arcane.Operator.Services.Base.Repositories.CustomResources;
 using Arcane.Operator.Services.Base.Repositories.StreamingJob;

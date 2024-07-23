@@ -6,12 +6,13 @@ using Arcane.Operator.Models.Commands;
 using Arcane.Operator.Models.StreamDefinitions.Base;
 using Arcane.Operator.Services.Base;
 using Arcane.Operator.Services.Base.CommandHandlers;
+using Arcane.Operator.Services.Base.EventFilters;
 using Arcane.Operator.Services.Base.Metrics;
 using Arcane.Operator.Services.Base.Operators;
 using Arcane.Operator.Services.Base.Repositories.CustomResources;
 using Arcane.Operator.Services.Base.Repositories.StreamingJob;
 using Arcane.Operator.Services.CommandHandlers;
-using Arcane.Operator.Services.Filters;
+using Arcane.Operator.Services.EventFilters;
 using Arcane.Operator.Services.Metrics;
 using Arcane.Operator.Services.Operators;
 using Arcane.Operator.Services.Repositories.CustomResources;
@@ -60,7 +61,7 @@ public class Startup
         services.AddSingleton<IStreamClassRepository, StreamClassRepository>();
 
         // Event filters
-        services.AddSingleton<IEventFilter<IStreamDefinition>, DuplicateFilter<IStreamDefinition>>();
+        services.AddSingleton<IEventFilter<IStreamDefinition>, ResourceVersionDuplicateFilter<IStreamDefinition>>();
 
         // Register the command handlers
         services.AddSingleton<ICommandHandler<UpdateStatusCommand>, UpdateStatusCommandHandler>();

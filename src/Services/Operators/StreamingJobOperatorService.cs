@@ -83,7 +83,7 @@ public class StreamingJobOperatorService : IStreamingJobOperatorService
             _ => Task.FromResult(new List<Option<KubernetesCommand>>())
         };
     }
-    
+
     private Task<List<Option<KubernetesCommand>>> OnJobAdded(V1Job job)
     {
         return this.streamDefinitionCollection
