@@ -11,6 +11,7 @@ using Arcane.Operator.Services.Base.Operators;
 using Arcane.Operator.Services.Base.Repositories.CustomResources;
 using Arcane.Operator.Services.Base.Repositories.StreamingJob;
 using Arcane.Operator.Services.CommandHandlers;
+using Arcane.Operator.Services.Filters;
 using Arcane.Operator.Services.Metrics;
 using Arcane.Operator.Services.Operators;
 using Arcane.Operator.Services.Repositories.CustomResources;
@@ -57,6 +58,8 @@ public class Startup
         services.AddSingleton<IStreamingJobCollection, StreamingJobRepository>();
         services.AddSingleton<IStreamingJobTemplateRepository, StreamingJobTemplateRepository>();
         services.AddSingleton<IStreamClassRepository, StreamClassRepository>();
+
+        services.AddSingleton<IEventFilter<IStreamDefinition>, DuplicateFilter<IStreamDefinition>>();
 
         // Register the command handlers
         services.AddSingleton<ICommandHandler<UpdateStatusCommand>, UpdateStatusCommandHandler>();
