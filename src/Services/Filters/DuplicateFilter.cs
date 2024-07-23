@@ -27,15 +27,15 @@ public class DuplicateFilter<TResourceType>: IEventFilter<TResourceType> where T
     {
         return Flow.FromFunction<ResourceEvent<TResourceType>, Option<ResourceEvent<TResourceType>>>(ev =>
         {
-            if (!memoryCache.TryGetValue<ResourceEvent<TResourceType>>(this.ToCacheKey(ev), out var cached))
+            if (!memoryCache.TryGetValue<ResourceEvent<TResourceType>>(ToCacheKey(ev), out var cached))
             {
-               memoryCache.Set(this.ToCacheKey(ev), ev);
+               memoryCache.Set(ToCacheKey(ev), ev);
                return ev;
             }
             
             if (cached != null && cached.kubernetesObject.ResourceVersion() != ev.kubernetesObject.ResourceVersion())
             {
-                memoryCache.Set(this.ToCacheKey(ev), ev);
+                memoryCache.Set(ToCacheKey(ev), ev);
                 return ev;
             }
 
@@ -45,7 +45,7 @@ public class DuplicateFilter<TResourceType>: IEventFilter<TResourceType> where T
     }
 
 
-    private string ToCacheKey(ResourceEvent<TResourceType> resourceEvent) => string.Join("/", new List<string>
+    private static string ToCacheKey(ResourceEvent<TResourceType> resourceEvent) => string.Join("/", new List<string>
     {
         resourceEvent?.kubernetesObject?.Kind,
         resourceEvent?.kubernetesObject?.Namespace() ?? "",

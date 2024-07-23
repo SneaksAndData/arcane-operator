@@ -25,6 +25,7 @@ using Arcane.Operator.Services.Operators;
 using Arcane.Operator.Services.Repositories.StreamingJob;
 using Arcane.Operator.Tests.Extensions;
 using Arcane.Operator.Tests.Fixtures;
+using Arcane.Operator.Tests.Services.Helpers;
 using k8s;
 using k8s.Models;
 using Microsoft.Extensions.DependencyInjection;
@@ -215,7 +216,9 @@ public class StreamingJobOperatorServiceTests : IClassFixture<LoggerFixture>
             .AddSingleton<ICommandHandler<UpdateStatusCommand>, UpdateStatusCommandHandler>()
             .AddSingleton<ICommandHandler<SetAnnotationCommand<IStreamDefinition>>, AnnotationCommandHandler>()
             .AddSingleton<ICommandHandler<StreamingJobCommand>, StreamingJobCommandHandler>()
+            .AddSingleton<ICommandHandler<RemoveAnnotationCommand<IStreamDefinition>>, AnnotationCommandHandler>()
             .AddSingleton<IStreamingJobCollection, StreamingJobRepository>()
+            .AddSingleton<IEventFilter<IStreamDefinition>, EmptyEventFilter<IStreamDefinition>>()
             .AddSingleton(this.loggerFixture.Factory.CreateLogger<StreamingJobOperatorService>())
             .AddSingleton(this.loggerFixture.Factory.CreateLogger<StreamingJobRepository>())
             .AddSingleton(this.loggerFixture.Factory.CreateLogger<AnnotationCommandHandler>())

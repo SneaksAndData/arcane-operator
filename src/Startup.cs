@@ -59,6 +59,7 @@ public class Startup
         services.AddSingleton<IStreamingJobTemplateRepository, StreamingJobTemplateRepository>();
         services.AddSingleton<IStreamClassRepository, StreamClassRepository>();
 
+        // Event filters
         services.AddSingleton<IEventFilter<IStreamDefinition>, DuplicateFilter<IStreamDefinition>>();
 
         // Register the command handlers
