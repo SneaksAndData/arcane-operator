@@ -52,8 +52,7 @@ public class StreamDefinition : IStreamDefinition
 
     /// <inheritdoc cref="IStreamDefinition"/>
     [JsonIgnore]
-    public bool ReloadRequested
-        =>
+    public bool ReloadRequested =>
             this.Metadata?.Annotations != null
             && this.Metadata.Annotations.TryGetValue(Annotations.STATE_ANNOTATION_KEY, out var value)
             && value == Annotations.RELOADING_STATE_ANNOTATION_VALUE;
@@ -130,7 +129,7 @@ public class StreamDefinition : IStreamDefinition
         this.Spec.GetProperty("jobTemplateRef").Deserialize<V1TypedLocalObjectReference>();
 
     private V1TypedLocalObjectReference BackfillingJobTemplateRef =>
-        this.Spec.GetProperty("backfillingJobTemplateRef").Deserialize<V1TypedLocalObjectReference>();
+        this.Spec.GetProperty("backfillJobTemplateRef").Deserialize<V1TypedLocalObjectReference>();
 
 
     private byte[] GetSpecHash()
