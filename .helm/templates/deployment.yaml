@@ -14,6 +14,9 @@ spec:
       {{- include "app.selectorLabels" $ | nindent 6 }}
   # For now Arcane Operator supports only single replica
   replicas: 1
+  # The deployment strategy is hardcoded as well until the Arcane Operator is able to work in HA mode
+  strategy:
+    type: Recreate
   template:
     metadata:
       labels:
