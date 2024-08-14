@@ -1,4 +1,6 @@
-﻿using k8s;
+﻿using System;
+using Akka.Streams;
+using k8s;
 using k8s.Models;
 using Snd.Sdk.Kubernetes;
 
@@ -52,4 +54,22 @@ public interface IStreamClass : IKubernetesObject<V1ObjectMeta>
     /// <param name="propertyName">Name of the property to test</param>
     /// <returns></returns>
     bool IsSecretRef(string propertyName);
+    
+    /// <summary>
+    /// Reads the restart settings for source that emits StreamDefinitionEvents for this StreamClass.
+    /// For now, it is a default value.
+    /// </summary>
+    /// <returns>Akka restart settings instance.</returns>
+    public RestartSettings RestartSettings => DefaultRestartSettings;
+
+    /// <summary>
+    /// Default restart settings for the StreamClass.
+    /// Minimum backoff is 1 second.
+    /// Maximum backoff is 30 seconds.
+    /// Random factor is 0.2 adds 20% "noise" to vary the intervals slightly.
+    /// Maximum number of restarts is 20 restarts within 10 minutes.
+    /// </summary>
+    private static RestartSettings DefaultRestartSettings =>
+        RestartSettings.Create(TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(30), 0.2)
+        .WithMaxRestarts(20, TimeSpan.FromMinutes(10));
 }

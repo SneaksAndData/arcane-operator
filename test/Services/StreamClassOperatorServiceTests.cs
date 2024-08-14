@@ -233,7 +233,6 @@ public class StreamClassOperatorServiceTests : IClassFixture<LoggerFixture>, ICl
             .AddSingleton<IStreamOperatorService, StreamOperatorService>()
             .AddSingleton<ICommandHandler<UpdateStatusCommand>, UpdateStatusCommandHandler>()
             .AddSingleton<ICommandHandler<SetStreamClassStatusCommand>, UpdateStatusCommandHandler>()
-            .AddSingleton<ICommandHandler<RemoveAnnotationCommand<IStreamDefinition>>, AnnotationCommandHandler>()
             .AddSingleton<ICommandHandler<SetAnnotationCommand<V1Job>>, AnnotationCommandHandler>()
             .AddSingleton<ICommandHandler<StreamingJobCommand>, StreamingJobCommandHandler>()
             .AddSingleton<IMetricsReporter, MetricsReporter>()
