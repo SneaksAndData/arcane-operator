@@ -74,23 +74,23 @@ public sealed class StreamOperatorService : IStreamOperatorService, IDisposable
 
     public void Attach(IStreamClass streamClass)
     {
-        if(this.killSwitches.ContainsKey(streamClass.ToStreamClassId()))
+        if (this.killSwitches.ContainsKey(streamClass.ToStreamClassId()))
         {
             return;
         }
-        
+
         var request = new CustomResourceApiRequest(
             streamClass.Namespace(),
             streamClass.ApiGroupRef,
             streamClass.VersionRef,
             streamClass.PluralNameRef
         );
-        
+
 
         var restartSource = RestartSource
-            .WithBackoff(() => this.streamDefinitionSource.GetEvents(request, streamClass.MaxBufferCapacity),streamClass.RestartSettings)
+            .WithBackoff(() => this.streamDefinitionSource.GetEvents(request, streamClass.MaxBufferCapacity), streamClass.RestartSettings)
             .ViaMaterialized(KillSwitches.Single<ResourceEvent<IStreamDefinition>>(), Keep.Right);
-            
+
         var ks = restartSource
             .Recover(cause =>
             {

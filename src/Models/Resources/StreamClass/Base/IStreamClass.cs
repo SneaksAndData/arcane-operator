@@ -54,7 +54,7 @@ public interface IStreamClass : IKubernetesObject<V1ObjectMeta>
     /// <param name="propertyName">Name of the property to test</param>
     /// <returns></returns>
     bool IsSecretRef(string propertyName);
-    
+
     /// <summary>
     /// Reads the restart settings for source that emits StreamDefinitionEvents for this StreamClass.
     /// For now, it is a default value.
