@@ -9,7 +9,6 @@ using Arcane.Operator.Configurations;
 using Arcane.Operator.Models.Api;
 using Arcane.Operator.Models.Commands;
 using Arcane.Operator.Models.Resources.StreamClass.Base;
-using Arcane.Operator.Services.Base;
 using Arcane.Operator.Services.Base.CommandHandlers;
 using Arcane.Operator.Services.Base.Metrics;
 using Arcane.Operator.Services.Base.Operators;
@@ -25,7 +24,7 @@ namespace Arcane.Operator.Services.Operators;
 /// <inheritdoc cref="IStreamClassOperatorService"/>
 public class StreamClassOperatorService : IStreamClassOperatorService
 {
-    private const int parallelism = 1;
+    private const int PARALLELISM = 1;
 
     private readonly StreamClassOperatorServiceConfiguration configuration;
 
@@ -61,7 +60,7 @@ public class StreamClassOperatorService : IStreamClassOperatorService
     /// <inheritdoc cref="IStreamClassOperatorService.GetStreamClassEventsGraph"/>
     public IRunnableGraph<Task> GetStreamClassEventsGraph(CancellationToken cancellationToken)
     {
-        var sink = Sink.ForEachAsync<SetStreamClassStatusCommand>(parallelism, command =>
+        var sink = Sink.ForEachAsync<SetStreamClassStatusCommand>(PARALLELISM, command =>
         {
             this.streamClassStatusCommandHandler.Handle(command);
             return this.streamClassRepository.InsertOrUpdate(command.streamClass, command.phase, command.conditions, command.request.PluralName);
@@ -92,10 +91,10 @@ public class StreamClassOperatorService : IStreamClassOperatorService
         return new SetStreamClassReady(streamClass.Name(), this.request, streamClass);
     }
 
-    private SetStreamClassStopped Detach(IStreamClass streamClass)
+    private Option<SetStreamClassStatusCommand> Detach(IStreamClass streamClass)
     {
         this.streamOperatorService.Detach(streamClass);
-        return new SetStreamClassStopped(streamClass.Name(), this.request, streamClass);
+        return Option<SetStreamClassStatusCommand>.None;
     }
 
     private Directive HandleError(Exception exception)
