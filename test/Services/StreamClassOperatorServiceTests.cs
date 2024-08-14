@@ -17,6 +17,7 @@ using Arcane.Operator.Models.Resources.StreamClass.V1Beta1;
 using Arcane.Operator.Models.StreamDefinitions.Base;
 using Arcane.Operator.Services.Base;
 using Arcane.Operator.Services.Base.CommandHandlers;
+using Arcane.Operator.Services.Base.EventFilters;
 using Arcane.Operator.Services.Base.Metrics;
 using Arcane.Operator.Services.Base.Operators;
 using Arcane.Operator.Services.Base.Repositories.CustomResources;
@@ -27,6 +28,7 @@ using Arcane.Operator.Services.Operators;
 using Arcane.Operator.Services.Repositories.CustomResources;
 using Arcane.Operator.Services.Repositories.StreamingJob;
 using Arcane.Operator.Tests.Fixtures;
+using Arcane.Operator.Tests.Services.Helpers;
 using Arcane.Operator.Tests.Services.TestCases;
 using k8s;
 using k8s.Models;
@@ -235,6 +237,7 @@ public class StreamClassOperatorServiceTests : IClassFixture<LoggerFixture>, ICl
             .AddSingleton<ICommandHandler<SetAnnotationCommand<V1Job>>, AnnotationCommandHandler>()
             .AddSingleton<ICommandHandler<StreamingJobCommand>, StreamingJobCommandHandler>()
             .AddSingleton<IMetricsReporter, MetricsReporter>()
+            .AddSingleton<IEventFilter<IStreamDefinition>, EmptyEventFilter<IStreamDefinition>>()
             .AddSingleton(Mock.Of<MetricsService>())
             .AddSingleton(this.loggerFixture.Factory.CreateLogger<StreamOperatorService>())
             .AddSingleton(this.loggerFixture.Factory.CreateLogger<StreamClassOperatorService>())

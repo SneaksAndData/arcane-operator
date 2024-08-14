@@ -19,6 +19,7 @@ using Arcane.Operator.Models.Resources.StreamDefinitions;
 using Arcane.Operator.Models.StreamDefinitions.Base;
 using Arcane.Operator.Services.Base;
 using Arcane.Operator.Services.Base.CommandHandlers;
+using Arcane.Operator.Services.Base.EventFilters;
 using Arcane.Operator.Services.Base.Metrics;
 using Arcane.Operator.Services.Base.Operators;
 using Arcane.Operator.Services.Base.Repositories.CustomResources;
@@ -30,6 +31,7 @@ using Arcane.Operator.Services.Repositories.CustomResources;
 using Arcane.Operator.Services.Repositories.StreamingJob;
 using Arcane.Operator.Tests.Extensions;
 using Arcane.Operator.Tests.Fixtures;
+using Arcane.Operator.Tests.Services.Helpers;
 using Arcane.Operator.Tests.Services.TestCases;
 using k8s;
 using k8s.Models;
@@ -245,15 +247,6 @@ public class StreamOperatorServiceTests : IClassFixture<LoggerFixture>, IDisposa
                 => service.SendJob(It.Is<V1Job>(job => job.IsBackfilling()),
                     It.IsAny<string>(), It.IsAny<CancellationToken>()),
             Times.Exactly(expectReload ? 0 : 1));
-
-        var crd = StreamClass.ToNamespacedCrd();
-        this.kubeClusterMock.Verify(service => service.RemoveObjectAnnotation(
-            It.Is<NamespacedCrd>(namespacedCrd => namespacedCrd.Group == crd.Group &&
-                                                  namespacedCrd.Plural == crd.Plural &&
-                                                  namespacedCrd.Version == crd.Version),
-            Annotations.STATE_ANNOTATION_KEY,
-            streamDefinition.StreamId,
-            streamDefinition.Namespace()));
     }
 
     public static IEnumerable<object[]> GenerateAddTestCases()
@@ -440,6 +433,7 @@ public class StreamOperatorServiceTests : IClassFixture<LoggerFixture>, IDisposa
             .AddSingleton<IMetricsReporter, MetricsReporter>()
             .AddSingleton(Mock.Of<MetricsService>())
             .AddSingleton(metricsReporterConfiguration)
+            .AddSingleton<IEventFilter<IStreamDefinition>, EmptyEventFilter<IStreamDefinition>>()
             .AddSingleton(this.loggerFixture.Factory.CreateLogger<StreamOperatorService>())
             .AddSingleton(this.loggerFixture.Factory.CreateLogger<StreamDefinitionRepository>())
             .AddSingleton(this.loggerFixture.Factory.CreateLogger<StreamingJobOperatorService>())

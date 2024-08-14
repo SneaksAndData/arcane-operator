@@ -36,6 +36,7 @@ public class StreamingJobOperatorService : IStreamingJobOperatorService
     private readonly ICommandHandler<UpdateStatusCommand> updateStatusCommandHandler;
     private readonly ICommandHandler<SetAnnotationCommand<IStreamDefinition>> setAnnotationCommandHandler;
     private readonly ICommandHandler<StreamingJobCommand> streamingJobCommandHandler;
+    private readonly ICommandHandler<RemoveAnnotationCommand<IStreamDefinition>> removeAnnotationHandler;
     private readonly IStreamingJobCollection streamingJobCollection;
 
     public StreamingJobOperatorService(
@@ -46,6 +47,7 @@ public class StreamingJobOperatorService : IStreamingJobOperatorService
         ICommandHandler<UpdateStatusCommand> updateStatusCommandHandler,
         ICommandHandler<SetAnnotationCommand<IStreamDefinition>> setAnnotationCommandHandler,
         ICommandHandler<StreamingJobCommand> streamingJobCommandHandler,
+        ICommandHandler<RemoveAnnotationCommand<IStreamDefinition>> removeAnnotationHandler,
         IStreamingJobCollection streamingJobCollection)
     {
         this.configuration = options.Value;
@@ -56,6 +58,7 @@ public class StreamingJobOperatorService : IStreamingJobOperatorService
         this.streamingJobCommandHandler = streamingJobCommandHandler;
         this.setAnnotationCommandHandler = setAnnotationCommandHandler;
         this.streamingJobCollection = streamingJobCollection;
+        this.removeAnnotationHandler = removeAnnotationHandler;
     }
 
 
@@ -74,10 +77,32 @@ public class StreamingJobOperatorService : IStreamingJobOperatorService
     {
         return valueTuple switch
         {
-            (WatchEventType.Deleted, var job) => this.OnJobDelete(job),
+            (WatchEventType.Added, var job) => this.OnJobAdded(job),
             (WatchEventType.Modified, var job) => Task.FromResult(new List<Option<KubernetesCommand>> { this.OnJobModified(job) }),
+            (WatchEventType.Deleted, var job) => this.OnJobDelete(job),
             _ => Task.FromResult(new List<Option<KubernetesCommand>>())
         };
+    }
+
+    private Task<List<Option<KubernetesCommand>>> OnJobAdded(V1Job job)
+    {
+        return this.streamDefinitionCollection
+            .Get(job.Name(), job.ToOwnerApiRequest())
+            .Map(maybeSd => maybeSd switch
+            {
+                { HasValue: true, Value: var sd } when job.IsReloading() && sd.ReloadRequested => new
+                    List<Option<KubernetesCommand>>
+                    {
+                        new RemoveReloadRequestedAnnotation(sd),
+                        new Reloading(sd)
+                    },
+                { HasValue: true, Value: var sd } when job.IsReloading() && !sd.ReloadRequested => new
+                    List<Option<KubernetesCommand>>
+                    {
+                        new Reloading(sd)
+                    },
+                _ => new List<Option<KubernetesCommand>>()
+            });
     }
 
     private Option<KubernetesCommand> OnJobModified(V1Job job)
@@ -92,7 +117,7 @@ public class StreamingJobOperatorService : IStreamingJobOperatorService
 
         if (job.IsReloadRequested() || job.IsRestartRequested())
         {
-            return new StopJob(job.GetStreamKind(), streamId);
+            return new StopJob(job.Name(), job.Namespace());
         }
 
         return Option<KubernetesCommand>.None;
@@ -131,6 +156,7 @@ public class StreamingJobOperatorService : IStreamingJobOperatorService
         UpdateStatusCommand sdc => this.updateStatusCommandHandler.Handle(sdc),
         StreamingJobCommand sjc => this.streamingJobCommandHandler.Handle(sjc),
         SetAnnotationCommand<IStreamDefinition> sac => this.setAnnotationCommandHandler.Handle(sac),
+        RemoveAnnotationCommand<IStreamDefinition> command => this.removeAnnotationHandler.Handle(command),
         _ => throw new ArgumentOutOfRangeException(nameof(response), response, null)
     };
 }

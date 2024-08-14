@@ -13,7 +13,9 @@ using Arcane.Operator.Models.Base;
 using Arcane.Operator.Models.Commands;
 using Arcane.Operator.Models.Resources.StreamClass.Base;
 using Arcane.Operator.Models.StreamDefinitions.Base;
+using Arcane.Operator.Services.Base;
 using Arcane.Operator.Services.Base.CommandHandlers;
+using Arcane.Operator.Services.Base.EventFilters;
 using Arcane.Operator.Services.Base.Metrics;
 using Arcane.Operator.Services.Base.Operators;
 using Arcane.Operator.Services.Base.Repositories.CustomResources;
@@ -22,6 +24,7 @@ using k8s;
 using k8s.Autorest;
 using k8s.Models;
 using Microsoft.Extensions.Logging;
+using Snd.Sdk.ActorProviders;
 using Snd.Sdk.Tasks;
 
 namespace Arcane.Operator.Services.Operators;
@@ -39,9 +42,10 @@ public class StreamOperatorService : IStreamOperatorService, IDisposable
     private readonly ICommandHandler<StreamingJobCommand> streamingJobCommandHandler;
     private readonly IMaterializer materializer;
     private readonly CancellationTokenSource cancellationTokenSource;
-    private readonly IReactiveResourceCollection<IStreamDefinition> streamDefinitionSource;
     private readonly IStreamingJobCollection streamingJobCollection;
     private readonly Dictionary<string, UniqueKillSwitch> killSwitches = new();
+    private readonly IReactiveResourceCollection<IStreamDefinition> streamDefinitionSource;
+    private readonly IEventFilter<IStreamDefinition> eventFilter;
 
     public StreamOperatorService(
         IMetricsReporter metricsReporter,
@@ -52,6 +56,7 @@ public class StreamOperatorService : IStreamOperatorService, IDisposable
         ILogger<StreamOperatorService> logger,
         IMaterializer materializer,
         IReactiveResourceCollection<IStreamDefinition> streamDefinitionSource,
+        IEventFilter<IStreamDefinition> eventFilter,
         IStreamingJobCollection streamingJobCollection)
     {
         this.logger = logger;
@@ -64,6 +69,7 @@ public class StreamOperatorService : IStreamOperatorService, IDisposable
         this.cancellationTokenSource = new CancellationTokenSource();
         this.streamDefinitionSource = streamDefinitionSource;
         this.streamingJobCollection = streamingJobCollection;
+        this.eventFilter = eventFilter;
     }
 
     public virtual void Dispose()
@@ -111,6 +117,8 @@ public class StreamOperatorService : IStreamOperatorService, IDisposable
     private IRunnableGraph<Sink<ResourceEvent<IStreamDefinition>, NotUsed>> BuildSink(CancellationToken cancellationToken)
     {
         return MergeHub.Source<ResourceEvent<IStreamDefinition>>(perProducerBufferSize: bufferSize)
+            .Via(this.eventFilter.Filter())
+            .CollectOption()
             .Via(cancellationToken.AsFlow<ResourceEvent<IStreamDefinition>>(true))
             .Select(this.metricsReporter.ReportTrafficMetrics)
             .SelectAsync(parallelism,
@@ -162,16 +170,13 @@ public class StreamOperatorService : IStreamOperatorService, IDisposable
             { HasValue: false } when streamDefinition.Suspended => new Suspended(streamDefinition).AsList(),
             { HasValue: false } when streamDefinition.ReloadRequested => new List<KubernetesCommand>
             {
-                new RemoveReloadRequestedAnnotation(streamDefinition),
                 new StartJob(streamDefinition, true),
-                new Reloading(streamDefinition)
             },
             { HasValue: false } => new StartJob(streamDefinition, false).AsList(),
 
             { HasValue: true, Value: var job } when streamDefinition.CrashLoopDetected => new
                 List<KubernetesCommand>
                 {
-                    new StopJob(job.Name(), job.Namespace()),
                     new SetCrashLoopStatusCommand(streamDefinition)
                 },
             { HasValue: true, Value: var job } when streamDefinition.Suspended => new
@@ -187,9 +192,7 @@ public class StreamOperatorService : IStreamOperatorService, IDisposable
             { HasValue: true, Value: var job } when streamDefinition.ReloadRequested => new
                 List<KubernetesCommand>
                 {
-                    new RemoveReloadRequestedAnnotation(streamDefinition),
                     new RequestJobReloadCommand(job),
-                    new Reloading(streamDefinition)
                 },
             { HasValue: true, Value: var job } when job.ConfigurationMatches(streamDefinition) =>
                 new List<KubernetesCommand>(),
@@ -204,7 +207,6 @@ public class StreamOperatorService : IStreamOperatorService, IDisposable
         RequestJobRestartCommand rrc => this.setAnnotationCommandHandler.Handle(rrc),
         RequestJobReloadCommand rrc => this.setAnnotationCommandHandler.Handle(rrc),
         SetAnnotationCommand<V1Job> sac => this.setAnnotationCommandHandler.Handle(sac),
-        RemoveAnnotationCommand<IStreamDefinition> rac => this.removeAnnotationCommandHandler.Handle(rac),
         _ => throw new ArgumentOutOfRangeException(nameof(response), response, null)
     };
 }
