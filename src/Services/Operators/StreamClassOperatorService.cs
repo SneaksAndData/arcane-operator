@@ -30,14 +30,14 @@ public class StreamClassOperatorService : IStreamClassOperatorService
 
     private readonly ILogger<StreamClassOperatorService> logger;
     private readonly IStreamClassRepository streamClassRepository;
-    private readonly IMetricsReporter metricsService;
+    private readonly IMetricsReporter metricsReporter;
     private readonly IStreamOperatorService streamOperatorService;
     private readonly CustomResourceApiRequest request;
     private readonly ICommandHandler<SetStreamClassStatusCommand> streamClassStatusCommandHandler;
 
     public StreamClassOperatorService(IOptions<StreamClassOperatorServiceConfiguration> streamOperatorServiceOptions,
         IStreamClassRepository streamClassRepository,
-        IMetricsReporter metricsService,
+        IMetricsReporter metricsReporter,
         ILogger<StreamClassOperatorService> logger,
         ICommandHandler<SetStreamClassStatusCommand> streamClassStatusCommandHandler,
         IStreamOperatorService streamOperatorService)
@@ -45,7 +45,7 @@ public class StreamClassOperatorService : IStreamClassOperatorService
         this.configuration = streamOperatorServiceOptions.Value;
         this.logger = logger;
         this.streamClassRepository = streamClassRepository;
-        this.metricsService = metricsService;
+        this.metricsReporter = metricsReporter;
         this.streamOperatorService = streamOperatorService;
         this.streamClassStatusCommandHandler = streamClassStatusCommandHandler;
         this.request = new CustomResourceApiRequest(
@@ -70,7 +70,7 @@ public class StreamClassOperatorService : IStreamClassOperatorService
             .Via(cancellationToken.AsFlow<ResourceEvent<IStreamClass>>(true))
             .Select(this.OnEvent)
             .CollectOption()
-            .Select(streamClass => this.metricsService.ReportStatusMetrics(streamClass))
+            .Select(streamClass => this.metricsReporter.ReportStatusMetrics(streamClass))
             .WithAttributes(ActorAttributes.CreateSupervisionStrategy(this.HandleError))
             .ToMaterialized(sink, Keep.Right);
     }

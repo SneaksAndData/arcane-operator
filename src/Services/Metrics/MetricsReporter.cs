@@ -8,6 +8,7 @@ using Arcane.Operator.Services.Metrics.Actors;
 using k8s;
 using k8s.Models;
 using Microsoft.Extensions.Options;
+using SnD.Sdk.Metrics.Actors;
 using Snd.Sdk.Metrics.Base;
 
 namespace Arcane.Operator.Services.Metrics;
@@ -24,10 +25,11 @@ public class MetricsReporter : IMetricsReporter
         IOptions<MetricsReporterConfiguration> metricsReporterConfiguration)
     {
         this.metricsService = metricsService;
-        this.statusActor = actorSystem.ActorOf(Props.Create(() => new MetricsPublisherActor(
-                metricsReporterConfiguration.Value.MetricsPublisherActorConfiguration,
-                metricsService)),
-            nameof(MetricsPublisherActor));
+        this.statusActor = actorSystem.StartMetricsPublisher(() =>
+            new StreamClassOnlineMetricsPublisherActor(
+                metricsReporterConfiguration.Value.MetricsPublisherActorConfiguration.InitialDelay,
+                metricsReporterConfiguration.Value.MetricsPublisherActorConfiguration.UpdateInterval,
+                this.metricsService));
     }
 
     /// <inheritdoc cref="IMetricsReporter.ReportStatusMetrics"/>
@@ -35,11 +37,11 @@ public class MetricsReporter : IMetricsReporter
     {
         if (command.phase.IsFinal())
         {
-            this.statusActor.Tell(new RemoveStreamClassMetricsMessage(command.streamClass.KindRef));
+            this.statusActor.Tell(new RemoveMetricMessage(command.streamClass.KindRef));
         }
         else
         {
-            var msg = new AddStreamClassMetricsMessage(command.streamClass.KindRef, "stream_class", command.GetMetricsTags());
+            var msg = new AddMetricMessage(command.streamClass.KindRef, "stream_class", command.GetMetricsTags());
             this.statusActor.Tell(msg);
         }
         return command;

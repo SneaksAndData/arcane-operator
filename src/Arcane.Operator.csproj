@@ -8,7 +8,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="SnD.Sdk" Version="1.1.0"/>
+        <PackageReference Include="SnD.Sdk" Version="1.2.4"/>
     </ItemGroup>
 
     <ItemGroup>
@@ -16,7 +16,5 @@
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
     </ItemGroup>
-
-
 
 </Project>
