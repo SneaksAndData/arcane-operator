@@ -25,11 +25,10 @@ public class MetricsReporter : IMetricsReporter
         IOptions<MetricsReporterConfiguration> metricsReporterConfiguration)
     {
         this.metricsService = metricsService;
+        var initialDelay = metricsReporterConfiguration.Value.MetricsPublisherActorConfiguration.InitialDelay;
+        var updateInterval = metricsReporterConfiguration.Value.MetricsPublisherActorConfiguration.UpdateInterval;
         this.statusActor = actorSystem.StartMetricsPublisher(() =>
-            new StreamClassOnlineMetricsPublisherActor(
-                metricsReporterConfiguration.Value.MetricsPublisherActorConfiguration.InitialDelay,
-                metricsReporterConfiguration.Value.MetricsPublisherActorConfiguration.UpdateInterval,
-                this.metricsService));
+            new StreamClassOnlineMetricsPublisherActor(initialDelay, updateInterval, this.metricsService));
     }
 
     /// <inheritdoc cref="IMetricsReporter.ReportStatusMetrics"/>

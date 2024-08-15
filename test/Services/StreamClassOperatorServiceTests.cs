@@ -7,7 +7,6 @@ using Akka.Streams;
 using Akka.Streams.Dsl;
 using Akka.Util.Extensions;
 using Arcane.Operator.Configurations;
-using Arcane.Operator.Configurations.Common;
 using Arcane.Operator.Models.Api;
 using Arcane.Operator.Models.Base;
 using Arcane.Operator.Models.Commands;
@@ -26,7 +25,6 @@ using Arcane.Operator.Services.CommandHandlers;
 using Arcane.Operator.Services.Metrics;
 using Arcane.Operator.Services.Operators;
 using Arcane.Operator.Services.Repositories.CustomResources;
-using Arcane.Operator.Services.Repositories.StreamingJob;
 using Arcane.Operator.Tests.Fixtures;
 using Arcane.Operator.Tests.Services.Helpers;
 using Arcane.Operator.Tests.Services.TestCases;
@@ -165,9 +163,9 @@ public class StreamClassOperatorServiceTests : IClassFixture<LoggerFixture>, ICl
 
         // Assert
         this.kubeClusterMock.Verify(
-                service => service.SendJob(It.IsAny<V1Job>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
-                Times.Never
-            );
+            service => service.SendJob(It.IsAny<V1Job>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
+            Times.Never
+        );
     }
 
     [Fact]
@@ -243,6 +241,14 @@ public class StreamClassOperatorServiceTests : IClassFixture<LoggerFixture>, ICl
             .AddSingleton(this.loggerFixture.Factory.CreateLogger<AnnotationCommandHandler>())
             .AddSingleton(this.loggerFixture.Factory.CreateLogger<UpdateStatusCommandHandler>())
             .AddSingleton(this.loggerFixture.Factory.CreateLogger<StreamingJobCommandHandler>())
+            .AddSingleton(Options.Create(new MetricsReporterConfiguration
+            {
+                MetricsPublisherActorConfiguration = new MetricsPublisherActorConfiguration
+                {
+                    UpdateInterval = TimeSpan.FromSeconds(10),
+                    InitialDelay = TimeSpan.Zero
+                },
+            }))
             .AddSingleton(Options.Create(new StreamClassOperatorServiceConfiguration
             {
                 MaxBufferCapacity = 100
