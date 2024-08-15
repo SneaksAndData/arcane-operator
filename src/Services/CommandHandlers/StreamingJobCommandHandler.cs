@@ -128,6 +128,6 @@ public class StreamingJobCommandHandler : ICommandHandler<StreamingJobCommand>
             .WithMetadataAnnotations(streamClass)
             .WithCustomEnvironment(streamDefinition.ToV1EnvFromSources(streamClass))
             .WithCustomEnvironment(streamDefinition.ToEnvironment(isBackfilling, streamClass))
-            .WithOwnerReference(streamDefinition)
+            .WithOwnerReference(streamDefinition.ApiVersion, streamDefinition.Kind, streamDefinition.Metadata)
             .WithName(streamDefinition.StreamId);
 }
