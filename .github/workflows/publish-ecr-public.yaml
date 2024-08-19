@@ -86,7 +86,7 @@ jobs:
             latest=false
 
       - name: Push image to ECR Public registry
-        uses: akhilerm/tag-push-action@v2.1.0
+        uses: akhilerm/tag-push-action@v2.2.0
         with:
           src: ${{ steps.meta.outputs.tags }}
           dst: public.ecr.aws/s0t1h2z6/arcane/${{ github.event.repository.name }}:${{ steps.meta.outputs.version }}
