@@ -6,6 +6,7 @@ using Akka.Streams;
 using Akka.Streams.Dsl;
 using Akka.Util;
 using Arcane.Operator.Configurations;
+using Arcane.Operator.Exceptions;
 using Arcane.Operator.Extensions;
 using Arcane.Operator.Models.Api;
 using Arcane.Operator.Models.Base;
@@ -23,6 +24,8 @@ using Microsoft.Extensions.Options;
 using Snd.Sdk.ActorProviders;
 using Snd.Sdk.Kubernetes;
 using Snd.Sdk.Tasks;
+using Akka.Streams.Supervision;
+
 
 namespace Arcane.Operator.Services.Operators;
 
@@ -70,6 +73,7 @@ public class StreamingJobOperatorService : IStreamingJobOperatorService
             .SelectAsync(parallelism, this.OnJobEvent)
             .SelectMany(e => e)
             .CollectOption()
+            .WithAttributes(ActorAttributes.CreateSupervisionStrategy(this.HandleError))
             .ToMaterialized(Sink.ForEachAsync<KubernetesCommand>(parallelism, this.HandleCommand), Keep.Right);
     }
 
@@ -159,4 +163,26 @@ public class StreamingJobOperatorService : IStreamingJobOperatorService
         RemoveAnnotationCommand<IStreamDefinition> command => this.removeAnnotationHandler.Handle(command),
         _ => throw new ArgumentOutOfRangeException(nameof(response), response, null)
     };
+    
+    private Directive HandleError(Exception exception)
+    {
+        this.logger.LogError(exception, "Failed to handle stream definition event");
+        return exception switch
+        {
+            JobListenerException ex => this.LogAndContinue(ex),
+            _ => this.LogAndStop(exception),
+        };
+    }
+    
+    private Directive LogAndContinue(Exception exception)
+    {
+        this.logger.LogWarning(exception, "Failed to handle stream definition event");
+        return Directive.Resume;
+    }
+    
+    private Directive LogAndStop(Exception exception)
+    {
+        this.logger.LogError(exception, "Failed to handle stream definition event");
+        return Directive.Resume;
+    }
 }
