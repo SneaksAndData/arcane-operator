@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Arcane.Operator.Contracts;
+using Arcane.Operator.Exceptions;
 using Arcane.Operator.Models.Api;
 using Arcane.Operator.Models.Resources.StreamClass.Base;
 using Arcane.Operator.Models.StreamDefinitions.Base;
@@ -128,7 +129,7 @@ public static class V1JobExtensions
             return value;
         }
 
-        throw new InvalidOperationException("Api group not found in job annotations.");
+        throw new JobListenerException("Api group not found in job annotations.");
     }
 
     private static string GetApiVersion(this V1Job job)
@@ -138,7 +139,7 @@ public static class V1JobExtensions
             return value;
         }
 
-        throw new InvalidOperationException("Api version not found in job annotations.");
+        throw new JobListenerException("Api version not found in job annotations.");
     }
 
     private static string GetPluralName(this V1Job job)
@@ -148,6 +149,6 @@ public static class V1JobExtensions
             return value;
         }
 
-        throw new InvalidOperationException("Api plural name version not found in job annotations.");
+        throw new JobListenerException("Api plural name version not found in job annotations.");
     }
 }
