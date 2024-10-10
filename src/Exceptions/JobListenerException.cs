@@ -5,7 +5,7 @@ namespace Arcane.Operator.Exceptions;
 /// <summary>
 /// Thrown when an error occurs in the job listener
 /// </summary>
-public class JobListenerException: Exception
+public class JobListenerException : Exception
 {
     /// <summary>
     /// Thrown when an error occurs in the job listener

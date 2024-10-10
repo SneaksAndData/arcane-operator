@@ -163,7 +163,7 @@ public class StreamingJobOperatorService : IStreamingJobOperatorService
         RemoveAnnotationCommand<IStreamDefinition> command => this.removeAnnotationHandler.Handle(command),
         _ => throw new ArgumentOutOfRangeException(nameof(response), response, null)
     };
-    
+
     private Directive HandleError(Exception exception)
     {
         this.logger.LogError(exception, "Failed to handle stream definition event");
@@ -173,13 +173,13 @@ public class StreamingJobOperatorService : IStreamingJobOperatorService
             _ => this.LogAndStop(exception),
         };
     }
-    
+
     private Directive LogAndContinue(Exception exception)
     {
         this.logger.LogWarning(exception, "Failed to handle stream definition event");
         return Directive.Resume;
     }
-    
+
     private Directive LogAndStop(Exception exception)
     {
         this.logger.LogError(exception, "Failed to handle stream definition event");
