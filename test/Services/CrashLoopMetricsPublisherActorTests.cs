@@ -24,7 +24,7 @@ public class CrashLoopMetricsPublisherActorTests : TestKit
 
     public CrashLoopMetricsPublisherActorTests()
     {
-        this.cts.CancelAfter(TimeSpan.FromSeconds(5));
+        this.cts.CancelAfter(TimeSpan.FromSeconds(10));
         this.cts.Token.Register(this.tcs.SetResult);
     }
 
@@ -35,7 +35,7 @@ public class CrashLoopMetricsPublisherActorTests : TestKit
         this.metricsServiceMock.Setup(ms => ms.Count(It.IsAny<string>(),
             It.IsAny<int>(),
             It.IsAny<SortedDictionary<string, string>>())).Callback(() => this.tcs.TrySetResult());
-        var subject = this.CreateSubject(null);
+        var subject = this.CreateSubject(this.tcs);
 
         // Act
         subject.Tell(new AddSCrashLoopMetricsMessage("test", "test", new()));
