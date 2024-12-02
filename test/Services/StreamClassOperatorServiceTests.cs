@@ -248,6 +248,7 @@ public class StreamClassOperatorServiceTests : IClassFixture<LoggerFixture>, ICl
                 MaxBufferCapacity = 100
             }))
             .AddSingleton<IStreamClassOperatorService, StreamClassOperatorService>()
+            .AddSingleton(Mock.Of<ICrashLoopReporterService>())
             .BuildServiceProvider();
     }
 }
