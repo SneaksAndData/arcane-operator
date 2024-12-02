@@ -14,7 +14,7 @@ public interface ICrashLoopReporterService
     /// <param name="streamId">The id of the affected stream.</param>
     /// <param name="metricTags">Metric tags</param>
     void AddCrashLoopEvent(string streamId, SortedDictionary<string, string> metricTags);
-    
+
     /// <summary>
     /// Removes the crash loop event from the metrics reporter
     /// </summary>

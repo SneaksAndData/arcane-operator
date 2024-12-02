@@ -23,7 +23,7 @@ public static class DeclaredMetrics
         { $"{TAG_PREFIX}/kind", job.Kind },
         { $"{TAG_PREFIX}/name", job.Name() },
     };
-    
+
     public static SortedDictionary<string, string> GetCrashLoopMetricsTags(this IStreamDefinition streamDefinition) => new()
     {
         { $"{TAG_PREFIX}/namespace", streamDefinition.Namespace() },

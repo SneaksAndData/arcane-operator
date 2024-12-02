@@ -298,14 +298,14 @@ public class StreamOperatorServiceTests : IClassFixture<LoggerFixture>, IDisposa
                 => service.SendJob(It.Is<V1Job>(job => job.IsBackfilling()), It.IsAny<string>(), It.IsAny<CancellationToken>()),
             Times.Exactly(expectStart ? 1 : 0));
     }
-    
-    
+
+
     public static IEnumerable<object[]> GenerateCrashLoopTestCases()
     {
         yield return new object[] { WatchEventType.Added, CrashLoopStreamDefinition, true };
         yield return new object[] { WatchEventType.Modified, CrashLoopStreamDefinition, true };
         yield return new object[] { WatchEventType.Deleted, CrashLoopStreamDefinition, false };
-        
+
         yield return new object[] { WatchEventType.Added, StreamDefinitionTestCases.StreamDefinition, false };
         yield return new object[] { WatchEventType.Modified, StreamDefinitionTestCases.StreamDefinition, false };
         yield return new object[] { WatchEventType.Deleted, StreamDefinitionTestCases.StreamDefinition, false };
@@ -331,11 +331,11 @@ public class StreamOperatorServiceTests : IClassFixture<LoggerFixture>, IDisposa
         // Assert
         if (expectMetricAdded)
         {
-            this.crashLoopReporterServiceMock.Verify( m => m.AddCrashLoopEvent(streamDefinition.StreamId, It.IsAny<SortedDictionary<string, string>>()));
+            this.crashLoopReporterServiceMock.Verify(m => m.AddCrashLoopEvent(streamDefinition.StreamId, It.IsAny<SortedDictionary<string, string>>()));
         }
         else
         {
-            this.crashLoopReporterServiceMock.Verify( m => m.RemoveCrashLoopEvent(streamDefinition.StreamId));
+            this.crashLoopReporterServiceMock.Verify(m => m.RemoveCrashLoopEvent(streamDefinition.StreamId));
         }
     }
 

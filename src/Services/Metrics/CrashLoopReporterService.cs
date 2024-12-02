@@ -26,7 +26,7 @@ public class CrashLoopReporterService : ICrashLoopReporterService
     {
         this.statusActor.Tell(new AddSCrashLoopMetricsMessage(streamId, METRIC_NAME, metricTags));
     }
-    
+
     public void RemoveCrashLoopEvent(string streamId)
     {
         this.statusActor.Tell(new RemoveCrashLoopMetricsMessage(streamId));

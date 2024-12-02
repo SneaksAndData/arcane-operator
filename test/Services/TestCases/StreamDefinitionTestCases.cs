@@ -54,7 +54,7 @@ public static class StreamDefinitionTestCases
             }
         }
     };
-    
+
     public static IStreamDefinition CrashLoopStreamDefinition => new StreamDefinition
     {
         Spec = JsonDocument.Parse(StreamSpec).RootElement,
