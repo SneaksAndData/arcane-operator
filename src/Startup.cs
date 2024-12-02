@@ -79,6 +79,7 @@ public class Startup
         // Register the metrics providers
         services.AddDatadogMetrics(DatadogConfiguration.UnixDomainSocket(AppDomain.CurrentDomain.FriendlyName));
         services.AddSingleton<IMetricsReporter, MetricsReporter>();
+        services.AddSingleton<ICrashLoopReporterService, CrashLoopReporterService>();
 
         // Register additional services
         services.AddLocalActorSystem();

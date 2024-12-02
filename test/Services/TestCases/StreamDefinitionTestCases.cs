@@ -54,6 +54,20 @@ public static class StreamDefinitionTestCases
             }
         }
     };
+    
+    public static IStreamDefinition CrashLoopStreamDefinition => new StreamDefinition
+    {
+        Spec = JsonDocument.Parse(StreamSpec).RootElement,
+        Kind = Kind,
+        Metadata = new V1ObjectMeta
+        {
+            Name = "stream",
+            Annotations = new Dictionary<string, string>
+            {
+                { Annotations.STATE_ANNOTATION_KEY, Annotations.CRASH_LOOP_STATE_ANNOTATION_VALUE }
+            }
+        }
+    };
 
     public static FailedStreamDefinition FailedStreamDefinition(Exception exception)
     {

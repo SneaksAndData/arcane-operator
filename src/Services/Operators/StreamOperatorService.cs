@@ -19,6 +19,7 @@ using Arcane.Operator.Services.Base.Metrics;
 using Arcane.Operator.Services.Base.Operators;
 using Arcane.Operator.Services.Base.Repositories.CustomResources;
 using Arcane.Operator.Services.Base.Repositories.StreamingJob;
+using Arcane.Operator.Services.Metrics;
 using k8s;
 using k8s.Models;
 using Microsoft.Extensions.Logging;
@@ -43,6 +44,7 @@ public sealed class StreamOperatorService : IStreamOperatorService, IDisposable
     private readonly Dictionary<string, UniqueKillSwitch> killSwitches = new();
     private readonly IReactiveResourceCollection<IStreamDefinition> streamDefinitionSource;
     private readonly IEventFilter<IStreamDefinition> eventFilter;
+    private readonly ICrashLoopReporterService crashLoopReporterService;
 
     public StreamOperatorService(
         IMetricsReporter metricsReporter,
@@ -53,7 +55,8 @@ public sealed class StreamOperatorService : IStreamOperatorService, IDisposable
         IMaterializer materializer,
         IReactiveResourceCollection<IStreamDefinition> streamDefinitionSource,
         IEventFilter<IStreamDefinition> eventFilter,
-        IStreamingJobCollection streamingJobCollection)
+        IStreamingJobCollection streamingJobCollection,
+        ICrashLoopReporterService crashLoopReporterService)
     {
         this.logger = logger;
         this.metricsReporter = metricsReporter;
@@ -65,6 +68,7 @@ public sealed class StreamOperatorService : IStreamOperatorService, IDisposable
         this.streamDefinitionSource = streamDefinitionSource;
         this.streamingJobCollection = streamingJobCollection;
         this.eventFilter = eventFilter;
+        this.crashLoopReporterService = crashLoopReporterService;
     }
 
     public void Dispose()
@@ -126,6 +130,22 @@ public sealed class StreamOperatorService : IStreamOperatorService, IDisposable
                 ev => this.streamingJobCollection.Get(ev.kubernetesObject.Namespace(),
                         ev.kubernetesObject.StreamId)
                     .Map(job => (ev, job)))
+            .Select(pair =>
+            {
+                if (pair.ev.EventType == WatchEventType.Deleted)
+                {
+                    this.crashLoopReporterService.RemoveCrashLoopEvent(pair.ev.kubernetesObject.StreamId);
+                    return pair;
+                }
+                if (pair.ev.kubernetesObject.CrashLoopDetected)
+                {
+                    this.crashLoopReporterService.AddCrashLoopEvent(pair.ev.kubernetesObject.StreamId,
+                        pair.ev.kubernetesObject.GetCrashLoopMetricsTags());
+                    return pair;
+                }
+                this.crashLoopReporterService.RemoveCrashLoopEvent(pair.ev.kubernetesObject.StreamId);
+                return pair;
+            })
             .Select(this.OnEvent)
             .SelectMany(e => e)
             .To(Akka.Streams.Dsl.Sink.ForEachAsync<KubernetesCommand>(PARALLELISM, this.HandleCommand))

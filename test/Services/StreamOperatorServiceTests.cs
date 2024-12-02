@@ -65,6 +65,7 @@ public class StreamOperatorServiceTests : IClassFixture<LoggerFixture>, IDisposa
     private readonly TaskCompletionSource tcs = new();
     private readonly CancellationTokenSource cts = new();
     private readonly Mock<IStreamingJobTemplateRepository> streamingJobTemplateRepositoryMock = new();
+    private readonly Mock<ICrashLoopReporterService> crashLoopReporterServiceMock = new();
 
     public StreamOperatorServiceTests(LoggerFixture loggerFixture)
     {
@@ -297,6 +298,46 @@ public class StreamOperatorServiceTests : IClassFixture<LoggerFixture>, IDisposa
                 => service.SendJob(It.Is<V1Job>(job => job.IsBackfilling()), It.IsAny<string>(), It.IsAny<CancellationToken>()),
             Times.Exactly(expectStart ? 1 : 0));
     }
+    
+    
+    public static IEnumerable<object[]> GenerateCrashLoopTestCases()
+    {
+        yield return new object[] { WatchEventType.Added, CrashLoopStreamDefinition, true };
+        yield return new object[] { WatchEventType.Modified, CrashLoopStreamDefinition, true };
+        yield return new object[] { WatchEventType.Deleted, CrashLoopStreamDefinition, false };
+        
+        yield return new object[] { WatchEventType.Added, StreamDefinitionTestCases.StreamDefinition, false };
+        yield return new object[] { WatchEventType.Modified, StreamDefinitionTestCases.StreamDefinition, false };
+        yield return new object[] { WatchEventType.Deleted, StreamDefinitionTestCases.StreamDefinition, false };
+    }
+
+    [Theory]
+    [MemberData(nameof(GenerateCrashLoopTestCases))]
+    public async Task TestCrashLoopMetricsServiceInvoked(WatchEventType eventType, StreamDefinition streamDefinition, bool expectMetricAdded)
+    {
+        // Arrange
+        this.SetupEventMock(eventType, streamDefinition);
+
+        var task = this.tcs.Task;
+        this.kubeClusterMock
+            .Setup(service => service.SendJob(It.IsAny<V1Job>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Callback(this.tcs.SetResult);
+
+        // Act
+        var sp = this.CreateServiceProvider();
+        sp.GetRequiredService<IStreamOperatorService>().Attach(StreamClass);
+        await task;
+
+        // Assert
+        if (expectMetricAdded)
+        {
+            this.crashLoopReporterServiceMock.Verify( m => m.AddCrashLoopEvent(streamDefinition.StreamId, It.IsAny<SortedDictionary<string, string>>()));
+        }
+        else
+        {
+            this.crashLoopReporterServiceMock.Verify( m => m.RemoveCrashLoopEvent(streamDefinition.StreamId));
+        }
+    }
 
     public static IEnumerable<object[]> GenerateRecoverableTestCases()
     {
@@ -422,7 +463,7 @@ public class StreamOperatorServiceTests : IClassFixture<LoggerFixture>, IDisposa
             .AddSingleton(this.actorSystem)
             .AddSingleton(this.kubeClusterMock.Object)
             .AddSingleton<IMaterializer>(this.actorSystem.Materializer())
-            .AddSingleton(streamingJobOperatorServiceMock.Object)
+            .AddSingleton(this.streamingJobOperatorServiceMock.Object)
             .AddSingleton(this.streamDefinitionRepositoryMock.Object)
             .AddSingleton(this.streamingJobTemplateRepositoryMock.Object)
             .AddSingleton<ICommandHandler<UpdateStatusCommand>, UpdateStatusCommandHandler>()
@@ -444,6 +485,7 @@ public class StreamOperatorServiceTests : IClassFixture<LoggerFixture>, IDisposa
             .AddSingleton(this.streamingJobOperatorServiceMock.Object)
             .AddSingleton(optionsMock.Object)
             .AddSingleton<IStreamOperatorService, StreamOperatorService>()
+            .AddSingleton(this.crashLoopReporterServiceMock.Object)
             .BuildServiceProvider();
     }
 

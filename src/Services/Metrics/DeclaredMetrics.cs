@@ -2,6 +2,7 @@
 using Arcane.Operator.Extensions;
 using Arcane.Operator.Models;
 using Arcane.Operator.Models.Commands;
+using Arcane.Operator.Models.StreamDefinitions.Base;
 using k8s;
 using k8s.Models;
 using Snd.Sdk.Helpers;
@@ -21,6 +22,13 @@ public static class DeclaredMetrics
         { $"{TAG_PREFIX}/namespace", job.Namespace() },
         { $"{TAG_PREFIX}/kind", job.Kind },
         { $"{TAG_PREFIX}/name", job.Name() },
+    };
+    
+    public static SortedDictionary<string, string> GetCrashLoopMetricsTags(this IStreamDefinition streamDefinition) => new()
+    {
+        { $"{TAG_PREFIX}/namespace", streamDefinition.Namespace() },
+        { $"{TAG_PREFIX}/kind", streamDefinition.Kind },
+        { $"{TAG_PREFIX}/stream_id", streamDefinition.Name() },
     };
 
     public static SortedDictionary<string, string> GetMetricsTags(this V1Job job) => new()
