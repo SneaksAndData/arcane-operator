@@ -32,7 +32,8 @@ data:
         }
       },
       "LoggingConfiguration": {
-        "CustomProperties": {{ .Values.settings.customLoggingProperties | toJson }}
+        "CustomProperties": {{ .Values.settings.customLoggingProperties | toJson }},
+        "MinimumLevelOverrides": {{ .Values.settings.customLoggingMinimumLevel | toJson }}
       }
     }
     
