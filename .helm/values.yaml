@@ -197,5 +197,5 @@ settings:
     # Custom logger configuration
   customLoggingProperties: { }
   
-  # Custom logger minimum level
+  # Custom logger minimum level overrides
   customLoggingMinimumLevel: {}
