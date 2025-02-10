@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using Arcane.Operator.Configurations;
 using Microsoft.Extensions.Configuration;
@@ -15,6 +16,13 @@ internal static class LoggerConfigurationExtensions
         foreach (var (key, value) in customProperties?.CustomProperties ?? new Dictionary<string, string>())
         {
             loggerConfiguration.Enrich.WithProperty(key, value);
+        }
+        foreach (var (key, value) in customProperties?.MinimumLevelOverrides ?? new Dictionary<string, string>())
+        {
+            if (Enum.TryParse(value, out Serilog.Events.LogEventLevel logEventLevel) && logEventLevel != default)
+            {
+                loggerConfiguration.MinimumLevel.Override(key, logEventLevel);
+            }
         }
         return loggerConfiguration;
     }
