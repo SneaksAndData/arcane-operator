@@ -28,7 +28,7 @@ This repository contains the **Arcane Operator**, which is responsible for manag
    - [Verify the installation](#verify-the-installation)
  - [Streaming plugins](#streaming-plugins)
  - [Contributing](#contributing)
- - 
+   - [Extending the platform with your own plugins](#extending-the-platform-with-your-own-plugins)
 
 # Getting started
 Run the following command to install the Arcane Operator in your Kubernetes cluster:
@@ -73,3 +73,4 @@ Once operator is installed, you can install the streaming plugins.
 -- TBD --
 
 ## Extending the platform with plugins
+-- TBD --
