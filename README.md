@@ -1,49 +1,75 @@
-# Arcane Operator
+# About the project
 
-Arcane is a Kubernetes-native, lightweight, and easy-to-use data streaming platform powered by Akka.Net.
+<img src="docs/images/arcane-logo.png" width="100" height="100" alt="logo"> 
 
-This repository contains the Arcane Operator, which is a Kubernetes operator that manages the lifecycle of
-Arcane data streams.
+**Arcane** is a Kubernetes-native data streaming platform powered by extendable plugin architecture.
 
-The Arcane operator internally consists of the set of `*Operator` services
-(`StreamClassOperatorService`, `StreamingJobOperatorService` and so forth)
-that are listening to the Kubernetes API events and produces a commands that are handled by the
-`*CommandHandler` services (`AnnotationCommandHandler`, `StreamingJobCommandHandler` and so forth).
+Arcane is designed to be:
+- **Kubernetes-native**: It runs data streaming plugins as a Kubernetes jobs and uses Kubernetes API to manage the
+   lifecycle of data streams.
 
-## Project structure
+- **Extendable**: It allows you to extend the platform with your own data streaming plugins, which can be written in
+   any programming language.
 
-The project is structured as follows:
+- **Scalable**: It can scale horizontally by adding more Kubernetes nodes to the cluster or vertically by adding more
+   resources to the streaming jobs. It does not require any stateful components like Zookeeper or Kafka brokers which 
+   makes it easy to scale and manage.
 
-- `.github/` contains GitHub Actions workflows
+- **Lightweight**: It has a small footprint and can run on any Kubernetes cluster, including local clusters like
+   [Minikube](https://minikube.sigs.k8s.io/docs/) or [Kind](https://kind.sigs.k8s.io/).
+ 
+- **Cloud-agnostic**: It can run on any cloud provider that supports Kubernetes, including AWS, Azure, GCP, and
+   on-premises clusters.
 
-- `.container/` contains the Dockerfile for the operator image
+This repository contains the **Arcane Operator**, which is responsible for managing the lifecycle of Arcane data streams.
 
-- `src/` contains the source code of the operator
-  - `Configurations/` contains the configuration models used by the operator
-  - `Extensions/` contains extension methods for the operator
-  - `Models/` contains the models used by the operator
-    - `Api/` contains models and services for interacting with the Kubernetes API
-    - `Base/` contains base classes for the operator
-    - `Commands/` command models produced by the `*Operator` services
-    - `Resources/` contains the models for the Kubernetes resources managed by the operator:
-      1. Streaming job templates
-      2. Resource statuses
-      3. Stream Classes
-      4. Stream Definitions
-      
-      Each directory inside the `Resources/` directory contains the `Base` subdirectory with interface that implemented
-      by corresponding model class and the version with the actual model class version(s).
-    
-  - `Services/` contains the services used by the operator
-    - `Base/` contains the interfaces for the classes defined in the `Services/` directory
-    - `CommandHandlers/` contains the command handlers for the operator
-    - `HostedServices/` contains the background services run by the operator
-    - `Metrics/` contains services related to metrics publishing
-    - `Operators/` contains the operator services:
-      - `StreamClassOperatorService` manages the lifecycle of Stream Classes
-      - `StreamingJobOperatorService` manages streaming Jobs
-      - `StreamOperatorService` manages the stream definitions lifecycle
-    - `Repositories/` contains the abstractions for reading and writing resources to the Kubernetes API
-  - `Contracts/` contains definitions of the Kubernetes labels and annotations used by the operator
-- `tests/` contains unit tests for the operator
+# Table of Contents
+ - [Getting started](#getting-started)
+   - [Verify the installation](#verify-the-installation)
+ - [Streaming plugins](#streaming-plugins)
+ - [Contributing](#contributing)
+ - 
 
+# Getting started
+Run the following command to install the Arcane Operator in your Kubernetes cluster:
+
+```bash
+# Create a namespace for the operator installation
+$ kubectl create namespace arcane
+
+# Install the operator in the created namespace
+$ helm install arcane oci://ghcr.io/sneaksanddata/helm/arcane-operator \
+  --version v0.0.14 \
+  --namespace arcane
+```
+
+This command creates a namespace `arcane` and installs the stream operator in it. By default, the Helm chart installs two CRDs:
+- StreamClass
+- StreamingJobTemplate
+
+The resources of both kinds are being installed by the streaming plugins.
+
+## Verify the installation
+
+To verify the operator installation run the following command:
+
+```bash
+$ kubectl get pods -l app.kubernetes.io/name=arcane-operator --namespace arcane
+```
+
+It should produce the similar output:
+
+```bash
+NAME                               READY   STATUS    RESTARTS   AGE
+arcane-operator-55988bbfcb-ql7qr   1/1     Running   0          25m
+```
+
+Once operator is installed, you can install the streaming plugins.
+
+# Streaming plugins
+-- TBD --
+
+# Contributing
+-- TBD --
+
+## Extending the platform with plugins
