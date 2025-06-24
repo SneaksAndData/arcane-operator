@@ -2,6 +2,12 @@
 
 <img src="docs/images/arcane-logo.png" width="100" height="100" alt="logo"> 
 
+[![Run tests with coverage](https://github.com/SneaksAndData/arcane-operator/actions/workflows/build.yaml/badge.svg)](https://github.com/SneaksAndData/arcane-operator/actions/workflows/build.yaml)
+[![C#](https://img.shields.io/badge/C%23-8-blue.svg)](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-versioning)
+![GitHub Release Date](https://img.shields.io/github/release-date/sneaksanddata/arcane-operator)
+
+
+
 **Arcane** is a Kubernetes-native data streaming platform powered by extendable plugin architecture.
 
 Arcane is designed to be:
@@ -67,6 +73,9 @@ arcane-operator-55988bbfcb-ql7qr   1/1     Running   0          25m
 Once operator is installed, you can install the streaming plugins.
 
 # Streaming plugins
+-- TBD --
+
+# Monitoring and observability
 -- TBD --
 
 # Contributing
