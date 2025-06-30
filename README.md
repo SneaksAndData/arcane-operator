@@ -82,9 +82,9 @@ Please refer the roadmap for the Arcane Streaming Platform on the [Arcane](https
 The most significant milestones are listed below: 
 
 - [x] Support for ZIO-based streaming plugins
-- [x] Support for Akka-based streaming plugins
 - [ ] Add contribution guidelines
 - [ ] Rewrite the operator in Go
+- [ ] Complete transition from Akka.NET to ZIO for the remaining streaming plugins
 
 # Streaming plugins
 
