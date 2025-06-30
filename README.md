@@ -33,6 +33,9 @@ This repository contains the **Arcane Operator**, which is responsible for manag
  - [Getting started](#getting-started)
    - [Verify the installation](#verify-the-installation)
  - [Streaming plugins](#streaming-plugins)
+    - [Available ZIO-based streaming plugins](#available-ziobased-streaming-plugins)
+    - [Available Akka-based streaming plugins](#available-akkabased-streaming-plugins)
+ - [Monitoring and observability](#monitoring-and-observability)
  - [Contributing](#contributing)
    - [Extending the platform with your own plugins](#extending-the-platform-with-your-own-plugins)
 
@@ -72,8 +75,26 @@ arcane-operator-55988bbfcb-ql7qr   1/1     Running   0          25m
 
 Once operator is installed, you can install the streaming plugins.
 
+# Platform roadmap
+
+Please refer the roadmap for the Arcane Streaming Platform on the [Arcane](https://github.com/orgs/SneaksAndData/projects/21) project page.
+
+The most significant milestones are listed below: 
+
+- [x] Support for ZIO-based streaming plugins
+- [x] Support for Akka-based streaming plugins
+- [ ] Add contribution guidelines
+- [ ] Rewrite the operator in Go
+
 # Streaming plugins
--- TBD --
+
+### Available ZIO-based streaming plugins
+* Sql Server streaming plugin: [arcane-stream-sqlserver-change-tracking](https://github.com/SneaksAndData/arcane-stream-sqlserver-change-tracking)
+* Microsoft Synapse streaming plugin: [arcane-stream-microsoft-synapse-link](https://github.com/SneaksAndData/arcane-stream-microsoft-synapse-link)
+
+### Available Akka-based streaming plugins
+* REST-api streaming plugin: [arcane-stream-rest-api](https://github.com/SneaksAndData/arcane-stream-rest-api)
+
 
 # Monitoring and observability
 -- TBD --
