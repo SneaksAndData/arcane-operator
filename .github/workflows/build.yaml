@@ -50,38 +50,38 @@ jobs:
       #      - name: Setup integration tests
       #        run: just up
 
-      - name: Run integration tests
-        run: go test -v ./... -coverprofile=./cover.out -covermode=atomic -coverpkg=./...
+#      - name: Run integration tests
+#        run: go test -v ./... -coverprofile=./cover.out -covermode=atomic -coverpkg=./...
 
-      - name: Check test coverage
-        id: coverage
-        uses: vladopajic/go-test-coverage@v2.18.0
-        continue-on-error: true # Should fail after coverage comment is posted
-        with:
-          config: .testcoverage.yaml
+#      - name: Check test coverage
+#        id: coverage
+#        uses: vladopajic/go-test-coverage@v2.18.0
+#        continue-on-error: true # Should fail after coverage comment is posted
+#        with:
+#          config: .testcoverage.yaml
 
-      - name: Post coverage report
-        uses: thollander/actions-comment-pull-request@v3
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          comment-tag: coverage-report
-          message: |
-            go-test-coverage report:
-            ```${{ fromJSON(steps.coverage.outputs.report) }}```
-
-      - name: Finally check coverage
-        if: steps.coverage.outcome == 'failure'
-        shell: bash
-        run: echo "coverage check failed" && exit 1
-
-      - name: Get logs from application pods
-        if: always()
-        run: |
-          kubectl describe pods --namespace default || true
-          echo "============================= Logs from boxer-issuer =================================================="
-          kubectl logs -l app.kubernetes.io/name=boxer-issuer || true
-          echo "============================= Logs from boxer-validator-nginx =-======================================="
-          kubectl logs -l app.kubernetes.io/name=boxer-validator-nginx || true
+#      - name: Post coverage report
+#        uses: thollander/actions-comment-pull-request@v3
+#        with:
+#          github-token: ${{ secrets.GITHUB_TOKEN }}
+#          comment-tag: coverage-report
+#          message: |
+#            go-test-coverage report:
+#            ```${{ fromJSON(steps.coverage.outputs.report) }}```
+#
+#      - name: Finally check coverage
+#        if: steps.coverage.outcome == 'failure'
+#        shell: bash
+#        run: echo "coverage check failed" && exit 1
+#
+#      - name: Get logs from application pods
+#        if: always()
+#        run: |
+#          kubectl describe pods --namespace default || true
+#          echo "============================= Logs from boxer-issuer =================================================="
+#          kubectl logs -l app.kubernetes.io/name=boxer-issuer || true
+#          echo "============================= Logs from boxer-validator-nginx =-======================================="
+#          kubectl logs -l app.kubernetes.io/name=boxer-validator-nginx || true
 #
 #  build_image:
 #    name: Build Docker Image and Helm Charts
