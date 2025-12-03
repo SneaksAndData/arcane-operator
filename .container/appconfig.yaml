@@ -3,15 +3,19 @@ app-environment: "development"
 
 stream-class-operator:
   max-buffer-capacity: 100
-  api-group: "example.arcane.io"
-  version: "v1"
-  plural: "streamclasses"
+  api-settings:
+    api-group: "example.arcane.io"
+    version: "v1"
+    plural: "streamclasses"
   name-space: "default"
 
 streaming-job-operator:
   max-buffer-capacity: 50
 
 streaming-job-template:
-  api-group: "example.arcane.io"
-  version: "v1"
-  plural: "streamingjobtemplates"
+  max-buffer-capacity: 100
+  api-settings:
+    api-group: "example.arcane.io"
+    version: "v1"
+    plural: "streamingjobtemplates"
+

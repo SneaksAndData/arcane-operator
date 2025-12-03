@@ -15,7 +15,7 @@ RUN go install github.com/DataDog/orchestrion@v1.5.0 \
     && go mod tidy \
     && go mod verify \
     && go mod vendor \
-    && CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH GOFLAGS="${GOFLAGS} '-toolexec=orchestrion toolexec'" go build -ldflags "-X github.com/SneaksAndData/nexus-core/pkg/buildmeta.AppVersion=$APPVERSION -X github.com/SneaksAndData/nexus-core/pkg/buildmeta.BuildNumber=$BUILDNUMBER" -o /app -v ./...
+    && CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH GOFLAGS="${GOFLAGS} '-toolexec=orchestrion toolexec'" go build o /app -v ./...
 
 
 # Deploy the application binary into a lean image
@@ -29,4 +29,4 @@ COPY .container/appconfig.yaml /app/appconfig.yaml
 
 USER nonroot:nonroot
 
-ENTRYPOINT ["/app/nexus"]
+ENTRYPOINT ["/app/arcane-operator"]
