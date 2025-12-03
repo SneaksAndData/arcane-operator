@@ -1,4 +1,4 @@
-package arcane_operator
+package main
 
 import (
 	"arcane-operator/configuration"
