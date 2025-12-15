@@ -58,7 +58,7 @@ jobs:
       - name: Check test coverage
         if: false # Temporarily disable integration tests
         id: coverage
-        uses: vladopajic/go-test-coverage@v2.18.0
+        uses: vladopajic/go-test-coverage@v2.18.1
         continue-on-error: true # Should fail after coverage comment is posted
         with:
           config: .testcoverage.yaml
