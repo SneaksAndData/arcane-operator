@@ -19,10 +19,10 @@ limitations under the License.
 package v1
 
 import (
-	streamingv1 "arcane-operator/pkg/apis/streaming/v1"
-	scheme "arcane-operator/pkg/generated/clientset/versioned/scheme"
 	http "net/http"
 
+	streamingv1 "github.com/SneaksAndData/arcane-operator/pkg/apis/streaming/v1"
+	scheme "github.com/SneaksAndData/arcane-operator/pkg/generated/clientset/versioned/scheme"
 	rest "k8s.io/client-go/rest"
 )
 

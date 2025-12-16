@@ -19,10 +19,9 @@ limitations under the License.
 package fake
 
 import (
-	v1 "arcane-operator/pkg/apis/streaming/v1"
-	streamingv1 "arcane-operator/pkg/generated/applyconfiguration/streaming/v1"
-	typedstreamingv1 "arcane-operator/pkg/generated/clientset/versioned/typed/streaming/v1"
-
+	v1 "github.com/SneaksAndData/arcane-operator/pkg/apis/streaming/v1"
+	streamingv1 "github.com/SneaksAndData/arcane-operator/pkg/generated/applyconfiguration/streaming/v1"
+	typedstreamingv1 "github.com/SneaksAndData/arcane-operator/pkg/generated/clientset/versioned/typed/streaming/v1"
 	gentype "k8s.io/client-go/gentype"
 )
 

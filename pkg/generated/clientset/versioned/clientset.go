@@ -19,10 +19,10 @@ limitations under the License.
 package versioned
 
 import (
-	streamingv1 "arcane-operator/pkg/generated/clientset/versioned/typed/streaming/v1"
 	fmt "fmt"
 	http "net/http"
 
+	streamingv1 "github.com/SneaksAndData/arcane-operator/pkg/generated/clientset/versioned/typed/streaming/v1"
 	discovery "k8s.io/client-go/discovery"
 	rest "k8s.io/client-go/rest"
 	flowcontrol "k8s.io/client-go/util/flowcontrol"

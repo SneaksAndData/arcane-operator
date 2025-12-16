@@ -19,11 +19,10 @@ limitations under the License.
 package fake
 
 import (
-	applyconfiguration "arcane-operator/pkg/generated/applyconfiguration"
-	clientset "arcane-operator/pkg/generated/clientset/versioned"
-	streamingv1 "arcane-operator/pkg/generated/clientset/versioned/typed/streaming/v1"
-	fakestreamingv1 "arcane-operator/pkg/generated/clientset/versioned/typed/streaming/v1/fake"
-
+	applyconfiguration "github.com/SneaksAndData/arcane-operator/pkg/generated/applyconfiguration"
+	clientset "github.com/SneaksAndData/arcane-operator/pkg/generated/clientset/versioned"
+	streamingv1 "github.com/SneaksAndData/arcane-operator/pkg/generated/clientset/versioned/typed/streaming/v1"
+	fakestreamingv1 "github.com/SneaksAndData/arcane-operator/pkg/generated/clientset/versioned/typed/streaming/v1/fake"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"

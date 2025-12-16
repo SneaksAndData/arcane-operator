@@ -19,7 +19,7 @@ limitations under the License.
 package v1
 
 import (
-	internalinterfaces "arcane-operator/pkg/generated/informers/externalversions/internalinterfaces"
+	internalinterfaces "github.com/SneaksAndData/arcane-operator/pkg/generated/informers/externalversions/internalinterfaces"
 )
 
 // Interface provides access to all the informers in this group version.
