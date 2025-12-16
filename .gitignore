@@ -357,5 +357,5 @@ NuGet.Config
 # Integration test Helm charts
 /integration_tests/helm/setup/charts/
 
-# Goland vendor directory
-vendor
+# Golang vendor directory
+/vendor/
