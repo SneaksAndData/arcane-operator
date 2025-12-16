@@ -11,7 +11,7 @@ import (
 var _ StreamClassHandler = (*StreamClassEventHandler)(nil)
 
 type StreamClassEventHandler struct {
-	logger    slog.Logger
+	logger    klog.Logger
 	workQueue workqueue.TypedRateLimitingInterface[StreamClassEvent]
 }
 
