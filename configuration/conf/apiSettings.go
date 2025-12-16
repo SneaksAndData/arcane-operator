@@ -1,4 +1,4 @@
-package configurations
+package conf
 
 type ApiSettings struct {
 	// ApiGroup is the API group of the StreamClass CRD.

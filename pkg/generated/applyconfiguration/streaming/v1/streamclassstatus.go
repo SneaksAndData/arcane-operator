@@ -19,8 +19,7 @@ limitations under the License.
 package v1
 
 import (
-	streamingv1 "arcane-operator/pkg/apis/streaming/v1"
-
+	streamingv1 "github.com/SneaksAndData/arcane-operator/pkg/apis/streaming/v1"
 	metav1 "k8s.io/client-go/applyconfigurations/meta/v1"
 )
 

@@ -1,9 +1,9 @@
 package configuration
 
 import (
-	"arcane-operator/configuration/configurations"
 	"context"
 	"fmt"
+	"github.com/SneaksAndData/arcane-operator/configuration/conf"
 	"github.com/spf13/viper"
 	"k8s.io/klog/v2"
 	"os"
@@ -24,7 +24,7 @@ func configExists(configPath string) (bool, error) {
 	}
 }
 
-func LoadConfig(ctx context.Context) configurations.ApplicationConfiguration {
+func LoadConfig(ctx context.Context) conf.ApplicationConfiguration {
 	logger := klog.FromContext(ctx)
 	customViper := viper.NewWithOptions(viper.KeyDelimiter("__"))
 	customViper.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
@@ -49,7 +49,7 @@ func LoadConfig(ctx context.Context) configurations.ApplicationConfiguration {
 		klog.FlushAndExit(klog.ExitFlushTimeout, 1)
 	}
 
-	var appConfig configurations.ApplicationConfiguration
+	var appConfig conf.ApplicationConfiguration
 	err := customViper.Unmarshal(&appConfig)
 
 	if err != nil { // coverage-ignore

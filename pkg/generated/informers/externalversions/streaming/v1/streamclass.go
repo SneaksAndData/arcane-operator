@@ -19,10 +19,10 @@ limitations under the License.
 package v1
 
 import (
-	apisstreamingv1 "arcane-operator/pkg/apis/streaming/v1"
 	context "context"
 	time "time"
 
+	apisstreamingv1 "github.com/SneaksAndData/arcane-operator/pkg/apis/streaming/v1"
 	versioned "github.com/SneaksAndData/arcane-operator/pkg/generated/clientset/versioned"
 	internalinterfaces "github.com/SneaksAndData/arcane-operator/pkg/generated/informers/externalversions/internalinterfaces"
 	streamingv1 "github.com/SneaksAndData/arcane-operator/pkg/generated/listers/streaming/v1"

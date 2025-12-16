@@ -19,9 +19,9 @@ limitations under the License.
 package externalversions
 
 import (
-	v1 "arcane-operator/pkg/apis/streaming/v1"
 	fmt "fmt"
 
+	v1 "github.com/SneaksAndData/arcane-operator/pkg/apis/streaming/v1"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	cache "k8s.io/client-go/tools/cache"
 )

@@ -61,7 +61,7 @@ type StreamClass struct {
 }
 
 // StreamClassList contains a list of StreamClass resources
-// +kubebuilder:object:root=true
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type StreamClassList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
@@ -84,7 +84,7 @@ type StreamingJobTemplate struct {
 }
 
 // StreamingJobTemplateList contains a list of Job resources
-// +kubebuilder:object:root=true
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type StreamingJobTemplateList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
