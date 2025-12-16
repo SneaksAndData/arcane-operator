@@ -1,8 +1,8 @@
 package stream_class
 
 import (
-	v1 "arcane-operator/pkg/generated/informers/externalversions/streaming/v1"
 	"fmt"
+	"github.com/SneaksAndData/arcane-operator/pkg/generated/informers/externalversions/streaming/v1"
 	"k8s.io/client-go/tools/cache"
 )
 

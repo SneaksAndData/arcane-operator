@@ -1,11 +1,11 @@
 package stream_class
 
 import (
-	"arcane-operator/configuration/conf"
-	"arcane-operator/pkg/apis/streaming/v1"
+	"github.com/SneaksAndData/arcane-operator/configuration/conf"
+	"github.com/SneaksAndData/arcane-operator/pkg/apis/streaming/v1"
 	"golang.org/x/time/rate"
 	"k8s.io/client-go/util/workqueue"
-	"log/slog"
+	"k8s.io/klog/v2"
 )
 
 var _ StreamClassHandler = (*StreamClassEventHandler)(nil)
@@ -18,7 +18,7 @@ type StreamClassEventHandler struct {
 // NewStreamClassEventHandler creates a new StreamClassEventHandler
 //
 //lint:ignore U1000 Suppress unused constructor temporarily
-func NewStreamClassEventHandler(log slog.Logger, configuration conf.StreamClassOperatorConfiguration) *StreamClassEventHandler {
+func NewStreamClassEventHandler(log klog.Logger, configuration conf.StreamClassOperatorConfiguration) *StreamClassEventHandler {
 
 	rlc := configuration.RateLimiting
 	rateLimiter := workqueue.NewTypedMaxOfRateLimiter(
@@ -41,7 +41,7 @@ func (s *StreamClassEventHandler) HandleStreamClassAdded(obj any) {
 			StreamClass: streamClass,
 		})
 	} else {
-		s.logger.Error("HandleStreamClassAdded: unable to cast object to StreamClass")
+		s.logger.Error(nil, "HandleStreamClassAdded: unable to cast object to StreamClass")
 	}
 }
 
@@ -52,7 +52,7 @@ func (s *StreamClassEventHandler) HandleStreamClassUpdated(_ any, newObj any) {
 			StreamClass: streamClass,
 		})
 	} else {
-		s.logger.Error("HandleStreamClassAdded: unable to cast object to StreamClass")
+		s.logger.Error(nil, "HandleStreamClassAdded: unable to cast object to StreamClass")
 	}
 }
 
@@ -63,6 +63,6 @@ func (s *StreamClassEventHandler) HandleStreamClassDeleted(obj any) {
 			StreamClass: streamClass,
 		})
 	} else {
-		s.logger.Error("HandleStreamClassAdded: unable to cast object to StreamClass")
+		s.logger.Error(nil, "HandleStreamClassAdded: unable to cast object to StreamClass")
 	}
 }

@@ -1,9 +1,9 @@
 package configuration
 
 import (
-	"arcane-operator/configuration/conf"
 	"context"
 	"fmt"
+	"github.com/SneaksAndData/arcane-operator/configuration/conf"
 	"github.com/spf13/viper"
 	"k8s.io/klog/v2"
 	"os"

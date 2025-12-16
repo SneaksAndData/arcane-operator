@@ -1,6 +1,6 @@
 package stream_class
 
-import v1 "arcane-operator/pkg/apis/streaming/v1"
+import v1 "github.com/SneaksAndData/arcane-operator/pkg/apis/streaming/v1"
 
 // Define event types for StreamClass events
 type eventType string
