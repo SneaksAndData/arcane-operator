@@ -1,4 +1,4 @@
-package configurations
+package conf
 
 // StreamingJobTemplateConfiguration holds configuration for StreamingJobTemplate CRD.
 type StreamingJobTemplateConfiguration struct {

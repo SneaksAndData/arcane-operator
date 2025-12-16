@@ -19,8 +19,8 @@ limitations under the License.
 package streaming
 
 import (
-	internalinterfaces "github.com/SneaksAndData/arcane-operator/pkg/generated/informers/externalversions/internalinterfaces"
-	v1 "github.com/SneaksAndData/arcane-operator/pkg/generated/informers/externalversions/streaming/v1"
+	internalinterfaces "arcane-operator/pkg/generated/informers/externalversions/internalinterfaces"
+	v1 "arcane-operator/pkg/generated/informers/externalversions/streaming/v1"
 )
 
 // Interface provides access to each of this group's versions.

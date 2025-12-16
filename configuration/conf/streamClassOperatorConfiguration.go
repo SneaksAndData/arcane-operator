@@ -1,4 +1,4 @@
-package configurations
+package conf
 
 // StreamClassOperatorConfiguration holds configuration for StreamClassOperatorService.
 type StreamClassOperatorConfiguration struct {
@@ -11,4 +11,7 @@ type StreamClassOperatorConfiguration struct {
 
 	// ApiSettings holds the API settings for the StreamClass CRD.
 	ApiSettings ApiSettings
+
+	// RateLimitConfiguration holds the rate limiting configuration
+	RateLimiting RateLimitConfiguration
 }

@@ -1,4 +1,4 @@
-package configurations
+package conf
 
 // ApplicationConfiguration holds the configuration for the application.
 type ApplicationConfiguration struct {

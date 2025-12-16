@@ -1,4 +1,4 @@
-package configurations
+package conf
 
 // StreamingJobOperatorConfiguration holds configuration for StreamOperatorService.
 type StreamingJobOperatorConfiguration struct {

@@ -20,10 +20,10 @@ package v1
 
 import (
 	streamingv1 "arcane-operator/pkg/apis/streaming/v1"
+	applyconfigurationstreamingv1 "arcane-operator/pkg/generated/applyconfiguration/streaming/v1"
+	scheme "arcane-operator/pkg/generated/clientset/versioned/scheme"
 	context "context"
 
-	applyconfigurationstreamingv1 "github.com/SneaksAndData/arcane-operator/pkg/generated/applyconfiguration/streaming/v1"
-	scheme "github.com/SneaksAndData/arcane-operator/pkg/generated/clientset/versioned/scheme"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"

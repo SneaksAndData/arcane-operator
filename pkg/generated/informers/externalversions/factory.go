@@ -19,13 +19,13 @@ limitations under the License.
 package externalversions
 
 import (
+	versioned "arcane-operator/pkg/generated/clientset/versioned"
+	internalinterfaces "arcane-operator/pkg/generated/informers/externalversions/internalinterfaces"
+	streaming "arcane-operator/pkg/generated/informers/externalversions/streaming"
 	reflect "reflect"
 	sync "sync"
 	time "time"
 
-	versioned "github.com/SneaksAndData/arcane-operator/pkg/generated/clientset/versioned"
-	internalinterfaces "github.com/SneaksAndData/arcane-operator/pkg/generated/informers/externalversions/internalinterfaces"
-	streaming "github.com/SneaksAndData/arcane-operator/pkg/generated/informers/externalversions/streaming"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
