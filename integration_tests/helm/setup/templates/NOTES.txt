@@ -1,0 +1,4 @@
+IMPORTANT NOTE:
+This chart is designed to be used in integration tests and is not intended for production use.
+If you want to install the Arcane Operator application, please use the Arcane Operator chart instead.
+The boxer issuer chart can be found at: https://github.com/SneaksAndData/arcane-operator/tree/main/.helm

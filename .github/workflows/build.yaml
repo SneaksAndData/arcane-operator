@@ -52,7 +52,6 @@ jobs:
           version: v2.1.0
 
       - name: Setup integration tests
-        if: false # Temporarily disable integration tests
         run: just up
 
       - name: Run integration tests

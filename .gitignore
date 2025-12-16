@@ -353,4 +353,9 @@ MigrationBackup/
 # Ionide (cross platform F# VS Code tools) working folder
 .ionide/
 NuGet.Config
+
+# Integration test Helm charts
+/integration_tests/helm/setup/charts/
+
+# Golang vendor directory
 /vendor/
