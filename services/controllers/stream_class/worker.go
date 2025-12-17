@@ -1,6 +1,7 @@
 package stream_class
 
 import (
+	"context"
 	"fmt"
 	"github.com/SneaksAndData/arcane-operator/pkg/apis/streaming/v1"
 	"github.com/SneaksAndData/arcane-operator/services/controllers/common"
@@ -88,7 +89,11 @@ func (s StreamDefinitionControllerManager) updateOrCreate(class *v1.StreamClass)
 
 	// The second check to handle case where the controller was created after the first check
 	if controller.IsUpdateNeeded(class) {
-		controller.Stop()
+		err := controller.Stop(context.Background())
+		if err != nil {
+			s.logger.Error(err, "Error stopping StreamClass worker", "name", class.Name)
+			return
+		}
 		s.controllers[class.WorkerId()] = s.factory.CreateStreamClassWorker(class)
 	}
 }
@@ -104,7 +109,10 @@ func (s StreamDefinitionControllerManager) stopWorker(class *v1.StreamClass) err
 
 	if controller.IsUpdateNeeded(class) {
 		// Update or create the controller handle
-		controller.Stop()
+		err := controller.Stop(context.Background())
+		if err != nil {
+			return fmt.Errorf("error stopping stream class %s: %w", class.Name, err)
+		}
 		s.controllers[class.WorkerId()] = nil
 	}
 
