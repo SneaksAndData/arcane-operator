@@ -44,14 +44,12 @@ type StreamClassStatus struct {
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
 }
 
+// StreamClass is the Schema for the stream class API
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +kubebuilder:subresource:status
-// +kubebuilder:resource:scope=Cluster
-// +kubebuilder:resource:singular=stream-class,shortName=sc,path=stream-classes
+// +kubebuilder:resource:scope=Cluster,shortName=sc
 // +kubebuilder:object:root=true
-
-// StreamClass is the Schema for the stream class API
 type StreamClass struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -70,8 +68,7 @@ type StreamClassList struct {
 
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-// +kubebuilder:resource:scope=Namespaced
-// +kubebuilder:resource:singular=streaming-job-template,shortName=sjt,path=streaming-job-templates
+// +kubebuilder:resource:scope=Namespaced,shortName=sjt
 // +kubebuilder:subresource:status
 // +kubebuilder:object:root=true
 

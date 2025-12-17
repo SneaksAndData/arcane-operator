@@ -8,17 +8,25 @@ import (
 	"k8s.io/klog/v2"
 )
 
+type StreamClassWorker interface {
+	HandleEvents(queue workqueue.TypedRateLimitingInterface[StreamClassEvent]) error
+}
+
 var _ StreamClassHandler = (*StreamClassEventHandler)(nil)
 
 type StreamClassEventHandler struct {
 	logger    klog.Logger
 	workQueue workqueue.TypedRateLimitingInterface[StreamClassEvent]
+	worker    StreamClassWorker
 }
 
 // NewStreamClassEventHandler creates a new StreamClassEventHandler
 //
 //lint:ignore U1000 Suppress unused constructor temporarily
-func NewStreamClassEventHandler(log klog.Logger, configuration conf.StreamClassOperatorConfiguration) *StreamClassEventHandler {
+func NewStreamClassEventHandler(
+	log klog.Logger,
+	configuration conf.StreamClassOperatorConfiguration,
+	worker StreamClassWorker) *StreamClassEventHandler {
 
 	rlc := configuration.RateLimiting
 	rateLimiter := workqueue.NewTypedMaxOfRateLimiter(
@@ -28,9 +36,11 @@ func NewStreamClassEventHandler(log klog.Logger, configuration conf.StreamClassO
 		},
 	)
 
+	queue := workqueue.NewTypedRateLimitingQueue(rateLimiter)
 	return &StreamClassEventHandler{
 		logger:    log,
-		workQueue: workqueue.NewTypedRateLimitingQueue(rateLimiter),
+		workQueue: queue,
+		worker:    worker,
 	}
 }
 
