@@ -10,23 +10,39 @@ import (
 	"sync"
 )
 
-type StreamingJobControllerFactory interface {
-	CreateStreamClassWorker(*v1.StreamClass) StreamingJobControllerHandle
+type StreamControllerFactory interface {
+	CreateStreamOperator(context.Context, *v1.StreamClass) (StreamControllerHandle, error)
 }
 
 var _ StreamClassWorker = (*StreamDefinitionControllerManager)(nil)
 
 type StreamDefinitionControllerManager struct {
-	factory     StreamingJobControllerFactory
+	factory     StreamControllerFactory
 	lock        *sync.RWMutex
-	controllers map[common.WorkerId]StreamingJobControllerHandle
+	controllers map[common.WorkerId]StreamControllerHandle
 	logger      *klog.Logger
+	context     context.Context
+	cancelFunc  context.CancelFunc
+}
+
+func NewStreamDefinitionControllerManager(factory StreamControllerFactory, logger klog.Logger) *StreamDefinitionControllerManager {
+	l := logger.WithValues("component", "StreamDefinitionControllerManager")
+	ctx, cancelFunc := context.WithCancel(context.Background())
+	return &StreamDefinitionControllerManager{
+		factory:     factory,
+		lock:        &sync.RWMutex{},
+		controllers: make(map[common.WorkerId]StreamControllerHandle),
+		logger:      &l,
+		context:     ctx,
+		cancelFunc:  cancelFunc,
+	}
 }
 
 func (s StreamDefinitionControllerManager) HandleEvents(queue workqueue.TypedRateLimitingInterface[StreamClassEvent]) error {
 	element, shutdown := queue.Get()
 
 	if shutdown {
+		s.cancelFunc()
 		return nil
 	}
 	defer queue.Done(element)
@@ -82,19 +98,29 @@ func (s StreamDefinitionControllerManager) updateOrCreate(class *v1.StreamClass)
 	controller, exists := s.controllers[class.WorkerId()]
 	if !exists {
 		// Update or create the controller handle
-		s.controllers[class.WorkerId()] = s.factory.CreateStreamClassWorker(class)
+		worker, err := s.factory.CreateStreamOperator(s.context, class)
+		if err != nil {
+			s.logger.Error(err, "Error creating StreamClass worker", "name", class.Name)
+			return
+		}
+		s.controllers[class.WorkerId()] = worker
 
 		return
 	}
 
 	// The second check to handle case where the controller was created after the first check
 	if controller.IsUpdateNeeded(class) {
-		err := controller.Stop(context.Background())
+		err := controller.Stop()
 		if err != nil {
 			s.logger.Error(err, "Error stopping StreamClass worker", "name", class.Name)
 			return
 		}
-		s.controllers[class.WorkerId()] = s.factory.CreateStreamClassWorker(class)
+		worker, err := s.factory.CreateStreamOperator(s.context, class)
+		if err != nil {
+			s.logger.Error(err, "Error creating StreamClass worker", "name", class.Name)
+			return
+		}
+		s.controllers[class.WorkerId()] = worker
 	}
 }
 
@@ -109,7 +135,7 @@ func (s StreamDefinitionControllerManager) stopWorker(class *v1.StreamClass) err
 
 	if controller.IsUpdateNeeded(class) {
 		// Update or create the controller handle
-		err := controller.Stop(context.Background())
+		err := controller.Stop()
 		if err != nil {
 			return fmt.Errorf("error stopping stream class %s: %w", class.Name, err)
 		}

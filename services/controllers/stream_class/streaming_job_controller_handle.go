@@ -1,13 +1,12 @@
 package stream_class
 
 import (
-	"context"
 	"github.com/SneaksAndData/arcane-operator/pkg/apis/streaming/v1"
 	"github.com/SneaksAndData/arcane-operator/services/controllers/common"
 )
 
-// StreamingJobControllerHandle defines the interface for object that can be used to control a streaming job worker
-type StreamingJobControllerHandle interface {
+// StreamControllerHandle defines the interface for object that can be used to control a streaming job worker
+type StreamControllerHandle interface {
 
 	// IsUpdateNeeded Returns true if the streaming job needs to be updated
 	IsUpdateNeeded(obj *v1.StreamClass) bool
@@ -16,5 +15,5 @@ type StreamingJobControllerHandle interface {
 	Id() common.StreamClassWorkerIdentity
 
 	// Stop stops the streaming job worker and returns a context that is done when the worker has stopped
-	Stop(ctx context.Context) error
+	Stop() error
 }

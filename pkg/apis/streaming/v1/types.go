@@ -33,6 +33,9 @@ type StreamClassSpec struct {
 
 	// SecretRefs is a list of fields to be extracted from the secret
 	SecretRefs []string `json:"secretRefs,omitempty"`
+
+	// TargetNamespace is the namespace where streaming jobs will be created
+	TargetNamespace string `json:"namespace,omitempty"`
 }
 
 // StreamClassStatus defines the observed state of a stream class
