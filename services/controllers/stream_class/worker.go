@@ -33,7 +33,7 @@ func (s StreamDefinitionControllerManager) HandleEvents(queue workqueue.TypedRat
 	switch element.Type {
 	case StreamClassAdded:
 		// Handle StreamClass added event
-		s.logger.Info("Handling StreamClass added event", "name", element.StreamClass.Name)
+		s.logger.V(4).Info("Handling StreamClass added event", "name", element.StreamClass.Name)
 		isUpdateNeeded := s.isUpdateNeeded(element.StreamClass)
 		if isUpdateNeeded {
 			s.logger.Info("Handling StreamClass update or create", "name", element.StreamClass.Name)
