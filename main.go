@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/SneaksAndData/arcane-operator/configuration"
-	"github.com/SneaksAndData/arcane-operator/signals"
+	"github.com/SneaksAndData/arcane-operator/pkg/signals"
 	"github.com/SneaksAndData/arcane-operator/telemetry"
 	"k8s.io/klog/v2"
 )

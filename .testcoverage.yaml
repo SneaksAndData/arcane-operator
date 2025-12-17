@@ -11,5 +11,7 @@ exclude:
   paths:
     - \.pb\.go$           # excludes all protobuf generated files
     - ^pkg/generated      # exclude generated code
+    - ^pkg/apis/          # exclude API definitions
     - ^pkg/signals        # exclude signal handlers from sample controller
     - hack/*.go           # exclude hack folder
+    - main.go             # application entry point
