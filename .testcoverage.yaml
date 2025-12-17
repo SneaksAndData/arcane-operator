@@ -1,0 +1,15 @@
+profile: cover.out
+
+local-prefix: "github.com/SneaksAndData/arcane-operator"
+
+threshold:
+  file: 70
+  package: 70
+  total: 75
+
+exclude:
+  paths:
+    - \.pb\.go$           # excludes all protobuf generated files
+    - ^pkg/generated      # exclude generated code
+    - ^pkg/signals        # exclude signal handlers from sample controller
+    - hack/*.go           # exclude hack folder
