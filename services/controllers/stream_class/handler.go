@@ -38,7 +38,7 @@ func NewStreamClassEventHandler(
 
 	queue := workqueue.NewTypedRateLimitingQueue(rateLimiter)
 	return &StreamClassEventHandler{
-		logger:    log,
+		logger:    logger,
 		workQueue: queue,
 		worker:    worker,
 	}
