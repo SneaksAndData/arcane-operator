@@ -3,7 +3,7 @@ default:
 
 fresh: stop up
 
-up: start-kind-cluster build-deps
+up: start-kind-cluster build-deps install-integration-tests
 
 start-kind-cluster:
     kind create cluster
