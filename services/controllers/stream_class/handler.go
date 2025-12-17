@@ -24,7 +24,7 @@ type StreamClassEventHandler struct {
 //
 //lint:ignore U1000 Suppress unused constructor temporarily
 func NewStreamClassEventHandler(
-	log klog.Logger,
+	logger klog.Logger,
 	configuration conf.StreamClassOperatorConfiguration,
 	worker StreamClassWorker) *StreamClassEventHandler {
 
