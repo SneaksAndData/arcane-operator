@@ -15,5 +15,5 @@ type StreamingJobControllerHandle interface {
 	Id() common.StreamClassWorkerIdentity
 
 	// Stop stops the streaming job worker and returns a context that is done when the worker has stopped
-	Stop()
+	Stop(ctx context.Context)
 }
