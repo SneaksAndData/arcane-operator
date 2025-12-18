@@ -25,8 +25,7 @@ type StreamDefinitionControllerManager struct {
 	cancelFunc  context.CancelFunc
 }
 
-//lint:ignore U1000 Ignore unused function temporarily
-func NewStreamDefinitionControllerManager(factory StreamControllerFactory, logger klog.Logger) *StreamDefinitionControllerManager {
+func NewStreamDefinitionControllerManager(logger klog.Logger, factory StreamControllerFactory) *StreamDefinitionControllerManager {
 	l := logger.WithValues("component", "StreamDefinitionControllerManager")
 	ctx, cancelFunc := context.WithCancel(context.Background())
 	return &StreamDefinitionControllerManager{
@@ -39,12 +38,12 @@ func NewStreamDefinitionControllerManager(factory StreamControllerFactory, logge
 	}
 }
 
-func (s StreamDefinitionControllerManager) HandleEvents(queue workqueue.TypedRateLimitingInterface[StreamClassEvent]) error {
+func (s StreamDefinitionControllerManager) HandleEvent(queue workqueue.TypedRateLimitingInterface[StreamClassEvent]) {
 	element, shutdown := queue.Get()
 
 	if shutdown {
 		s.cancelFunc()
-		return nil
+		return
 	}
 	defer queue.Done(element)
 
@@ -77,8 +76,6 @@ func (s StreamDefinitionControllerManager) HandleEvents(queue workqueue.TypedRat
 	default:
 		s.logger.Error(nil, "Unknown event type received")
 	}
-
-	return nil
 }
 
 func (s StreamDefinitionControllerManager) isUpdateNeeded(class *v1.StreamClass) bool {
