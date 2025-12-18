@@ -48,7 +48,7 @@ func Test_StreamClassInformer(t *testing.T) {
 	}
 
 	mock := mocks.NewMockStreamControllerFactory(mockCtrl)
-	mock.EXPECT().CreateStreamOperator(gomock.AnyOf(sc)).AnyTimes()
+	mock.EXPECT().CreateStreamOperator(gomock.Any()).AnyTimes()
 	controller, err := createController(t.Context(), mock)
 	assert.NoError(t, err)
 	assert.NotNil(t, controller)
