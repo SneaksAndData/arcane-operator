@@ -101,6 +101,11 @@ func (s StreamDefinitionControllerManager) updateOrCreate(class *v1.StreamClass)
 			s.logger.Error(err, "Error creating StreamClass worker", "name", class.Name)
 			return
 		}
+		err = worker.Start()
+		if err != nil {
+			s.logger.Error(err, "Error starting StreamClass worker", "name", class.Name)
+			return
+		}
 		s.controllers[class.WorkerId()] = worker
 
 		return
@@ -118,6 +123,11 @@ func (s StreamDefinitionControllerManager) updateOrCreate(class *v1.StreamClass)
 			s.logger.Error(err, "Error creating StreamClass worker", "name", class.Name)
 			return
 		}
+		err = worker.Start()
+		if err != nil {
+			s.logger.Error(err, "Error starting StreamClass worker", "name", class.Name)
+			return
+		}
 		s.controllers[class.WorkerId()] = worker
 	}
 }
@@ -131,14 +141,11 @@ func (s StreamDefinitionControllerManager) stopWorker(class *v1.StreamClass) err
 		return fmt.Errorf("stream class %s has already been stopped", class.Name)
 	}
 
-	if controller.IsUpdateNeeded(class) {
-		// Update or create the controller handle
-		err := controller.Stop()
-		if err != nil {
-			return fmt.Errorf("error stopping stream class %s: %w", class.Name, err)
-		}
-		s.controllers[class.WorkerId()] = nil
+	err := controller.Stop()
+	if err != nil {
+		return fmt.Errorf("error stopping stream class %s: %w", class.Name, err)
 	}
+	s.controllers[class.WorkerId()] = nil
 
 	return nil
 }

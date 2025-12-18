@@ -37,7 +37,7 @@ func Test_StreamClassWorkerIdentity(t *testing.T) {
 	assert.Equal(t, sc.WorkerId(), createdSc.WorkerId())
 }
 
-func Test_StreamClassInformer(t *testing.T) {
+func Test_StreamClassCreationHandling(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 
@@ -47,14 +47,62 @@ func Test_StreamClassInformer(t *testing.T) {
 		},
 	}
 
-	mock := mocks.NewMockStreamControllerFactory(mockCtrl)
-	mock.EXPECT().CreateStreamOperator(gomock.Any()).AnyTimes()
-	controller, err := createController(t.Context(), mock)
+	controllerHandleMock := mocks.NewMockStreamControllerHandle(mockCtrl)
+	factory := mocks.NewMockStreamControllerFactory(mockCtrl)
+
+	factory.EXPECT().CreateStreamOperator(gomock.Any()).AnyTimes().Return(controllerHandleMock, nil)
+	controllerHandleMock.EXPECT().Start().AnyTimes().Return(nil)
+
+	controller, err := createController(t.Context(), factory)
 	assert.NoError(t, err)
 	assert.NotNil(t, controller)
 
 	_, err = versionedClientSet.StreamingV1().StreamClasses("").Create(t.Context(), sc, metav1.CreateOptions{})
 	assert.NoError(t, err)
+}
+
+func Test_StreamClassDeletionHandling(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+
+	sc := &v1.StreamClass{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: uuid.New().String(),
+		},
+	}
+
+	controllerHandleMock := mocks.NewMockStreamControllerHandle(mockCtrl)
+	factory := mocks.NewMockStreamControllerFactory(mockCtrl)
+
+	factory.EXPECT().CreateStreamOperator(gomock.Any()).AnyTimes().Return(controllerHandleMock, nil)
+
+	waitChan := make(chan struct{})
+	controllerHandleMock.EXPECT().Start().MinTimes(1).Return(nil)
+	controllerHandleMock.EXPECT().IsUpdateNeeded(gomock.Any()).AnyTimes().Return(false)
+	controllerHandleMock.EXPECT().Stop().MinTimes(1).Do(func() {
+		waitChan <- struct{}{}
+	})
+
+	controller, err := createController(t.Context(), factory)
+	assert.NoError(t, err)
+	assert.NotNil(t, controller)
+
+	_, err = versionedClientSet.StreamingV1().StreamClasses("").Create(t.Context(), sc, metav1.CreateOptions{})
+	assert.NoError(t, err)
+
+	err = versionedClientSet.StreamingV1().StreamClasses("").Delete(t.Context(), sc.Name, metav1.DeleteOptions{})
+	assert.NoError(t, err)
+
+	for {
+		select {
+		case <-t.Context().Done():
+			t.Fatal("Test timed out waiting for StreamClass deletion handling")
+		case <-waitChan:
+			return
+		default:
+			time.Sleep(100 * time.Millisecond)
+		}
+	}
 }
 
 var cmd = flag.String("cmd", "/opt/homebrew/bin/kind get kubeconfig", "Command to get kubeconfig")
