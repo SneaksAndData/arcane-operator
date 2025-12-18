@@ -25,6 +25,7 @@ type StreamDefinitionControllerManager struct {
 	cancelFunc  context.CancelFunc
 }
 
+//lint:ignore U1000 Ignore unused function temporarily
 func NewStreamDefinitionControllerManager(factory StreamControllerFactory, logger klog.Logger) *StreamDefinitionControllerManager {
 	l := logger.WithValues("component", "StreamDefinitionControllerManager")
 	ctx, cancelFunc := context.WithCancel(context.Background())
@@ -98,7 +99,7 @@ func (s StreamDefinitionControllerManager) updateOrCreate(class *v1.StreamClass)
 	controller, exists := s.controllers[class.WorkerId()]
 	if !exists {
 		// Update or create the controller handle
-		worker, err := s.factory.CreateStreamOperator(s.context, class)
+		worker, err := s.factory.CreateStreamOperator(class)
 		if err != nil {
 			s.logger.Error(err, "Error creating StreamClass worker", "name", class.Name)
 			return
@@ -115,7 +116,7 @@ func (s StreamDefinitionControllerManager) updateOrCreate(class *v1.StreamClass)
 			s.logger.Error(err, "Error stopping StreamClass worker", "name", class.Name)
 			return
 		}
-		worker, err := s.factory.CreateStreamOperator(s.context, class)
+		worker, err := s.factory.CreateStreamOperator(class)
 		if err != nil {
 			s.logger.Error(err, "Error creating StreamClass worker", "name", class.Name)
 			return
