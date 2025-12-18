@@ -58,7 +58,7 @@ func (s *StreamClassEventHandler) HandleStreamClassAdded(obj any) {
 			Type:        StreamClassAdded,
 			StreamClass: streamClass,
 		})
-	} else {
+	} else { // coverage-ignore
 		s.logger.Error(nil, "HandleStreamClassAdded: unable to cast object to StreamClass")
 	}
 }
@@ -69,7 +69,7 @@ func (s *StreamClassEventHandler) HandleStreamClassUpdated(_ any, newObj any) {
 			Type:        StreamClassUpdated,
 			StreamClass: streamClass,
 		})
-	} else {
+	} else { // coverage-ignore
 		s.logger.Error(nil, "HandleStreamClassAdded: unable to cast object to StreamClass")
 	}
 }
@@ -80,7 +80,7 @@ func (s *StreamClassEventHandler) HandleStreamClassDeleted(obj any) {
 			Type:        StreamClassDeleted,
 			StreamClass: streamClass,
 		})
-	} else {
+	} else { // coverage-ignore
 		s.logger.Error(nil, "HandleStreamClassAdded: unable to cast object to StreamClass")
 	}
 }

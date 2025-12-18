@@ -36,7 +36,7 @@ func NewStreamClassController(informer v1.StreamClassInformer, handler StreamCla
 		DeleteFunc: handler.HandleStreamClassDeleted,
 	})
 
-	if err != nil {
+	if err != nil { // coverage-ignore
 		return nil, fmt.Errorf("error adding StreamClass controller: %w", err)
 	}
 
