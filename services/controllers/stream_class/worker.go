@@ -11,7 +11,7 @@ import (
 )
 
 type StreamControllerFactory interface {
-	CreateStreamOperator(context.Context, *v1.StreamClass) (StreamControllerHandle, error)
+	CreateStreamOperator(*v1.StreamClass) (StreamControllerHandle, error)
 }
 
 var _ StreamClassWorker = (*StreamDefinitionControllerManager)(nil)

@@ -14,6 +14,9 @@ type StreamControllerHandle interface {
 	// Id returns the identity of the streaming job worker
 	Id() common.StreamClassWorkerIdentity
 
+	// Start starts the streaming job worker
+	Start() error
+
 	// Stop stops the streaming job worker and returns a context that is done when the worker has stopped
 	Stop() error
 }
