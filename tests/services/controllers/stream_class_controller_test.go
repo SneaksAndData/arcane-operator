@@ -9,8 +9,10 @@ import (
 	"github.com/SneaksAndData/arcane-operator/pkg/generated/clientset/versioned"
 	"github.com/SneaksAndData/arcane-operator/pkg/generated/informers/externalversions"
 	"github.com/SneaksAndData/arcane-operator/services/controllers/stream_class"
+	"github.com/SneaksAndData/arcane-operator/tests/mocks"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/mock/gomock"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -36,20 +38,23 @@ func Test_StreamClassWorkerIdentity(t *testing.T) {
 }
 
 func Test_StreamClassInformer(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+
 	sc := &v1.StreamClass{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: uuid.New().String(),
 		},
 	}
 
-	controller, err := createController(t.Context(), nil)
+	mock := mocks.NewMockStreamControllerFactory(mockCtrl)
+	mock.EXPECT().CreateStreamOperator(gomock.AnyOf(sc)).AnyTimes()
+	controller, err := createController(t.Context(), mock)
 	assert.NoError(t, err)
 	assert.NotNil(t, controller)
 
 	_, err = versionedClientSet.StreamingV1().StreamClasses("").Create(t.Context(), sc, metav1.CreateOptions{})
 	assert.NoError(t, err)
-	time.Sleep(15 * time.Second)
-	//assert.Equal(t, sc.WorkerId(), createdSc.WorkerId())
 }
 
 var cmd = flag.String("cmd", "/opt/homebrew/bin/kind get kubeconfig", "Command to get kubeconfig")
