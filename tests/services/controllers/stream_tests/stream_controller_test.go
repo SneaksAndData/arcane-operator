@@ -3,6 +3,7 @@ package stream_tests
 import (
 	"flag"
 	"github.com/SneaksAndData/arcane-operator/services/controllers/stream"
+	"github.com/SneaksAndData/arcane-operator/tests"
 	"github.com/SneaksAndData/arcane-operator/tests/mocks"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
@@ -10,6 +11,7 @@ import (
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/klog/v2"
 	"os"
+	"strings"
 	"testing"
 )
 
@@ -70,6 +72,9 @@ func TestMain(m *testing.M) {
 	if err != nil {
 		panic(err)
 	}
+
+	flag.Parse()
+	_ = strings.Split(*tests.KubeconfigCmd, " ")
 
 	code := m.Run()
 	os.Exit(code)
