@@ -10,6 +10,7 @@ import (
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
+	"k8s.io/klog/v2"
 	"reflect"
 )
 
@@ -20,19 +21,21 @@ type ControllerHandle struct {
 	class        *v1.StreamClass
 	context      context.Context
 	cancelFunc   context.CancelFunc
-	sharedQueue  workqueue.TypedRateLimitingInterface[any]
+	sharedQueue  workqueue.TypedRateLimitingInterface[StreamEvent]
 	informer     informers.GenericInformer
 	registration cache.ResourceEventHandlerRegistration
+	logger       klog.Logger
 }
 
-func NewControllerHandle(factory informers.SharedInformerFactory, class *v1.StreamClass, sharedQueue workqueue.TypedRateLimitingInterface[any]) *ControllerHandle {
+func NewControllerHandle(logger klog.Logger, factory informers.SharedInformerFactory, class *v1.StreamClass, q QueueProvider) *ControllerHandle {
 	ctx, cancelFunc := context.WithCancel(context.Background())
 	return &ControllerHandle{
 		factory:     factory,
 		class:       class,
 		context:     ctx,
 		cancelFunc:  cancelFunc,
-		sharedQueue: sharedQueue,
+		sharedQueue: q.GetQueue(),
+		logger:      logger,
 	}
 }
 
@@ -51,13 +54,18 @@ func (s ControllerHandle) Start() error {
 
 	registration, err := informer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj any) {
-			s.sharedQueue.Add(obj)
+			event, err := tryFromKubernetesObject(obj)
+			if err != nil {
+				s.logger.V(0).Error(err, "failed to parse event")
+			}
+			s.sharedQueue.Add(event)
 		},
 		UpdateFunc: func(oldObj, newObj any) {
-			s.sharedQueue.Add(newObj)
-		},
-		DeleteFunc: func(obj any) {
-			s.sharedQueue.Add(obj)
+			event, err := tryFromKubernetesObject(newObj)
+			if err != nil {
+				s.logger.V(0).Error(err, "failed to parse event")
+			}
+			s.sharedQueue.Add(event)
 		},
 	})
 	if err != nil {

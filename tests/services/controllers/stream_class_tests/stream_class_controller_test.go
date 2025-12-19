@@ -1,24 +1,21 @@
-package controllers
+package stream_class_tests
 
 import (
 	"context"
 	"flag"
-	"fmt"
 	"github.com/SneaksAndData/arcane-operator/configuration/conf"
 	"github.com/SneaksAndData/arcane-operator/pkg/apis/streaming/v1"
 	"github.com/SneaksAndData/arcane-operator/pkg/generated/clientset/versioned"
 	"github.com/SneaksAndData/arcane-operator/pkg/generated/informers/externalversions"
 	"github.com/SneaksAndData/arcane-operator/services/controllers/stream_class"
+	"github.com/SneaksAndData/arcane-operator/tests"
 	"github.com/SneaksAndData/arcane-operator/tests/mocks"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/klog/v2"
 	"os"
-	"os/exec"
 	"strings"
 	"testing"
 	"time"
@@ -105,7 +102,6 @@ func Test_StreamClassDeletionHandling(t *testing.T) {
 	}
 }
 
-var cmd = flag.String("cmd", "/opt/homebrew/bin/kind get kubeconfig", "Command to get kubeconfig")
 var versionedClientSet versioned.Interface
 
 func TestMain(m *testing.M) {
@@ -115,9 +111,9 @@ func TestMain(m *testing.M) {
 	}
 
 	flag.Parse()
-	command := strings.Split(*cmd, " ")
+	command := strings.Split(*tests.KubeconfigCmd, " ")
 
-	output, err := readExecKubeconfig(command)
+	output, err := tests.ReadExecKubeconfig(command)
 	if err != nil {
 		panic(err)
 	}
@@ -160,18 +156,4 @@ func clearStreamClasses(client versioned.Interface) error {
 		}
 	}
 	return nil
-}
-
-func readExecKubeconfig(command []string) (*rest.Config, error) {
-	proc := exec.Command(command[0], command[1:]...)
-	output, err := proc.Output()
-	if err != nil { // coverage-ignore
-		return nil, fmt.Errorf("failed to execute command %s: %w", command, err)
-	}
-
-	cfg, err := clientcmd.RESTConfigFromKubeConfig(output)
-	if err != nil { // coverage-ignore
-		return nil, fmt.Errorf("failed to build rest config from kubeconfig: %w", err)
-	}
-	return cfg, nil
 }
