@@ -55,9 +55,11 @@ func (mr *MockJobManagerMockRecorder) EnsureStopped(id any) *gomock.Call {
 }
 
 // StartBackfill mocks base method.
-func (m *MockJobManager) StartBackfill(definition stream.StreamDefinition) {
+func (m *MockJobManager) StartBackfill(definition stream.StreamDefinition) error {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "StartBackfill", definition)
+	ret := m.ctrl.Call(m, "StartBackfill", definition)
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
 // StartBackfill indicates an expected call of StartBackfill.
@@ -67,9 +69,11 @@ func (mr *MockJobManagerMockRecorder) StartBackfill(definition any) *gomock.Call
 }
 
 // StartJob mocks base method.
-func (m *MockJobManager) StartJob(definition stream.StreamDefinition) {
+func (m *MockJobManager) StartJob(definition stream.StreamDefinition) error {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "StartJob", definition)
+	ret := m.ctrl.Call(m, "StartJob", definition)
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
 // StartJob indicates an expected call of StartJob.
