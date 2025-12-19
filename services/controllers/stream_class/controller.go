@@ -1,8 +1,9 @@
 package stream_class
 
 import (
+	"context"
 	"fmt"
-	"github.com/SneaksAndData/arcane-operator/pkg/generated/informers/externalversions/streaming/v1"
+	v1 "github.com/SneaksAndData/arcane-operator/pkg/generated/informers/externalversions/streaming/v1"
 	"k8s.io/client-go/tools/cache"
 )
 
@@ -10,6 +11,7 @@ type StreamClassHandler interface {
 	HandleStreamClassAdded(obj any)
 	HandleStreamClassUpdated(oldObj any, newObj any)
 	HandleStreamClassDeleted(obj any)
+	Start(ctx context.Context)
 }
 
 // StreamClassController reconciles a StreamClass object
@@ -27,15 +29,20 @@ func NewStreamClassController(informer v1.StreamClassInformer, handler StreamCla
 		handler:  handler,
 	}
 
-	_, err := informer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+	inf := informer.Informer()
+	_, err := inf.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc:    handler.HandleStreamClassAdded,
 		UpdateFunc: handler.HandleStreamClassUpdated,
 		DeleteFunc: handler.HandleStreamClassDeleted,
 	})
 
-	if err != nil {
+	if err != nil { // coverage-ignore
 		return nil, fmt.Errorf("error adding StreamClass controller: %w", err)
 	}
 
 	return controller, nil
+}
+
+func (s *StreamClassController) Start(ctx context.Context) {
+	s.handler.Start(ctx)
 }

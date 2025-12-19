@@ -1,15 +1,17 @@
 package stream_class
 
 import (
+	"context"
 	"github.com/SneaksAndData/arcane-operator/configuration/conf"
 	"github.com/SneaksAndData/arcane-operator/pkg/apis/streaming/v1"
 	"golang.org/x/time/rate"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/klog/v2"
 )
 
 type StreamClassWorker interface {
-	HandleEvents(queue workqueue.TypedRateLimitingInterface[StreamClassEvent]) error
+	HandleEvent(queue workqueue.TypedRateLimitingInterface[StreamClassEvent])
 }
 
 var _ StreamClassHandler = (*StreamClassEventHandler)(nil)
@@ -44,13 +46,19 @@ func NewStreamClassEventHandler(
 	}
 }
 
+func (s *StreamClassEventHandler) Start(ctx context.Context) {
+	go wait.UntilWithContext(ctx, func(_ context.Context) {
+		s.worker.HandleEvent(s.workQueue)
+	}, 0)
+}
+
 func (s *StreamClassEventHandler) HandleStreamClassAdded(obj any) {
 	if streamClass, ok := obj.(*v1.StreamClass); ok {
 		s.workQueue.Add(StreamClassEvent{
 			Type:        StreamClassAdded,
 			StreamClass: streamClass,
 		})
-	} else {
+	} else { // coverage-ignore
 		s.logger.Error(nil, "HandleStreamClassAdded: unable to cast object to StreamClass")
 	}
 }
@@ -61,7 +69,7 @@ func (s *StreamClassEventHandler) HandleStreamClassUpdated(_ any, newObj any) {
 			Type:        StreamClassUpdated,
 			StreamClass: streamClass,
 		})
-	} else {
+	} else { // coverage-ignore
 		s.logger.Error(nil, "HandleStreamClassAdded: unable to cast object to StreamClass")
 	}
 }
@@ -72,7 +80,7 @@ func (s *StreamClassEventHandler) HandleStreamClassDeleted(obj any) {
 			Type:        StreamClassDeleted,
 			StreamClass: streamClass,
 		})
-	} else {
+	} else { // coverage-ignore
 		s.logger.Error(nil, "HandleStreamClassAdded: unable to cast object to StreamClass")
 	}
 }
