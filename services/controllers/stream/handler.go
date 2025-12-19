@@ -99,7 +99,22 @@ func (s *Handler) handleAddedEvent(streamEvent StreamEvent) {
 		}
 
 		streamDefinition, err := s.streamRepository.GetStreamById(streamEvent.StreamId())
-		s.jobManager.StartBackfill(streamDefinition)
+		if err != nil {
+			s.logger.V(0).Error(err, "Failed to get stream definition for backfill", "streamId", streamEvent.StreamId().String())
+			return
+		}
+
+		err = s.jobManager.StartBackfill(streamDefinition)
+		if err != nil {
+			s.logger.V(0).Error(err, "Failed to start backfill job", "streamId", streamEvent.StreamId().String())
+
+			err = s.streamManager.SetFailed(streamEvent)
+			if err != nil {
+				s.logger.Error(err,
+					"Failed to set Stream job as failed after backfill job start failure",
+					"streamId", streamEvent.StreamId().String())
+			}
+		}
 
 		return
 	}

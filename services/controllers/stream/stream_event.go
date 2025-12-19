@@ -31,5 +31,5 @@ type StreamEvent interface {
 }
 
 func tryFromKubernetesObject(_ any) (StreamEvent, error) {
-	return nil, fmt.Errorf("Not implemented")
+	return nil, fmt.Errorf("not implemented")
 }

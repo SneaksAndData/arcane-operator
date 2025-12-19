@@ -8,8 +8,8 @@ type JobManager interface {
 	EnsureStopped(id StreamIdentity) error
 
 	// StartJob starts a new streaming job with the given definition
-	StartJob(definition StreamDefinition)
+	StartJob(definition StreamDefinition) error
 
 	// StartBackfill starts a backfill job for the given stream definition
-	StartBackfill(definition StreamDefinition)
+	StartBackfill(definition StreamDefinition) error
 }
