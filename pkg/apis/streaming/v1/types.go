@@ -90,3 +90,47 @@ type StreamingJobTemplateList struct {
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []StreamingJobTemplate `json:"items"`
 }
+
+// BackfillRequestSpec defines the desired state of a stream class to watch
+type BackfillRequestSpec struct {
+
+	// StreamClass is the name of the stream class to backfill
+	StreamClass string `json:"omitempty"`
+
+	// StreamId is the name of the stream class to backfill
+	StreamId string `json:"omitempty"`
+}
+
+// BackfillRequest is the Schema for the stream class API
+// +genclient
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:subresource:status
+// +kubebuilder:resource:scope=Namespaced,shortName=bfr
+// +kubebuilder:object:root=true
+type BackfillRequest struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	Spec   BackfillRequestSpec   `json:"spec,omitempty"`
+	Status BackfillRequestStatus `json:"status,omitempty"`
+}
+
+// BackfillRequestStatus defines the observed state of a stream class
+type BackfillRequestStatus struct {
+	// Phase represents the current phase of the stream class
+	Phase Phase `json:"phase,omitempty"`
+
+	// Conditions represent the latest available observations
+	Conditions []metav1.Condition `json:"conditions,omitempty"`
+
+	// Completed
+	Completed bool `json:"completed,omitempty"`
+}
+
+// BackfillRequestList contains a list of StreamClass resources
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+type BackfillRequestList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata,omitempty"`
+	Items           []BackfillRequest `json:"items"`
+}
