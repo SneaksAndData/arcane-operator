@@ -18,6 +18,8 @@ limitations under the License.
 
 package v1
 
+type BackfillRequestExpansion interface{}
+
 type StreamClassExpansion interface{}
 
 type StreamingJobTemplateExpansion interface{}

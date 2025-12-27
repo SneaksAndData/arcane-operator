@@ -28,6 +28,7 @@ import (
 
 type StreamingV1Interface interface {
 	RESTClient() rest.Interface
+	BackfillRequestsGetter
 	StreamClassesGetter
 	StreamingJobTemplatesGetter
 }
@@ -35,6 +36,10 @@ type StreamingV1Interface interface {
 // StreamingV1Client is used to interact with features provided by the streaming.sneaksanddata.com group.
 type StreamingV1Client struct {
 	restClient rest.Interface
+}
+
+func (c *StreamingV1Client) BackfillRequests(namespace string) BackfillRequestInterface {
+	return newBackfillRequests(c, namespace)
 }
 
 func (c *StreamingV1Client) StreamClasses(namespace string) StreamClassInterface {

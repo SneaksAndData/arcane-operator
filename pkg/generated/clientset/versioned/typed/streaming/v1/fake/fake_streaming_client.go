@@ -28,6 +28,10 @@ type FakeStreamingV1 struct {
 	*testing.Fake
 }
 
+func (c *FakeStreamingV1) BackfillRequests(namespace string) v1.BackfillRequestInterface {
+	return newFakeBackfillRequests(c, namespace)
+}
+
 func (c *FakeStreamingV1) StreamClasses(namespace string) v1.StreamClassInterface {
 	return newFakeStreamClasses(c, namespace)
 }
