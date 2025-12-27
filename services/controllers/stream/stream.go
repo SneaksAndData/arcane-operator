@@ -1,18 +1,22 @@
-package controllers
+package stream
 
 import (
 	"context"
+	"fmt"
 	"github.com/SneaksAndData/arcane-operator/pkg/apis/streaming/v1"
+	"github.com/SneaksAndData/arcane-operator/services/controllers"
 	batchv1 "k8s.io/api/batch/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/klog/v2"
-	controller "sigs.k8s.io/controller-runtime"
+	runtime "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 var _ reconcile.Reconciler = (*StreamReconciler)(nil)
@@ -20,16 +24,18 @@ var _ reconcile.Reconciler = (*StreamReconciler)(nil)
 type StreamReconciler struct {
 	gvk        schema.GroupVersionKind
 	client     client.Client
-	jobBuilder JobBuilder
+	jobBuilder controllers.JobBuilder
 }
 
-func NewStreamReconciler(gvk schema.GroupVersionKind, jobBuilder JobBuilder) *StreamReconciler {
+// NewStreamReconciler creates a new StreamReconciler instance.
+func NewStreamReconciler(gvk schema.GroupVersionKind, jobBuilder controllers.JobBuilder) *StreamReconciler {
 	return &StreamReconciler{
 		gvk:        gvk,
 		jobBuilder: jobBuilder,
 	}
 }
 
+// Reconcile implements the reconciliation loop for Stream resources.
 func (s *StreamReconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	logger := s.getLogger(ctx, request.NamespacedName)
 	logger.V(2).Info("reconciling Stream resource")
@@ -53,21 +59,45 @@ func (s *StreamReconciler) Reconcile(ctx context.Context, request reconcile.Requ
 		return reconcile.Result{}, err
 	}
 
-	return s.moveFsm(ctx, FromUnstructured(streamDefinition), job, backfillRequest)
+	return s.moveFsm(ctx, controllers.FromUnstructured(streamDefinition), job, backfillRequest)
 }
 
-func (s *StreamReconciler) SetupWithManager(mgr controller.Manager) error {
+// SetupWithManager sets up the controller with the Manager.
+func (s *StreamReconciler) SetupWithManager(mgr runtime.Manager) error {
 	resource := &unstructured.Unstructured{}
 	resource.SetGroupVersionKind(s.gvk)
 
-	return controller.NewControllerManagedBy(mgr).
+	return runtime.NewControllerManagedBy(mgr).
 		For(resource).
 		Owns(&batchv1.Job{}).
 		Watches(&v1.BackfillRequest{}, handler.EnqueueRequestsFromMapFunc(s.mapBfrToReconcile)).
 		Complete(s)
 }
 
-func (s *StreamReconciler) mapBfrToReconcile(ctx context.Context, obj client.Object) []controller.Request {
+// SetupUnmanaged sets up the controller with the Manager.
+func (s *StreamReconciler) SetupUnmanaged(mgr runtime.Manager) (controller.Controller, error) {
+	resource := &unstructured.Unstructured{}
+	resource.SetGroupVersionKind(s.gvk)
+
+	c, err := controller.NewUnmanaged("stream-controller", controller.Options{
+		Reconciler: s,
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to start unmanaged stream controller: %w", err)
+	}
+
+	newSource := source.Kind(mgr.GetCache(), resource, &handler.TypedEnqueueRequestForObject[*unstructured.Unstructured]{})
+
+	err = c.Watch(newSource)
+	if err != nil {
+		return nil, fmt.Errorf("failed to watch stream resource: %w", err)
+	}
+
+	return c, nil
+}
+
+func (s *StreamReconciler) mapBfrToReconcile(ctx context.Context, obj client.Object) []runtime.Request {
 	logger := klog.FromContext(ctx).WithName("mapBfrToReconcile")
 	bfr, ok := obj.(*v1.BackfillRequest)
 	if !ok {
@@ -88,45 +118,49 @@ func (s *StreamReconciler) mapBfrToReconcile(ctx context.Context, obj client.Obj
 		return nil
 	}
 
-	return []controller.Request{{NamespacedName: client.ObjectKey{
+	return []runtime.Request{{NamespacedName: client.ObjectKey{
 		Namespace: obj.GetNamespace(),
 		Name:      bfr.Spec.StreamId,
 	}}}
 }
 
-func (s *StreamReconciler) moveFsm(ctx context.Context, definition StreamDefinition, job StreamingJob, backfillRequest *v1.BackfillRequest) (reconcile.Result, error) {
-	status := definition.GetStatus()
+func (s *StreamReconciler) moveFsm(ctx context.Context, definition controllers.StreamDefinition, job controllers.StreamingJob, backfillRequest *v1.BackfillRequest) (reconcile.Result, error) {
+	status := definition.GetPhase()
 
 	switch {
-	case status == New && definition.Suspended():
-		return s.stopStream(ctx, definition, Suspended)
+	case status == controllers.New && definition.Suspended():
+		return s.stopStream(ctx, definition, controllers.Suspended)
 
-	case status == New && !definition.Suspended():
-		return s.startBackfill(ctx, definition, Pending)
+	case status == controllers.New && !definition.Suspended():
+		return s.startBackfill(ctx, definition, controllers.Pending)
 
-	case status == Pending && backfillRequest == nil:
-		return s.reconcileStream(ctx, definition, Running)
+	case status == controllers.Pending && backfillRequest == nil:
+		return s.reconcileStream(ctx, definition, controllers.Running)
 
-	case status == Pending && backfillRequest != nil:
-		return s.reconcileBackfill(ctx, definition, backfillRequest, Backfilling)
+	case status == controllers.Pending && backfillRequest != nil:
+		return s.reconcileBackfill(ctx, definition, backfillRequest, controllers.Backfilling)
 
-	case status == Running && definition.Suspended():
-		return s.stopStream(ctx, definition, Suspended)
+	case status == controllers.Running && definition.Suspended():
+		return s.stopStream(ctx, definition, controllers.Suspended)
 
-	case status == Running && backfillRequest != nil:
-		return s.reconcileBackfill(ctx, definition, backfillRequest, Running)
+	case status == controllers.Running && backfillRequest != nil:
+		return s.reconcileBackfill(ctx, definition, backfillRequest, controllers.Running)
 
-	case status == Backfilling && job.IsCompleted():
-		return s.completeBackfill(ctx, definition, backfillRequest, Pending)
+	case status == controllers.Backfilling && job.IsCompleted():
+		return s.completeBackfill(ctx, definition, backfillRequest, controllers.Pending)
 
 	case job.IsFailed():
-		return s.stopStream(ctx, definition, Failed)
+		return s.stopStream(ctx, definition, controllers.Failed)
 	}
 
-	return reconcile.Result{}, nil
+	return reconcile.Result{}, fmt.Errorf("failed to reconcile Stream FSM for %s/%s. Current state: %s",
+		definition.NamespacedName().Namespace,
+		definition.NamespacedName().Name,
+		definition.StateString(),
+	)
 }
 
-func (s *StreamReconciler) stopStream(ctx context.Context, definition StreamDefinition, nextStatus Status) (reconcile.Result, error) {
+func (s *StreamReconciler) stopStream(ctx context.Context, definition controllers.StreamDefinition, nextStatus controllers.Phase) (reconcile.Result, error) {
 	job := &batchv1.Job{}
 	job.SetName(definition.GetJobName())
 	job.SetNamespace(definition.GetJobNamespace())
@@ -138,7 +172,7 @@ func (s *StreamReconciler) stopStream(ctx context.Context, definition StreamDefi
 	return s.updateStreamStatus(ctx, definition, nil, nextStatus)
 }
 
-func (s *StreamReconciler) startBackfill(ctx context.Context, definition StreamDefinition, nextStatus Status) (reconcile.Result, error) {
+func (s *StreamReconciler) startBackfill(ctx context.Context, definition controllers.StreamDefinition, nextStatus controllers.Phase) (reconcile.Result, error) {
 	_, err := s.stopStream(ctx, definition, nextStatus)
 	if err != nil {
 		return reconcile.Result{}, err
@@ -157,15 +191,15 @@ func (s *StreamReconciler) startBackfill(ctx context.Context, definition StreamD
 	return s.updateStreamStatus(ctx, definition, &v1.BackfillRequest{}, nextStatus)
 }
 
-func (s *StreamReconciler) reconcileStream(ctx context.Context, definition StreamDefinition, nextStatus Status) (reconcile.Result, error) {
+func (s *StreamReconciler) reconcileStream(ctx context.Context, definition controllers.StreamDefinition, nextStatus controllers.Phase) (reconcile.Result, error) {
 	return s.reconcileJob(ctx, definition, nil, nextStatus)
 }
 
-func (s *StreamReconciler) reconcileBackfill(ctx context.Context, definition StreamDefinition, backfillRequest *v1.BackfillRequest, nextStatus Status) (reconcile.Result, error) {
+func (s *StreamReconciler) reconcileBackfill(ctx context.Context, definition controllers.StreamDefinition, backfillRequest *v1.BackfillRequest, nextStatus controllers.Phase) (reconcile.Result, error) {
 	return s.reconcileJob(ctx, definition, backfillRequest, nextStatus)
 }
 
-func (s *StreamReconciler) completeBackfill(ctx context.Context, definition StreamDefinition, request *v1.BackfillRequest, nextStatus Status) (reconcile.Result, error) {
+func (s *StreamReconciler) completeBackfill(ctx context.Context, definition controllers.StreamDefinition, request *v1.BackfillRequest, nextStatus controllers.Phase) (reconcile.Result, error) {
 	job := &batchv1.Job{}
 	job.SetName(definition.GetJobName())
 	job.SetNamespace(definition.GetJobNamespace())
@@ -183,7 +217,7 @@ func (s *StreamReconciler) completeBackfill(ctx context.Context, definition Stre
 	return s.updateStreamStatus(ctx, definition, nil, nextStatus)
 }
 
-func (s *StreamReconciler) reconcileJob(ctx context.Context, definition StreamDefinition, backfillRequest *v1.BackfillRequest, nextStatus Status) (reconcile.Result, error) {
+func (s *StreamReconciler) reconcileJob(ctx context.Context, definition controllers.StreamDefinition, backfillRequest *v1.BackfillRequest, nextStatus controllers.Phase) (reconcile.Result, error) {
 	logger := s.getLogger(ctx, definition.NamespacedName())
 	currentConfig := definition.CurrentConfiguration()
 	previousConfig := definition.LastObservedConfiguration()
@@ -197,7 +231,7 @@ func (s *StreamReconciler) reconcileJob(ctx context.Context, definition StreamDe
 		return reconcile.Result{}, err
 	}
 
-	job, err := s.jobBuilder.BuildJob(definition, nil)
+	job, err := s.jobBuilder.BuildJob(definition, backfillRequest)
 	err = s.client.Create(ctx, &job)
 	if err != nil {
 		return reconcile.Result{}, err
@@ -205,7 +239,7 @@ func (s *StreamReconciler) reconcileJob(ctx context.Context, definition StreamDe
 	return s.updateStreamStatus(ctx, definition, nil, nextStatus)
 }
 
-func (s *StreamReconciler) getJob(ctx context.Context, request reconcile.Request, logger klog.Logger) (StreamingJob, error) {
+func (s *StreamReconciler) getJob(ctx context.Context, request reconcile.Request, logger klog.Logger) (controllers.StreamingJob, error) {
 	streamJob := &batchv1.Job{}
 	err := s.client.Get(ctx, request.NamespacedName, streamJob)
 
@@ -218,7 +252,7 @@ func (s *StreamReconciler) getJob(ctx context.Context, request reconcile.Request
 		return nil, err
 	}
 
-	return FromV1Job(streamJob), nil
+	return controllers.FromV1Job(streamJob), nil
 }
 
 func (s *StreamReconciler) getBackfillRequestForStream(ctx context.Context, definition *unstructured.Unstructured) (*v1.BackfillRequest, error) {
@@ -256,9 +290,13 @@ func (s *StreamReconciler) getLogger(ctx context.Context, request types.Namespac
 		WithValues("namespace", request.Namespace, "name", request.Name)
 }
 
-func (s *StreamReconciler) updateStreamStatus(ctx context.Context, definition StreamDefinition, backfillRequest *v1.BackfillRequest, nextStatus Status) (reconcile.Result, error) {
+func (s *StreamReconciler) updateStreamStatus(ctx context.Context, definition controllers.StreamDefinition, backfillRequest *v1.BackfillRequest, nextStatus controllers.Phase) (reconcile.Result, error) {
 	logger := s.getLogger(ctx, definition.NamespacedName())
-	logger.V(1).Info("updating Stream status", "from", definition.GetStatus(), "to", nextStatus)
+	if definition.GetPhase() == nextStatus {
+		logger.V(2).Info("Stream phase is already set to", definition.GetPhase())
+		return reconcile.Result{}, nil
+	}
+	logger.V(1).Info("updating Stream status", "from", definition.GetPhase(), "to", nextStatus)
 	definition.SetStatus(nextStatus)
 	statusUpdate := definition.ToUnstructured().DeepCopy()
 	err := s.client.Status().Update(ctx, statusUpdate)

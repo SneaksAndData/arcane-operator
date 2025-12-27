@@ -6,5 +6,5 @@ import (
 )
 
 type JobBuilder interface {
-	BuildJob(definition StreamDefinition, v *streamingv1.BackfillRequest) (batchv1.Job, error)
+	BuildJob(definition StreamDefinition, backfillRequest *streamingv1.BackfillRequest) (batchv1.Job, error)
 }

@@ -5,19 +5,19 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
-type Status string
+type Phase string
 
 const (
-	New         Status = ""
-	Pending     Status = "Pending"
-	Running     Status = "Running"
-	Backfilling Status = "Backfilling"
-	Suspended   Status = "Completed"
-	Failed      Status = "Failed"
+	New         Phase = ""
+	Pending     Phase = "Pending"
+	Running     Phase = "Running"
+	Backfilling Phase = "Backfilling"
+	Suspended   Phase = "Completed"
+	Failed      Phase = "Failed"
 )
 
 type StreamDefinition interface {
-	GetStatus() Status
+	GetPhase() Phase
 	Suspended() bool
 	GetJobName() string
 	GetJobNamespace() string
@@ -25,7 +25,8 @@ type StreamDefinition interface {
 	LastObservedConfiguration() string
 	NamespacedName() types.NamespacedName
 	ToUnstructured() *unstructured.Unstructured
-	SetStatus(status Status)
+	SetStatus(status Phase)
+	StateString() string
 }
 
 func FromUnstructured(obj *unstructured.Unstructured) StreamDefinition {

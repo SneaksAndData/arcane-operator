@@ -3,6 +3,7 @@ package v1
 import (
 	batchv1 "k8s.io/api/batch/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 // Phase represents the current phase of the stream class
@@ -10,10 +11,10 @@ import (
 type Phase string
 
 const (
-	PhaseInitializing Phase = "Initializing"
-	PhaseReady        Phase = "Ready"
-	PhaseFailed       Phase = "Failed"
-	PhaseStopped      Phase = "Stopped"
+	PhasePending Phase = "Pending"
+	PhaseReady   Phase = "Ready"
+	PhaseFailed  Phase = "Failed"
+	PhaseStopped Phase = "Stopped"
 )
 
 // StreamClassSpec defines the desired state of a stream class to watch
@@ -59,6 +60,24 @@ type StreamClass struct {
 
 	Spec   StreamClassSpec   `json:"spec,omitempty"`
 	Status StreamClassStatus `json:"status,omitempty"`
+}
+
+// StateString returns a string representation of the current state
+func (in *StreamClass) StateString() any {
+	if in == nil {
+		return "(nil)"
+	}
+
+	return string(in.Status.Phase)
+}
+
+// TargetResourceGvk returns the GroupVersionKind of the target resource
+func (in *StreamClass) TargetResourceGvk() schema.GroupVersionKind {
+	return schema.GroupVersionKind{
+		Group:   in.Spec.APIGroupRef,
+		Version: in.Spec.APIVersion,
+		Kind:    in.Spec.KindRef,
+	}
 }
 
 // StreamClassList contains a list of StreamClass resources
