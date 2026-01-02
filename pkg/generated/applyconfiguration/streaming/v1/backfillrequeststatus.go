@@ -28,6 +28,7 @@ import (
 type BackfillRequestStatusApplyConfiguration struct {
 	Phase      *streamingv1.Phase                   `json:"phase,omitempty"`
 	Conditions []metav1.ConditionApplyConfiguration `json:"conditions,omitempty"`
+	Completed  *bool                                `json:"completed,omitempty"`
 }
 
 // BackfillRequestStatusApplyConfiguration constructs a declarative configuration of the BackfillRequestStatus type for use with
@@ -54,5 +55,13 @@ func (b *BackfillRequestStatusApplyConfiguration) WithConditions(values ...*meta
 		}
 		b.Conditions = append(b.Conditions, *values[i])
 	}
+	return b
+}
+
+// WithCompleted sets the Completed field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the Completed field is set to the value of the last call.
+func (b *BackfillRequestStatusApplyConfiguration) WithCompleted(value bool) *BackfillRequestStatusApplyConfiguration {
+	b.Completed = &value
 	return b
 }

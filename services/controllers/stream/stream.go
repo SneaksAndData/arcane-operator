@@ -62,24 +62,12 @@ func (s *StreamReconciler) Reconcile(ctx context.Context, request reconcile.Requ
 	return s.moveFsm(ctx, controllers.FromUnstructured(streamDefinition), job, backfillRequest)
 }
 
-// SetupWithManager sets up the controller with the Manager.
-func (s *StreamReconciler) SetupWithManager(mgr runtime.Manager) error {
-	resource := &unstructured.Unstructured{}
-	resource.SetGroupVersionKind(s.gvk)
-
-	return runtime.NewControllerManagedBy(mgr).
-		For(resource).
-		Owns(&batchv1.Job{}).
-		Watches(&v1.BackfillRequest{}, handler.EnqueueRequestsFromMapFunc(s.mapBfrToReconcile)).
-		Complete(s)
-}
-
 // SetupUnmanaged sets up the controller with the Manager.
 func (s *StreamReconciler) SetupUnmanaged(mgr runtime.Manager) (controller.Controller, error) {
 	resource := &unstructured.Unstructured{}
 	resource.SetGroupVersionKind(s.gvk)
 
-	c, err := controller.NewUnmanaged("stream-controller", controller.Options{
+	newController, err := controller.NewUnmanaged("stream-controller", controller.Options{
 		Reconciler: s,
 	})
 
@@ -87,14 +75,26 @@ func (s *StreamReconciler) SetupUnmanaged(mgr runtime.Manager) (controller.Contr
 		return nil, fmt.Errorf("failed to start unmanaged stream controller: %w", err)
 	}
 
+	// Watch for changes to primary resource Stream
 	newSource := source.Kind(mgr.GetCache(), resource, &handler.TypedEnqueueRequestForObject[*unstructured.Unstructured]{})
 
-	err = c.Watch(newSource)
+	err = newController.Watch(newSource)
 	if err != nil {
 		return nil, fmt.Errorf("failed to watch stream resource: %w", err)
 	}
 
-	return c, nil
+	// Watch for changes to secondary resource Jobs and requeue the owner Stream
+	h := handler.TypedEnqueueRequestForOwner[*batchv1.Job](
+		mgr.GetScheme(),
+		mgr.GetRESTMapper(),
+		&batchv1.Job{},
+		handler.OnlyControllerOwner(),
+	)
+
+	jobSource := source.Kind(mgr.GetCache(), &batchv1.Job{}, h, nil)
+	err = newController.Watch(jobSource)
+
+	return newController, nil
 }
 
 func (s *StreamReconciler) mapBfrToReconcile(ctx context.Context, obj client.Object) []runtime.Request {
@@ -147,7 +147,7 @@ func (s *StreamReconciler) moveFsm(ctx context.Context, definition controllers.S
 		return s.reconcileBackfill(ctx, definition, backfillRequest, controllers.Running)
 
 	case status == controllers.Backfilling && job.IsCompleted():
-		return s.completeBackfill(ctx, definition, backfillRequest, controllers.Pending)
+		return s.completeBackfill(ctx, job.ToV1Job(), definition, backfillRequest, controllers.Pending)
 
 	case job.IsFailed():
 		return s.stopStream(ctx, definition, controllers.Failed)
@@ -178,7 +178,7 @@ func (s *StreamReconciler) startBackfill(ctx context.Context, definition control
 		return reconcile.Result{}, err
 	}
 
-	job, err := s.jobBuilder.BuildJob(definition, &v1.BackfillRequest{})
+	job, err := s.jobBuilder.BuildJob(ctx, definition, &v1.BackfillRequest{})
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -199,10 +199,7 @@ func (s *StreamReconciler) reconcileBackfill(ctx context.Context, definition con
 	return s.reconcileJob(ctx, definition, backfillRequest, nextStatus)
 }
 
-func (s *StreamReconciler) completeBackfill(ctx context.Context, definition controllers.StreamDefinition, request *v1.BackfillRequest, nextStatus controllers.Phase) (reconcile.Result, error) {
-	job := &batchv1.Job{}
-	job.SetName(definition.GetJobName())
-	job.SetNamespace(definition.GetJobNamespace())
+func (s *StreamReconciler) completeBackfill(ctx context.Context, job *batchv1.Job, definition controllers.StreamDefinition, request *v1.BackfillRequest, nextStatus controllers.Phase) (reconcile.Result, error) {
 	err := s.client.Delete(ctx, job)
 	if client.IgnoreNotFound(err) != nil {
 		return reconcile.Result{}, err
@@ -231,7 +228,7 @@ func (s *StreamReconciler) reconcileJob(ctx context.Context, definition controll
 		return reconcile.Result{}, err
 	}
 
-	job, err := s.jobBuilder.BuildJob(definition, backfillRequest)
+	job, err := s.jobBuilder.BuildJob(ctx, definition, backfillRequest)
 	err = s.client.Create(ctx, &job)
 	if err != nil {
 		return reconcile.Result{}, err

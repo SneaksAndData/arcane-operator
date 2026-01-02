@@ -8,6 +8,7 @@ require (
 	github.com/samber/slog-datadog/v2 v2.10.2
 	github.com/samber/slog-multi v1.6.0
 	github.com/spf13/viper v1.21.0
+	github.com/stretchr/testify v1.11.1
 	golang.org/x/time v0.9.0
 	k8s.io/api v0.34.3
 	k8s.io/apimachinery v0.34.3
