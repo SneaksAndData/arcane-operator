@@ -5,12 +5,9 @@ go 1.24.5
 require (
 	github.com/DataDog/datadog-api-client-go/v2 v2.50.0
 	github.com/DataDog/datadog-go/v5 v5.8.1
-	github.com/google/uuid v1.6.0
 	github.com/samber/slog-datadog/v2 v2.10.2
 	github.com/samber/slog-multi v1.6.0
 	github.com/spf13/viper v1.21.0
-	github.com/stretchr/testify v1.11.1
-	go.uber.org/mock v0.6.0
 	golang.org/x/time v0.9.0
 	k8s.io/api v0.34.3
 	k8s.io/apimachinery v0.34.3
@@ -35,6 +32,7 @@ require (
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/google/gnostic-models v0.7.0 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
+	github.com/google/uuid v1.6.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
