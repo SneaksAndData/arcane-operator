@@ -93,8 +93,8 @@ type StreamingJobTemplateList struct {
 
 // BackfillRequestSpec defines the desired state of a backfill request
 type BackfillRequestSpec struct {
-	// StreamClassName is the name of the stream class to backfill
-	StreamClassName string `json:"streamClassName"`
+	// StreamClass is the name of the stream class to backfill
+	StreamClass string `json:"streamClass"`
 
 	// StreamId is the ID of the stream to backfill
 	StreamId string `json:"streamId"`

@@ -21,8 +21,8 @@ package v1
 // BackfillRequestSpecApplyConfiguration represents a declarative configuration of the BackfillRequestSpec type for use
 // with apply.
 type BackfillRequestSpecApplyConfiguration struct {
-	StreamClassName *string `json:"streamClassName,omitempty"`
-	StreamId        *string `json:"streamId,omitempty"`
+	StreamClass *string `json:"streamClass,omitempty"`
+	StreamId    *string `json:"streamId,omitempty"`
 }
 
 // BackfillRequestSpecApplyConfiguration constructs a declarative configuration of the BackfillRequestSpec type for use with
@@ -31,11 +31,11 @@ func BackfillRequestSpec() *BackfillRequestSpecApplyConfiguration {
 	return &BackfillRequestSpecApplyConfiguration{}
 }
 
-// WithStreamClassName sets the StreamClassName field in the declarative configuration to the given value
+// WithStreamClass sets the StreamClass field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the StreamClassName field is set to the value of the last call.
-func (b *BackfillRequestSpecApplyConfiguration) WithStreamClassName(value string) *BackfillRequestSpecApplyConfiguration {
-	b.StreamClassName = &value
+// If called multiple times, the StreamClass field is set to the value of the last call.
+func (b *BackfillRequestSpecApplyConfiguration) WithStreamClass(value string) *BackfillRequestSpecApplyConfiguration {
+	b.StreamClass = &value
 	return b
 }
 
