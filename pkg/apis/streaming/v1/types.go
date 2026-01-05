@@ -10,10 +10,10 @@ import (
 type Phase string
 
 const (
-	PhaseInitializing Phase = "Initializing"
-	PhaseReady        Phase = "Ready"
-	PhaseFailed       Phase = "Failed"
-	PhaseStopped      Phase = "Stopped"
+	PhasePending Phase = "Pending"
+	PhaseReady   Phase = "Ready"
+	PhaseFailed  Phase = "Failed"
+	PhaseStopped Phase = "Stopped"
 )
 
 // StreamClassSpec defines the desired state of a stream class to watch
