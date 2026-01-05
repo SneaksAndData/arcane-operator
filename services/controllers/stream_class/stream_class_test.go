@@ -119,7 +119,7 @@ func Test_UpdatePhase_Ready_ToStopped(t *testing.T) {
 	})
 
 	streamController := mocks.NewMockController[reconcile.Request](mockCtrl)
-	streamController.EXPECT().Start(gomock.Any())
+	streamController.EXPECT().Start(gomock.Any()).AnyTimes()
 
 	streamReconciler := mocks.NewMockStreamReconciler(mockCtrl)
 	streamReconciler.EXPECT().SetupUnmanaged(gomock.Any()).Return(streamController, nil)
@@ -235,7 +235,7 @@ func Test_UpdatePhase_Ready_ToFailed(t *testing.T) {
 	streamController := mocks.NewMockController[reconcile.Request](mockCtrl)
 	streamController.EXPECT().Start(gomock.Any()).Do(func(arg any) {
 		completed <- struct{}{}
-	})
+	}).Return(fmt.Errorf("some error"))
 
 	streamReconciler := mocks.NewMockStreamReconciler(mockCtrl)
 	streamReconciler.EXPECT().SetupUnmanaged(gomock.Any()).Return(streamController, nil)

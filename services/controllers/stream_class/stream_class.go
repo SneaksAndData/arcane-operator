@@ -94,14 +94,16 @@ func (s *streamClassReconciler) tryStartStreamController(ctx context.Context, sc
 
 	controllerContext, cancelFunc := context.WithCancel(context.Background())
 	go func() {
-		if err := controller.Start(controllerContext); err != nil {
-			logger := s.getLogger(ctx, name)
-			logger.V(0).Error(err, "stream controller exited with error")
-		}
-		_, err = s.updatePhase(ctx, sc, name, v1.PhaseFailed)
+		err := controller.Start(controllerContext)
 		if err != nil {
 			logger := s.getLogger(ctx, name)
-			logger.V(0).Error(err, "unable to update StreamClass phase to Failed after stream controller exited with error")
+			logger.V(0).Error(err, "stream controller exited with error")
+
+			_, err = s.updatePhase(ctx, sc, name, v1.PhaseFailed)
+			if err != nil {
+				logger := s.getLogger(ctx, name)
+				logger.V(0).Error(err, "unable to update StreamClass phase to Failed after stream controller exited with error")
+			}
 		}
 	}()
 
