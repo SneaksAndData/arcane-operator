@@ -51,7 +51,7 @@ func (s *streamClassReconciler) SetupWithManager(mgr runtime.Manager) error {
 func (s *streamClassReconciler) getLogger(ctx context.Context, request types.NamespacedName) klog.Logger {
 	return klog.FromContext(ctx).
 		WithName("streamClassReconciler").
-		WithValues("namespace", request.Namespace, "name", request.Name)
+		WithValues("name", request.Name)
 }
 
 func (s *streamClassReconciler) moveFsm(ctx context.Context, sc *v1.StreamClass, deleted bool, name types.NamespacedName) (reconcile.Result, error) {
