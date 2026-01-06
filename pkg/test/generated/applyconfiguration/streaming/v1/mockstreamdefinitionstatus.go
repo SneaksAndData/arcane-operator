@@ -21,7 +21,8 @@ package v1
 // MockStreamDefinitionStatusApplyConfiguration represents a declarative configuration of the MockStreamDefinitionStatus type for use
 // with apply.
 type MockStreamDefinitionStatusApplyConfiguration struct {
-	Phase *string `json:"phase,omitempty"`
+	Phase             *string `json:"phase,omitempty"`
+	ConfigurationHash *string `json:"configurationHash,omitempty"`
 }
 
 // MockStreamDefinitionStatusApplyConfiguration constructs a declarative configuration of the MockStreamDefinitionStatus type for use with
@@ -35,5 +36,13 @@ func MockStreamDefinitionStatus() *MockStreamDefinitionStatusApplyConfiguration 
 // If called multiple times, the Phase field is set to the value of the last call.
 func (b *MockStreamDefinitionStatusApplyConfiguration) WithPhase(value string) *MockStreamDefinitionStatusApplyConfiguration {
 	b.Phase = &value
+	return b
+}
+
+// WithConfigurationHash sets the ConfigurationHash field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the ConfigurationHash field is set to the value of the last call.
+func (b *MockStreamDefinitionStatusApplyConfiguration) WithConfigurationHash(value string) *MockStreamDefinitionStatusApplyConfiguration {
+	b.ConfigurationHash = &value
 	return b
 }
