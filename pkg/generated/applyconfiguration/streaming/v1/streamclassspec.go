@@ -21,11 +21,12 @@ package v1
 // StreamClassSpecApplyConfiguration represents a declarative configuration of the StreamClassSpec type for use
 // with apply.
 type StreamClassSpecApplyConfiguration struct {
-	APIGroupRef *string  `json:"apiGroupRef,omitempty"`
-	APIVersion  *string  `json:"apiVersion,omitempty"`
-	KindRef     *string  `json:"kindRef,omitempty"`
-	PluralName  *string  `json:"pluralName,omitempty"`
-	SecretRefs  []string `json:"secretRefs,omitempty"`
+	APIGroupRef     *string  `json:"apiGroupRef,omitempty"`
+	APIVersion      *string  `json:"apiVersion,omitempty"`
+	KindRef         *string  `json:"kindRef,omitempty"`
+	PluralName      *string  `json:"pluralName,omitempty"`
+	SecretRefs      []string `json:"secretRefs,omitempty"`
+	TargetNamespace *string  `json:"namespace,omitempty"`
 }
 
 // StreamClassSpecApplyConfiguration constructs a declarative configuration of the StreamClassSpec type for use with
@@ -73,5 +74,13 @@ func (b *StreamClassSpecApplyConfiguration) WithSecretRefs(values ...string) *St
 	for i := range values {
 		b.SecretRefs = append(b.SecretRefs, values[i])
 	}
+	return b
+}
+
+// WithTargetNamespace sets the TargetNamespace field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the TargetNamespace field is set to the value of the last call.
+func (b *StreamClassSpecApplyConfiguration) WithTargetNamespace(value string) *StreamClassSpecApplyConfiguration {
+	b.TargetNamespace = &value
 	return b
 }

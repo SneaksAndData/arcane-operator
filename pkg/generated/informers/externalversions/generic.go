@@ -53,6 +53,8 @@ func (f *genericInformer) Lister() cache.GenericLister {
 func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource) (GenericInformer, error) {
 	switch resource {
 	// Group=streaming.sneaksanddata.com, Version=v1
+	case v1.SchemeGroupVersion.WithResource("backfillrequests"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Streaming().V1().BackfillRequests().Informer()}, nil
 	case v1.SchemeGroupVersion.WithResource("streamclasses"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Streaming().V1().StreamClasses().Informer()}, nil
 	case v1.SchemeGroupVersion.WithResource("streamingjobtemplates"):
