@@ -19,9 +19,9 @@ limitations under the License.
 package applyconfiguration
 
 import (
-	v1 "github.com/SneaksAndData/arcane-operator/pkg/apis/streaming/v1"
-	internal "github.com/SneaksAndData/arcane-operator/pkg/generated/applyconfiguration/internal"
-	streamingv1 "github.com/SneaksAndData/arcane-operator/pkg/generated/applyconfiguration/streaming/v1"
+	v1 "github.com/SneaksAndData/arcane-operator/pkg/internal/apis_test/streaming/v1"
+	internal "github.com/SneaksAndData/arcane-operator/pkg/internal/generated/applyconfiguration/internal"
+	streamingv1 "github.com/SneaksAndData/arcane-operator/pkg/internal/generated/applyconfiguration/streaming/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	managedfields "k8s.io/apimachinery/pkg/util/managedfields"
@@ -32,20 +32,12 @@ import (
 func ForKind(kind schema.GroupVersionKind) interface{} {
 	switch kind {
 	// Group=streaming.sneaksanddata.com, Version=v1
-	case v1.SchemeGroupVersion.WithKind("BackfillRequest"):
-		return &streamingv1.BackfillRequestApplyConfiguration{}
-	case v1.SchemeGroupVersion.WithKind("BackfillRequestSpec"):
-		return &streamingv1.BackfillRequestSpecApplyConfiguration{}
-	case v1.SchemeGroupVersion.WithKind("BackfillRequestStatus"):
-		return &streamingv1.BackfillRequestStatusApplyConfiguration{}
-	case v1.SchemeGroupVersion.WithKind("StreamClass"):
-		return &streamingv1.StreamClassApplyConfiguration{}
-	case v1.SchemeGroupVersion.WithKind("StreamClassSpec"):
-		return &streamingv1.StreamClassSpecApplyConfiguration{}
-	case v1.SchemeGroupVersion.WithKind("StreamClassStatus"):
-		return &streamingv1.StreamClassStatusApplyConfiguration{}
-	case v1.SchemeGroupVersion.WithKind("StreamingJobTemplate"):
-		return &streamingv1.StreamingJobTemplateApplyConfiguration{}
+	case v1.SchemeGroupVersion.WithKind("MockStreamDefinition"):
+		return &streamingv1.MockStreamDefinitionApplyConfiguration{}
+	case v1.SchemeGroupVersion.WithKind("MockStreamDefinitionSpec"):
+		return &streamingv1.MockStreamDefinitionSpecApplyConfiguration{}
+	case v1.SchemeGroupVersion.WithKind("MockStreamDefinitionStatus"):
+		return &streamingv1.MockStreamDefinitionStatusApplyConfiguration{}
 
 	}
 	return nil

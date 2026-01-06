@@ -18,6 +18,14 @@ limitations under the License.
 
 package v1
 
+// BackfillRequestListerExpansion allows custom methods to be added to
+// BackfillRequestLister.
+type BackfillRequestListerExpansion interface{}
+
+// BackfillRequestNamespaceListerExpansion allows custom methods to be added to
+// BackfillRequestNamespaceLister.
+type BackfillRequestNamespaceListerExpansion interface{}
+
 // StreamClassListerExpansion allows custom methods to be added to
 // StreamClassLister.
 type StreamClassListerExpansion interface{}

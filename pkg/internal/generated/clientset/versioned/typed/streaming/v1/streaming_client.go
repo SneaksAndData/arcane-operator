@@ -21,16 +21,14 @@ package v1
 import (
 	http "net/http"
 
-	streamingv1 "github.com/SneaksAndData/arcane-operator/pkg/apis/streaming/v1"
-	scheme "github.com/SneaksAndData/arcane-operator/pkg/generated/clientset/versioned/scheme"
+	streamingv1 "github.com/SneaksAndData/arcane-operator/pkg/internal/apis_test/streaming/v1"
+	scheme "github.com/SneaksAndData/arcane-operator/pkg/internal/generated/clientset/versioned/scheme"
 	rest "k8s.io/client-go/rest"
 )
 
 type StreamingV1Interface interface {
 	RESTClient() rest.Interface
-	BackfillRequestsGetter
-	StreamClassesGetter
-	StreamingJobTemplatesGetter
+	MockStreamDefinitionsGetter
 }
 
 // StreamingV1Client is used to interact with features provided by the streaming.sneaksanddata.com group.
@@ -38,16 +36,8 @@ type StreamingV1Client struct {
 	restClient rest.Interface
 }
 
-func (c *StreamingV1Client) BackfillRequests(namespace string) BackfillRequestInterface {
-	return newBackfillRequests(c, namespace)
-}
-
-func (c *StreamingV1Client) StreamClasses(namespace string) StreamClassInterface {
-	return newStreamClasses(c, namespace)
-}
-
-func (c *StreamingV1Client) StreamingJobTemplates(namespace string) StreamingJobTemplateInterface {
-	return newStreamingJobTemplates(c, namespace)
+func (c *StreamingV1Client) MockStreamDefinitions(namespace string) MockStreamDefinitionInterface {
+	return newMockStreamDefinitions(c, namespace)
 }
 
 // NewForConfig creates a new StreamingV1Client for the given config.

@@ -19,7 +19,7 @@ limitations under the License.
 package fake
 
 import (
-	v1 "github.com/SneaksAndData/arcane-operator/pkg/generated/clientset/versioned/typed/streaming/v1"
+	v1 "github.com/SneaksAndData/arcane-operator/pkg/internal/generated/clientset/versioned/typed/streaming/v1"
 	rest "k8s.io/client-go/rest"
 	testing "k8s.io/client-go/testing"
 )
@@ -28,16 +28,8 @@ type FakeStreamingV1 struct {
 	*testing.Fake
 }
 
-func (c *FakeStreamingV1) BackfillRequests(namespace string) v1.BackfillRequestInterface {
-	return newFakeBackfillRequests(c, namespace)
-}
-
-func (c *FakeStreamingV1) StreamClasses(namespace string) v1.StreamClassInterface {
-	return newFakeStreamClasses(c, namespace)
-}
-
-func (c *FakeStreamingV1) StreamingJobTemplates(namespace string) v1.StreamingJobTemplateInterface {
-	return newFakeStreamingJobTemplates(c, namespace)
+func (c *FakeStreamingV1) MockStreamDefinitions(namespace string) v1.MockStreamDefinitionInterface {
+	return newFakeMockStreamDefinitions(c, namespace)
 }
 
 // RESTClient returns a RESTClient that is used to communicate

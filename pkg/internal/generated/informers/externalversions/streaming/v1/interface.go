@@ -19,17 +19,13 @@ limitations under the License.
 package v1
 
 import (
-	internalinterfaces "github.com/SneaksAndData/arcane-operator/pkg/generated/informers/externalversions/internalinterfaces"
+	internalinterfaces "github.com/SneaksAndData/arcane-operator/pkg/internal/generated/informers/externalversions/internalinterfaces"
 )
 
 // Interface provides access to all the informers in this group version.
 type Interface interface {
-	// BackfillRequests returns a BackfillRequestInformer.
-	BackfillRequests() BackfillRequestInformer
-	// StreamClasses returns a StreamClassInformer.
-	StreamClasses() StreamClassInformer
-	// StreamingJobTemplates returns a StreamingJobTemplateInformer.
-	StreamingJobTemplates() StreamingJobTemplateInformer
+	// MockStreamDefinitions returns a MockStreamDefinitionInformer.
+	MockStreamDefinitions() MockStreamDefinitionInformer
 }
 
 type version struct {
@@ -43,17 +39,7 @@ func New(f internalinterfaces.SharedInformerFactory, namespace string, tweakList
 	return &version{factory: f, namespace: namespace, tweakListOptions: tweakListOptions}
 }
 
-// BackfillRequests returns a BackfillRequestInformer.
-func (v *version) BackfillRequests() BackfillRequestInformer {
-	return &backfillRequestInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
-}
-
-// StreamClasses returns a StreamClassInformer.
-func (v *version) StreamClasses() StreamClassInformer {
-	return &streamClassInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
-}
-
-// StreamingJobTemplates returns a StreamingJobTemplateInformer.
-func (v *version) StreamingJobTemplates() StreamingJobTemplateInformer {
-	return &streamingJobTemplateInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+// MockStreamDefinitions returns a MockStreamDefinitionInformer.
+func (v *version) MockStreamDefinitions() MockStreamDefinitionInformer {
+	return &mockStreamDefinitionInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
