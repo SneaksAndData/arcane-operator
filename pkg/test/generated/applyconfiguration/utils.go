@@ -19,9 +19,9 @@ limitations under the License.
 package applyconfiguration
 
 import (
-	v1 "github.com/SneaksAndData/arcane-operator/pkg/internal/apis_test/streaming/v1"
-	internal "github.com/SneaksAndData/arcane-operator/pkg/internal/generated/applyconfiguration/internal"
-	streamingv1 "github.com/SneaksAndData/arcane-operator/pkg/internal/generated/applyconfiguration/streaming/v1"
+	v1 "github.com/SneaksAndData/arcane-operator/pkg/test/apis_test/streaming/v1"
+	internal "github.com/SneaksAndData/arcane-operator/pkg/test/generated/applyconfiguration/internal"
+	streamingv1 "github.com/SneaksAndData/arcane-operator/pkg/test/generated/applyconfiguration/streaming/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	managedfields "k8s.io/apimachinery/pkg/util/managedfields"

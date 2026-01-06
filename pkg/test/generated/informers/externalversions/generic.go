@@ -21,7 +21,7 @@ package externalversions
 import (
 	fmt "fmt"
 
-	v1 "github.com/SneaksAndData/arcane-operator/pkg/internal/apis_test/streaming/v1"
+	v1 "github.com/SneaksAndData/arcane-operator/pkg/test/apis_test/streaming/v1"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	cache "k8s.io/client-go/tools/cache"
 )

@@ -22,7 +22,7 @@ import (
 	fmt "fmt"
 	http "net/http"
 
-	streamingv1 "github.com/SneaksAndData/arcane-operator/pkg/internal/generated/clientset/versioned/typed/streaming/v1"
+	streamingv1 "github.com/SneaksAndData/arcane-operator/pkg/test/generated/clientset/versioned/typed/streaming/v1"
 	discovery "k8s.io/client-go/discovery"
 	rest "k8s.io/client-go/rest"
 	flowcontrol "k8s.io/client-go/util/flowcontrol"

@@ -21,8 +21,8 @@ package v1
 import (
 	http "net/http"
 
-	streamingv1 "github.com/SneaksAndData/arcane-operator/pkg/internal/apis_test/streaming/v1"
-	scheme "github.com/SneaksAndData/arcane-operator/pkg/internal/generated/clientset/versioned/scheme"
+	streamingv1 "github.com/SneaksAndData/arcane-operator/pkg/test/apis_test/streaming/v1"
+	scheme "github.com/SneaksAndData/arcane-operator/pkg/test/generated/clientset/versioned/scheme"
 	rest "k8s.io/client-go/rest"
 )
 
