@@ -5,9 +5,12 @@ go 1.24.5
 require (
 	github.com/DataDog/datadog-api-client-go/v2 v2.50.0
 	github.com/DataDog/datadog-go/v5 v5.8.1
+	github.com/go-logr/logr v1.4.2
 	github.com/samber/slog-datadog/v2 v2.10.2
 	github.com/samber/slog-multi v1.6.0
 	github.com/spf13/viper v1.21.0
+	github.com/stretchr/testify v1.11.1
+	go.uber.org/mock v0.6.0
 	golang.org/x/time v0.9.0
 	k8s.io/api v0.34.3
 	k8s.io/apimachinery v0.34.3
@@ -27,7 +30,6 @@ require (
 	github.com/evanphx/json-patch/v5 v5.9.11 // indirect
 	github.com/fsnotify/fsnotify v1.9.0 // indirect
 	github.com/fxamacker/cbor/v2 v2.9.0 // indirect
-	github.com/go-logr/logr v1.4.2 // indirect
 	github.com/go-openapi/jsonpointer v0.21.0 // indirect
 	github.com/go-openapi/jsonreference v0.20.2 // indirect
 	github.com/go-openapi/swag v0.23.0 // indirect
