@@ -19,7 +19,7 @@ limitations under the License.
 package scheme
 
 import (
-	streamingv1 "github.com/SneaksAndData/arcane-operator/pkg/internal/apis_test/streaming/v1"
+	streamingv1 "github.com/SneaksAndData/arcane-operator/pkg/test/apis_test/streaming/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"

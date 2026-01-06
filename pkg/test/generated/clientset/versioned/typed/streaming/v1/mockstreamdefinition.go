@@ -21,9 +21,9 @@ package v1
 import (
 	context "context"
 
-	streamingv1 "github.com/SneaksAndData/arcane-operator/pkg/internal/apis_test/streaming/v1"
-	applyconfigurationstreamingv1 "github.com/SneaksAndData/arcane-operator/pkg/internal/generated/applyconfiguration/streaming/v1"
-	scheme "github.com/SneaksAndData/arcane-operator/pkg/internal/generated/clientset/versioned/scheme"
+	streamingv1 "github.com/SneaksAndData/arcane-operator/pkg/test/apis_test/streaming/v1"
+	applyconfigurationstreamingv1 "github.com/SneaksAndData/arcane-operator/pkg/test/generated/applyconfiguration/streaming/v1"
+	scheme "github.com/SneaksAndData/arcane-operator/pkg/test/generated/clientset/versioned/scheme"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"

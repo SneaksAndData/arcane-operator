@@ -23,9 +23,9 @@ import (
 	sync "sync"
 	time "time"
 
-	versioned "github.com/SneaksAndData/arcane-operator/pkg/internal/generated/clientset/versioned"
-	internalinterfaces "github.com/SneaksAndData/arcane-operator/pkg/internal/generated/informers/externalversions/internalinterfaces"
-	streaming "github.com/SneaksAndData/arcane-operator/pkg/internal/generated/informers/externalversions/streaming"
+	versioned "github.com/SneaksAndData/arcane-operator/pkg/test/generated/clientset/versioned"
+	internalinterfaces "github.com/SneaksAndData/arcane-operator/pkg/test/generated/informers/externalversions/internalinterfaces"
+	streaming "github.com/SneaksAndData/arcane-operator/pkg/test/generated/informers/externalversions/streaming"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
