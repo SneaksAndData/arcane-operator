@@ -24,6 +24,8 @@ import (
 
 // Interface provides access to all the informers in this group version.
 type Interface interface {
+	// BackfillRequests returns a BackfillRequestInformer.
+	BackfillRequests() BackfillRequestInformer
 	// StreamClasses returns a StreamClassInformer.
 	StreamClasses() StreamClassInformer
 	// StreamingJobTemplates returns a StreamingJobTemplateInformer.
@@ -39,6 +41,11 @@ type version struct {
 // New returns a new Interface.
 func New(f internalinterfaces.SharedInformerFactory, namespace string, tweakListOptions internalinterfaces.TweakListOptionsFunc) Interface {
 	return &version{factory: f, namespace: namespace, tweakListOptions: tweakListOptions}
+}
+
+// BackfillRequests returns a BackfillRequestInformer.
+func (v *version) BackfillRequests() BackfillRequestInformer {
+	return &backfillRequestInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // StreamClasses returns a StreamClassInformer.

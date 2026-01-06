@@ -32,6 +32,12 @@ import (
 func ForKind(kind schema.GroupVersionKind) interface{} {
 	switch kind {
 	// Group=streaming.sneaksanddata.com, Version=v1
+	case v1.SchemeGroupVersion.WithKind("BackfillRequest"):
+		return &streamingv1.BackfillRequestApplyConfiguration{}
+	case v1.SchemeGroupVersion.WithKind("BackfillRequestSpec"):
+		return &streamingv1.BackfillRequestSpecApplyConfiguration{}
+	case v1.SchemeGroupVersion.WithKind("BackfillRequestStatus"):
+		return &streamingv1.BackfillRequestStatusApplyConfiguration{}
 	case v1.SchemeGroupVersion.WithKind("StreamClass"):
 		return &streamingv1.StreamClassApplyConfiguration{}
 	case v1.SchemeGroupVersion.WithKind("StreamClassSpec"):
