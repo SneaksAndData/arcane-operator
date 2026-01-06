@@ -2,7 +2,9 @@
 
 package v1
 
-import metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+import (
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
 
 // MockStreamDefinitionSpec is a mock implementation of the StreamDefinitionSpec for testing purposes.
 type MockStreamDefinitionSpec struct {
@@ -11,6 +13,9 @@ type MockStreamDefinitionSpec struct {
 
 	// Destination represents the destination of the stream.
 	Destination string `json:"destination"`
+
+	// Suspend true if the definition is suspended
+	Suspend bool `json:"suspend"`
 }
 
 type MockStreamDefinitionStatus struct {

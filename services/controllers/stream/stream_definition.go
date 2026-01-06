@@ -1,7 +1,6 @@
 package stream
 
 import (
-	"github.com/SneaksAndData/arcane-operator/services"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
@@ -14,27 +13,35 @@ const (
 	Pending     Phase = "Pending"
 	Running     Phase = "Running"
 	Backfilling Phase = "Backfilling"
-	Suspended   Phase = "Completed"
+	Suspended   Phase = "Suspended"
 	Failed      Phase = "Failed"
 )
 
-type StreamDefinition interface {
+type Definition interface {
 	GetPhase() Phase
 	Suspended() bool
 	CurrentConfiguration() string
 	LastObservedConfiguration() string
 	NamespacedName() types.NamespacedName
 	ToUnstructured() *unstructured.Unstructured
-	SetStatus(status Phase)
+	SetStatus(status Phase) error
 	StateString() string
 
 	GetStreamingJobName() (types.NamespacedName, error)
 	GetBackfillJobName() (types.NamespacedName, error)
 
 	ToOwnerReference() (v1.OwnerReference, error)
-	JobConfigurator() services.JobConfigurator
+	JobConfigurator() JobConfigurator
 }
 
-func FromUnstructured(obj *unstructured.Unstructured) StreamDefinition {
-	panic("implement me")
+func fromUnstructured(obj *unstructured.Unstructured) (Definition, error) {
+	v := unstructuredWrapper{
+		underlying: obj,
+	}
+
+	err := v.Validate()
+	if err != nil {
+		return nil, err
+	}
+	return &v, nil
 }
