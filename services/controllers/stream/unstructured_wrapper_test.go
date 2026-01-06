@@ -19,6 +19,7 @@ func Test_GetPhase(t *testing.T) {
 	// Arrange
 	fakeClient := setupFakeClient(nil)
 	unstructuredObj, err := getUnstructured(t, fakeClient)
+	require.NoError(t, err)
 
 	// Act
 	wrapper, err := fromUnstructured(&unstructuredObj)
@@ -66,10 +67,14 @@ func Test_CurrentConfiguration(t *testing.T) {
 	streamDefinition.Spec.Destination = "destinationC"
 	err = fakeClient.Update(t.Context(), streamDefinition)
 	require.NoError(t, err)
+
 	unstructuredObj, err = getUnstructured(t, fakeClient)
+	require.NoError(t, err)
+
 	wrapper, err = fromUnstructured(&unstructuredObj)
 	require.NoError(t, err)
 	require.NotNil(t, wrapper)
+
 	updatedConfig, err := wrapper.CurrentConfiguration()
 	require.NoError(t, err)
 
@@ -101,6 +106,8 @@ func Test_LastAppliedConfiguration(t *testing.T) {
 	require.NoError(t, err)
 
 	err = fakeClient.Update(t.Context(), wrapper.ToUnstructured())
+	require.NoError(t, err)
+
 	unstructuredObj, err = getUnstructured(t, fakeClient)
 	require.NoError(t, err)
 
