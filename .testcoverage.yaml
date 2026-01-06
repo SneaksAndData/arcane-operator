@@ -9,9 +9,12 @@ threshold:
 
 exclude:
   paths:
-    - \.pb\.go$           # excludes all protobuf generated files
-    - ^pkg/generated      # exclude generated code
-    - ^pkg/apis/          # exclude API definitions
-    - ^pkg/signals        # exclude signal handlers from sample controller
-    - hack/*.go           # exclude hack folder
-    - main.go             # application entry point
+    - \.pb\.go$                # excludes all protobuf generated files
+    - ^pkg/generated           # exclude generated code
+    - ^pkg/internal/generated  # exclude generated code
+    - ^pkg/internal/apis_test  # exclude test API definitions
+    - ^pkg/apis/               # exclude API definitions
+    - ^pkg/signals             # exclude signal handlers from sample controller
+    - hack/*.go                # exclude hack folder
+    - tests/mocks              # exclude mocks
+    - main.go                  # application entry point

@@ -25,14 +25,26 @@ source "${CODEGEN_PKG}/kube_codegen.sh"
 
 THIS_PKG="github.com/SneaksAndData/arcane-operator"
 
+if [ -z "${API_ROOT:-}" ]; then
+  API_ROOT="${SCRIPT_ROOT}/pkg/apis"
+fi
+
+if [ -z "${GEN_ROOT:-}" ]; then
+  GEN_ROOT="${SCRIPT_ROOT}/pkg/generated"
+fi
+
+if [ -z "${GEN_PKG:-}" ]; then
+  GEN_PKG="pkg/generated"
+fi
+
 kube::codegen::gen_helpers \
     --boilerplate "${SCRIPT_ROOT}/hack/boilerplate.go.txt" \
-    "${SCRIPT_ROOT}/pkg/apis"
+    "${API_ROOT}"
 
 kube::codegen::gen_client \
     --with-watch \
     --with-applyconfig \
-    --output-dir "${SCRIPT_ROOT}/pkg/generated" \
-    --output-pkg "${THIS_PKG}/pkg/generated" \
+    --output-dir "${GEN_ROOT}" \
+    --output-pkg "${THIS_PKG}/${GEN_PKG}" \
     --boilerplate "${SCRIPT_ROOT}/hack/boilerplate.go.txt" \
-    "${SCRIPT_ROOT}/pkg/apis"
+    "${API_ROOT}"
