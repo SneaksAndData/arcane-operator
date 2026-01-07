@@ -55,9 +55,6 @@ type Definition interface {
 
 	// ToOwnerReference converts the stream definition to an owner reference.
 	ToOwnerReference() v1.OwnerReference
-
-	// JobConfigurator returns a JobConfigurator for the stream definition.
-	JobConfigurator() JobConfigurator
 }
 
 func fromUnstructured(obj *unstructured.Unstructured) (Definition, error) {
