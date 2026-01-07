@@ -30,5 +30,5 @@ func (in *BackfillRequest) JobConfigurator() services.JobConfigurator {
 	if in == nil {
 		return nil
 	}
-	return services.EnvironmentBuilder{}
+	return services.NewEnvironmentConfigurator(in, "OVERRIDE")
 }

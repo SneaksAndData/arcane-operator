@@ -5,7 +5,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	v1 "github.com/SneaksAndData/arcane-operator/pkg/apis/streaming/v1"
 	"github.com/SneaksAndData/arcane-operator/services"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -40,7 +39,7 @@ func (u *unstructuredWrapper) Suspended() bool {
 	return u.suspended
 }
 
-func (u *unstructuredWrapper) CurrentConfiguration(request *v1.BackfillRequest) (string, error) {
+func (u *unstructuredWrapper) CurrentConfiguration() (string, error) {
 	spec, found, err := unstructured.NestedFieldCopy(u.underlying.Object, "spec")
 
 	if err != nil {
@@ -57,30 +56,15 @@ func (u *unstructuredWrapper) CurrentConfiguration(request *v1.BackfillRequest) 
 	}
 
 	sum := md5.Sum(b)
-	selfConfiguration := hex.EncodeToString(sum[:])
-
-	if request == nil {
-		return selfConfiguration, nil
-	}
-
-	// Include backfill request spec in the configuration hash
-	bRequest, err := json.Marshal(request.Spec)
-	if err != nil {
-		return "", err
-	}
-
-	combinedSum := md5.Sum(bRequest)
-	requestConfiguration := hex.EncodeToString(combinedSum[:])
-
-	return fmt.Sprintf("%x:%x", selfConfiguration, requestConfiguration), nil
+	return hex.EncodeToString(sum[:]), nil
 }
 
 func (u *unstructuredWrapper) LastAppliedConfiguration() string {
 	return u.configuration
 }
 
-func (u *unstructuredWrapper) RecomputeConfiguration(request *v1.BackfillRequest) error {
-	currentConfig, err := u.CurrentConfiguration(request)
+func (u *unstructuredWrapper) RecomputeConfiguration() error {
+	currentConfig, err := u.CurrentConfiguration()
 	if err != nil {
 		return err
 	}
@@ -106,8 +90,13 @@ func (u *unstructuredWrapper) SetPhase(phase Phase) error {
 }
 
 func (u *unstructuredWrapper) StateString() string {
+	current, err := u.CurrentConfiguration()
+	if err != nil {
+		current = fmt.Sprintf("<error:%v>", err)
+	}
+	last := u.LastAppliedConfiguration()
 	phase := u.GetPhase()
-	return fmt.Sprintf("phase=%s", phase)
+	return fmt.Sprintf("current=%s,last=%s,phase=%s", current, last, phase)
 }
 
 func (u *unstructuredWrapper) GetStreamingJobName() types.NamespacedName {
@@ -136,7 +125,7 @@ func (u *unstructuredWrapper) ToOwnerReference() metav1.OwnerReference {
 }
 
 func (u *unstructuredWrapper) JobConfigurator() services.JobConfigurator {
-	return services.NewFromStreamDefinition(u, "SPEC")
+	return services.NewEnvironmentConfigurator(u, "SPEC")
 }
 
 func (u *unstructuredWrapper) Validate() error {
