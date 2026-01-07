@@ -20,7 +20,7 @@ import (
 
 func Test_UpdatePhase_New_To_Suspended(t *testing.T) {
 	// Arrange
-	k8sClient := setupClient(nil)
+	k8sClient := setupClient(nil, nil)
 	gvk := schema.GroupVersionKind{Group: "streaming.sneaksanddata.com", Version: "v1", Kind: "MockStreamDefinition"}
 	reconciler := NewStreamReconciler(k8sClient, gvk, nil)
 
@@ -36,19 +36,16 @@ func Test_UpdatePhase_New_To_Suspended(t *testing.T) {
 	require.Equal(t, "Suspended", sd.Status.Phase)
 }
 
-func Test_UpdatePhase_New_To_Backfilling(t *testing.T) {
+func Test_UpdatePhase_New_To_Pending(t *testing.T) {
 	// Arrange
-	k8sClient := setupClient(func(definition *testv1.MockStreamDefinition) {
-		definition.Spec.Suspended = false
-	})
+	k8sClient := setupClient(func(definition *testv1.MockStreamDefinition) { definition.Spec.Suspended = false }, nil)
 	gvk := schema.GroupVersionKind{Group: "streaming.sneaksanddata.com", Version: "v1", Kind: "MockStreamDefinition"}
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 
 	jobBuilder := mocks.NewMockJobBuilder(mockCtrl)
-	jobBuilder.EXPECT().BuildJob(gomock.Any(), gomock.Any(), gomock.Any()).Return(&batchv1.Job{
-		ObjectMeta: metav1.ObjectMeta{Name: "job1"},
-	}, nil)
+	mockJob := batchv1.Job{ObjectMeta: metav1.ObjectMeta{Name: "job1"}}
+	jobBuilder.EXPECT().BuildJob(gomock.Any(), gomock.Any(), gomock.Any()).Return(&mockJob, nil)
 	reconciler := NewStreamReconciler(k8sClient, gvk, jobBuilder)
 
 	// Act
@@ -62,10 +59,196 @@ func Test_UpdatePhase_New_To_Backfilling(t *testing.T) {
 	err = k8sClient.Get(t.Context(), types.NamespacedName{Name: "s1"}, sd)
 	require.NoError(t, err)
 	// The generated mock type stores status as MockStreamDefinitionStatus with Phase string
-	require.Equal(t, "Suspended", sd.Status.Phase)
+	require.Equal(t, "Pending", sd.Status.Phase)
 }
 
-func setupClient(prepareStreamDefinition func(definition *testv1.MockStreamDefinition)) client.Client {
+func Test_UpdatePhase_Pending_To_Running_no_job(t *testing.T) {
+	// Arrange
+	k8sClient := setupClient(func(definition *testv1.MockStreamDefinition) { definition.Status.Phase = "Pending" }, nil)
+	gvk := schema.GroupVersionKind{Group: "streaming.sneaksanddata.com", Version: "v1", Kind: "MockStreamDefinition"}
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+
+	jobBuilder := mocks.NewMockJobBuilder(mockCtrl)
+	mockJob := batchv1.Job{ObjectMeta: metav1.ObjectMeta{Name: "job1"}}
+	jobBuilder.EXPECT().BuildJob(gomock.Any(), gomock.Any(), gomock.Any()).Return(&mockJob, nil)
+	reconciler := NewStreamReconciler(k8sClient, gvk, jobBuilder)
+
+	// Act
+	result, err := reconciler.Reconcile(t.Context(), reconcile.Request{NamespacedName: types.NamespacedName{Name: "s1"}})
+	require.NoError(t, err)
+	require.Equal(t, result, reconcile.Result{})
+
+	// Assert
+	// Fetch the object and ensure its status Phase is Pending
+	sd := &testv1.MockStreamDefinition{}
+	err = k8sClient.Get(t.Context(), types.NamespacedName{Name: "s1"}, sd)
+	require.NoError(t, err)
+	// The generated mock type stores status as MockStreamDefinitionStatus with Phase string
+	require.Equal(t, "Running", sd.Status.Phase)
+
+	newJob := &batchv1.Job{}
+	err = k8sClient.Get(t.Context(), types.NamespacedName{Name: "job1"}, newJob)
+	require.NoError(t, err)
+}
+
+func Test_UpdatePhase_Pending_To_Running_recreate_job(t *testing.T) {
+	// Arrange
+	namespace := "default"
+	name := "stream1"
+	k8sClient := setupClient(
+		func(definition *testv1.MockStreamDefinition) {
+			definition.Namespace = namespace
+			definition.Name = name
+			definition.Status.Phase = "Pending"
+		},
+
+		func(client2 *crfake.ClientBuilder) {
+			client2.WithObjects(&batchv1.Job{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: namespace,
+					Name:      name,
+					Annotations: map[string]string{
+						"configuration-hash": "old-hash",
+					},
+				},
+			})
+		},
+	)
+	gvk := schema.GroupVersionKind{Group: "streaming.sneaksanddata.com", Version: "v1", Kind: "MockStreamDefinition"}
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+
+	jobBuilder := mocks.NewMockJobBuilder(mockCtrl)
+	mockJob := batchv1.Job{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: namespace,
+			Name:      name,
+			Annotations: map[string]string{
+				"configuration-hash": "new-hash",
+			},
+		},
+	}
+
+	jobBuilder.EXPECT().BuildJob(gomock.Any(), gomock.Any(), gomock.Any()).Return(&mockJob, nil)
+	reconciler := NewStreamReconciler(k8sClient, gvk, jobBuilder)
+
+	// Act
+	result, err := reconciler.Reconcile(t.Context(), reconcile.Request{NamespacedName: types.NamespacedName{Namespace: namespace, Name: name}})
+	require.NoError(t, err)
+	require.Equal(t, result, reconcile.Result{})
+
+	// Assert
+	sd := &testv1.MockStreamDefinition{}
+	err = k8sClient.Get(t.Context(), types.NamespacedName{Namespace: namespace, Name: name}, sd)
+	require.NoError(t, err)
+	require.Equal(t, "Running", sd.Status.Phase)
+
+	newJob := &batchv1.Job{}
+	err = k8sClient.Get(t.Context(), types.NamespacedName{Namespace: namespace, Name: name}, newJob)
+	require.NoError(t, err)
+
+	jobConfiguration, err := StreamingJob(*newJob).CurrentConfiguration()
+	require.NoError(t, err)
+
+	require.Equal(t, jobConfiguration, "new-hash")
+}
+
+func Test_UpdatePhase_Pending_To_Running_not_recreate_job(t *testing.T) {
+	// Arrange
+	namespace := "default"
+	name := "stream1"
+	definitionHash := "add681440f7ac110a987718f47978201"
+	k8sClient := setupClient(
+		func(definition *testv1.MockStreamDefinition) {
+			definition.Namespace = namespace
+			definition.Name = name
+			definition.Status.Phase = "Pending"
+		},
+
+		func(client2 *crfake.ClientBuilder) {
+			client2.WithObjects(&batchv1.Job{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: namespace,
+					Name:      name,
+					Annotations: map[string]string{
+						"configuration-hash": definitionHash,
+					},
+				},
+			})
+		},
+	)
+	gvk := schema.GroupVersionKind{Group: "streaming.sneaksanddata.com", Version: "v1", Kind: "MockStreamDefinition"}
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+
+	jobBuilder := mocks.NewMockJobBuilder(mockCtrl)
+	reconciler := NewStreamReconciler(k8sClient, gvk, jobBuilder)
+
+	// Act
+	result, err := reconciler.Reconcile(t.Context(), reconcile.Request{NamespacedName: types.NamespacedName{Namespace: namespace, Name: name}})
+	require.NoError(t, err)
+	require.Equal(t, result, reconcile.Result{})
+
+	// Assert
+	sd := &testv1.MockStreamDefinition{}
+	err = k8sClient.Get(t.Context(), types.NamespacedName{Namespace: namespace, Name: name}, sd)
+	require.NoError(t, err)
+	require.Equal(t, "Running", sd.Status.Phase)
+
+	newJob := &batchv1.Job{}
+	err = k8sClient.Get(t.Context(), types.NamespacedName{Namespace: namespace, Name: name}, newJob)
+	require.NoError(t, err)
+
+	jobConfiguration, err := StreamingJob(*newJob).CurrentConfiguration()
+	require.NoError(t, err)
+
+	require.Equal(t, jobConfiguration, definitionHash)
+}
+
+func Test_UpdatePhase_Pending_To_Backfilling(t *testing.T) {
+	// Arrange
+	name := types.NamespacedName{Name: "stream1", Namespace: "default"}
+	k8sClient := setupClient(
+		func(definition *testv1.MockStreamDefinition) {
+			definition.Namespace = name.Namespace
+			definition.Name = name.Name
+			definition.Status.Phase = "Pending"
+		},
+		func(client2 *crfake.ClientBuilder) {
+			client2.WithObjects(&v1.BackfillRequest{
+				ObjectMeta: metav1.ObjectMeta{Name: "backfill1", Namespace: name.Namespace},
+				Spec: v1.BackfillRequestSpec{
+					StreamClass: "MockStreamDefinition",
+					StreamId:    name.Name,
+				},
+			})
+		},
+	)
+	gvk := schema.GroupVersionKind{Group: "streaming.sneaksanddata.com", Version: "v1", Kind: "MockStreamDefinition"}
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+
+	jobBuilder := mocks.NewMockJobBuilder(mockCtrl)
+	mockJob := batchv1.Job{ObjectMeta: metav1.ObjectMeta{Name: "job1"}}
+	jobBuilder.EXPECT().BuildJob(gomock.Any(), gomock.Any(), gomock.Any()).Return(&mockJob, nil)
+	reconciler := NewStreamReconciler(k8sClient, gvk, jobBuilder)
+
+	// Act
+	result, err := reconciler.Reconcile(t.Context(), reconcile.Request{NamespacedName: name})
+	require.NoError(t, err)
+	require.Equal(t, result, reconcile.Result{})
+
+	// Assert
+	// Fetch the object and ensure its status Phase is Pending
+	sd := &testv1.MockStreamDefinition{}
+	err = k8sClient.Get(t.Context(), name, sd)
+	require.NoError(t, err)
+	// The generated mock type stores status as MockStreamDefinitionStatus with Phase string
+	require.Equal(t, "Backfilling", sd.Status.Phase)
+}
+
+func setupClient(definition func(definition *testv1.MockStreamDefinition), addResources func(client2 *crfake.ClientBuilder)) client.Client {
 	scheme := runtime.NewScheme()
 	_ = testv1.AddToScheme(scheme)
 	_ = corev1.AddToScheme(scheme)
@@ -81,8 +264,13 @@ func setupClient(prepareStreamDefinition func(definition *testv1.MockStreamDefin
 			Suspended:   true,
 		},
 	}
-	if prepareStreamDefinition != nil {
-		prepareStreamDefinition(obj)
+	if definition != nil {
+		definition(obj)
 	}
-	return crfake.NewClientBuilder().WithScheme(scheme).WithObjects(obj).WithStatusSubresource(&testv1.MockStreamDefinition{}).Build()
+
+	clientBuilder := crfake.NewClientBuilder().WithScheme(scheme).WithObjects(obj).WithStatusSubresource(&testv1.MockStreamDefinition{})
+	if addResources != nil {
+		addResources(clientBuilder)
+	}
+	return clientBuilder.Build()
 }

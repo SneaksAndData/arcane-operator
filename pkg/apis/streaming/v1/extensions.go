@@ -27,5 +27,8 @@ var _ services.JobConfiguratorProvider = (*BackfillRequest)(nil)
 
 // JobConfigurator returns a JobConfigurator for the BackfillRequest
 func (in *BackfillRequest) JobConfigurator() services.JobConfigurator {
+	if in == nil {
+		return nil
+	}
 	panic("not implmented")
 }

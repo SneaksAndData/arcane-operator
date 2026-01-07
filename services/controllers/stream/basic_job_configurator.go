@@ -9,10 +9,12 @@ var _ services.JobConfigurator = &BasicJobConfigurator{}
 
 type BasicJobConfigurator struct {
 	definition Definition
+	next       services.JobConfigurator
 }
 
 func (f BasicJobConfigurator) AddNext(configurator services.JobConfigurator) services.JobConfigurator {
-	panic("not implemented")
+	f.next = configurator
+	return f
 }
 
 func (f BasicJobConfigurator) ConfigureJob(job *batchv1.Job) error {

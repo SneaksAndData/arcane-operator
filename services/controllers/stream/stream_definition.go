@@ -1,8 +1,9 @@
 package stream
 
 import (
+	v1 "github.com/SneaksAndData/arcane-operator/pkg/apis/streaming/v1"
 	"github.com/SneaksAndData/arcane-operator/services"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
 )
@@ -26,14 +27,14 @@ type Definition interface {
 	Suspended() bool
 
 	// CurrentConfiguration returns the hash sum of the current configuration (spec) of the stream definition.
-	CurrentConfiguration() (string, error)
+	CurrentConfiguration(request *v1.BackfillRequest) (string, error)
 
 	// LastAppliedConfiguration returns the hash sum of the last observed configuration (spec) of the stream definition.
 	LastAppliedConfiguration() string
 
 	// RecomputeConfiguration recomputes and updates the last observed configuration hash.
 	// This should be called after any changes to the spec have been applied and the object saved to the API server.
-	RecomputeConfiguration() error
+	RecomputeConfiguration(request *v1.BackfillRequest) error
 
 	// NamespacedName returns the namespaced name of the stream definition.
 	NamespacedName() types.NamespacedName
@@ -55,7 +56,7 @@ type Definition interface {
 	GetBackfillJobName() types.NamespacedName
 
 	// ToOwnerReference converts the stream definition to an owner reference.
-	ToOwnerReference() v1.OwnerReference
+	ToOwnerReference() metav1.OwnerReference
 
 	// ToConfiguratorProvider converts the stream definition to a JobConfiguratorProvider.
 	ToConfiguratorProvider() services.JobConfiguratorProvider
