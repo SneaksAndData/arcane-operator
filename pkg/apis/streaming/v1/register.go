@@ -50,6 +50,8 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&StreamClassList{},
 		&StreamingJobTemplate{},
 		&StreamingJobTemplateList{},
+		&BackfillRequest{},
+		&BackfillRequestList{},
 	)
 	metav1.AddToGroupVersion(scheme, SchemeGroupVersion)
 	return nil

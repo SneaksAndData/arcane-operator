@@ -98,6 +98,9 @@ type BackfillRequestSpec struct {
 
 	// StreamId is the ID of the stream to backfill
 	StreamId string `json:"streamId"`
+
+	// Completed indicates whether the backfill request has been completed
+	Completed bool `json:"completed,omitempty"`
 }
 
 // BackfillRequestStatus defines the observed state of a backfill request
