@@ -1,6 +1,9 @@
 package v1
 
-import "k8s.io/apimachinery/pkg/runtime/schema"
+import (
+	"github.com/SneaksAndData/arcane-operator/services"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+)
 
 // StateString returns a string representation of the current state
 func (in *StreamClass) StateString() string {
@@ -18,4 +21,11 @@ func (in *StreamClass) TargetResourceGvk() schema.GroupVersionKind {
 		Version: in.Spec.APIVersion,
 		Kind:    in.Spec.KindRef,
 	}
+}
+
+var _ services.JobConfiguratorProvider = (*BackfillRequest)(nil)
+
+// JobConfigurator returns a JobConfigurator for the BackfillRequest
+func (in *BackfillRequest) JobConfigurator() services.JobConfigurator {
+	panic("not implmented")
 }
