@@ -27,6 +27,10 @@ type unstructuredWrapper struct {
 	backfillJobRef  corev1.ObjectReference
 }
 
+func (u *unstructuredWrapper) ToConfiguratorProvider() services.JobConfiguratorProvider {
+	return u
+}
+
 func (u *unstructuredWrapper) GetPhase() Phase {
 	return u.phase
 }

@@ -46,7 +46,7 @@ func Test_UpdatePhase_New_To_Backfilling(t *testing.T) {
 	defer mockCtrl.Finish()
 
 	jobBuilder := mocks.NewMockJobBuilder(mockCtrl)
-	jobBuilder.EXPECT().BuildJob(gomock.Any(), gomock.Any()).Return(&batchv1.Job{
+	jobBuilder.EXPECT().BuildJob(gomock.Any(), gomock.Any(), gomock.Any()).Return(&batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{Name: "job1"},
 	}, nil)
 	reconciler := NewStreamReconciler(k8sClient, gvk, jobBuilder)

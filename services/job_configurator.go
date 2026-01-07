@@ -18,5 +18,5 @@ type JobConfigurator interface {
 
 	// AddNext sets the next JobConfigurator in the chain.
 	// Returns self to allow for method chaining.
-	AddNext(configurator *JobConfigurator) JobConfigurator
+	AddNext(configurator JobConfigurator) JobConfigurator
 }

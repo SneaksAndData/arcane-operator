@@ -11,7 +11,7 @@ type BasicJobConfigurator struct {
 	definition Definition
 }
 
-func (f BasicJobConfigurator) AddNext(configurator *services.JobConfigurator) services.JobConfigurator {
+func (f BasicJobConfigurator) AddNext(configurator services.JobConfigurator) services.JobConfigurator {
 	panic("not implemented")
 }
 

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	v1 "github.com/SneaksAndData/arcane-operator/pkg/apis/streaming/v1"
+	"github.com/SneaksAndData/arcane-operator/services"
 	batchv1 "k8s.io/api/batch/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -161,7 +162,7 @@ func (s *streamReconciler) startBackfill(ctx context.Context, definition Definit
 		return reconcile.Result{}, err
 	}
 
-	job, err := s.jobBuilder.BuildJob(ctx, definition.JobConfigurator())
+	job, err := s.jobBuilder.BuildJob(ctx, services.BackfillJobTemplate, definition.ToConfiguratorProvider().JobConfigurator())
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -215,7 +216,13 @@ func (s *streamReconciler) reconcileJob(ctx context.Context, definition Definiti
 		return reconcile.Result{}, err
 	}
 
-	job, err := s.jobBuilder.BuildJob(ctx, definition.JobConfigurator() /*, backfillRequest*/)
+	templateType := services.StreamingJobTemplate
+	if backfillRequest != nil {
+		templateType = services.BackfillJobTemplate
+	}
+
+	configurator := definition.ToConfiguratorProvider().JobConfigurator().AddNext(backfillRequest.JobConfigurator())
+	job, err := s.jobBuilder.BuildJob(ctx, templateType, configurator)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
