@@ -136,7 +136,7 @@ func (u *unstructuredWrapper) ToOwnerReference() metav1.OwnerReference {
 }
 
 func (u *unstructuredWrapper) JobConfigurator() services.JobConfigurator {
-	return NewFromStreamDefinition(u)
+	return services.NewFromStreamDefinition(u, "SPEC")
 }
 
 func (u *unstructuredWrapper) Validate() error {

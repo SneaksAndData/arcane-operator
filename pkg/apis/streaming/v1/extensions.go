@@ -30,5 +30,5 @@ func (in *BackfillRequest) JobConfigurator() services.JobConfigurator {
 	if in == nil {
 		return nil
 	}
-	panic("not implmented")
+	return services.EnvironmentBuilder{}
 }
