@@ -43,16 +43,16 @@ func (m *MockJobBuilder) EXPECT() *MockJobBuilderMockRecorder {
 }
 
 // BuildJob mocks base method.
-func (m *MockJobBuilder) BuildJob(ctx context.Context, configurator services.JobConfigurator) (*v1.Job, error) {
+func (m *MockJobBuilder) BuildJob(ctx context.Context, jobType services.JobTemplateType, configurator services.JobConfigurator) (*v1.Job, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "BuildJob", ctx, configurator)
+	ret := m.ctrl.Call(m, "BuildJob", ctx, jobType, configurator)
 	ret0, _ := ret[0].(*v1.Job)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // BuildJob indicates an expected call of BuildJob.
-func (mr *MockJobBuilderMockRecorder) BuildJob(ctx, configurator any) *gomock.Call {
+func (mr *MockJobBuilderMockRecorder) BuildJob(ctx, jobType, configurator any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BuildJob", reflect.TypeOf((*MockJobBuilder)(nil).BuildJob), ctx, configurator)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BuildJob", reflect.TypeOf((*MockJobBuilder)(nil).BuildJob), ctx, jobType, configurator)
 }

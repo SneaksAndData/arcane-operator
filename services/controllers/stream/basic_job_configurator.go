@@ -12,8 +12,7 @@ type BasicJobConfigurator struct {
 }
 
 func (f BasicJobConfigurator) AddNext(configurator *services.JobConfigurator) services.JobConfigurator {
-	panic("implement me")
-	return f
+	panic("not implemented")
 }
 
 func (f BasicJobConfigurator) ConfigureJob(job *batchv1.Job) error {

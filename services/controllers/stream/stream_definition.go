@@ -1,7 +1,6 @@
 package stream
 
 import (
-	"github.com/SneaksAndData/arcane-operator/services"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
@@ -56,9 +55,6 @@ type Definition interface {
 
 	// ToOwnerReference converts the stream definition to an owner reference.
 	ToOwnerReference() v1.OwnerReference
-
-	// JobConfigurator returns a JobConfigurator for the stream definition.
-	JobConfigurator() services.JobConfigurator
 }
 
 func fromUnstructured(obj *unstructured.Unstructured) (Definition, error) {

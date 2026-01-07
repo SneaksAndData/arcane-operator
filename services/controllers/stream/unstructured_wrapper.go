@@ -13,7 +13,10 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
-var _ Definition = (*unstructuredWrapper)(nil)
+var (
+	_ Definition                       = (*unstructuredWrapper)(nil)
+	_ services.JobConfiguratorProvider = (*unstructuredWrapper)(nil)
+)
 
 type unstructuredWrapper struct {
 	underlying      *unstructured.Unstructured
