@@ -27,10 +27,11 @@ type streamReconciler struct {
 }
 
 // NewStreamReconciler creates a new StreamReconciler instance.
-func NewStreamReconciler(gvk schema.GroupVersionKind, jobBuilder JobBuilder) reconcile.Reconciler {
+func NewStreamReconciler(client client.Client, gvk schema.GroupVersionKind, jobBuilder JobBuilder) reconcile.Reconciler {
 	return &streamReconciler{
 		gvk:        gvk,
 		jobBuilder: jobBuilder,
+		client:     client,
 	}
 }
 
@@ -160,7 +161,7 @@ func (s *streamReconciler) startBackfill(ctx context.Context, definition Definit
 		return reconcile.Result{}, err
 	}
 
-	job, err := s.jobBuilder.BuildJob(ctx, definition, &v1.BackfillRequest{})
+	job, err := s.jobBuilder.BuildJob(ctx, definition.JobConfigurator())
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -214,7 +215,7 @@ func (s *streamReconciler) reconcileJob(ctx context.Context, definition Definiti
 		return reconcile.Result{}, err
 	}
 
-	job, err := s.jobBuilder.BuildJob(ctx, definition, backfillRequest)
+	job, err := s.jobBuilder.BuildJob(ctx, definition.JobConfigurator() /*, backfillRequest*/)
 	if err != nil {
 		return reconcile.Result{}, err
 	}

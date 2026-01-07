@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"github.com/SneaksAndData/arcane-operator/services"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -116,7 +117,7 @@ func (u *unstructuredWrapper) ToOwnerReference() metav1.OwnerReference {
 	}
 }
 
-func (u *unstructuredWrapper) JobConfigurator() JobConfigurator {
+func (u *unstructuredWrapper) JobConfigurator() services.JobConfigurator {
 	return NewFromStreamDefinition(u)
 }
 
