@@ -110,9 +110,6 @@ type BackfillRequestStatus struct {
 
 	// Conditions represent the latest available observations
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
-
-	// Completed indicates whether the backfill request has been completed
-	Completed bool `json:"completed,omitempty"`
 }
 
 // BackfillRequest is the Schema for the backfill request API
