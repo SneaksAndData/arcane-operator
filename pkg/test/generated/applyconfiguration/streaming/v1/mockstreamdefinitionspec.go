@@ -18,11 +18,18 @@ limitations under the License.
 
 package v1
 
+import (
+	corev1 "k8s.io/api/core/v1"
+)
+
 // MockStreamDefinitionSpecApplyConfiguration represents a declarative configuration of the MockStreamDefinitionSpec type for use
 // with apply.
 type MockStreamDefinitionSpecApplyConfiguration struct {
-	Source      *string `json:"source,omitempty"`
-	Destination *string `json:"destination,omitempty"`
+	Source                 *string                 `json:"source,omitempty"`
+	Destination            *string                 `json:"destination,omitempty"`
+	Suspended              *bool                   `json:"suspended,omitempty"`
+	JobTemplateRef         *corev1.ObjectReference `json:"jobTemplateRef,omitempty"`
+	BackfillJobTemplateRef *corev1.ObjectReference `json:"backfillJobTemplateRef,omitempty"`
 }
 
 // MockStreamDefinitionSpecApplyConfiguration constructs a declarative configuration of the MockStreamDefinitionSpec type for use with
@@ -44,5 +51,29 @@ func (b *MockStreamDefinitionSpecApplyConfiguration) WithSource(value string) *M
 // If called multiple times, the Destination field is set to the value of the last call.
 func (b *MockStreamDefinitionSpecApplyConfiguration) WithDestination(value string) *MockStreamDefinitionSpecApplyConfiguration {
 	b.Destination = &value
+	return b
+}
+
+// WithSuspended sets the Suspended field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the Suspended field is set to the value of the last call.
+func (b *MockStreamDefinitionSpecApplyConfiguration) WithSuspended(value bool) *MockStreamDefinitionSpecApplyConfiguration {
+	b.Suspended = &value
+	return b
+}
+
+// WithJobTemplateRef sets the JobTemplateRef field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the JobTemplateRef field is set to the value of the last call.
+func (b *MockStreamDefinitionSpecApplyConfiguration) WithJobTemplateRef(value corev1.ObjectReference) *MockStreamDefinitionSpecApplyConfiguration {
+	b.JobTemplateRef = &value
+	return b
+}
+
+// WithBackfillJobTemplateRef sets the BackfillJobTemplateRef field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the BackfillJobTemplateRef field is set to the value of the last call.
+func (b *MockStreamDefinitionSpecApplyConfiguration) WithBackfillJobTemplateRef(value corev1.ObjectReference) *MockStreamDefinitionSpecApplyConfiguration {
+	b.BackfillJobTemplateRef = &value
 	return b
 }

@@ -3,6 +3,7 @@
 package v1
 
 import (
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -14,13 +15,22 @@ type MockStreamDefinitionSpec struct {
 	// Destination represents the destination of the stream.
 	Destination string `json:"destination"`
 
-	// Suspend true if the definition is suspended
-	Suspend bool `json:"suspend"`
+	// Suspended indicates whether the stream is suspended.
+	Suspended bool `json:"suspended"`
+
+	// JobTemplateRef represents a reference to the job template.
+	JobTemplateRef v1.ObjectReference `json:"jobTemplateRef"`
+
+	// BackfillJobTemplateRef represents a reference to the job template.
+	BackfillJobTemplateRef v1.ObjectReference `json:"backfillJobTemplateRef"`
 }
 
 type MockStreamDefinitionStatus struct {
 	// Phase represents the current phase of the stream.
 	Phase string `json:"phase"`
+
+	// ConfigurationHash represents the hash of the current configuration.
+	ConfigurationHash string `json:"configurationHash"`
 }
 
 // MockStreamDefinition is a mock implementation of the StreamDefinition for testing purposes.
