@@ -8,6 +8,7 @@ import (
 	"go.uber.org/mock/gomock"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -314,6 +315,109 @@ func Test_UpdatePhase_Pending_To_Backfilling_recreate_job(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Equal(t, jobConfiguration, "new-hash")
+}
+
+func Test_UpdatePhase_Running_To_Suspended_no_job(t *testing.T) {
+	// Arrange
+	k8sClient := setupClient(func(definition *testv1.MockStreamDefinition) {
+		definition.Status.Phase = "Running"
+		definition.Spec.Suspended = true
+	}, nil)
+	gvk := schema.GroupVersionKind{Group: "streaming.sneaksanddata.com", Version: "v1", Kind: "MockStreamDefinition"}
+	reconciler := NewStreamReconciler(k8sClient, gvk, nil)
+
+	// Act
+	result, err := reconciler.Reconcile(t.Context(), reconcile.Request{NamespacedName: types.NamespacedName{Name: "s1"}})
+	require.NoError(t, err)
+	require.Equal(t, result, reconcile.Result{})
+
+	// Assert
+	sd := &testv1.MockStreamDefinition{}
+	err = k8sClient.Get(t.Context(), types.NamespacedName{Name: "s1"}, sd)
+	require.NoError(t, err)
+	require.Equal(t, "Suspended", sd.Status.Phase)
+}
+
+func Test_UpdatePhase_Running_To_Suspended_stop_job(t *testing.T) {
+	// Arrange
+	name := types.NamespacedName{Name: "stream1", Namespace: "default"}
+	k8sClient := setupClient(func(definition *testv1.MockStreamDefinition) {
+		definition.Namespace = name.Namespace
+		definition.Name = name.Name
+		definition.Status.Phase = "Running"
+		definition.Spec.Suspended = true
+	},
+		func(client2 *crfake.ClientBuilder) {
+			client2.WithObjects(&v1.BackfillRequest{
+				ObjectMeta: metav1.ObjectMeta{Name: "backfill1", Namespace: name.Namespace},
+				Spec: v1.BackfillRequestSpec{
+					StreamClass: "MockStreamDefinition",
+					StreamId:    name.Name,
+				},
+			})
+			client2.WithObjects(&batchv1.Job{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: name.Namespace,
+					Name:      name.Name,
+					Annotations: map[string]string{
+						"configuration-hash": "old-hash",
+					},
+				},
+			})
+		},
+	)
+	gvk := schema.GroupVersionKind{Group: "streaming.sneaksanddata.com", Version: "v1", Kind: "MockStreamDefinition"}
+	reconciler := NewStreamReconciler(k8sClient, gvk, nil)
+
+	// Act
+	result, err := reconciler.Reconcile(t.Context(), reconcile.Request{NamespacedName: name})
+	require.NoError(t, err)
+	require.Equal(t, result, reconcile.Result{})
+
+	// Assert
+	sd := &testv1.MockStreamDefinition{}
+	err = k8sClient.Get(t.Context(), name, sd)
+	require.NoError(t, err)
+	require.Equal(t, "Suspended", sd.Status.Phase)
+
+	newJob := &batchv1.Job{}
+	err = k8sClient.Get(t.Context(), name, newJob)
+	require.True(t, errors.IsNotFound(err))
+}
+
+func Test_UpdatePhase_Running_with_BackfillRequest_no_job(t *testing.T) {
+	// Arrange
+	name := types.NamespacedName{Name: "stream1", Namespace: "default"}
+	k8sClient := setupClient(
+		func(definition *testv1.MockStreamDefinition) {
+			definition.Namespace = name.Namespace
+			definition.Name = name.Name
+			definition.Status.Phase = "Running"
+			definition.Spec.Suspended = false
+		},
+		func(client2 *crfake.ClientBuilder) {
+			client2.WithObjects(&v1.BackfillRequest{
+				ObjectMeta: metav1.ObjectMeta{Name: "backfill1", Namespace: name.Namespace},
+				Spec: v1.BackfillRequestSpec{
+					StreamClass: "MockStreamDefinition",
+					StreamId:    name.Name,
+				},
+			})
+		},
+	)
+	gvk := schema.GroupVersionKind{Group: "streaming.sneaksanddata.com", Version: "v1", Kind: "MockStreamDefinition"}
+	reconciler := NewStreamReconciler(k8sClient, gvk, nil)
+
+	// Act
+	result, err := reconciler.Reconcile(t.Context(), reconcile.Request{NamespacedName: name})
+	require.NoError(t, err)
+	require.Equal(t, result, reconcile.Result{})
+
+	// Assert
+	sd := &testv1.MockStreamDefinition{}
+	err = k8sClient.Get(t.Context(), name, sd)
+	require.NoError(t, err)
+	require.Equal(t, "Pending", sd.Status.Phase)
 }
 
 func setupClient(definition func(definition *testv1.MockStreamDefinition), addResources func(client2 *crfake.ClientBuilder)) client.Client {

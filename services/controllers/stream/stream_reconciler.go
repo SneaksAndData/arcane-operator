@@ -87,12 +87,18 @@ func (s *streamReconciler) moveFsm(ctx context.Context, definition Definition, j
 		return s.stopStream(ctx, definition, Suspended)
 
 	case phase == Running && backfillRequest != nil:
-		return s.reconcileJob(ctx, definition, backfillRequest, Running)
+		return s.stopStream(ctx, definition, Pending)
 
-	case phase == Backfilling && job.IsCompleted():
+	case phase == Suspended && backfillRequest != nil: // TODO
+		return s.updateStreamPhase(ctx, definition, backfillRequest, Pending)
+
+	case phase == Suspended && backfillRequest == nil: // TODO
+		return s.stopStream(ctx, definition, Suspended)
+
+	case phase == Backfilling && job.IsCompleted(): // TODO
 		return s.completeBackfill(ctx, job.ToV1Job(), definition, backfillRequest, Pending)
 
-	case job.IsFailed():
+	case job.IsFailed(): // TODO
 		return s.stopStream(ctx, definition, Failed)
 	}
 
@@ -181,7 +187,6 @@ func (s *streamReconciler) completeBackfill(ctx context.Context, job *batchv1.Jo
 		return reconcile.Result{}, err
 	}
 
-	request.Status.Completed = true
 	err = s.client.Status().Update(ctx, request)
 	if err != nil {
 		return reconcile.Result{}, err
