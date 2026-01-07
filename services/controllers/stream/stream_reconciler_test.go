@@ -30,7 +30,7 @@ func Test_UpdatePhase_ToPending(t *testing.T) {
 		Spec: testv1.MockStreamDefinitionSpec{
 			Source:      "sourceA",
 			Destination: "destinationB",
-			Suspend:     true,
+			Suspended:   true,
 		},
 	}
 

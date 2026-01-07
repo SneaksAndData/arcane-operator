@@ -222,14 +222,18 @@ func (s *streamReconciler) completeBackfill(ctx context.Context, job *batchv1.Jo
 
 func (s *streamReconciler) reconcileJob(ctx context.Context, definition Definition, backfillRequest *v1.BackfillRequest, nextStatus Phase) (reconcile.Result, error) {
 	logger := s.getLogger(ctx, definition.NamespacedName())
-	currentConfig := definition.CurrentConfiguration()
-	previousConfig := definition.LastObservedConfiguration()
+	currentConfig, err := definition.CurrentConfiguration()
+	if err != nil {
+		logger.V(0).Error(err, "unable to compute current configuration hash")
+		return reconcile.Result{}, err
+	}
+	previousConfig := definition.LastAppliedConfiguration()
 
 	if currentConfig == previousConfig {
 		logger.V(0).Info("no configuration changes detected")
 		return reconcile.Result{}, nil
 	}
-	_, err := s.stopStream(ctx, definition, nextStatus)
+	_, err = s.stopStream(ctx, definition, nextStatus)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -300,7 +304,7 @@ func (s *streamReconciler) updateStreamStatus(ctx context.Context, definition De
 		return reconcile.Result{}, nil
 	}
 	logger.V(1).Info("updating Stream status", "from", definition.GetPhase(), "to", nextStatus)
-	err := definition.SetStatus(nextStatus)
+	err := definition.SetPhase(nextStatus)
 	if err != nil {
 		logger.V(0).Error(err, "unable to set Stream status")
 		return reconcile.Result{}, err
