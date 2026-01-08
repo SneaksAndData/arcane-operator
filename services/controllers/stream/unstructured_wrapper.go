@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	v1 "github.com/SneaksAndData/arcane-operator/pkg/apis/streaming/v1"
-	"github.com/SneaksAndData/arcane-operator/services/jobs"
+	"github.com/SneaksAndData/arcane-operator/services/job"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -15,8 +15,8 @@ import (
 )
 
 var (
-	_ Definition                   = (*unstructuredWrapper)(nil)
-	_ jobs.JobConfiguratorProvider = (*unstructuredWrapper)(nil)
+	_ Definition               = (*unstructuredWrapper)(nil)
+	_ job.ConfiguratorProvider = (*unstructuredWrapper)(nil)
 )
 
 type unstructuredWrapper struct {
@@ -28,7 +28,7 @@ type unstructuredWrapper struct {
 	backfillJobRef  corev1.ObjectReference
 }
 
-func (u *unstructuredWrapper) ToConfiguratorProvider() jobs.JobConfiguratorProvider {
+func (u *unstructuredWrapper) ToConfiguratorProvider() job.ConfiguratorProvider {
 	return u
 }
 
@@ -135,8 +135,10 @@ func (u *unstructuredWrapper) ToOwnerReference() metav1.OwnerReference {
 	}
 }
 
-func (u *unstructuredWrapper) JobConfigurator() jobs.JobConfigurator {
-	return jobs.NewEnvironmentConfigurator(u, "SPEC")
+func (u *unstructuredWrapper) JobConfigurator() job.Configurator {
+	metadata := job.NewMetadataConfigurator(u.underlying.GetName(), u.underlying.GetKind())
+	backfill := job.NewBackfillConfigurator(false).AddNext(metadata)
+	return job.NewEnvironmentConfigurator(u, "SPEC").AddNext(backfill)
 }
 
 func (u *unstructuredWrapper) Validate() error {

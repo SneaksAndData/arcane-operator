@@ -7,5 +7,5 @@ import (
 )
 
 type JobBuilder interface {
-	BuildJob(ctx context.Context, jobType jobs.JobTemplateType, configurator jobs.JobConfigurator) (*batchv1.Job, error)
+	BuildJob(ctx context.Context, jobType job.JobTemplateType, configurator job.JobConfigurator) (*batchv1.Job, error)
 }

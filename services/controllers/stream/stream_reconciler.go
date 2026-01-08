@@ -184,9 +184,9 @@ func (s *streamReconciler) reconcileJob(ctx context.Context, definition Definiti
 		return reconcile.Result{}, err
 	}
 
-	templateType := jobs.StreamingJobTemplate
+	templateType := job.StreamingJobTemplate
 	if backfillRequest != nil {
-		templateType = jobs.BackfillJobTemplate
+		templateType = job.BackfillJobTemplate
 	}
 	configurator := definition.ToConfiguratorProvider().JobConfigurator().AddNext(backfillRequest.JobConfigurator())
 
@@ -258,7 +258,7 @@ func (s *streamReconciler) completeBackfill(ctx context.Context, job *batchv1.Jo
 	return s.updateStreamPhase(ctx, definition, nil, nextStatus)
 }
 
-func (s *streamReconciler) startNewJob(ctx context.Context, templateType jobs.JobTemplateType, configurator jobs.JobConfigurator) error {
+func (s *streamReconciler) startNewJob(ctx context.Context, templateType job.JobTemplateType, configurator job.JobConfigurator) error {
 	job, err := s.jobBuilder.BuildJob(ctx, templateType, configurator)
 	if err != nil { // coverage-ignore
 		return err

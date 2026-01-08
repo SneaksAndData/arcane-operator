@@ -1,7 +1,7 @@
 package v1
 
 import (
-	"github.com/SneaksAndData/arcane-operator/services/jobs"
+	"github.com/SneaksAndData/arcane-operator/services/job"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
@@ -23,12 +23,12 @@ func (in *StreamClass) TargetResourceGvk() schema.GroupVersionKind {
 	}
 }
 
-var _ jobs.JobConfiguratorProvider = (*BackfillRequest)(nil)
+var _ job.ConfiguratorProvider = (*BackfillRequest)(nil)
 
 // JobConfigurator returns a JobConfigurator for the BackfillRequest
-func (in *BackfillRequest) JobConfigurator() jobs.JobConfigurator {
+func (in *BackfillRequest) JobConfigurator() job.Configurator {
 	if in == nil {
 		return nil
 	}
-	return jobs.NewEnvironmentConfigurator(in, "OVERRIDE")
+	return job.NewEnvironmentConfigurator(in, "OVERRIDE").AddNext(job.NewBackfillConfigurator(true))
 }
