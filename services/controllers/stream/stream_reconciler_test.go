@@ -619,16 +619,16 @@ func Test_UpdatePhase_Backfilling_To_Pending_with_job_completed(t *testing.T) {
 	sd := &testv1.MockStreamDefinition{}
 	err = k8sClient.Get(t.Context(), name, sd)
 	require.NoError(t, err)
-	require.Equal(t, "Backfilling", sd.Status.Phase)
+	require.Equal(t, "Pending", sd.Status.Phase)
 
 	newJob := &batchv1.Job{}
 	err = k8sClient.Get(t.Context(), name, newJob)
-	require.False(t, errors.IsNotFound(err))
+	require.True(t, errors.IsNotFound(err))
 
 	backfillRequest := &v1.BackfillRequest{}
 	err = k8sClient.Get(t.Context(), types.NamespacedName{Name: "backfill1", Namespace: name.Namespace}, backfillRequest)
 	require.NoError(t, err)
-	require.False(t, backfillRequest.Spec.Completed)
+	require.True(t, backfillRequest.Spec.Completed)
 }
 
 func Test_UpdatePhase_Job_Failed(t *testing.T) {
