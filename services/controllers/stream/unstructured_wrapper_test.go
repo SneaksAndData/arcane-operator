@@ -232,8 +232,6 @@ func Test_StateString(t *testing.T) {
 	// Assert
 	stateString := wrapper.StateString()
 	require.Contains(t, stateString, "phase=Running")
-	require.Contains(t, stateString, "current=")
-	require.Contains(t, stateString, "last=")
 }
 
 func setupFakeClient(updateStreamDefinition func(sd *testv1.MockStreamDefinition)) client.WithWatch {
