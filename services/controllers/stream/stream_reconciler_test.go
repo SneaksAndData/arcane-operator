@@ -315,6 +315,38 @@ func Test_UpdatePhase_Backfilling_To_Pending_with_job_completed(t *testing.T) {
 	assertBackfillRequestCompleted(t, k8sClient)
 }
 
+func Test_UpdatePhase_Backfilling_To_Backfilling_with_no_job(t *testing.T) {
+	// Arrange
+	k8sClient := setupClient(
+		combined(withNamedStreamDefinition(objectName), withPhase(Backfilling)),
+		combinedB(withBackfillRequest(objectName)),
+	)
+
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+
+	mockJob := batchv1.Job{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: objectName.Namespace,
+			Name:      objectName.Name,
+			Annotations: map[string]string{
+				"configuration-hash": "new-hash",
+			},
+		},
+	}
+	reconciler := createReconciler(k8sClient, &mockJob, mockCtrl)
+
+	// Act
+	result, err := reconciler.Reconcile(t.Context(), reconcile.Request{NamespacedName: objectName})
+	require.NoError(t, err)
+	require.Equal(t, result, reconcile.Result{})
+
+	// Assert
+	assertStreamDefinitionPhase(t, k8sClient, objectName, Backfilling)
+	assertJobExists(t, k8sClient, objectName)
+	assertBackfillRequestNotCompleted(t, k8sClient)
+}
+
 func Test_UpdatePhase_Job_Failed(t *testing.T) {
 	// Arrange
 	k8sClient := setupClient(
@@ -351,6 +383,21 @@ func Test_UpdatePhase_Failed_to_Failed(t *testing.T) {
 	// Assert
 	assertStreamDefinitionPhase(t, k8sClient, objectName, Failed)
 	assertJobNotExists(t, k8sClient, objectName)
+}
+
+func Test_UpdatePhase_Failed_to_Failed_without_job(t *testing.T) {
+	// Arrange
+	name := types.NamespacedName{Name: "stream1", Namespace: "default"}
+	k8sClient := setupClient(combined(withNamedStreamDefinition(name), withPhase(Failed)), nil)
+	reconciler := createReconciler(k8sClient, nil, nil)
+
+	// Act
+	result, err := reconciler.Reconcile(t.Context(), reconcile.Request{NamespacedName: name})
+	require.NoError(t, err)
+	require.Equal(t, result, reconcile.Result{})
+
+	// Assert
+	assertStreamDefinitionPhase(t, k8sClient, objectName, Failed)
 }
 
 func setupClient(definition func(definition *testv1.MockStreamDefinition), addResources func(client2 *crfake.ClientBuilder)) client.Client {

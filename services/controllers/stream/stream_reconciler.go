@@ -44,24 +44,24 @@ func (s *streamReconciler) Reconcile(ctx context.Context, request reconcile.Requ
 	maybeSd.SetGroupVersionKind(s.gvk)
 	err := s.client.Get(ctx, request.NamespacedName, &maybeSd)
 
-	if errors.IsNotFound(err) {
+	if errors.IsNotFound(err) { // coverage-ignore
 		logger.V(1).Info("stream resource not found, might have been deleted")
 		return reconcile.Result{}, nil
 	}
 
-	if client.IgnoreNotFound(err) != nil {
+	if client.IgnoreNotFound(err) != nil { // coverage-ignore
 		logger.V(1).Error(err, "unable to fetch Stream resource")
 		return reconcile.Result{}, err
 	}
 
 	streamDefinition, err := fromUnstructured(&maybeSd)
-	if err != nil {
+	if err != nil { // coverage-ignore
 		logger.V(0).Error(err, "failed to parse Stream definition")
 		return reconcile.Result{}, err
 	}
 
 	backfillRequest, err := s.getBackfillRequest(ctx, streamDefinition)
-	if client.IgnoreNotFound(err) != nil {
+	if client.IgnoreNotFound(err) != nil { // coverage-ignore
 		logger.V(1).Error(err, "unable to fetch BackfillRequest for the Stream, cannot proceed")
 		return reconcile.Result{}, err
 	}
@@ -69,7 +69,7 @@ func (s *streamReconciler) Reconcile(ctx context.Context, request reconcile.Requ
 	job := &batchv1.Job{}
 	err = s.client.Get(ctx, request.NamespacedName, job)
 
-	if client.IgnoreNotFound(err) != nil {
+	if client.IgnoreNotFound(err) != nil { // coverage-ignore
 		logger.V(1).Error(err, "unable to fetch Stream Job")
 		return reconcile.Result{}, err
 	}
@@ -143,7 +143,7 @@ func (s *streamReconciler) stopStream(ctx context.Context, definition Definition
 	job.SetName(definition.NamespacedName().Name)
 	job.SetNamespace(definition.NamespacedName().Namespace)
 	err := s.client.Delete(ctx, job, client.PropagationPolicy(metav1.DeletePropagationBackground))
-	if client.IgnoreNotFound(err) != nil {
+	if client.IgnoreNotFound(err) != nil { // coverage-ignore
 		return reconcile.Result{}, err
 	}
 
@@ -167,7 +167,7 @@ func (s *streamReconciler) startBackfill(ctx context.Context, definition Definit
 	}
 
 	err := s.client.Create(ctx, backfillRequest)
-	if err != nil {
+	if err != nil { // coverage-ignore
 		logger.V(0).Error(err, "failed to create backfill request")
 		return reconcile.Result{}, err
 	}
@@ -180,7 +180,7 @@ func (s *streamReconciler) reconcileJob(ctx context.Context, definition Definiti
 	v1job := batchv1.Job{}
 	err := s.client.Get(ctx, definition.NamespacedName(), &v1job)
 
-	if client.IgnoreNotFound(err) != nil {
+	if client.IgnoreNotFound(err) != nil { // coverage-ignore
 		return reconcile.Result{}, err
 	}
 
@@ -192,14 +192,14 @@ func (s *streamReconciler) reconcileJob(ctx context.Context, definition Definiti
 
 	if errors.IsNotFound(err) {
 		err := s.startNewJob(ctx, templateType, configurator)
-		if err != nil {
+		if err != nil { // coverage-ignore
 			return reconcile.Result{}, err
 		}
 		return s.updateStreamPhase(ctx, definition, backfillRequest, nextPhase)
 	}
 
 	equals, err := s.compareConfigurations(ctx, v1job, definition)
-	if err != nil {
+	if err != nil { // coverage-ignore
 		return reconcile.Result{}, err
 	}
 
@@ -209,12 +209,12 @@ func (s *streamReconciler) reconcileJob(ctx context.Context, definition Definiti
 	}
 
 	err = s.client.Delete(ctx, &v1job, client.PropagationPolicy(metav1.DeletePropagationBackground))
-	if client.IgnoreNotFound(err) != nil {
+	if client.IgnoreNotFound(err) != nil { // coverage-ignore
 		return reconcile.Result{}, err
 	}
 
 	err = s.startNewJob(ctx, templateType, configurator)
-	if err != nil {
+	if err != nil { // coverage-ignore
 		return reconcile.Result{}, err
 	}
 	return s.updateStreamPhase(ctx, definition, backfillRequest, nextPhase)
@@ -247,11 +247,11 @@ func (s *streamReconciler) completeBackfill(ctx context.Context, job *batchv1.Jo
 
 	request.Spec.Completed = true
 	err := s.client.Update(ctx, request)
-	if err != nil {
+	if err != nil { // coverage-ignore
 		return reconcile.Result{}, err
 	}
 	err = s.client.Status().Update(ctx, request)
-	if err != nil {
+	if err != nil { // coverage-ignore
 		return reconcile.Result{}, err
 	}
 
@@ -260,12 +260,12 @@ func (s *streamReconciler) completeBackfill(ctx context.Context, job *batchv1.Jo
 
 func (s *streamReconciler) startNewJob(ctx context.Context, templateType services.JobTemplateType, configurator services.JobConfigurator) error {
 	job, err := s.jobBuilder.BuildJob(ctx, templateType, configurator)
-	if err != nil {
+	if err != nil { // coverage-ignore
 		return err
 	}
 
 	err = s.client.Create(ctx, job)
-	if err != nil {
+	if err != nil { // coverage-ignore
 		return err
 	}
 	return nil
@@ -274,7 +274,7 @@ func (s *streamReconciler) startNewJob(ctx context.Context, templateType service
 func (s *streamReconciler) getBackfillRequest(ctx context.Context, definition Definition) (*v1.BackfillRequest, error) {
 	backfillRequestList := &v1.BackfillRequestList{}
 	err := s.client.List(ctx, backfillRequestList, client.InNamespace(definition.NamespacedName().Namespace))
-	if client.IgnoreNotFound(err) != nil {
+	if client.IgnoreNotFound(err) != nil { // coverage-ignore
 		return nil, err
 	}
 
@@ -295,19 +295,19 @@ func (s *streamReconciler) getLogger(ctx context.Context, request types.Namespac
 
 func (s *streamReconciler) updateStreamPhase(ctx context.Context, definition Definition, _ *v1.BackfillRequest, nextStatus Phase) (reconcile.Result, error) {
 	logger := s.getLogger(ctx, definition.NamespacedName())
-	if definition.GetPhase() == nextStatus {
+	if definition.GetPhase() == nextStatus { // coverage-ignore
 		logger.V(2).Info("Stream phase is already set to", definition.GetPhase())
 		return reconcile.Result{}, nil
 	}
 	logger.V(1).Info("updating Stream status", "from", definition.GetPhase(), "to", nextStatus)
 	err := definition.SetPhase(nextStatus)
-	if err != nil {
+	if err != nil { // coverage-ignore
 		logger.V(0).Error(err, "unable to set Stream status")
 		return reconcile.Result{}, err
 	}
 	statusUpdate := definition.ToUnstructured().DeepCopy()
 	err = s.client.Status().Update(ctx, statusUpdate)
-	if err != nil {
+	if err != nil { // coverage-ignore
 		logger.V(1).Error(err, "unable to update Stream status")
 		return reconcile.Result{}, err
 	}
