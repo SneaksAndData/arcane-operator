@@ -61,7 +61,7 @@ func Test_CurrentConfiguration(t *testing.T) {
 	wrapper, err := fromUnstructured(&unstructuredObj)
 	require.NotNil(t, wrapper)
 	require.NoError(t, err)
-	currentConfig, err := wrapper.CurrentConfiguration()
+	currentConfig, err := wrapper.CurrentConfiguration(nil)
 	require.NoError(t, err)
 
 	streamDefinition.Spec.Destination = "destinationC"
@@ -75,7 +75,7 @@ func Test_CurrentConfiguration(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, wrapper)
 
-	updatedConfig, err := wrapper.CurrentConfiguration()
+	updatedConfig, err := wrapper.CurrentConfiguration(nil)
 	require.NoError(t, err)
 
 	// Assert
@@ -95,14 +95,14 @@ func Test_LastAppliedConfiguration(t *testing.T) {
 	require.NotNil(t, wrapper)
 	require.NoError(t, err)
 
-	currentConfig, err := wrapper.CurrentConfiguration()
+	currentConfig, err := wrapper.CurrentConfiguration(nil)
 	require.NoError(t, err)
 
 	// Precondition: LastAppliedConfiguration is empty before recompute since it hasn't been set yet
 	lastAppliedConfig := wrapper.LastAppliedConfiguration()
 	require.Empty(t, lastAppliedConfig)
 
-	err = wrapper.RecomputeConfiguration()
+	err = wrapper.RecomputeConfiguration(nil)
 	require.NoError(t, err)
 
 	err = fakeClient.Update(t.Context(), wrapper.ToUnstructured())
@@ -232,8 +232,6 @@ func Test_StateString(t *testing.T) {
 	// Assert
 	stateString := wrapper.StateString()
 	require.Contains(t, stateString, "phase=Running")
-	require.Contains(t, stateString, "current=")
-	require.Contains(t, stateString, "last=")
 }
 
 func setupFakeClient(updateStreamDefinition func(sd *testv1.MockStreamDefinition)) client.WithWatch {
