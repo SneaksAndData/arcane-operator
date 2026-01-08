@@ -11,7 +11,7 @@ package mocks
 
 import (
 	context "context"
-	services "github.com/SneaksAndData/arcane-operator/services/jobs"
+	job "github.com/SneaksAndData/arcane-operator/services/job"
 	reflect "reflect"
 
 	gomock "go.uber.org/mock/gomock"
@@ -43,7 +43,7 @@ func (m *MockJobBuilder) EXPECT() *MockJobBuilderMockRecorder {
 }
 
 // BuildJob mocks base method.
-func (m *MockJobBuilder) BuildJob(ctx context.Context, jobType services.JobTemplateType, configurator services.JobConfigurator) (*v1.Job, error) {
+func (m *MockJobBuilder) BuildJob(ctx context.Context, jobType job.TemplateType, configurator job.Configurator) (*v1.Job, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "BuildJob", ctx, jobType, configurator)
 	ret0, _ := ret[0].(*v1.Job)
