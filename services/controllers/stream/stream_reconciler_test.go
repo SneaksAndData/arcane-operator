@@ -535,6 +535,8 @@ func assertJobNotExists(t *testing.T, k8sClient client.Client, name types.Namesp
 func assertJobConfiguration(t *testing.T, k8sClient client.Client, name types.NamespacedName, expectedConfiguration string) {
 	newJob := &batchv1.Job{}
 	err := k8sClient.Get(t.Context(), name, newJob)
+	require.NoError(t, err)
+
 	jobConfiguration, err := StreamingJob(*newJob).CurrentConfiguration()
 	require.NoError(t, err)
 	require.Equal(t, jobConfiguration, expectedConfiguration)
