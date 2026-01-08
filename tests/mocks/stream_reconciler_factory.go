@@ -43,10 +43,10 @@ func (m *MockStreamReconcilerFactory) EXPECT() *MockStreamReconcilerFactoryMockR
 }
 
 // CreateStreamReconciler mocks base method.
-func (m *MockStreamReconcilerFactory) CreateStreamReconciler(ctx context.Context, gvk schema.GroupVersionKind) (controllers.StreamReconciler, error) {
+func (m *MockStreamReconcilerFactory) CreateStreamReconciler(ctx context.Context, gvk schema.GroupVersionKind) (controllers.UnmanagedReconciler, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateStreamReconciler", ctx, gvk)
-	ret0, _ := ret[0].(controllers.StreamReconciler)
+	ret0, _ := ret[0].(controllers.UnmanagedReconciler)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

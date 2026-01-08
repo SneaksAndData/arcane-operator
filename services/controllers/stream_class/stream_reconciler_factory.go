@@ -7,5 +7,5 @@ import (
 )
 
 type StreamReconcilerFactory interface {
-	CreateStreamReconciler(ctx context.Context, gvk schema.GroupVersionKind) (controllers.StreamReconciler, error)
+	CreateStreamReconciler(ctx context.Context, gvk schema.GroupVersionKind) (controllers.UnmanagedReconciler, error)
 }
