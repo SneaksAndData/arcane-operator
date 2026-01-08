@@ -5,24 +5,71 @@ import (
 	"fmt"
 	v1 "github.com/SneaksAndData/arcane-operator/pkg/apis/streaming/v1"
 	"github.com/SneaksAndData/arcane-operator/services"
+	"github.com/SneaksAndData/arcane-operator/services/controllers"
 	batchv1 "k8s.io/api/batch/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/klog/v2"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
-var _ reconcile.Reconciler = (*streamReconciler)(nil)
+var (
+	_ reconcile.Reconciler            = (*streamReconciler)(nil)
+	_ controllers.UnmanagedReconciler = (*streamReconciler)(nil)
+)
 
 type streamReconciler struct {
 	gvk        schema.GroupVersionKind
 	client     client.Client
 	jobBuilder JobBuilder
 	className  string
+}
+
+func (s *streamReconciler) SetupUnmanaged(cache cache.Cache, scheme *runtime.Scheme, mapper meta.RESTMapper) (controller.Controller, error) {
+	resource := &unstructured.Unstructured{}
+	resource.SetGroupVersionKind(s.gvk)
+
+	newController, err := controller.NewUnmanaged("stream-controller", controller.Options{
+		Reconciler: s,
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to start unmanaged stream controller: %w", err)
+	}
+
+	// Watch for changes to primary resource Stream
+	newSource := source.Kind(cache, resource, &handler.TypedEnqueueRequestForObject[*unstructured.Unstructured]{})
+
+	err = newController.Watch(newSource)
+	if err != nil {
+		return nil, fmt.Errorf("failed to watch stream resource: %w", err)
+	}
+
+	// Watch for changes to secondary resource Jobs and requeue the owner Stream
+	h := handler.TypedEnqueueRequestForOwner[*batchv1.Job](
+		scheme,
+		mapper,
+		&batchv1.Job{},
+		handler.OnlyControllerOwner(),
+	)
+
+	jobSource := source.Kind(cache, &batchv1.Job{}, h, nil)
+	err = newController.Watch(jobSource)
+	if err != nil {
+		return nil, fmt.Errorf("failed to watch stream resource: %w", err)
+	}
+
+	return newController, nil
 }
 
 // NewStreamReconciler creates a new StreamReconciler instance.

@@ -22,8 +22,8 @@ func Test_UpdatePhase_ToPending(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 	k8sClient := setupFakeClient(&v1.StreamClass{ObjectMeta: metav1.ObjectMeta{Name: "sc1"}})
-	streamReconcilerFactory := mocks.NewMockStreamReconcilerFactory(mockCtrl)
-	reconciler := NewStreamClassReconciler(k8sClient, nil, streamReconcilerFactory)
+	streamReconcilerFactory := mocks.NewMockUnmanagedControllerFactory(mockCtrl)
+	reconciler := NewStreamClassReconciler(k8sClient, streamReconcilerFactory)
 
 	// Act
 	result, err := reconciler.Reconcile(t.Context(), reconcile.Request{NamespacedName: types.NamespacedName{Name: "sc1"}})
@@ -49,16 +49,10 @@ func Test_UpdatePhase_ToRunning(t *testing.T) {
 	streamController := mocks.NewMockController[reconcile.Request](mockCtrl)
 	streamController.EXPECT().Start(gomock.Any())
 
-	streamReconciler := mocks.NewMockStreamReconciler(mockCtrl)
-	streamReconciler.EXPECT().SetupUnmanaged(gomock.Any()).Return(streamController, nil)
+	streamReconcilerFactory := mocks.NewMockUnmanagedControllerFactory(mockCtrl)
+	streamReconcilerFactory.EXPECT().CreateStreamController(gomock.Any(), gomock.Any()).Return(streamController, nil)
 
-	streamReconcilerFactory := mocks.NewMockStreamReconcilerFactory(mockCtrl)
-	streamReconcilerFactory.EXPECT().CreateStreamReconciler(gomock.Any(), gomock.Any()).Return(streamReconciler, nil)
-
-	cacheProvider := mocks.NewMockCacheProvider(mockCtrl)
-	cacheProvider.EXPECT().GetCache().Return(nil).Times(1)
-
-	reconciler := NewStreamClassReconciler(k8sClient, cacheProvider, streamReconcilerFactory)
+	reconciler := NewStreamClassReconciler(k8sClient, streamReconcilerFactory)
 
 	// Act
 	result, err := reconciler.Reconcile(t.Context(), reconcile.Request{NamespacedName: types.NamespacedName{Name: "sc1"}})
@@ -84,16 +78,10 @@ func Test_UpdatePhase_ToRunning_Idempotence(t *testing.T) {
 	streamController := mocks.NewMockController[reconcile.Request](mockCtrl)
 	streamController.EXPECT().Start(gomock.Any())
 
-	streamReconciler := mocks.NewMockStreamReconciler(mockCtrl)
-	streamReconciler.EXPECT().SetupUnmanaged(gomock.Any()).Return(streamController, nil)
+	streamReconcilerFactory := mocks.NewMockUnmanagedControllerFactory(mockCtrl)
+	streamReconcilerFactory.EXPECT().CreateStreamController(gomock.Any(), gomock.Any()).Return(streamController, nil)
 
-	streamReconcilerFactory := mocks.NewMockStreamReconcilerFactory(mockCtrl)
-	streamReconcilerFactory.EXPECT().CreateStreamReconciler(gomock.Any(), gomock.Any()).Return(streamReconciler, nil)
-
-	cacheProvider := mocks.NewMockCacheProvider(mockCtrl)
-	cacheProvider.EXPECT().GetCache().Return(nil).Times(1)
-
-	reconciler := NewStreamClassReconciler(k8sClient, cacheProvider, streamReconcilerFactory)
+	reconciler := NewStreamClassReconciler(k8sClient, streamReconcilerFactory)
 
 	// Act
 	for i := 0; i < 5; i++ {
@@ -121,16 +109,10 @@ func Test_UpdatePhase_Ready_ToStopped(t *testing.T) {
 	streamController := mocks.NewMockController[reconcile.Request](mockCtrl)
 	streamController.EXPECT().Start(gomock.Any()).AnyTimes()
 
-	streamReconciler := mocks.NewMockStreamReconciler(mockCtrl)
-	streamReconciler.EXPECT().SetupUnmanaged(gomock.Any()).Return(streamController, nil)
+	streamReconcilerFactory := mocks.NewMockUnmanagedControllerFactory(mockCtrl)
+	streamReconcilerFactory.EXPECT().CreateStreamController(gomock.Any(), gomock.Any()).Return(streamController, nil)
 
-	streamReconcilerFactory := mocks.NewMockStreamReconcilerFactory(mockCtrl)
-	streamReconcilerFactory.EXPECT().CreateStreamReconciler(gomock.Any(), gomock.Any()).Return(streamReconciler, nil)
-
-	cacheProvider := mocks.NewMockCacheProvider(mockCtrl)
-	cacheProvider.EXPECT().GetCache().Return(nil).Times(1)
-
-	reconciler := NewStreamClassReconciler(k8sClient, cacheProvider, streamReconcilerFactory)
+	reconciler := NewStreamClassReconciler(k8sClient, streamReconcilerFactory)
 
 	// Start the stream controller first
 	result, err := reconciler.Reconcile(t.Context(), reconcile.Request{NamespacedName: types.NamespacedName{Name: "sc1"}})
@@ -163,11 +145,9 @@ func Test_UpdatePhase_Pending_ToStopped(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{Name: "sc1"},
 	})
 
-	streamReconcilerFactory := mocks.NewMockStreamReconcilerFactory(mockCtrl)
+	streamReconcilerFactory := mocks.NewMockUnmanagedControllerFactory(mockCtrl)
 
-	cacheProvider := mocks.NewMockCacheProvider(mockCtrl)
-
-	reconciler := NewStreamClassReconciler(k8sClient, cacheProvider, streamReconcilerFactory)
+	reconciler := NewStreamClassReconciler(k8sClient, streamReconcilerFactory)
 
 	// Transit the stream class to Pending state first
 	result, err := reconciler.Reconcile(t.Context(), reconcile.Request{NamespacedName: types.NamespacedName{Name: "sc1"}})
@@ -203,11 +183,10 @@ func Test_UpdatePhase_Pending_ToFailed(t *testing.T) {
 		},
 	})
 
-	streamReconcilerFactory := mocks.NewMockStreamReconcilerFactory(mockCtrl)
-	streamReconcilerFactory.EXPECT().CreateStreamReconciler(gomock.Any(), gomock.Any()).Return(nil, fmt.Errorf("some error"))
+	streamReconcilerFactory := mocks.NewMockUnmanagedControllerFactory(mockCtrl)
+	streamReconcilerFactory.EXPECT().CreateStreamController(gomock.Any(), gomock.Any()).Return(nil, fmt.Errorf("some error"))
 
-	cacheProvider := mocks.NewMockCacheProvider(mockCtrl)
-	reconciler := NewStreamClassReconciler(k8sClient, cacheProvider, streamReconcilerFactory)
+	reconciler := NewStreamClassReconciler(k8sClient, streamReconcilerFactory)
 
 	// Act
 	result, err := reconciler.Reconcile(t.Context(), reconcile.Request{NamespacedName: types.NamespacedName{Name: "sc1"}})
@@ -239,16 +218,13 @@ func Test_UpdatePhase_Ready_ToFailed(t *testing.T) {
 		completed <- struct{}{}
 	}).Return(fmt.Errorf("some error"))
 
-	streamReconciler := mocks.NewMockStreamReconciler(mockCtrl)
-	streamReconciler.EXPECT().SetupUnmanaged(gomock.Any()).Return(streamController, nil)
-
-	streamReconcilerFactory := mocks.NewMockStreamReconcilerFactory(mockCtrl)
-	streamReconcilerFactory.EXPECT().CreateStreamReconciler(gomock.Any(), gomock.Any()).Return(streamReconciler, nil)
+	streamReconcilerFactory := mocks.NewMockUnmanagedControllerFactory(mockCtrl)
+	streamReconcilerFactory.EXPECT().CreateStreamController(gomock.Any(), gomock.Any()).Return(streamController, nil)
 
 	cacheProvider := mocks.NewMockCacheProvider(mockCtrl)
 	cacheProvider.EXPECT().GetCache().Return(nil).Times(1)
 
-	reconciler := NewStreamClassReconciler(k8sClient, cacheProvider, streamReconcilerFactory)
+	reconciler := NewStreamClassReconciler(k8sClient, streamReconcilerFactory)
 
 	// Start the stream controller first
 	result, err := reconciler.Reconcile(t.Context(), reconcile.Request{NamespacedName: types.NamespacedName{Name: "sc1"}})
