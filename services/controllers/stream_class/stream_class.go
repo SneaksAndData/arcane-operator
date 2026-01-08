@@ -17,15 +17,13 @@ var _ reconcile.Reconciler = (*streamClassReconciler)(nil)
 type streamClassReconciler struct {
 	client                  client.Client
 	streamControllers       map[types.NamespacedName]*StreamControllerHandle
-	cacheProvider           CacheProvider
-	streamControllerFactory StreamReconcilerFactory
+	streamControllerFactory UnmanagedControllerFactory
 }
 
-func NewStreamClassReconciler(client client.Client, cacheProvider CacheProvider, streamControllerFactory StreamReconcilerFactory) reconcile.Reconciler {
+func NewStreamClassReconciler(client client.Client, streamControllerFactory UnmanagedControllerFactory) reconcile.Reconciler {
 	return &streamClassReconciler{
 		client:                  client,
 		streamControllers:       make(map[types.NamespacedName]*StreamControllerHandle),
-		cacheProvider:           cacheProvider,
 		streamControllerFactory: streamControllerFactory,
 	}
 }
@@ -79,16 +77,10 @@ func (s *streamClassReconciler) tryStartStreamController(ctx context.Context, sc
 		return s.updatePhase(ctx, sc, name, nextPhase)
 	}
 
-	reconciler, err := s.streamControllerFactory.CreateStreamReconciler(ctx, sc.TargetResourceGvk())
+	controller, err := s.streamControllerFactory.CreateStreamController(ctx, sc.TargetResourceGvk())
 
 	if err != nil {
 		logger.V(0).Error(err, "unable to create stream reconciler")
-		return s.updatePhase(ctx, sc, name, v1.PhaseFailed)
-	}
-
-	controller, err := reconciler.SetupUnmanaged(s.cacheProvider.GetCache())
-	if err != nil {
-		logger.V(0).Error(err, "unable to setup stream reconciler")
 		return s.updatePhase(ctx, sc, name, v1.PhaseFailed)
 	}
 

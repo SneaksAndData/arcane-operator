@@ -4,19 +4,29 @@ import (
 	"context"
 	"fmt"
 	v1 "github.com/SneaksAndData/arcane-operator/pkg/apis/streaming/v1"
-	"github.com/SneaksAndData/arcane-operator/services/jobs"
+	"github.com/SneaksAndData/arcane-operator/services/job"
+	"github.com/SneaksAndData/arcane-operator/services/controllers"
 	batchv1 "k8s.io/api/batch/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/klog/v2"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
-var _ reconcile.Reconciler = (*streamReconciler)(nil)
+var (
+	_ reconcile.Reconciler            = (*streamReconciler)(nil)
+	_ controllers.UnmanagedReconciler = (*streamReconciler)(nil)
+)
 
 type streamReconciler struct {
 	gvk        schema.GroupVersionKind
@@ -258,7 +268,7 @@ func (s *streamReconciler) completeBackfill(ctx context.Context, job *batchv1.Jo
 	return s.updateStreamPhase(ctx, definition, nil, nextStatus)
 }
 
-func (s *streamReconciler) startNewJob(ctx context.Context, templateType job.JobTemplateType, configurator job.JobConfigurator) error {
+func (s *streamReconciler) startNewJob(ctx context.Context, templateType job.TemplateType, configurator job.Configurator) error {
 	job, err := s.jobBuilder.BuildJob(ctx, templateType, configurator)
 	if err != nil { // coverage-ignore
 		return err
