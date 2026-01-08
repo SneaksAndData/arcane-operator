@@ -42,7 +42,7 @@ func (f backfillConfigurator) ConfigureJob(job *batchv1.Job) error {
 		found = false
 	}
 
-	job.ObjectMeta.Labels["arcane/backfilling"] = strconv.FormatBool(f.value)
+	job.Labels["arcane/backfilling"] = strconv.FormatBool(f.value)
 
 	if f.next != nil {
 		return f.next.ConfigureJob(job)

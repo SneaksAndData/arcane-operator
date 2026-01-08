@@ -33,8 +33,8 @@ func (f metadataConfigurator) ConfigureJob(job *batchv1.Job) error {
 		return err
 	}
 
-	job.ObjectMeta.Labels["arcane/stream-id"] = f.streamId
-	job.ObjectMeta.Labels["arcane/stream-kind"] = f.streamKind
+	job.Labels["arcane/stream-id"] = f.streamId
+	job.Labels["arcane/stream-kind"] = f.streamKind
 
 	if f.next != nil {
 		return f.next.ConfigureJob(job)
