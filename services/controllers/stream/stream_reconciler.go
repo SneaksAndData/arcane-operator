@@ -65,6 +65,9 @@ func (s *streamReconciler) SetupUnmanaged(cache cache.Cache, scheme *runtime.Sch
 
 	jobSource := source.Kind(cache, &batchv1.Job{}, h, nil)
 	err = newController.Watch(jobSource)
+	if err != nil {
+		return nil, fmt.Errorf("failed to watch stream resource: %w", err)
+	}
 
 	return newController, nil
 }
