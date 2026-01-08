@@ -11,9 +11,9 @@ package mocks
 
 import (
 	context "context"
-	job "github.com/SneaksAndData/arcane-operator/services/job"
 	reflect "reflect"
 
+	job "github.com/SneaksAndData/arcane-operator/services/job"
 	gomock "go.uber.org/mock/gomock"
 	v1 "k8s.io/api/batch/v1"
 )
