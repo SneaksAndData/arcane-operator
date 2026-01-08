@@ -54,28 +54,37 @@ func (s *streamReconciler) Reconcile(ctx context.Context, request reconcile.Requ
 		return reconcile.Result{}, err
 	}
 
-	backfillRequest, err := s.getBackfillRequestForStream(ctx, streamDefinition)
+	backfillRequest, err := s.tryGetBackfillRequest(ctx, streamDefinition)
 	if client.IgnoreNotFound(err) != nil {
 		return reconcile.Result{}, err
 	}
 
-	job, err := s.getJob(ctx, request, logger)
+	job := batchv1.Job{}
+	err = s.client.Get(ctx, request.NamespacedName, &job)
+
 	if client.IgnoreNotFound(err) != nil {
+		logger.V(1).Error(err, "unable to fetch Stream Job")
 		return reconcile.Result{}, err
 	}
 
-	return s.moveFsm(ctx, streamDefinition, job, backfillRequest)
+	streamJob := StreamingJob(job)
+
+	return s.moveFsm(ctx, streamDefinition, &streamJob, backfillRequest)
 }
 
 func (s *streamReconciler) moveFsm(ctx context.Context, definition Definition, job *StreamingJob, backfillRequest *v1.BackfillRequest) (reconcile.Result, error) {
 	phase := definition.GetPhase()
 
 	switch {
+	case job != nil && job.IsFailed(): // TODO
+		return s.stopStream(ctx, definition, Failed)
+	case phase == Failed:
+		return s.stopStream(ctx, definition, Failed)
 	case phase == New && definition.Suspended():
 		return s.stopStream(ctx, definition, Suspended)
 
 	case phase == New && !definition.Suspended():
-		return s.startBackfill(ctx, definition, Pending)
+		return s.startBackfill(ctx, definition, Pending) // TODO: this should create Backfill request
 
 	case phase == Pending && backfillRequest == nil:
 		return s.reconcileJob(ctx, definition, nil, Running)
@@ -89,17 +98,21 @@ func (s *streamReconciler) moveFsm(ctx context.Context, definition Definition, j
 	case phase == Running && backfillRequest != nil:
 		return s.stopStream(ctx, definition, Pending)
 
-	case phase == Suspended && backfillRequest != nil: // TODO
+	case phase == Suspended && backfillRequest != nil:
 		return s.updateStreamPhase(ctx, definition, backfillRequest, Pending)
 
-	case phase == Suspended && backfillRequest == nil: // TODO
+	case phase == Suspended && backfillRequest == nil:
 		return s.stopStream(ctx, definition, Suspended)
 
-	case phase == Backfilling && job.IsCompleted(): // TODO
+	case phase == Backfilling && job == nil:
+		return s.completeBackfill(ctx, nil, definition, backfillRequest, Pending)
+
+	case phase == Backfilling && job.IsCompleted():
 		return s.completeBackfill(ctx, job.ToV1Job(), definition, backfillRequest, Pending)
 
-	case job.IsFailed(): // TODO
-		return s.stopStream(ctx, definition, Failed)
+	case phase == Backfilling && !job.IsCompleted():
+		return s.updateStreamPhase(ctx, definition, backfillRequest, Backfilling)
+
 	}
 
 	return reconcile.Result{}, fmt.Errorf("failed to reconcile Stream FSM for %s/%s. Current state: %s",
@@ -177,16 +190,19 @@ func (s *streamReconciler) startNewBackfill(ctx context.Context, definition Defi
 	return s.updateStreamPhase(ctx, definition, &v1.BackfillRequest{}, nextStatus)
 }
 
-func (s *streamReconciler) reconcileStream(ctx context.Context, definition Definition, nextStatus Phase) (reconcile.Result, error) {
-	return s.reconcileJob(ctx, definition, nil, nextStatus)
-}
-
 func (s *streamReconciler) completeBackfill(ctx context.Context, job *batchv1.Job, definition Definition, request *v1.BackfillRequest, nextStatus Phase) (reconcile.Result, error) {
-	err := s.client.Delete(ctx, job)
-	if client.IgnoreNotFound(err) != nil {
-		return reconcile.Result{}, err
+	if job != nil {
+		err := s.client.Delete(ctx, job)
+		if client.IgnoreNotFound(err) != nil {
+			return reconcile.Result{}, err
+		}
 	}
 
+	request.Spec.Completed = true
+	err := s.client.Update(ctx, request)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
 	err = s.client.Status().Update(ctx, request)
 	if err != nil {
 		return reconcile.Result{}, err
@@ -253,23 +269,7 @@ func (s *streamReconciler) startNewJob(ctx context.Context, templateType service
 	return nil
 }
 
-func (s *streamReconciler) getJob(ctx context.Context, request reconcile.Request, logger klog.Logger) (*StreamingJob, error) {
-	streamJob := &batchv1.Job{}
-	err := s.client.Get(ctx, request.NamespacedName, streamJob)
-
-	if errors.IsNotFound(err) {
-		return nil, nil
-	}
-
-	if client.IgnoreNotFound(err) != nil {
-		logger.V(1).Error(err, "unable to fetch Stream Job")
-		return nil, err
-	}
-
-	return nil, nil
-}
-
-func (s *streamReconciler) getBackfillRequestForStream(ctx context.Context, definition Definition) (*v1.BackfillRequest, error) {
+func (s *streamReconciler) tryGetBackfillRequest(ctx context.Context, definition Definition) (*v1.BackfillRequest, error) {
 	backfillRequestList := &v1.BackfillRequestList{}
 	err := s.client.List(ctx, backfillRequestList, client.InNamespace(definition.NamespacedName().Namespace))
 	if client.IgnoreNotFound(err) != nil {

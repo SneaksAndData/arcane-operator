@@ -420,6 +420,306 @@ func Test_UpdatePhase_Running_with_BackfillRequest_no_job(t *testing.T) {
 	require.Equal(t, "Pending", sd.Status.Phase)
 }
 
+func Test_UpdatePhase_Suspended_with_BackfillRequest(t *testing.T) {
+	// Arrange
+	name := types.NamespacedName{Name: "stream1", Namespace: "default"}
+	k8sClient := setupClient(
+		func(definition *testv1.MockStreamDefinition) {
+			definition.Namespace = name.Namespace
+			definition.Name = name.Name
+			definition.Status.Phase = "Suspended"
+			definition.Spec.Suspended = true
+		},
+		func(client2 *crfake.ClientBuilder) {
+			client2.WithObjects(&v1.BackfillRequest{
+				ObjectMeta: metav1.ObjectMeta{Name: "backfill1", Namespace: name.Namespace},
+				Spec: v1.BackfillRequestSpec{
+					StreamClass: "MockStreamDefinition",
+					StreamId:    name.Name,
+				},
+			})
+		},
+	)
+	gvk := schema.GroupVersionKind{Group: "streaming.sneaksanddata.com", Version: "v1", Kind: "MockStreamDefinition"}
+	reconciler := NewStreamReconciler(k8sClient, gvk, nil)
+
+	// Act
+	result, err := reconciler.Reconcile(t.Context(), reconcile.Request{NamespacedName: name})
+	require.NoError(t, err)
+	require.Equal(t, result, reconcile.Result{})
+
+	// Assert
+	sd := &testv1.MockStreamDefinition{}
+	err = k8sClient.Get(t.Context(), name, sd)
+	require.NoError(t, err)
+	require.Equal(t, "Pending", sd.Status.Phase)
+}
+
+func Test_UpdatePhase_Suspended_without_BackfillRequest_without_job(t *testing.T) {
+	// Arrange
+	name := types.NamespacedName{Name: "stream1", Namespace: "default"}
+	k8sClient := setupClient(
+		func(definition *testv1.MockStreamDefinition) {
+			definition.Namespace = name.Namespace
+			definition.Name = name.Name
+			definition.Status.Phase = "Suspended"
+			definition.Spec.Suspended = true
+		},
+		nil,
+	)
+	gvk := schema.GroupVersionKind{Group: "streaming.sneaksanddata.com", Version: "v1", Kind: "MockStreamDefinition"}
+	reconciler := NewStreamReconciler(k8sClient, gvk, nil)
+
+	// Act
+	result, err := reconciler.Reconcile(t.Context(), reconcile.Request{NamespacedName: name})
+	require.NoError(t, err)
+	require.Equal(t, result, reconcile.Result{})
+
+	// Assert
+	sd := &testv1.MockStreamDefinition{}
+	err = k8sClient.Get(t.Context(), name, sd)
+	require.NoError(t, err)
+	require.Equal(t, "Suspended", sd.Status.Phase)
+
+	newJob := &batchv1.Job{}
+	err = k8sClient.Get(t.Context(), name, newJob)
+	require.True(t, errors.IsNotFound(err))
+}
+
+func Test_UpdatePhase_Suspended_without_BackfillRequest_with_job(t *testing.T) {
+	// Arrange
+	name := types.NamespacedName{Name: "stream1", Namespace: "default"}
+	k8sClient := setupClient(
+		func(definition *testv1.MockStreamDefinition) {
+			definition.Namespace = name.Namespace
+			definition.Name = name.Name
+			definition.Status.Phase = "Suspended"
+			definition.Spec.Suspended = true
+		},
+		func(client2 *crfake.ClientBuilder) {
+			client2.WithObjects(&batchv1.Job{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: name.Namespace,
+					Name:      name.Name,
+				},
+			})
+		},
+	)
+	gvk := schema.GroupVersionKind{Group: "streaming.sneaksanddata.com", Version: "v1", Kind: "MockStreamDefinition"}
+	reconciler := NewStreamReconciler(k8sClient, gvk, nil)
+
+	// Act
+	result, err := reconciler.Reconcile(t.Context(), reconcile.Request{NamespacedName: name})
+	require.NoError(t, err)
+	require.Equal(t, result, reconcile.Result{})
+
+	// Assert
+	sd := &testv1.MockStreamDefinition{}
+	err = k8sClient.Get(t.Context(), name, sd)
+	require.NoError(t, err)
+	require.Equal(t, "Suspended", sd.Status.Phase)
+
+	newJob := &batchv1.Job{}
+	err = k8sClient.Get(t.Context(), name, newJob)
+	require.True(t, errors.IsNotFound(err))
+}
+
+func Test_UpdatePhase_Backfilling_To_Pending_with_job_running(t *testing.T) {
+	// Arrange
+	name := types.NamespacedName{Name: "stream1", Namespace: "default"}
+	k8sClient := setupClient(
+		func(definition *testv1.MockStreamDefinition) {
+			definition.Namespace = name.Namespace
+			definition.Name = name.Name
+			definition.Status.Phase = "Backfilling"
+		},
+		func(client2 *crfake.ClientBuilder) {
+			client2.WithObjects(&v1.BackfillRequest{
+				ObjectMeta: metav1.ObjectMeta{Name: "backfill1", Namespace: name.Namespace},
+				Spec: v1.BackfillRequestSpec{
+					StreamClass: "MockStreamDefinition",
+					StreamId:    name.Name,
+				},
+			})
+			client2.WithObjects(&batchv1.Job{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: name.Namespace,
+					Name:      name.Name,
+				},
+			})
+		},
+	)
+	gvk := schema.GroupVersionKind{Group: "streaming.sneaksanddata.com", Version: "v1", Kind: "MockStreamDefinition"}
+	reconciler := NewStreamReconciler(k8sClient, gvk, nil)
+
+	// Act
+	result, err := reconciler.Reconcile(t.Context(), reconcile.Request{NamespacedName: name})
+	require.NoError(t, err)
+	require.Equal(t, result, reconcile.Result{})
+
+	// Assert
+	sd := &testv1.MockStreamDefinition{}
+	err = k8sClient.Get(t.Context(), name, sd)
+	require.NoError(t, err)
+	require.Equal(t, "Backfilling", sd.Status.Phase)
+
+	newJob := &batchv1.Job{}
+	err = k8sClient.Get(t.Context(), name, newJob)
+	require.False(t, errors.IsNotFound(err))
+
+	backfillRequest := &v1.BackfillRequest{}
+	err = k8sClient.Get(t.Context(), types.NamespacedName{Name: "backfill1", Namespace: name.Namespace}, backfillRequest)
+	require.NoError(t, err)
+	require.False(t, backfillRequest.Spec.Completed)
+}
+
+func Test_UpdatePhase_Backfilling_To_Pending_with_job_completed(t *testing.T) {
+	// Arrange
+	name := types.NamespacedName{Name: "stream1", Namespace: "default"}
+	k8sClient := setupClient(
+		func(definition *testv1.MockStreamDefinition) {
+			definition.Namespace = name.Namespace
+			definition.Name = name.Name
+			definition.Status.Phase = "Backfilling"
+		},
+		func(client2 *crfake.ClientBuilder) {
+			client2.WithObjects(&v1.BackfillRequest{
+				ObjectMeta: metav1.ObjectMeta{Name: "backfill1", Namespace: name.Namespace},
+				Spec: v1.BackfillRequestSpec{
+					StreamClass: "MockStreamDefinition",
+					StreamId:    name.Name,
+				},
+			})
+			client2.WithObjects(&batchv1.Job{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: name.Namespace,
+					Name:      name.Name,
+				},
+				Status: batchv1.JobStatus{
+					Succeeded: 1,
+					Conditions: []batchv1.JobCondition{
+						{
+							Type:   batchv1.JobComplete,
+							Status: corev1.ConditionTrue,
+						},
+					},
+				},
+			})
+		},
+	)
+	gvk := schema.GroupVersionKind{Group: "streaming.sneaksanddata.com", Version: "v1", Kind: "MockStreamDefinition"}
+	reconciler := NewStreamReconciler(k8sClient, gvk, nil)
+
+	// Act
+	result, err := reconciler.Reconcile(t.Context(), reconcile.Request{NamespacedName: name})
+	require.NoError(t, err)
+	require.Equal(t, result, reconcile.Result{})
+
+	// Assert
+	sd := &testv1.MockStreamDefinition{}
+	err = k8sClient.Get(t.Context(), name, sd)
+	require.NoError(t, err)
+	require.Equal(t, "Backfilling", sd.Status.Phase)
+
+	newJob := &batchv1.Job{}
+	err = k8sClient.Get(t.Context(), name, newJob)
+	require.False(t, errors.IsNotFound(err))
+
+	backfillRequest := &v1.BackfillRequest{}
+	err = k8sClient.Get(t.Context(), types.NamespacedName{Name: "backfill1", Namespace: name.Namespace}, backfillRequest)
+	require.NoError(t, err)
+	require.False(t, backfillRequest.Spec.Completed)
+}
+
+func Test_UpdatePhase_Job_Failed(t *testing.T) {
+	// Arrange
+	name := types.NamespacedName{Name: "stream1", Namespace: "default"}
+	k8sClient := setupClient(
+		func(definition *testv1.MockStreamDefinition) {
+			definition.Namespace = name.Namespace
+			definition.Name = name.Name
+			definition.Status.Phase = "Backfilling"
+		},
+		func(client2 *crfake.ClientBuilder) {
+			client2.WithObjects(&v1.BackfillRequest{
+				ObjectMeta: metav1.ObjectMeta{Name: "backfill1", Namespace: name.Namespace},
+				Spec: v1.BackfillRequestSpec{
+					StreamClass: "MockStreamDefinition",
+					StreamId:    name.Name,
+				},
+			})
+			client2.WithObjects(&batchv1.Job{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: name.Namespace,
+					Name:      name.Name,
+				},
+				Status: batchv1.JobStatus{
+					Failed: 1,
+				},
+			})
+		},
+	)
+	gvk := schema.GroupVersionKind{Group: "streaming.sneaksanddata.com", Version: "v1", Kind: "MockStreamDefinition"}
+	reconciler := NewStreamReconciler(k8sClient, gvk, nil)
+
+	// Act
+	result, err := reconciler.Reconcile(t.Context(), reconcile.Request{NamespacedName: name})
+	require.NoError(t, err)
+	require.Equal(t, result, reconcile.Result{})
+
+	// Assert
+	sd := &testv1.MockStreamDefinition{}
+	err = k8sClient.Get(t.Context(), name, sd)
+	require.NoError(t, err)
+	require.Equal(t, "Failed", sd.Status.Phase)
+
+	newJob := &batchv1.Job{}
+	err = k8sClient.Get(t.Context(), name, newJob)
+	require.True(t, errors.IsNotFound(err))
+
+	backfillRequest := &v1.BackfillRequest{}
+	err = k8sClient.Get(t.Context(), types.NamespacedName{Name: "backfill1", Namespace: name.Namespace}, backfillRequest)
+	require.NoError(t, err)
+	require.False(t, backfillRequest.Spec.Completed)
+}
+
+func Test_UpdatePhase_Failed_to_Failed(t *testing.T) {
+	// Arrange
+	name := types.NamespacedName{Name: "stream1", Namespace: "default"}
+	k8sClient := setupClient(
+		func(definition *testv1.MockStreamDefinition) {
+			definition.Namespace = name.Namespace
+			definition.Name = name.Name
+			definition.Status.Phase = "Failed"
+		},
+		func(client2 *crfake.ClientBuilder) {
+			client2.WithObjects(&batchv1.Job{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: name.Namespace,
+					Name:      name.Name,
+				},
+			})
+		},
+	)
+	gvk := schema.GroupVersionKind{Group: "streaming.sneaksanddata.com", Version: "v1", Kind: "MockStreamDefinition"}
+	reconciler := NewStreamReconciler(k8sClient, gvk, nil)
+
+	// Act
+	result, err := reconciler.Reconcile(t.Context(), reconcile.Request{NamespacedName: name})
+	require.NoError(t, err)
+	require.Equal(t, result, reconcile.Result{})
+
+	// Assert
+	sd := &testv1.MockStreamDefinition{}
+	err = k8sClient.Get(t.Context(), name, sd)
+	require.NoError(t, err)
+	require.Equal(t, "Failed", sd.Status.Phase)
+
+	newJob := &batchv1.Job{}
+	err = k8sClient.Get(t.Context(), name, newJob)
+	require.True(t, errors.IsNotFound(err))
+}
+
 func setupClient(definition func(definition *testv1.MockStreamDefinition), addResources func(client2 *crfake.ClientBuilder)) client.Client {
 	scheme := runtime.NewScheme()
 	_ = testv1.AddToScheme(scheme)
@@ -440,7 +740,7 @@ func setupClient(definition func(definition *testv1.MockStreamDefinition), addRe
 		definition(obj)
 	}
 
-	clientBuilder := crfake.NewClientBuilder().WithScheme(scheme).WithObjects(obj).WithStatusSubresource(&testv1.MockStreamDefinition{})
+	clientBuilder := crfake.NewClientBuilder().WithScheme(scheme).WithObjects(obj).WithStatusSubresource(&testv1.MockStreamDefinition{}).WithStatusSubresource(&v1.BackfillRequest{})
 	if addResources != nil {
 		addResources(clientBuilder)
 	}
