@@ -121,7 +121,7 @@ func (s *streamReconciler) moveFsm(ctx context.Context, definition Definition, j
 		return s.stopStream(ctx, definition, Suspended)
 
 	case phase == Backfilling && job == nil:
-		return s.completeBackfill(ctx, nil, definition, backfillRequest, Pending)
+		return s.reconcileJob(ctx, definition, backfillRequest, Backfilling)
 
 	case phase == Backfilling && job.IsCompleted():
 		return s.completeBackfill(ctx, job.ToV1Job(), definition, backfillRequest, Pending)
@@ -142,7 +142,7 @@ func (s *streamReconciler) stopStream(ctx context.Context, definition Definition
 	job := &batchv1.Job{}
 	job.SetName(definition.NamespacedName().Name)
 	job.SetNamespace(definition.NamespacedName().Namespace)
-	err := s.client.Delete(ctx, job)
+	err := s.client.Delete(ctx, job, client.PropagationPolicy(metav1.DeletePropagationBackground))
 	if client.IgnoreNotFound(err) != nil {
 		return reconcile.Result{}, err
 	}
@@ -208,7 +208,7 @@ func (s *streamReconciler) reconcileJob(ctx context.Context, definition Definiti
 		return s.updateStreamPhase(ctx, definition, &v1.BackfillRequest{}, nextPhase)
 	}
 
-	err = s.client.Delete(ctx, &v1job, client.PropagationPolicy(metav1.DeletePropagationForeground))
+	err = s.client.Delete(ctx, &v1job, client.PropagationPolicy(metav1.DeletePropagationBackground))
 	if client.IgnoreNotFound(err) != nil {
 		return reconcile.Result{}, err
 	}
