@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 	v1 "github.com/SneaksAndData/arcane-operator/pkg/apis/streaming/v1"
-	"github.com/SneaksAndData/arcane-operator/services/job"
 	"github.com/SneaksAndData/arcane-operator/services/controllers"
+	"github.com/SneaksAndData/arcane-operator/services/job"
 	batchv1 "k8s.io/api/batch/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -33,6 +33,43 @@ type streamReconciler struct {
 	client     client.Client
 	jobBuilder JobBuilder
 	className  string
+}
+
+func (s *streamReconciler) SetupUnmanaged(cache cache.Cache, scheme *runtime.Scheme, mapper meta.RESTMapper) (controller.Controller, error) {
+	resource := &unstructured.Unstructured{}
+	resource.SetGroupVersionKind(s.gvk)
+
+	newController, err := controller.NewUnmanaged("stream-controller", controller.Options{
+		Reconciler: s,
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to start unmanaged stream controller: %w", err)
+	}
+
+	// Watch for changes to primary resource Stream
+	newSource := source.Kind(cache, resource, &handler.TypedEnqueueRequestForObject[*unstructured.Unstructured]{})
+
+	err = newController.Watch(newSource)
+	if err != nil {
+		return nil, fmt.Errorf("failed to watch stream resource: %w", err)
+	}
+
+	// Watch for changes to secondary resource Jobs and requeue the owner Stream
+	h := handler.TypedEnqueueRequestForOwner[*batchv1.Job](
+		scheme,
+		mapper,
+		&batchv1.Job{},
+		handler.OnlyControllerOwner(),
+	)
+
+	jobSource := source.Kind(cache, &batchv1.Job{}, h, nil)
+	err = newController.Watch(jobSource)
+	if err != nil {
+		return nil, fmt.Errorf("failed to watch stream resource: %w", err)
+	}
+
+	return newController, nil
 }
 
 // NewStreamReconciler creates a new StreamReconciler instance.
@@ -76,8 +113,8 @@ func (s *streamReconciler) Reconcile(ctx context.Context, request reconcile.Requ
 		return reconcile.Result{}, err
 	}
 
-	job := &batchv1.Job{}
-	err = s.client.Get(ctx, request.NamespacedName, job)
+	j := &batchv1.Job{}
+	err = s.client.Get(ctx, request.NamespacedName, j)
 
 	if client.IgnoreNotFound(err) != nil { // coverage-ignore
 		logger.V(1).Error(err, "unable to fetch Stream Job")
@@ -90,7 +127,7 @@ func (s *streamReconciler) Reconcile(ctx context.Context, request reconcile.Requ
 		streamingJob = nil
 		logger.V(2).Info("streaming does not exist")
 	} else {
-		streamingJob = (*StreamingJob)(job)
+		streamingJob = (*StreamingJob)(j)
 		logger.V(2).Info("streaming job found")
 	}
 
@@ -149,10 +186,10 @@ func (s *streamReconciler) moveFsm(ctx context.Context, definition Definition, j
 }
 
 func (s *streamReconciler) stopStream(ctx context.Context, definition Definition, nextPhase Phase) (reconcile.Result, error) {
-	job := &batchv1.Job{}
-	job.SetName(definition.NamespacedName().Name)
-	job.SetNamespace(definition.NamespacedName().Namespace)
-	err := s.client.Delete(ctx, job, client.PropagationPolicy(metav1.DeletePropagationBackground))
+	j := &batchv1.Job{}
+	j.SetName(definition.NamespacedName().Name)
+	j.SetNamespace(definition.NamespacedName().Namespace)
+	err := s.client.Delete(ctx, j, client.PropagationPolicy(metav1.DeletePropagationBackground))
 	if client.IgnoreNotFound(err) != nil { // coverage-ignore
 		return reconcile.Result{}, err
 	}
@@ -269,12 +306,12 @@ func (s *streamReconciler) completeBackfill(ctx context.Context, job *batchv1.Jo
 }
 
 func (s *streamReconciler) startNewJob(ctx context.Context, templateType job.TemplateType, configurator job.Configurator) error {
-	job, err := s.jobBuilder.BuildJob(ctx, templateType, configurator)
+	j, err := s.jobBuilder.BuildJob(ctx, templateType, configurator)
 	if err != nil { // coverage-ignore
 		return err
 	}
 
-	err = s.client.Create(ctx, job)
+	err = s.client.Create(ctx, j)
 	if err != nil { // coverage-ignore
 		return err
 	}
