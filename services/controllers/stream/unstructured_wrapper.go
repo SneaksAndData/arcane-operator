@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	v1 "github.com/SneaksAndData/arcane-operator/pkg/apis/streaming/v1"
-	"github.com/SneaksAndData/arcane-operator/services"
+	"github.com/SneaksAndData/arcane-operator/services/jobs"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -15,8 +15,8 @@ import (
 )
 
 var (
-	_ Definition                       = (*unstructuredWrapper)(nil)
-	_ services.JobConfiguratorProvider = (*unstructuredWrapper)(nil)
+	_ Definition                   = (*unstructuredWrapper)(nil)
+	_ jobs.JobConfiguratorProvider = (*unstructuredWrapper)(nil)
 )
 
 type unstructuredWrapper struct {
@@ -28,7 +28,7 @@ type unstructuredWrapper struct {
 	backfillJobRef  corev1.ObjectReference
 }
 
-func (u *unstructuredWrapper) ToConfiguratorProvider() services.JobConfiguratorProvider {
+func (u *unstructuredWrapper) ToConfiguratorProvider() jobs.JobConfiguratorProvider {
 	return u
 }
 
@@ -135,8 +135,8 @@ func (u *unstructuredWrapper) ToOwnerReference() metav1.OwnerReference {
 	}
 }
 
-func (u *unstructuredWrapper) JobConfigurator() services.JobConfigurator {
-	return services.NewEnvironmentConfigurator(u, "SPEC")
+func (u *unstructuredWrapper) JobConfigurator() jobs.JobConfigurator {
+	return jobs.NewEnvironmentConfigurator(u, "SPEC")
 }
 
 func (u *unstructuredWrapper) Validate() error {

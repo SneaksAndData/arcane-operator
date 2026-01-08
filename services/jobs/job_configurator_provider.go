@@ -1,4 +1,4 @@
-package services
+package jobs
 
 // JobConfiguratorProvider defines an interface for types that can provide a JobConfigurator.
 type JobConfiguratorProvider interface {
