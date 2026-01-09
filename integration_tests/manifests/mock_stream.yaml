@@ -2,7 +2,7 @@ apiVersion: streaming.sneaksanddata.com/v1beta1
 kind: MicrosoftSqlServerStream
 metadata:
   name: mock-mssql-stream
-  namespace: arcane
+  namespace: default
   annotations:
     arcane/state: "suspended"
 spec:

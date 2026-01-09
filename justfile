@@ -19,9 +19,8 @@ install-integration-tests:
 
 
 install-stream:
-    helm upgrade --install arcane-stream-microsoft-sql-server oci://ghcr.io/sneaksanddata/helm/arcane-stream-microsoft-sql-server \
-        --namespace arcane \
-        --version v1.0.8
+    kubectl apply -f integration_tests/manifests/stream_class.yaml
+    kubectl apply -f integration_tests/manifests/crd-microsoft-sql-server-stream.yaml
 
 install-rbac:
     kubectl apply -f integration_tests/manifests/rbac.yaml

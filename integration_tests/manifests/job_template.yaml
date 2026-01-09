@@ -2,58 +2,27 @@ apiVersion: streaming.sneaksanddata.com/v1
 kind: StreamingJobTemplate
 metadata:
   name: arcane-stream-microsoft-sql-server-mock
-  namespace: arcane
+  namespace: default
 spec:
-  template:
-    apiVersion: batch/v1
-    kind: job
-    spec:
-      backoffLimit: 3
-      podFailurePolicy:
-        rules:
-          - action: Ignore
-            onExitCodes:
-              operator: In
-              values:
-                - 2
-          - action: Ignore
-            onPodConditions:
-              - type: DisruptionTarget
-      template:
-        spec:
-          containers:
-            - name: arcane-stream
-              command:
-                - /bin/sh
-                - -c
-                - sleep 3600s
-              env:
-                - name: ASPNETCORE_ENVIRONMENT
-                  value: Development
-                - name: APPLICATION_VERSION
-                  value: v1.0.8
-              image: ghcr.io/sneaksanddata/arcane-stream-sqlserver-change-tracking:1.0.8
-              imagePullPolicy: IfNotPresent
-              securityContext:
-                allowPrivilegeEscalation: false
-                capabilities:
-                  drop:
-                    - ALL
-                readOnlyRootFilesystem: true
-                runAsNonRoot: true
-                runAsUser: 1000
-                seccompProfile:
-                  type: RuntimeDefault
-          restartPolicy: Never
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-                - ALL
-            readOnlyRootFilesystem: true
-            runAsNonRoot: true
-            runAsUser: 1000
-            seccompProfile:
-              type: RuntimeDefault
-          serviceAccountName: arcane-stream-microsoft-sql-server
-      ttlSecondsAfterFinished: 1
+  apiVersion: batch/v1
+  kind: job
+  spec:
+    backoffLimit: 3
+    template:
+      spec:
+        containers:
+          - name: arcane-stream
+            command:
+              - /bin/sh
+              - -c
+              - sleep 3600s
+            env:
+              - name: ASPNETCORE_ENVIRONMENT
+                value: Development
+              - name: APPLICATION_VERSION
+                value: v1.0.8
+            image: ghcr.io/sneaksanddata/arcane-stream-sqlserver-change-tracking:1.0.8
+            imagePullPolicy: IfNotPresent
+        restartPolicy: Never
+        serviceAccountName: arcane-stream-microsoft-sql-server
+    ttlSecondsAfterFinished: 1

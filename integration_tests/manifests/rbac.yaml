@@ -16,7 +16,7 @@ metadata:
 subjects:
   - kind: ServiceAccount
     name: arcane-operator
-    namespace: arcane
+    namespace: default
 roleRef:
   kind: ClusterRole
   name: arcane-operator-streams
