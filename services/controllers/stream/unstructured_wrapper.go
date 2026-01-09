@@ -28,10 +28,6 @@ type unstructuredWrapper struct {
 	backfillJobRef  corev1.ObjectReference
 }
 
-func (u *unstructuredWrapper) ToConfiguratorProvider() job.ConfiguratorProvider {
-	return u
-}
-
 func (u *unstructuredWrapper) GetPhase() Phase {
 	return u.phase
 }
@@ -110,20 +106,6 @@ func (u *unstructuredWrapper) StateString() string {
 	return fmt.Sprintf("phase=%s", phase)
 }
 
-func (u *unstructuredWrapper) GetStreamingJobName() types.NamespacedName {
-	return types.NamespacedName{
-		Name:      u.streamingJobRef.Name,
-		Namespace: u.streamingJobRef.Namespace,
-	}
-}
-
-func (u *unstructuredWrapper) GetBackfillJobName() types.NamespacedName {
-	return types.NamespacedName{
-		Name:      u.backfillJobRef.Name,
-		Namespace: u.backfillJobRef.Namespace,
-	}
-}
-
 func (u *unstructuredWrapper) ToOwnerReference() metav1.OwnerReference {
 	ctrl := true
 	return metav1.OwnerReference{
@@ -132,6 +114,24 @@ func (u *unstructuredWrapper) ToOwnerReference() metav1.OwnerReference {
 		Name:       u.underlying.GetName(),
 		UID:        u.underlying.GetUID(),
 		Controller: &ctrl,
+	}
+}
+
+func (u *unstructuredWrapper) ToConfiguratorProvider() job.ConfiguratorProvider {
+	return u
+}
+
+func (u *unstructuredWrapper) GetJobTemplate(request *v1.BackfillRequest) types.NamespacedName {
+	if request == nil {
+		return types.NamespacedName{
+			Name:      u.streamingJobRef.Name,
+			Namespace: u.streamingJobRef.Namespace,
+		}
+	} else {
+		return types.NamespacedName{
+			Name:      u.backfillJobRef.Name,
+			Namespace: u.backfillJobRef.Namespace,
+		}
 	}
 }
 

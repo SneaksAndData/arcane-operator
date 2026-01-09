@@ -49,17 +49,14 @@ type Definition interface {
 	// This is primarily used for logging and debugging purposes.
 	StateString() string
 
-	// GetStreamingJobName returns the namespaced name of the streaming job associated with the stream definition.
-	GetStreamingJobName() types.NamespacedName
-
-	// GetBackfillJobName returns the namespaced name of the backfill job associated with the stream definition.
-	GetBackfillJobName() types.NamespacedName
-
 	// ToOwnerReference converts the stream definition to an owner reference.
 	ToOwnerReference() metav1.OwnerReference
 
 	// ToConfiguratorProvider converts the stream definition to a JobConfiguratorProvider.
 	ToConfiguratorProvider() job.ConfiguratorProvider
+
+	// GetJobTemplate returns the job template reference based on the stream definition and backfill request.
+	GetJobTemplate(request *v1.BackfillRequest) types.NamespacedName
 }
 
 func fromUnstructured(obj *unstructured.Unstructured) (Definition, error) {

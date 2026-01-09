@@ -230,15 +230,11 @@ func (s *streamReconciler) reconcileJob(ctx context.Context, definition Definiti
 	if client.IgnoreNotFound(err) != nil { // coverage-ignore
 		return reconcile.Result{}, err
 	}
-
-	templateType := job.StreamingJobTemplate
-	if backfillRequest != nil {
-		templateType = job.BackfillJobTemplate
-	}
+	templateReference := definition.GetJobTemplate(backfillRequest)
 	configurator := definition.ToConfiguratorProvider().JobConfigurator().AddNext(backfillRequest.JobConfigurator())
 
 	if errors.IsNotFound(err) {
-		err := s.startNewJob(ctx, templateType, configurator)
+		err := s.startNewJob(ctx, templateReference, configurator)
 		if err != nil { // coverage-ignore
 			return reconcile.Result{}, err
 		}
@@ -260,7 +256,7 @@ func (s *streamReconciler) reconcileJob(ctx context.Context, definition Definiti
 		return reconcile.Result{}, err
 	}
 
-	err = s.startNewJob(ctx, templateType, configurator)
+	err = s.startNewJob(ctx, templateReference, configurator)
 	if err != nil { // coverage-ignore
 		return reconcile.Result{}, err
 	}
@@ -305,8 +301,8 @@ func (s *streamReconciler) completeBackfill(ctx context.Context, job *batchv1.Jo
 	return s.updateStreamPhase(ctx, definition, nil, nextStatus)
 }
 
-func (s *streamReconciler) startNewJob(ctx context.Context, templateType job.TemplateType, configurator job.Configurator) error {
-	j, err := s.jobBuilder.BuildJob(ctx, templateType, configurator)
+func (s *streamReconciler) startNewJob(ctx context.Context, templateReference types.NamespacedName, configurator job.Configurator) error {
+	j, err := s.jobBuilder.BuildJob(ctx, templateReference, configurator)
 	if err != nil { // coverage-ignore
 		return err
 	}

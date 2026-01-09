@@ -16,6 +16,7 @@ import (
 	job "github.com/SneaksAndData/arcane-operator/services/job"
 	gomock "go.uber.org/mock/gomock"
 	v1 "k8s.io/api/batch/v1"
+	types "k8s.io/apimachinery/pkg/types"
 )
 
 // MockJobBuilder is a mock of JobBuilder interface.
@@ -43,16 +44,16 @@ func (m *MockJobBuilder) EXPECT() *MockJobBuilderMockRecorder {
 }
 
 // BuildJob mocks base method.
-func (m *MockJobBuilder) BuildJob(ctx context.Context, jobType job.TemplateType, configurator job.Configurator) (*v1.Job, error) {
+func (m *MockJobBuilder) BuildJob(ctx context.Context, templateName types.NamespacedName, configurator job.Configurator) (*v1.Job, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "BuildJob", ctx, jobType, configurator)
+	ret := m.ctrl.Call(m, "BuildJob", ctx, templateName, configurator)
 	ret0, _ := ret[0].(*v1.Job)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // BuildJob indicates an expected call of BuildJob.
-func (mr *MockJobBuilderMockRecorder) BuildJob(ctx, jobType, configurator any) *gomock.Call {
+func (mr *MockJobBuilderMockRecorder) BuildJob(ctx, templateName, configurator any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BuildJob", reflect.TypeOf((*MockJobBuilder)(nil).BuildJob), ctx, jobType, configurator)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BuildJob", reflect.TypeOf((*MockJobBuilder)(nil).BuildJob), ctx, templateName, configurator)
 }
