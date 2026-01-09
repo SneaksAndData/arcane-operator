@@ -80,7 +80,7 @@ type StreamingJobTemplate struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec batchv1.JobSpec `json:"spec,omitempty"`
+	Spec batchv1.Job `json:"spec,omitempty"`
 }
 
 // StreamingJobTemplateList contains a list of Job resources
