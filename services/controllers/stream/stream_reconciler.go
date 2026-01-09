@@ -39,9 +39,8 @@ func (s *streamReconciler) SetupUnmanaged(cache cache.Cache, scheme *runtime.Sch
 	resource := &unstructured.Unstructured{}
 	resource.SetGroupVersionKind(s.gvk)
 
-	newController, err := controller.NewUnmanaged("stream-controller", controller.Options{
-		Reconciler: s,
-	})
+	controllerName := s.className + "-controller"
+	newController, err := controller.NewUnmanaged(controllerName, controller.Options{Reconciler: s})
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to start unmanaged stream controller: %w", err)
@@ -73,7 +72,7 @@ func (s *streamReconciler) SetupUnmanaged(cache cache.Cache, scheme *runtime.Sch
 }
 
 // NewStreamReconciler creates a new StreamReconciler instance.
-func NewStreamReconciler(client client.Client, gvk schema.GroupVersionKind, jobBuilder JobBuilder, className string) reconcile.Reconciler {
+func NewStreamReconciler(client client.Client, gvk schema.GroupVersionKind, jobBuilder JobBuilder, className string) controllers.UnmanagedReconciler {
 	return &streamReconciler{
 		gvk:        gvk,
 		jobBuilder: jobBuilder,
