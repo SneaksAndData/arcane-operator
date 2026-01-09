@@ -1,4 +1,4 @@
-package services
+package job
 
 import (
 	"encoding/json"
@@ -8,20 +8,20 @@ import (
 	"strings"
 )
 
-var _ JobConfigurator = &EnvironmentConfigurator{}
+var _ Configurator = &StreamContextConfigurator{}
 
-type EnvironmentConfigurator struct {
+type StreamContextConfigurator struct {
 	environmentKey string
 	definition     string
-	next           JobConfigurator
+	next           Configurator
 }
 
-func (f EnvironmentConfigurator) AddNext(configurator JobConfigurator) JobConfigurator {
+func (f StreamContextConfigurator) AddNext(configurator Configurator) Configurator {
 	f.next = configurator
 	return f
 }
 
-func (f EnvironmentConfigurator) ConfigureJob(job *batchv1.Job) error {
+func (f StreamContextConfigurator) ConfigureJob(job *batchv1.Job) error {
 	for k := range job.Spec.Template.Spec.Containers {
 		envVar := corev1.EnvVar{
 			Name:  fmt.Sprintf("STREAMCONTEXT__%s", strings.ToUpper(f.environmentKey)),
@@ -36,13 +36,13 @@ func (f EnvironmentConfigurator) ConfigureJob(job *batchv1.Job) error {
 	return nil
 }
 
-func NewEnvironmentConfigurator(baseObject any, environmentKey string) *EnvironmentConfigurator {
+func NewEnvironmentConfigurator(baseObject any, environmentKey string) *StreamContextConfigurator {
 	b, err := json.Marshal(baseObject)
 	def := ""
 	if err == nil {
 		def = string(b)
 	}
-	return &EnvironmentConfigurator{
+	return &StreamContextConfigurator{
 		environmentKey: environmentKey,
 		definition:     def,
 	}
