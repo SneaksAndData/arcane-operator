@@ -1,22 +1,22 @@
-package services
+package job
 
 import batchv1 "k8s.io/api/batch/v1"
 
-type JobTemplateType string
+type TemplateType string
 
 const (
-	BackfillJobTemplate  JobTemplateType = "backfill"
-	StreamingJobTemplate JobTemplateType = "streaming"
+	BackfillJobTemplate  TemplateType = "backfill"
+	StreamingJobTemplate TemplateType = "streaming"
 )
 
-// JobConfigurator defines an interface for configuring Kubernetes Jobs. Each implementer
+// Configurator defines an interface for configuring Kubernetes Jobs. Each implementer
 // can modify the Job object and chain to the next configurator in the sequence.
-type JobConfigurator interface {
+type Configurator interface {
 
 	// ConfigureJob modifies the provided Job object according to the configurator's logic.
 	ConfigureJob(job *batchv1.Job) error
 
 	// AddNext sets the next JobConfigurator in the chain.
 	// Returns self to allow for method chaining.
-	AddNext(configurator JobConfigurator) JobConfigurator
+	AddNext(configurator Configurator) Configurator
 }

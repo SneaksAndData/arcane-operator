@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 	v1 "github.com/SneaksAndData/arcane-operator/pkg/apis/streaming/v1"
-	"github.com/SneaksAndData/arcane-operator/services"
 	"github.com/SneaksAndData/arcane-operator/services/controllers"
+	"github.com/SneaksAndData/arcane-operator/services/job"
 	batchv1 "k8s.io/api/batch/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -112,8 +112,8 @@ func (s *streamReconciler) Reconcile(ctx context.Context, request reconcile.Requ
 		return reconcile.Result{}, err
 	}
 
-	job := &batchv1.Job{}
-	err = s.client.Get(ctx, request.NamespacedName, job)
+	j := &batchv1.Job{}
+	err = s.client.Get(ctx, request.NamespacedName, j)
 
 	if client.IgnoreNotFound(err) != nil { // coverage-ignore
 		logger.V(1).Error(err, "unable to fetch Stream Job")
@@ -126,7 +126,7 @@ func (s *streamReconciler) Reconcile(ctx context.Context, request reconcile.Requ
 		streamingJob = nil
 		logger.V(2).Info("streaming does not exist")
 	} else {
-		streamingJob = (*StreamingJob)(job)
+		streamingJob = (*StreamingJob)(j)
 		logger.V(2).Info("streaming job found")
 	}
 
@@ -185,10 +185,10 @@ func (s *streamReconciler) moveFsm(ctx context.Context, definition Definition, j
 }
 
 func (s *streamReconciler) stopStream(ctx context.Context, definition Definition, nextPhase Phase) (reconcile.Result, error) {
-	job := &batchv1.Job{}
-	job.SetName(definition.NamespacedName().Name)
-	job.SetNamespace(definition.NamespacedName().Namespace)
-	err := s.client.Delete(ctx, job, client.PropagationPolicy(metav1.DeletePropagationBackground))
+	j := &batchv1.Job{}
+	j.SetName(definition.NamespacedName().Name)
+	j.SetNamespace(definition.NamespacedName().Namespace)
+	err := s.client.Delete(ctx, j, client.PropagationPolicy(metav1.DeletePropagationBackground))
 	if client.IgnoreNotFound(err) != nil { // coverage-ignore
 		return reconcile.Result{}, err
 	}
@@ -230,9 +230,9 @@ func (s *streamReconciler) reconcileJob(ctx context.Context, definition Definiti
 		return reconcile.Result{}, err
 	}
 
-	templateType := services.StreamingJobTemplate
+	templateType := job.StreamingJobTemplate
 	if backfillRequest != nil {
-		templateType = services.BackfillJobTemplate
+		templateType = job.BackfillJobTemplate
 	}
 	configurator := definition.ToConfiguratorProvider().JobConfigurator().AddNext(backfillRequest.JobConfigurator())
 
@@ -304,13 +304,13 @@ func (s *streamReconciler) completeBackfill(ctx context.Context, job *batchv1.Jo
 	return s.updateStreamPhase(ctx, definition, nil, nextStatus)
 }
 
-func (s *streamReconciler) startNewJob(ctx context.Context, templateType services.JobTemplateType, configurator services.JobConfigurator) error {
-	job, err := s.jobBuilder.BuildJob(ctx, templateType, configurator)
+func (s *streamReconciler) startNewJob(ctx context.Context, templateType job.TemplateType, configurator job.Configurator) error {
+	j, err := s.jobBuilder.BuildJob(ctx, templateType, configurator)
 	if err != nil { // coverage-ignore
 		return err
 	}
 
-	err = s.client.Create(ctx, job)
+	err = s.client.Create(ctx, j)
 	if err != nil { // coverage-ignore
 		return err
 	}
