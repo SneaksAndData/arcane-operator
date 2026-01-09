@@ -12,23 +12,23 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-var _ reconcile.Reconciler = (*streamClassReconciler)(nil)
+var _ reconcile.Reconciler = (*StreamClassReconciler)(nil)
 
-type streamClassReconciler struct {
+type StreamClassReconciler struct {
 	client                  client.Client
 	streamControllers       map[types.NamespacedName]*StreamControllerHandle
 	streamControllerFactory UnmanagedControllerFactory
 }
 
-func NewStreamClassReconciler(client client.Client, streamControllerFactory UnmanagedControllerFactory) reconcile.Reconciler {
-	return &streamClassReconciler{
+func NewStreamClassReconciler(client client.Client, streamControllerFactory UnmanagedControllerFactory) *StreamClassReconciler {
+	return &StreamClassReconciler{
 		client:                  client,
 		streamControllers:       make(map[types.NamespacedName]*StreamControllerHandle),
 		streamControllerFactory: streamControllerFactory,
 	}
 }
 
-func (s *streamClassReconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
+func (s *StreamClassReconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	logger := s.getLogger(ctx, request.NamespacedName)
 	logger.Info("Reconciling StreamClass")
 
@@ -42,17 +42,17 @@ func (s *streamClassReconciler) Reconcile(ctx context.Context, request reconcile
 	return s.moveFsm(ctx, sc, deleted, request.NamespacedName)
 }
 
-func (s *streamClassReconciler) SetupWithManager(mgr runtime.Manager) error {
+func (s *StreamClassReconciler) SetupWithManager(mgr runtime.Manager) error {
 	return runtime.NewControllerManagedBy(mgr).For(&v1.StreamClass{}).Complete(s)
 }
 
-func (s *streamClassReconciler) getLogger(ctx context.Context, request types.NamespacedName) klog.Logger {
+func (s *StreamClassReconciler) getLogger(ctx context.Context, request types.NamespacedName) klog.Logger {
 	return klog.FromContext(ctx).
-		WithName("streamClassReconciler").
+		WithName("StreamClassReconciler").
 		WithValues("name", request.Name)
 }
 
-func (s *streamClassReconciler) moveFsm(ctx context.Context, sc *v1.StreamClass, deleted bool, name types.NamespacedName) (reconcile.Result, error) {
+func (s *StreamClassReconciler) moveFsm(ctx context.Context, sc *v1.StreamClass, deleted bool, name types.NamespacedName) (reconcile.Result, error) {
 	switch {
 	case !deleted && sc.Status.Phase == "":
 		return s.updatePhase(ctx, sc, name, v1.PhasePending)
@@ -68,7 +68,7 @@ func (s *streamClassReconciler) moveFsm(ctx context.Context, sc *v1.StreamClass,
 	)
 }
 
-func (s *streamClassReconciler) tryStartStreamController(ctx context.Context, sc *v1.StreamClass, name types.NamespacedName, nextPhase v1.Phase) (reconcile.Result, error) {
+func (s *StreamClassReconciler) tryStartStreamController(ctx context.Context, sc *v1.StreamClass, name types.NamespacedName, nextPhase v1.Phase) (reconcile.Result, error) {
 	logger := s.getLogger(ctx, name)
 
 	_, ok := s.streamControllers[name]
@@ -103,7 +103,7 @@ func (s *streamClassReconciler) tryStartStreamController(ctx context.Context, sc
 	return s.updatePhase(ctx, sc, name, nextPhase)
 }
 
-func (s *streamClassReconciler) tryStopStreamController(ctx context.Context, name types.NamespacedName) (reconcile.Result, error) {
+func (s *StreamClassReconciler) tryStopStreamController(ctx context.Context, name types.NamespacedName) (reconcile.Result, error) {
 	logger := s.getLogger(ctx, name)
 	_, ok := s.streamControllers[name]
 	if !ok {
@@ -115,7 +115,7 @@ func (s *streamClassReconciler) tryStopStreamController(ctx context.Context, nam
 	return s.updatePhase(ctx, nil, name, v1.PhaseStopped)
 }
 
-func (s *streamClassReconciler) updatePhase(ctx context.Context, sc *v1.StreamClass, name types.NamespacedName, nextPhase v1.Phase) (reconcile.Result, error) {
+func (s *StreamClassReconciler) updatePhase(ctx context.Context, sc *v1.StreamClass, name types.NamespacedName, nextPhase v1.Phase) (reconcile.Result, error) {
 	logger := s.getLogger(ctx, name)
 	if sc == nil {
 		logger.V(0).Info("Stream class is deleted, skipping phase update")
