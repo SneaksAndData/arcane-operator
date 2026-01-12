@@ -232,8 +232,8 @@ func (s *streamReconciler) reconcileJob(ctx context.Context, definition Definiti
 	templateReference := definition.GetJobTemplate(backfillRequest)
 
 	configurator := job.NewConfiguratorChainBuilder().
-		Next(definition.ToConfiguratorProvider().JobConfigurator()).
-		Next(backfillRequest.JobConfigurator())
+		WithConfigurator(definition.ToConfiguratorProvider().JobConfigurator()).
+		WithConfigurator(backfillRequest.JobConfigurator())
 
 	if errors.IsNotFound(err) {
 		err := s.startNewJob(ctx, templateReference, configurator)

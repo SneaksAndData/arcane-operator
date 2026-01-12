@@ -28,7 +28,7 @@ func NewConfiguratorChainBuilder() *ConfigurationChainBuilder {
 	}
 }
 
-func (b *ConfigurationChainBuilder) Next(configurator Configurator) *ConfigurationChainBuilder {
+func (b *ConfigurationChainBuilder) WithConfigurator(configurator Configurator) *ConfigurationChainBuilder {
 	b.configurators = append(b.configurators, configurator)
 	return b
 }

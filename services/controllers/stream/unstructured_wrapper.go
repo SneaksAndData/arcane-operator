@@ -145,11 +145,11 @@ func (u *unstructuredWrapper) GetJobTemplate(request *v1.BackfillRequest) types.
 
 func (u *unstructuredWrapper) JobConfigurator() job.Configurator {
 	return job.NewConfiguratorChainBuilder().
-		Next(job.NewNameConfigurator(u.underlying.GetName())).
-		Next(job.NewNamespaceConfigurator(u.underlying.GetNamespace())).
-		Next(job.NewMetadataConfigurator(u.underlying.GetName(), u.underlying.GetKind())).
-		Next(job.NewBackfillConfigurator(false)).
-		Next(job.NewEnvironmentConfigurator(u.underlying.Object, "SPEC")).
+		WithConfigurator(job.NewNameConfigurator(u.underlying.GetName())).
+		WithConfigurator(job.NewNamespaceConfigurator(u.underlying.GetNamespace())).
+		WithConfigurator(job.NewMetadataConfigurator(u.underlying.GetName(), u.underlying.GetKind())).
+		WithConfigurator(job.NewBackfillConfigurator(false)).
+		WithConfigurator(job.NewEnvironmentConfigurator(u.underlying.Object, "SPEC")).
 		Build()
 }
 
