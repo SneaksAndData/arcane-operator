@@ -30,5 +30,8 @@ func (in *BackfillRequest) JobConfigurator() job.Configurator {
 	if in == nil {
 		return nil
 	}
-	return job.NewEnvironmentConfigurator(in, "OVERRIDE").AddNext(job.NewBackfillConfigurator(true))
+	return job.NewConfiguratorChainBuilder().
+		Next(job.NewEnvironmentConfigurator(in, "OVERRIDE")).
+		Next(job.NewBackfillConfigurator(true)).
+		Build()
 }

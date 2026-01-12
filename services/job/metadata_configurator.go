@@ -14,12 +14,6 @@ var _ Configurator = &metadataConfigurator{}
 type metadataConfigurator struct {
 	streamId   string
 	streamKind string
-	next       Configurator
-}
-
-func (f metadataConfigurator) AddNext(configurator Configurator) Configurator {
-	f.next = configurator
-	return f
 }
 
 func (f metadataConfigurator) ConfigureJob(job *batchv1.Job) error {
@@ -33,12 +27,12 @@ func (f metadataConfigurator) ConfigureJob(job *batchv1.Job) error {
 		return err
 	}
 
+	if job.Labels == nil {
+		job.Labels = make(map[string]string)
+	}
 	job.Labels["arcane/stream-id"] = f.streamId
 	job.Labels["arcane/stream-kind"] = f.streamKind
 
-	if f.next != nil {
-		return f.next.ConfigureJob(job)
-	}
 	return nil
 }
 

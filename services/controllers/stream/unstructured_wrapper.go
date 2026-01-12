@@ -123,22 +123,34 @@ func (u *unstructuredWrapper) ToConfiguratorProvider() job.ConfiguratorProvider 
 
 func (u *unstructuredWrapper) GetJobTemplate(request *v1.BackfillRequest) types.NamespacedName {
 	if request == nil {
+		namespace := u.streamingJobRef.Namespace
+		if namespace == "" {
+			namespace = u.underlying.GetNamespace()
+		}
 		return types.NamespacedName{
 			Name:      u.streamingJobRef.Name,
-			Namespace: u.streamingJobRef.Namespace,
+			Namespace: namespace,
 		}
 	} else {
+		namespace := u.streamingJobRef.Namespace
+		if namespace == "" {
+			namespace = u.underlying.GetNamespace()
+		}
 		return types.NamespacedName{
 			Name:      u.backfillJobRef.Name,
-			Namespace: u.backfillJobRef.Namespace,
+			Namespace: namespace,
 		}
 	}
 }
 
 func (u *unstructuredWrapper) JobConfigurator() job.Configurator {
-	metadata := job.NewMetadataConfigurator(u.underlying.GetName(), u.underlying.GetKind())
-	backfill := job.NewBackfillConfigurator(false).AddNext(metadata)
-	return job.NewEnvironmentConfigurator(u, "SPEC").AddNext(backfill)
+	return job.NewConfiguratorChainBuilder().
+		Next(job.NewNameConfigurator(u.underlying.GetName())).
+		Next(job.NewNamespaceConfigurator(u.underlying.GetNamespace())).
+		Next(job.NewMetadataConfigurator(u.underlying.GetName(), u.underlying.GetKind())).
+		Next(job.NewBackfillConfigurator(false)).
+		Next(job.NewEnvironmentConfigurator(u.underlying.Object, "SPEC")).
+		Build()
 }
 
 func (u *unstructuredWrapper) Validate() error {
@@ -200,7 +212,7 @@ func (u *unstructuredWrapper) extractConfigurationHash() error {
 		return err
 	}
 	if !found {
-		return fmt.Errorf("status/configurationHash field not found in uRef object")
+		u.configuration = ""
 	}
 	u.configuration = currentConfiguration
 	return nil
