@@ -8,8 +8,4 @@ type Configurator interface {
 
 	// ConfigureJob modifies the provided Job object according to the configurator's logic.
 	ConfigureJob(job *batchv1.Job) error
-
-	// AddNext sets the next JobConfigurator in the chain.
-	// Returns self to allow for method chaining.
-	AddNext(configurator Configurator) Configurator
 }

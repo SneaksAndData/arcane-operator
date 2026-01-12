@@ -12,12 +12,6 @@ var _ Configurator = &backfillConfigurator{}
 // It adds STREAMCONTEXT__BACKFILL environment variable and arcane/backfilling label.
 type backfillConfigurator struct {
 	value bool
-	next  Configurator
-}
-
-func (f backfillConfigurator) AddNext(configurator Configurator) Configurator {
-	f.next = configurator
-	return f
 }
 
 func (f backfillConfigurator) ConfigureJob(job *batchv1.Job) error {
@@ -42,11 +36,11 @@ func (f backfillConfigurator) ConfigureJob(job *batchv1.Job) error {
 		found = false
 	}
 
+	if job.Labels == nil {
+		job.Labels = make(map[string]string)
+	}
 	job.Labels["arcane/backfilling"] = strconv.FormatBool(f.value)
 
-	if f.next != nil {
-		return f.next.ConfigureJob(job)
-	}
 	return nil
 }
 

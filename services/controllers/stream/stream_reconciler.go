@@ -230,11 +230,15 @@ func (s *streamReconciler) reconcileJob(ctx context.Context, definition Definiti
 		return reconcile.Result{}, err
 	}
 	templateReference := definition.GetJobTemplate(backfillRequest)
-	configurator := definition.ToConfiguratorProvider().JobConfigurator().AddNext(backfillRequest.JobConfigurator())
+
+	configurator := job.NewConfiguratorChainBuilder().
+		WithConfigurator(definition.ToConfiguratorProvider().JobConfigurator()).
+		WithConfigurator(backfillRequest.JobConfigurator())
 
 	if errors.IsNotFound(err) {
 		err := s.startNewJob(ctx, templateReference, configurator)
 		if err != nil { // coverage-ignore
+			logger.V(0).Error(err, "failed to create new job for the stream")
 			return reconcile.Result{}, err
 		}
 		return s.updateStreamPhase(ctx, definition, backfillRequest, nextPhase)
@@ -301,8 +305,10 @@ func (s *streamReconciler) completeBackfill(ctx context.Context, job *batchv1.Jo
 }
 
 func (s *streamReconciler) startNewJob(ctx context.Context, templateReference types.NamespacedName, configurator job.Configurator) error {
+	logger := s.getLogger(ctx, templateReference)
 	j, err := s.jobBuilder.BuildJob(ctx, templateReference, configurator)
 	if err != nil { // coverage-ignore
+		logger.V(0).Error(err, "failed to build job")
 		return err
 	}
 
