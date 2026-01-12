@@ -50,7 +50,7 @@ func Test_UpdatePhase_ToRunning(t *testing.T) {
 	streamController.EXPECT().Start(gomock.Any())
 
 	streamReconcilerFactory := mocks.NewMockUnmanagedControllerFactory(mockCtrl)
-	streamReconcilerFactory.EXPECT().CreateStreamController(gomock.Any(), gomock.Any()).Return(streamController, nil)
+	streamReconcilerFactory.EXPECT().CreateStreamController(gomock.Any(), gomock.Any(), gomock.Any()).Return(streamController, nil)
 
 	reconciler := NewStreamClassReconciler(k8sClient, streamReconcilerFactory)
 
@@ -79,7 +79,7 @@ func Test_UpdatePhase_ToRunning_Idempotence(t *testing.T) {
 	streamController.EXPECT().Start(gomock.Any())
 
 	streamReconcilerFactory := mocks.NewMockUnmanagedControllerFactory(mockCtrl)
-	streamReconcilerFactory.EXPECT().CreateStreamController(gomock.Any(), gomock.Any()).Return(streamController, nil)
+	streamReconcilerFactory.EXPECT().CreateStreamController(gomock.Any(), gomock.Any(), gomock.Any()).Return(streamController, nil)
 
 	reconciler := NewStreamClassReconciler(k8sClient, streamReconcilerFactory)
 
@@ -110,7 +110,7 @@ func Test_UpdatePhase_Ready_ToStopped(t *testing.T) {
 	streamController.EXPECT().Start(gomock.Any()).AnyTimes()
 
 	streamReconcilerFactory := mocks.NewMockUnmanagedControllerFactory(mockCtrl)
-	streamReconcilerFactory.EXPECT().CreateStreamController(gomock.Any(), gomock.Any()).Return(streamController, nil)
+	streamReconcilerFactory.EXPECT().CreateStreamController(gomock.Any(), gomock.Any(), gomock.Any()).Return(streamController, nil)
 
 	reconciler := NewStreamClassReconciler(k8sClient, streamReconcilerFactory)
 
@@ -184,7 +184,7 @@ func Test_UpdatePhase_Pending_ToFailed(t *testing.T) {
 	})
 
 	streamReconcilerFactory := mocks.NewMockUnmanagedControllerFactory(mockCtrl)
-	streamReconcilerFactory.EXPECT().CreateStreamController(gomock.Any(), gomock.Any()).Return(nil, fmt.Errorf("some error"))
+	streamReconcilerFactory.EXPECT().CreateStreamController(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, fmt.Errorf("some error"))
 
 	reconciler := NewStreamClassReconciler(k8sClient, streamReconcilerFactory)
 
@@ -219,7 +219,7 @@ func Test_UpdatePhase_Ready_ToFailed(t *testing.T) {
 	}).Return(fmt.Errorf("some error"))
 
 	streamReconcilerFactory := mocks.NewMockUnmanagedControllerFactory(mockCtrl)
-	streamReconcilerFactory.EXPECT().CreateStreamController(gomock.Any(), gomock.Any()).Return(streamController, nil)
+	streamReconcilerFactory.EXPECT().CreateStreamController(gomock.Any(), gomock.Any(), gomock.Any()).Return(streamController, nil)
 
 	cacheProvider := mocks.NewMockCacheProvider(mockCtrl)
 	cacheProvider.EXPECT().GetCache().Return(nil).Times(1)
