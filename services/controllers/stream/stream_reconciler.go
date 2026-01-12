@@ -84,31 +84,31 @@ func NewStreamReconciler(client client.Client, gvk schema.GroupVersionKind, jobB
 // Reconcile implements the reconciliation loop for Stream resources.
 func (s *streamReconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	logger := s.getLogger(ctx, request.NamespacedName)
-	logger.V(2).Info("Reconciling the Stream resource")
+	logger.V(0).Info("Reconciling the Stream resource")
 
 	maybeSd := unstructured.Unstructured{}
 	maybeSd.SetGroupVersionKind(s.gvk)
 	err := s.client.Get(ctx, request.NamespacedName, &maybeSd)
 
 	if errors.IsNotFound(err) { // coverage-ignore
-		logger.V(1).Info("stream resource not found, might have been deleted")
+		logger.V(0).Info("stream resource not found, might have been deleted")
 		return reconcile.Result{}, nil
 	}
 
 	if client.IgnoreNotFound(err) != nil { // coverage-ignore
-		logger.V(1).Error(err, "unable to fetch Stream resource")
+		logger.V(0).Error(err, "unable to fetch Stream resource")
 		return reconcile.Result{}, err
 	}
 
 	streamDefinition, err := fromUnstructured(&maybeSd)
 	if err != nil { // coverage-ignore
-		logger.V(0).Error(err, "failed to parse Stream definition")
+		logger.Error(err, "failed to parse Stream definition")
 		return reconcile.Result{}, err
 	}
 
 	backfillRequest, err := s.getBackfillRequest(ctx, streamDefinition)
 	if client.IgnoreNotFound(err) != nil { // coverage-ignore
-		logger.V(1).Error(err, "unable to fetch BackfillRequest for the Stream, cannot proceed")
+		logger.V(0).Error(err, "unable to fetch BackfillRequest for the Stream, cannot proceed")
 		return reconcile.Result{}, err
 	}
 
@@ -116,7 +116,7 @@ func (s *streamReconciler) Reconcile(ctx context.Context, request reconcile.Requ
 	err = s.client.Get(ctx, request.NamespacedName, j)
 
 	if client.IgnoreNotFound(err) != nil { // coverage-ignore
-		logger.V(1).Error(err, "unable to fetch Stream Job")
+		logger.V(0).Error(err, "unable to fetch Stream Job")
 		return reconcile.Result{}, err
 	}
 
@@ -124,10 +124,10 @@ func (s *streamReconciler) Reconcile(ctx context.Context, request reconcile.Requ
 
 	if errors.IsNotFound(err) {
 		streamingJob = nil
-		logger.V(2).Info("streaming does not exist")
+		logger.V(0).Info("streaming does not exist")
 	} else {
 		streamingJob = (*StreamingJob)(j)
-		logger.V(2).Info("streaming job found")
+		logger.V(0).Info("streaming job found")
 	}
 
 	return s.moveFsm(ctx, streamDefinition, streamingJob, backfillRequest)
@@ -329,8 +329,8 @@ func (s *streamReconciler) getBackfillRequest(ctx context.Context, definition De
 	return nil, nil
 }
 
-func (s *streamReconciler) getLogger(ctx context.Context, request types.NamespacedName) klog.Logger {
-	return klog.FromContext(ctx).
+func (s *streamReconciler) getLogger(_ context.Context, request types.NamespacedName) klog.Logger {
+	return klog.Background().
 		WithName("StreamReconciler").
 		WithValues("namespace", request.Namespace, "name", request.Name, "kind", s.gvk.Kind)
 }

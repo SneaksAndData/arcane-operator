@@ -11,5 +11,5 @@ import (
 type UnmanagedControllerFactory interface {
 
 	// CreateStreamController creates an unmanaged controller for the given GroupVersionKind (GVK).
-	CreateStreamController(ctx context.Context, gvk schema.GroupVersionKind) (controller.Controller, error)
+	CreateStreamController(ctx context.Context, gvk schema.GroupVersionKind, className string) (controller.Controller, error)
 }
