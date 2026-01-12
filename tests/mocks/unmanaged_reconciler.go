@@ -10,6 +10,7 @@
 package mocks
 
 import (
+	context "context"
 	reflect "reflect"
 
 	gomock "go.uber.org/mock/gomock"
@@ -17,6 +18,7 @@ import (
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	cache "sigs.k8s.io/controller-runtime/pkg/cache"
 	controller "sigs.k8s.io/controller-runtime/pkg/controller"
+	reconcile "sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 // MockUnmanagedReconciler is a mock of UnmanagedReconciler interface.
@@ -41,6 +43,21 @@ func NewMockUnmanagedReconciler(ctrl *gomock.Controller) *MockUnmanagedReconcile
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockUnmanagedReconciler) EXPECT() *MockUnmanagedReconcilerMockRecorder {
 	return m.recorder
+}
+
+// Reconcile mocks base method.
+func (m *MockUnmanagedReconciler) Reconcile(arg0 context.Context, arg1 reconcile.Request) (reconcile.Result, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Reconcile", arg0, arg1)
+	ret0, _ := ret[0].(reconcile.Result)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Reconcile indicates an expected call of Reconcile.
+func (mr *MockUnmanagedReconcilerMockRecorder) Reconcile(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Reconcile", reflect.TypeOf((*MockUnmanagedReconciler)(nil).Reconcile), arg0, arg1)
 }
 
 // SetupUnmanaged mocks base method.

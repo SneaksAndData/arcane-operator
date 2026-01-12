@@ -33,3 +33,9 @@ func (d DefaultJobBuilder) BuildJob(ctx context.Context, templateName types.Name
 
 	return extractedJob, nil
 }
+
+func NewDefaultJobBuilder(client client.Client) stream.JobBuilder {
+	return &DefaultJobBuilder{
+		client: client,
+	}
+}

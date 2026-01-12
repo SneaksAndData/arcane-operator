@@ -1,0 +1,23 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: arcane-operator-streams
+rules:
+  - apiGroups: ["streaming.sneaksanddata.com"]
+    resources:
+      - "microsoft-sql-server-streams"
+      - "microsoft-sql-server-streams/status"
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: arcane-operator-streams
+subjects:
+  - kind: ServiceAccount
+    name: arcane-operator
+    namespace: default
+roleRef:
+  kind: ClusterRole
+  name: arcane-operator-streams
+  apiGroup: rbac.authorization.k8s.io

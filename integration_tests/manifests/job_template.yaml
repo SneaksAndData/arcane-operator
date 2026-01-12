@@ -1,0 +1,28 @@
+apiVersion: streaming.sneaksanddata.com/v1
+kind: StreamingJobTemplate
+metadata:
+  name: arcane-stream-microsoft-sql-server-mock
+  namespace: default
+spec:
+  apiVersion: batch/v1
+  kind: job
+  spec:
+    backoffLimit: 3
+    template:
+      spec:
+        containers:
+          - name: arcane-stream
+            command:
+              - /bin/sh
+              - -c
+              - sleep 3600s
+            env:
+              - name: ASPNETCORE_ENVIRONMENT
+                value: Development
+              - name: APPLICATION_VERSION
+                value: v1.0.8
+            image: ghcr.io/sneaksanddata/arcane-stream-sqlserver-change-tracking:1.0.8
+            imagePullPolicy: IfNotPresent
+        restartPolicy: Never
+        serviceAccountName: arcane-stream-microsoft-sql-server
+    ttlSecondsAfterFinished: 1

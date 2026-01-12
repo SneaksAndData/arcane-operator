@@ -1,0 +1,11 @@
+apiVersion: streaming.sneaksanddata.com/v1
+kind: StreamClass
+metadata:
+  name: mock
+spec:
+  apiGroupRef: streaming.sneaksanddata.com
+  kindRef: MicrosoftSqlServerStream
+  apiVersion: v1beta1
+  pluralName: microsoft-sql-server-streams
+  secretRefs:
+    - connectionStringRef
