@@ -101,6 +101,10 @@ func (u *unstructuredWrapper) SetPhase(phase Phase) error {
 	return setNestedPhase(u.underlying, phase, "status", "phase")
 }
 
+func (u *unstructuredWrapper) SetSuspended(suspended bool) error {
+	return setNestedBool(u.underlying, suspended, "spec", "suspended")
+}
+
 func (u *unstructuredWrapper) StateString() string {
 	phase := u.GetPhase()
 	return fmt.Sprintf("phase=%s", phase)
@@ -150,6 +154,7 @@ func (u *unstructuredWrapper) JobConfigurator() job.Configurator {
 		WithConfigurator(job.NewMetadataConfigurator(u.underlying.GetName(), u.underlying.GetKind())).
 		WithConfigurator(job.NewBackfillConfigurator(false)).
 		WithConfigurator(job.NewEnvironmentConfigurator(u.underlying.Object, "SPEC")).
+		WithConfigurator(job.NewOwnerConfigurator(u.ToOwnerReference())).
 		Build()
 }
 
@@ -255,4 +260,8 @@ func setNestedPhase(u *unstructured.Unstructured, value Phase, path ...string) e
 
 func getNestedBool(u *unstructured.Unstructured, path ...string) (bool, bool, error) {
 	return unstructured.NestedBool(u.Object, path...)
+}
+
+func setNestedBool(u *unstructured.Unstructured, value bool, path ...string) error {
+	return unstructured.SetNestedField(u.Object, value, path...)
 }
