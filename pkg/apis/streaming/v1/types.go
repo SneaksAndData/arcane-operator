@@ -6,7 +6,7 @@ import (
 )
 
 // Phase represents the current phase of the stream class
-// +kubebuilder:validation:Enum=INITIALIZING;READY;FAILED;STOPPED
+// +kubebuilder:validation:Enum=Pending;Ready;Failed;Stopped
 type Phase string
 
 const (
