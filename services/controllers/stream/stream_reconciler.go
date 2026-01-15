@@ -254,14 +254,9 @@ func (s *streamReconciler) reconcileJob(ctx context.Context, definition Definiti
 	if client.IgnoreNotFound(err) != nil { // coverage-ignore
 		return reconcile.Result{}, err
 	}
-	templateReference := definition.GetJobTemplate(backfillRequest)
-
-	configurator := job.NewConfiguratorChainBuilder().
-		WithConfigurator(definition.ToConfiguratorProvider().JobConfigurator()).
-		WithConfigurator(backfillRequest.JobConfigurator())
 
 	if errors.IsNotFound(err) {
-		err := s.startNewJob(ctx, templateReference, configurator)
+		err := s.startNewJob(ctx, definition, backfillRequest)
 		if err != nil { // coverage-ignore
 			logger.V(0).Error(err, "failed to create new job for the stream")
 			return reconcile.Result{}, err
@@ -294,7 +289,7 @@ func (s *streamReconciler) reconcileJob(ctx context.Context, definition Definiti
 		return reconcile.Result{}, err
 	}
 
-	err = s.startNewJob(ctx, templateReference, configurator)
+	err = s.startNewJob(ctx, definition, backfillRequest)
 	if err != nil { // coverage-ignore
 		return reconcile.Result{}, err
 	}
@@ -339,8 +334,20 @@ func (s *streamReconciler) completeBackfill(ctx context.Context, job *batchv1.Jo
 	return s.updateStreamPhase(ctx, definition, nil, nextStatus)
 }
 
-func (s *streamReconciler) startNewJob(ctx context.Context, templateReference types.NamespacedName, configurator job.Configurator) error {
+func (s *streamReconciler) startNewJob(ctx context.Context, definition Definition, request *v1.BackfillRequest) error {
+	templateReference := definition.GetJobTemplate(request)
 	logger := s.getLogger(ctx, templateReference)
+
+	streamConfiguration, err := definition.CurrentConfiguration(request)
+	if err != nil { // coverage-ignore
+		return fmt.Errorf("failed to compute stream configuration: %w", err)
+	}
+
+	configurator := job.NewConfiguratorChainBuilder().
+		WithConfigurator(definition.ToConfiguratorProvider().JobConfigurator()).
+		WithConfigurator(request.JobConfigurator()).
+		WithConfigurator(job.NewConfigurationChecksumConfigurator(streamConfiguration))
+
 	j, err := s.jobBuilder.BuildJob(ctx, templateReference, configurator)
 	if err != nil { // coverage-ignore
 		logger.V(0).Error(err, "failed to build job")
