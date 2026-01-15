@@ -45,6 +45,9 @@ type Definition interface {
 	// SetPhase sets the status of the stream definition.
 	SetPhase(status Phase) error
 
+	// SetSuspended sets the suspended state of the stream definition.
+	SetSuspended(suspended bool) error
+
 	// StateString returns a string representation of the current state.
 	// This is primarily used for logging and debugging purposes.
 	StateString() string
