@@ -23,6 +23,7 @@ package v1
 type BackfillRequestSpecApplyConfiguration struct {
 	StreamClass *string `json:"streamClass,omitempty"`
 	StreamId    *string `json:"streamId,omitempty"`
+	Completed   *bool   `json:"completed,omitempty"`
 }
 
 // BackfillRequestSpecApplyConfiguration constructs a declarative configuration of the BackfillRequestSpec type for use with
@@ -44,5 +45,13 @@ func (b *BackfillRequestSpecApplyConfiguration) WithStreamClass(value string) *B
 // If called multiple times, the StreamId field is set to the value of the last call.
 func (b *BackfillRequestSpecApplyConfiguration) WithStreamId(value string) *BackfillRequestSpecApplyConfiguration {
 	b.StreamId = &value
+	return b
+}
+
+// WithCompleted sets the Completed field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the Completed field is set to the value of the last call.
+func (b *BackfillRequestSpecApplyConfiguration) WithCompleted(value bool) *BackfillRequestSpecApplyConfiguration {
+	b.Completed = &value
 	return b
 }

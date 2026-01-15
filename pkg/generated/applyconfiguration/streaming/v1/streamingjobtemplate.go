@@ -30,7 +30,7 @@ import (
 type StreamingJobTemplateApplyConfiguration struct {
 	metav1.TypeMetaApplyConfiguration    `json:",inline"`
 	*metav1.ObjectMetaApplyConfiguration `json:"metadata,omitempty"`
-	Spec                                 *batchv1.JobSpec `json:"spec,omitempty"`
+	Spec                                 *batchv1.Job `json:"spec,omitempty"`
 }
 
 // StreamingJobTemplate constructs a declarative configuration of the StreamingJobTemplate type for use with
@@ -206,7 +206,7 @@ func (b *StreamingJobTemplateApplyConfiguration) ensureObjectMetaApplyConfigurat
 // WithSpec sets the Spec field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Spec field is set to the value of the last call.
-func (b *StreamingJobTemplateApplyConfiguration) WithSpec(value batchv1.JobSpec) *StreamingJobTemplateApplyConfiguration {
+func (b *StreamingJobTemplateApplyConfiguration) WithSpec(value batchv1.Job) *StreamingJobTemplateApplyConfiguration {
 	b.Spec = &value
 	return b
 }
