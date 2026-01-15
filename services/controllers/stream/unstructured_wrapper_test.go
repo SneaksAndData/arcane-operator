@@ -236,6 +236,32 @@ func Test_StateString(t *testing.T) {
 	require.Contains(t, stateString, "phase=Running")
 }
 
+func Test_SetSuspended(t *testing.T) {
+	// Arrange
+	fakeClient := setupFakeClient(func(sd *testv1.MockStreamDefinition) {
+		sd.Spec.Suspended = false
+	})
+
+	unstructuredObj, err := getUnstructured(t, fakeClient)
+	require.NoError(t, err)
+
+	// Act
+	wrapper, err := fromUnstructured(&unstructuredObj)
+	require.NotNil(t, wrapper)
+	require.NoError(t, err)
+	err = wrapper.SetSuspended(true)
+	require.NoError(t, err)
+
+	// Assert
+	suspended := wrapper.Suspended()
+	require.True(t, suspended)
+
+	// Verify underlying unstructured object is updated
+	require.NoError(t, err)
+	suspended = unstructuredObj.Object["spec"].(map[string]interface{})["suspended"].(bool)
+	require.True(t, suspended)
+}
+
 func setupFakeClient(updateStreamDefinition func(sd *testv1.MockStreamDefinition)) client.WithWatch {
 	sd := testv1.MockStreamDefinition{
 		TypeMeta:   metav1.TypeMeta{APIVersion: "streaming.sneaksanddata.com/v1", Kind: "MockStreamDefinition"},

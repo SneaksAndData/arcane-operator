@@ -102,7 +102,8 @@ func (u *unstructuredWrapper) SetPhase(phase Phase) error {
 }
 
 func (u *unstructuredWrapper) SetSuspended(suspended bool) error {
-	return setNestedBool(u.underlying, suspended, "spec", "suspended")
+	u.suspended = suspended
+	return unstructured.SetNestedField(u.underlying.Object, suspended, "spec", "suspended")
 }
 
 func (u *unstructuredWrapper) StateString() string {
@@ -260,8 +261,4 @@ func setNestedPhase(u *unstructured.Unstructured, value Phase, path ...string) e
 
 func getNestedBool(u *unstructured.Unstructured, path ...string) (bool, bool, error) {
 	return unstructured.NestedBool(u.Object, path...)
-}
-
-func setNestedBool(u *unstructured.Unstructured, value bool, path ...string) error {
-	return unstructured.SetNestedField(u.Object, value, path...)
 }
