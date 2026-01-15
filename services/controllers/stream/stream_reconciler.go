@@ -55,14 +55,14 @@ func (s *streamReconciler) SetupUnmanaged(cache cache.Cache, scheme *runtime.Sch
 	}
 
 	//Watch for changes to secondary resource Jobs and requeue the owner Stream
-	h := handler.TypedEnqueueRequestForOwner[client.Object](
+	h := handler.TypedEnqueueRequestForOwner[*batchv1.Job](
 		scheme,
 		mapper,
 		resource,
 		handler.OnlyControllerOwner(),
 	)
 
-	jobSource := source.Kind[client.Object](cache, &batchv1.Job{}, h, NewJobFilter())
+	jobSource := source.Kind[*batchv1.Job](cache, &batchv1.Job{}, h, NewJobFilter())
 	err = newController.Watch(jobSource)
 	if err != nil {
 		return nil, fmt.Errorf("failed to watch jobs: %w", err)
@@ -178,6 +178,9 @@ func (s *streamReconciler) moveFsm(ctx context.Context, definition Definition, j
 
 	case phase == Running && backfillRequest != nil:
 		return s.stopStream(ctx, definition, Pending)
+
+	case phase == Running && backfillRequest == nil:
+		return s.reconcileJob(ctx, definition, backfillRequest, Running)
 
 	case phase == Suspended && backfillRequest != nil:
 		return s.updateStreamPhase(ctx, definition, backfillRequest, Pending)
@@ -359,7 +362,7 @@ func (s *streamReconciler) getBackfillRequest(ctx context.Context, definition De
 	}
 
 	for _, bfr := range backfillRequestList.Items {
-		if bfr.Spec.StreamId == definition.NamespacedName().Name {
+		if bfr.Spec.StreamId == definition.NamespacedName().Name && !bfr.Spec.Completed {
 			return &bfr, nil
 		}
 	}
@@ -373,14 +376,14 @@ func (s *streamReconciler) getLogger(_ context.Context, request types.Namespaced
 		WithValues("namespace", request.Namespace, "name", request.Name, "kind", s.gvk.Kind)
 }
 
-func (s *streamReconciler) updateStreamPhase(ctx context.Context, definition Definition, backfillRequest *v1.BackfillRequest, nextStatus Phase) (reconcile.Result, error) {
+func (s *streamReconciler) updateStreamPhase(ctx context.Context, definition Definition, backfillRequest *v1.BackfillRequest, next Phase) (reconcile.Result, error) {
 	logger := s.getLogger(ctx, definition.NamespacedName())
-	if definition.GetPhase() == nextStatus { // coverage-ignore
-		logger.V(2).Info("Stream phase is already set to", definition.GetPhase())
+	if definition.GetPhase() == next { // coverage-ignore
+		logger.V(0).Info("Stream phase is already set to", "phase", definition.GetPhase())
 		return reconcile.Result{}, nil
 	}
-	logger.V(1).Info("updating Stream status", "from", definition.GetPhase(), "to", nextStatus)
-	err := definition.SetPhase(nextStatus)
+	logger.V(0).Info("updating Stream status", "from", definition.GetPhase(), "to", next)
+	err := definition.SetPhase(next)
 	if err != nil { // coverage-ignore
 		logger.V(0).Error(err, "unable to set Stream status")
 		return reconcile.Result{}, err

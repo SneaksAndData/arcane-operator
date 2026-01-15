@@ -31,7 +31,7 @@ func (in *BackfillRequest) JobConfigurator() job.Configurator {
 		return nil
 	}
 	return job.NewConfiguratorChainBuilder().
-		WithConfigurator(job.NewEnvironmentConfigurator(in, "OVERRIDE")).
+		WithConfigurator(job.NewEnvironmentConfigurator(in.Spec, "OVERRIDE")).
 		WithConfigurator(job.NewBackfillConfigurator(true)).
 		Build()
 }

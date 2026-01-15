@@ -27,3 +27,7 @@ func (job StreamingJob) ToV1Job() *v1.Job {
 	j := v1.Job(job)
 	return &j
 }
+
+func NewStreamingJobFromV1Job(job *v1.Job) StreamingJob {
+	return StreamingJob(*job)
+}
