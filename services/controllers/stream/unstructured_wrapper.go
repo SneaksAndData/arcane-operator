@@ -102,6 +102,7 @@ func (u *unstructuredWrapper) SetPhase(phase Phase) error {
 }
 
 func (u *unstructuredWrapper) SetSuspended(suspended bool) error {
+	u.suspended = suspended
 	return unstructured.SetNestedField(u.underlying.Object, suspended, "spec", "suspended")
 }
 
