@@ -299,7 +299,7 @@ func Test_UpdatePhase_Backfilling_To_Pending_with_job_running(t *testing.T) {
 func Test_UpdatePhase_Backfilling_To_Pending_with_job_completed(t *testing.T) {
 	// Arrange
 	k8sClient := setupClient(
-		combined(withNamedStreamDefinition(objectName), withPhase(Backfilling)),
+		combined(withNamedStreamDefinition(objectName), withPhase(Backfilling), withSuspendedSpec(false)),
 		combinedB(withBackfillRequest(objectName), withCompletedJob(objectName)),
 	)
 	reconciler := createReconciler(k8sClient, nil, nil)
