@@ -2,9 +2,9 @@ apiVersion: v2
 name: setup
 description: Integration test setup chart for arcane operator
 type: application
-version: 0.0.1
-appVersion: "0.0.1"
+version: 0.0.0
+appVersion: "0.0.0"
 dependencies:
   - name: arcane-crd
-    version: v0.0.2
+    version: v0.0.3
     repository: oci://ghcr.io/sneaksanddata/helm
