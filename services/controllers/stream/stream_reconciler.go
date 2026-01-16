@@ -54,35 +54,31 @@ func (s *streamReconciler) SetupUnmanaged(cache cache.Cache, scheme *runtime.Sch
 		return nil, fmt.Errorf("failed to watch stream resource: %w", err)
 	}
 
-	//Watch for changes to secondary resource Jobs and requeue the owner Stream
-	h := handler.TypedEnqueueRequestForOwner[*batchv1.Job](
-		scheme,
-		mapper,
-		resource,
-		handler.OnlyControllerOwner(),
-	)
+	err = NewTypedSecondaryWatcherBuilder[*batchv1.Job]().
+		WithFilter(NewJobFilter()).
+		WithCache(cache).
+		WithHandler(handler.TypedEnqueueRequestForOwner[*batchv1.Job](scheme, mapper, resource, handler.OnlyControllerOwner())).
+		Build().
+		SetupWithController(newController, &batchv1.Job{})
 
-	jobSource := source.Kind[*batchv1.Job](cache, &batchv1.Job{}, h, NewJobFilter())
-	err = newController.Watch(jobSource)
 	if err != nil {
 		return nil, fmt.Errorf("failed to watch jobs: %w", err)
 	}
 
-	//Watch for changes to secondary resource Jobs and requeue the owner Stream
-	hBackfills := handler.TypedEnqueueRequestsFromMapFunc(func(ctx context.Context, obj *v1.BackfillRequest) []reconcile.Request {
-		if obj.Spec.StreamClass != s.className {
-			return []reconcile.Request{}
-		}
-		return []reconcile.Request{{
-			NamespacedName: types.NamespacedName{
-				Namespace: obj.Namespace,
-				Name:      obj.Spec.StreamId,
-			},
-		}}
-	})
+	err = NewTypedSecondaryWatcherBuilder[*v1.BackfillRequest]().
+		WithFilter(NewBackfillRequestFilter(s.className)).
+		WithCache(cache).
+		WithHandler(handler.TypedEnqueueRequestsFromMapFunc(func(ctx context.Context, obj *v1.BackfillRequest) []reconcile.Request {
+			return []reconcile.Request{{
+				NamespacedName: types.NamespacedName{
+					Namespace: obj.Namespace,
+					Name:      obj.Spec.StreamId,
+				},
+			}}
+		})).
+		Build().
+		SetupWithController(newController, &v1.BackfillRequest{})
 
-	backfillSource := source.Kind(cache, &v1.BackfillRequest{}, hBackfills, NewBackfillRequestFilter(s.className))
-	err = newController.Watch(backfillSource)
 	if err != nil {
 		return nil, fmt.Errorf("failed to watch backfills: %w", err)
 	}
