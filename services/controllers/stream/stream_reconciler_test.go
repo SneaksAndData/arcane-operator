@@ -375,7 +375,7 @@ func Test_UpdatePhase_Backfilling_To_Suspended(t *testing.T) {
 
 	// Assert
 	assertStreamDefinitionPhase(t, k8sClient, objectName, Suspended)
-	assertJobExists(t, k8sClient, objectName)
+	assertJobNotExists(t, k8sClient, objectName)
 	assertBackfillRequestNotCompleted(t, k8sClient)
 }
 
