@@ -280,7 +280,7 @@ func Test_UpdatePhase_Suspended_without_BackfillRequest_with_job(t *testing.T) {
 func Test_UpdatePhase_Backfilling_To_Pending_with_job_running(t *testing.T) {
 	// Arrange
 	k8sClient := setupClient(
-		combined(withNamedStreamDefinition(objectName), withPhase(Backfilling)),
+		combined(withNamedStreamDefinition(objectName), withPhase(Backfilling), withSuspendedSpec(false)),
 		combinedB(withOutdatedJob(objectName), withBackfillRequest(objectName)),
 	)
 	reconciler := createReconciler(k8sClient, nil, nil)
@@ -299,7 +299,7 @@ func Test_UpdatePhase_Backfilling_To_Pending_with_job_running(t *testing.T) {
 func Test_UpdatePhase_Backfilling_To_Pending_with_job_completed(t *testing.T) {
 	// Arrange
 	k8sClient := setupClient(
-		combined(withNamedStreamDefinition(objectName), withPhase(Backfilling)),
+		combined(withNamedStreamDefinition(objectName), withPhase(Backfilling), withSuspendedSpec(false)),
 		combinedB(withBackfillRequest(objectName), withCompletedJob(objectName)),
 	)
 	reconciler := createReconciler(k8sClient, nil, nil)
@@ -318,7 +318,7 @@ func Test_UpdatePhase_Backfilling_To_Pending_with_job_completed(t *testing.T) {
 func Test_UpdatePhase_Backfilling_To_Backfilling_with_no_job(t *testing.T) {
 	// Arrange
 	k8sClient := setupClient(
-		combined(withNamedStreamDefinition(objectName), withPhase(Backfilling)),
+		combined(withNamedStreamDefinition(objectName), withPhase(Backfilling), withSuspendedSpec(false)),
 		combinedB(withBackfillRequest(objectName)),
 	)
 
@@ -344,6 +344,38 @@ func Test_UpdatePhase_Backfilling_To_Backfilling_with_no_job(t *testing.T) {
 	// Assert
 	assertStreamDefinitionPhase(t, k8sClient, objectName, Backfilling)
 	assertJobExists(t, k8sClient, objectName)
+	assertBackfillRequestNotCompleted(t, k8sClient)
+}
+
+func Test_UpdatePhase_Backfilling_To_Suspended(t *testing.T) {
+	// Arrange
+	k8sClient := setupClient(
+		combined(withNamedStreamDefinition(objectName), withPhase(Backfilling), withSuspendedSpec(true)),
+		combinedB(withBackfillRequest(objectName)),
+	)
+
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+
+	mockJob := batchv1.Job{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: objectName.Namespace,
+			Name:      objectName.Name,
+			Annotations: map[string]string{
+				"configuration-hash": "new-hash",
+			},
+		},
+	}
+	reconciler := createReconciler(k8sClient, &mockJob, mockCtrl)
+
+	// Act
+	result, err := reconciler.Reconcile(t.Context(), reconcile.Request{NamespacedName: objectName})
+	require.NoError(t, err)
+	require.Equal(t, result, reconcile.Result{})
+
+	// Assert
+	assertStreamDefinitionPhase(t, k8sClient, objectName, Suspended)
+	assertJobNotExists(t, k8sClient, objectName)
 	assertBackfillRequestNotCompleted(t, k8sClient)
 }
 

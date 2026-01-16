@@ -54,18 +54,33 @@ func (s *streamReconciler) SetupUnmanaged(cache cache.Cache, scheme *runtime.Sch
 		return nil, fmt.Errorf("failed to watch stream resource: %w", err)
 	}
 
-	// Watch for changes to secondary resource Jobs and requeue the owner Stream
-	h := handler.TypedEnqueueRequestForOwner[*batchv1.Job](
-		scheme,
-		mapper,
-		&batchv1.Job{},
-		handler.OnlyControllerOwner(),
-	)
+	err = NewTypedSecondaryWatcherBuilder[*batchv1.Job]().
+		WithFilter(NewJobFilter()).
+		WithCache(cache).
+		WithHandler(handler.TypedEnqueueRequestForOwner[*batchv1.Job](scheme, mapper, resource, handler.OnlyControllerOwner())).
+		Build().
+		SetupWithController(newController, &batchv1.Job{})
 
-	jobSource := source.Kind(cache, &batchv1.Job{}, h, nil)
-	err = newController.Watch(jobSource)
 	if err != nil {
-		return nil, fmt.Errorf("failed to watch stream resource: %w", err)
+		return nil, fmt.Errorf("failed to watch jobs: %w", err)
+	}
+
+	err = NewTypedSecondaryWatcherBuilder[*v1.BackfillRequest]().
+		WithFilter(NewBackfillRequestFilter(s.className)).
+		WithCache(cache).
+		WithHandler(handler.TypedEnqueueRequestsFromMapFunc(func(ctx context.Context, obj *v1.BackfillRequest) []reconcile.Request {
+			return []reconcile.Request{{
+				NamespacedName: types.NamespacedName{
+					Namespace: obj.Namespace,
+					Name:      obj.Spec.StreamId,
+				},
+			}}
+		})).
+		Build().
+		SetupWithController(newController, &v1.BackfillRequest{})
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to watch backfills: %w", err)
 	}
 
 	return newController, nil
@@ -160,10 +175,16 @@ func (s *streamReconciler) moveFsm(ctx context.Context, definition Definition, j
 	case phase == Running && backfillRequest != nil:
 		return s.stopStream(ctx, definition, Pending)
 
+	case phase == Running && backfillRequest == nil:
+		return s.reconcileJob(ctx, definition, backfillRequest, Running)
+
 	case phase == Suspended && backfillRequest != nil:
 		return s.updateStreamPhase(ctx, definition, backfillRequest, Pending)
 
 	case phase == Suspended && backfillRequest == nil:
+		return s.stopStream(ctx, definition, Suspended)
+
+	case phase == Backfilling && definition.Suspended():
 		return s.stopStream(ctx, definition, Suspended)
 
 	case phase == Backfilling && job == nil:
@@ -229,16 +250,21 @@ func (s *streamReconciler) reconcileJob(ctx context.Context, definition Definiti
 	if client.IgnoreNotFound(err) != nil { // coverage-ignore
 		return reconcile.Result{}, err
 	}
-	templateReference := definition.GetJobTemplate(backfillRequest)
-
-	configurator := job.NewConfiguratorChainBuilder().
-		WithConfigurator(definition.ToConfiguratorProvider().JobConfigurator()).
-		WithConfigurator(backfillRequest.JobConfigurator())
 
 	if errors.IsNotFound(err) {
-		err := s.startNewJob(ctx, templateReference, configurator)
+		err := s.startNewJob(ctx, definition, backfillRequest)
 		if err != nil { // coverage-ignore
 			logger.V(0).Error(err, "failed to create new job for the stream")
+			return reconcile.Result{}, err
+		}
+		err = definition.SetSuspended(false)
+		if err != nil { // coverage-ignore
+			logger.V(0).Error(err, "unable to unsuspend Stream")
+			return reconcile.Result{}, err
+		}
+		err = s.client.Update(ctx, definition.ToUnstructured())
+		if err != nil { // coverage-ignore
+			logger.V(0).Error(err, "unable to update Stream to unsuspended state")
 			return reconcile.Result{}, err
 		}
 		return s.updateStreamPhase(ctx, definition, backfillRequest, nextPhase)
@@ -259,7 +285,7 @@ func (s *streamReconciler) reconcileJob(ctx context.Context, definition Definiti
 		return reconcile.Result{}, err
 	}
 
-	err = s.startNewJob(ctx, templateReference, configurator)
+	err = s.startNewJob(ctx, definition, backfillRequest)
 	if err != nil { // coverage-ignore
 		return reconcile.Result{}, err
 	}
@@ -304,8 +330,20 @@ func (s *streamReconciler) completeBackfill(ctx context.Context, job *batchv1.Jo
 	return s.updateStreamPhase(ctx, definition, nil, nextStatus)
 }
 
-func (s *streamReconciler) startNewJob(ctx context.Context, templateReference types.NamespacedName, configurator job.Configurator) error {
+func (s *streamReconciler) startNewJob(ctx context.Context, definition Definition, request *v1.BackfillRequest) error {
+	templateReference := definition.GetJobTemplate(request)
 	logger := s.getLogger(ctx, templateReference)
+
+	streamConfiguration, err := definition.CurrentConfiguration(request)
+	if err != nil { // coverage-ignore
+		return fmt.Errorf("failed to compute stream configuration: %w", err)
+	}
+
+	configurator := job.NewConfiguratorChainBuilder().
+		WithConfigurator(definition.ToConfiguratorProvider().JobConfigurator()).
+		WithConfigurator(request.JobConfigurator()).
+		WithConfigurator(job.NewConfigurationChecksumConfigurator(streamConfiguration))
+
 	j, err := s.jobBuilder.BuildJob(ctx, templateReference, configurator)
 	if err != nil { // coverage-ignore
 		logger.V(0).Error(err, "failed to build job")
@@ -327,7 +365,7 @@ func (s *streamReconciler) getBackfillRequest(ctx context.Context, definition De
 	}
 
 	for _, bfr := range backfillRequestList.Items {
-		if bfr.Spec.StreamId == definition.NamespacedName().Name {
+		if bfr.Spec.StreamId == definition.NamespacedName().Name && !bfr.Spec.Completed {
 			return &bfr, nil
 		}
 	}
@@ -341,18 +379,25 @@ func (s *streamReconciler) getLogger(_ context.Context, request types.Namespaced
 		WithValues("namespace", request.Namespace, "name", request.Name, "kind", s.gvk.Kind)
 }
 
-func (s *streamReconciler) updateStreamPhase(ctx context.Context, definition Definition, _ *v1.BackfillRequest, nextStatus Phase) (reconcile.Result, error) {
+func (s *streamReconciler) updateStreamPhase(ctx context.Context, definition Definition, backfillRequest *v1.BackfillRequest, next Phase) (reconcile.Result, error) {
 	logger := s.getLogger(ctx, definition.NamespacedName())
-	if definition.GetPhase() == nextStatus { // coverage-ignore
-		logger.V(2).Info("Stream phase is already set to", definition.GetPhase())
+	if definition.GetPhase() == next { // coverage-ignore
+		logger.V(0).Info("Stream phase is already set to", "phase", definition.GetPhase())
 		return reconcile.Result{}, nil
 	}
-	logger.V(1).Info("updating Stream status", "from", definition.GetPhase(), "to", nextStatus)
-	err := definition.SetPhase(nextStatus)
+	logger.V(0).Info("updating Stream status", "from", definition.GetPhase(), "to", next)
+	err := definition.SetPhase(next)
 	if err != nil { // coverage-ignore
 		logger.V(0).Error(err, "unable to set Stream status")
 		return reconcile.Result{}, err
 	}
+
+	err = definition.RecomputeConfiguration(backfillRequest)
+	if err != nil { // coverage-ignore
+		logger.V(0).Error(err, "unable to recompute Stream configuration hash")
+		return reconcile.Result{}, err
+	}
+
 	statusUpdate := definition.ToUnstructured().DeepCopy()
 	err = s.client.Status().Update(ctx, statusUpdate)
 	if err != nil { // coverage-ignore

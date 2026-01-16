@@ -154,7 +154,7 @@ func (u *unstructuredWrapper) JobConfigurator() job.Configurator {
 		WithConfigurator(job.NewNamespaceConfigurator(u.underlying.GetNamespace())).
 		WithConfigurator(job.NewMetadataConfigurator(u.underlying.GetName(), u.underlying.GetKind())).
 		WithConfigurator(job.NewBackfillConfigurator(false)).
-		WithConfigurator(job.NewEnvironmentConfigurator(u.underlying.Object, "SPEC")).
+		WithConfigurator(job.NewEnvironmentConfigurator(u.underlying.Object["spec"], "SPEC")).
 		WithConfigurator(job.NewOwnerConfigurator(u.ToOwnerReference())).
 		Build()
 }
