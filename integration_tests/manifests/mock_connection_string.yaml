@@ -1,8 +1,0 @@
-apiVersion: v1
-kind: Secret
-metadata:
-  name: mssql-connection-secret
-  namespace: default
-type: Opaque
-stringData:
-  ARCANE_CONNECTIONSTRING: "Server=localhost,1433;Database=testdb;User Id=sa;Password=YourPassword123!;TrustServerCertificate=true;"
