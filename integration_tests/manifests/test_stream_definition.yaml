@@ -17,4 +17,3 @@ spec:
     kind: StreamingJobTemplate
     name: arcane-stream-mock
     namespace: default
-
