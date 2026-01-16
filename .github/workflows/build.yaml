@@ -48,7 +48,7 @@ jobs:
           version: v2.1.0
 
       - name: Run unit tests
-        run: go test -v ./... -coverprofile=./cover.out -covermode=atomic -coverpkg=./... -skip-package=integration_tests
+        run: go test -v ./... -coverprofile=./cover.out -covermode=atomic -coverpkg=./... -short
 
       - name: Check test coverage
         id: coverage
