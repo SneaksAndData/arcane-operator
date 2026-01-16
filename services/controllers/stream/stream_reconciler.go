@@ -81,7 +81,7 @@ func (s *streamReconciler) SetupUnmanaged(cache cache.Cache, scheme *runtime.Sch
 		}}
 	})
 
-	backfillSource := source.Kind(cache, &v1.BackfillRequest{}, hBackfills, NewBfrFilter())
+	backfillSource := source.Kind(cache, &v1.BackfillRequest{}, hBackfills, NewBackfillRequestFilter(s.className))
 	err = newController.Watch(backfillSource)
 	if err != nil {
 		return nil, fmt.Errorf("failed to watch backfills: %w", err)
