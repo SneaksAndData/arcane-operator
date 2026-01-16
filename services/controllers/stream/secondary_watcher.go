@@ -14,7 +14,6 @@ import (
 // TypedSecondaryWatcher watches secondary resources and enqueues reconcile requests for the primary resource.
 type TypedSecondaryWatcher[object client.Object] struct {
 	cache   cache.Cache
-	obj     object
 	handler handler.TypedEventHandler[object, reconcile.Request]
 	filter  predicate.TypedPredicate[object]
 }

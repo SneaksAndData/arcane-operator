@@ -16,12 +16,12 @@ type BackfillRequestFilter struct {
 
 // Create filters BackfillRequests that are not completed and match the specified stream class.
 func (j *BackfillRequestFilter) Create(e event.TypedCreateEvent[*v1.BackfillRequest]) bool {
-	return e.Object.Spec.Completed == false && e.Object.Spec.StreamClass == j.streamClass
+	return !e.Object.Spec.Completed && e.Object.Spec.StreamClass == j.streamClass
 }
 
 // Delete filters BackfillRequests that are not completed and match the specified stream class.
 func (j *BackfillRequestFilter) Delete(e event.TypedDeleteEvent[*v1.BackfillRequest]) bool {
-	return e.Object.Spec.Completed == false && e.Object.Spec.StreamClass == j.streamClass
+	return !e.Object.Spec.Completed && e.Object.Spec.StreamClass == j.streamClass
 }
 
 // Update always returns false to ignore update events.
