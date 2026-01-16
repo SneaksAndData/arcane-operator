@@ -36,9 +36,6 @@ type streamReconciler struct {
 }
 
 func (s *streamReconciler) SetupUnmanaged(cache cache.Cache, scheme *runtime.Scheme, mapper meta.RESTMapper) (controller.Controller, error) {
-	resource := &unstructured.Unstructured{}
-	resource.SetGroupVersionKind(s.gvk)
-
 	controllerName := s.className + "-controller"
 	newController, err := controller.NewUnmanaged(controllerName, controller.Options{Reconciler: s})
 
@@ -46,7 +43,8 @@ func (s *streamReconciler) SetupUnmanaged(cache cache.Cache, scheme *runtime.Sch
 		return nil, fmt.Errorf("failed to start unmanaged stream controller: %w", err)
 	}
 
-	// Watch for changes to primary resource Stream
+	resource := &unstructured.Unstructured{}
+	resource.SetGroupVersionKind(s.gvk)
 	newSource := source.Kind(cache, resource, &handler.TypedEnqueueRequestForObject[*unstructured.Unstructured]{})
 
 	err = newController.Watch(newSource)
