@@ -7,15 +7,12 @@ on:
     branches: [ main ]
     
 env:
-  PROJECT_NAME: Arcane.Operator
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
-  
+
 jobs:
   validate_commit:
     name: Validate commit
     runs-on: ubuntu-latest
-    # Temporarily disable commit validation
     if: ${{ github.ref != 'refs/heads/main' }}
     steps:
       - uses: actions/checkout@v6
@@ -30,45 +27,45 @@ jobs:
       - name: Check Format
         run: gofmt -d ./
 
-#      - name: Verify dependencies
-#        run: go mod verify
+      - name: Verify dependencies
+        run: go mod verify
 
       - name: Install dependencies
         run: go mod vendor
 
-#      - name: Run go vet
-#        run: go vet ./...
+      - name: Run go vet
+        run: go vet ./...
 
       - name: Build
         run: go build -v ./...
 
-#      - name: Lint
-#        uses: golangci/golangci-lint-action@v9
+      - name: Lint
+        uses: golangci/golangci-lint-action@v9
 
-#      - name: Run unit tests
-#        run: go test -v ./... -coverprofile=./cover.out -covermode=atomic -coverpkg=./... -short
+      - name: Run unit tests
+        run: go test -v ./... -coverprofile=./cover.out -covermode=atomic -coverpkg=./... -short
 
-#      - name: Check test coverage
-#        id: coverage
-#        uses: vladopajic/go-test-coverage@v2
-#        continue-on-error: true # Should fail after coverage comment is posted
-#        with:
-#          config: .testcoverage.yaml
+      - name: Check test coverage
+        id: coverage
+        uses: vladopajic/go-test-coverage@v2
+        continue-on-error: true # Should fail after coverage comment is posted
+        with:
+          config: .testcoverage.yaml
 
-#      - name: Post coverage report
-#        uses: thollander/actions-comment-pull-request@v3
-#        with:
-#          github-token: ${{ secrets.GITHUB_TOKEN }}
-#          comment-tag: coverage-report
-#          message: |
-#            go-test-coverage report:
-#            ```${{ fromJSON(steps.coverage.outputs.report) }}```
-#
-#      - name: Finally check coverage
-#        if: false # Temporarily disabled until thresholds are adjusted
-#        #if: steps.coverage.outcome == 'failure'
-#        shell: bash
-#        run: echo "coverage check failed" && exit 1
+      - name: Post coverage report
+        uses: thollander/actions-comment-pull-request@v3
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          comment-tag: coverage-report
+          message: |
+            go-test-coverage report:
+            ```${{ fromJSON(steps.coverage.outputs.report) }}```
+
+      - name: Finally check coverage
+        if: false # Temporarily disabled until thresholds are adjusted
+        #if: steps.coverage.outcome == 'failure'
+        shell: bash
+        run: echo "coverage check failed" && exit 1
 
       - name: Setup integration tests
         run: just up

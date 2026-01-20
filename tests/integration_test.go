@@ -31,7 +31,9 @@ import (
 	"testing"
 )
 
-func TestDummyKubeconfigPrint(t *testing.T) {
+// Test_CreateStream verifies that creating a TestStreamDefinition results in the creation of both backfill and regular streaming jobs.
+// It watches for Job events in the Kubernetes cluster and checks that at least one backfill job and one regular job are created and completed.
+func Test_CreateStream(t *testing.T) {
 	g, ctx := errgroup.WithContext(t.Context())
 	mgr := createManager(t, ctx, g)
 	t.Cleanup(func() {
@@ -86,7 +88,7 @@ watchLoop:
 		}
 	}
 
-	require.GreaterOrEqual(t, len(jobs), 2, "Should have received at least 2 jobs (1 backfill and 1 regular)")
+	require.GreaterOrEqual(t, len(jobs), 2, "Should have received at least 2 jobs (1 backfill and 1 regular), but got %d", len(jobs))
 
 	backfillFound := false
 	regularFound := false
