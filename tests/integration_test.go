@@ -22,6 +22,7 @@ import (
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/klog/v2"
 	"os"
 	"os/exec"
 	controllerruntime "sigs.k8s.io/controller-runtime"
@@ -116,13 +117,13 @@ func createTestStreamDefinition(t *testing.T, mgr manager.Manager, ctx context.C
 			Destination: "mock-destination",
 			Suspended:   false,
 			JobTemplateRef: corev1.ObjectReference{
-				APIVersion: "streaming.sneaksanddata.com/v1beta1",
+				APIVersion: "streaming.sneaksanddata.com/v1",
 				Kind:       "StreamingJobTemplate",
 				Name:       "arcane-stream-mock",
 				Namespace:  "default",
 			},
 			BackfillJobTemplateRef: corev1.ObjectReference{
-				APIVersion: "streaming.sneaksanddata.com/v1beta1",
+				APIVersion: "streaming.sneaksanddata.com/v1",
 				Kind:       "StreamingJobTemplate",
 				Name:       "arcane-stream-mock",
 				Namespace:  "default",
@@ -165,6 +166,12 @@ var (
 func TestMain(m *testing.M) {
 	flag.StringVar(&kubeconfigCmd, "kubeconfig-cmd", "/opt/homebrew/bin/kind get kubeconfig", "Command to execute that outputs kubeconfig YAML content")
 	flag.Parse()
+
+	// Initialize logger to avoid controller-runtime warnings
+	klog.InitFlags(nil)
+	logger := klog.Background()
+	controllerruntime.SetLogger(logger)
+
 	if testing.Short() {
 		fmt.Println("Skipping integration tests in short mode")
 		return

@@ -74,7 +74,7 @@ jobs:
         run: just up
 
       - name: Run integration tests
-        run: go test -v ./tests/... -count=1 -kubeconfig-cmd "kind get kubeconfig"
+        run: go test -v ./tests/... -count=1 -kubeconfig-cmd "kind get kubeconfig" -timeout 3m
 
       - name: Get logs from application pods
         if: always()
