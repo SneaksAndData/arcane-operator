@@ -73,6 +73,9 @@ jobs:
       - name: Setup integration tests
         run: just up
 
+      - name: Run integration tests
+        run: go test -v ./tests/... -count=1
+
       - name: Get logs from application pods
         if: always()
         run: |

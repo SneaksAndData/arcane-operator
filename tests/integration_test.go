@@ -74,7 +74,7 @@ watchLoop:
 			}
 			t.Logf("Received job event: Type=%s, Object=%T", event.Type, event.Object)
 			job := stream.NewStreamingJobFromV1Job(event.Object.(*batchv1.Job))
-			jobs[job.ObjectMeta.UID] = job.IsBackfill()
+			jobs[job.UID] = job.IsBackfill()
 			if job.IsCompleted() && !job.IsBackfill() {
 				t.Log("Job is completed, stopping watcher")
 				break watchLoop
@@ -146,6 +146,7 @@ func createManager(t *testing.T, ctx context.Context, g *errgroup.Group) manager
 	jobBuilder := job_builder.NewDefaultJobBuilder(mgr.GetClient())
 	controllerFactory := stream.NewStreamControllerFactory(mgr.GetClient(), jobBuilder, mgr)
 	err = stream_class.NewStreamClassReconciler(mgr.GetClient(), controllerFactory).SetupWithManager(mgr)
+	require.NoError(t, err)
 
 	g.Go(func() error {
 		return mgr.Start(ctx)
