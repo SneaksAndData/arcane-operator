@@ -10,6 +10,7 @@ import (
 	"github.com/SneaksAndData/arcane-operator/services/controllers/stream_class"
 	"github.com/SneaksAndData/arcane-operator/services/job/job_builder"
 	mockv1 "github.com/SneaksAndData/arcane-stream-mock/pkg/apis/streaming/v1"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/sync/errgroup"
 	batchv1 "k8s.io/api/batch/v1"
@@ -61,7 +62,7 @@ func Test_CreateStream(t *testing.T) {
 	require.NoError(t, err)
 
 	// Act
-	createTestStreamDefinition(t, mgr, ctx)
+	name := createTestStreamDefinition(t, mgr, ctx)
 
 	// Collect job events from the watcher channel
 	jobs := make(map[types.UID]bool)
@@ -75,8 +76,19 @@ watchLoop:
 				t.Error("watcher channel closed")
 				break watchLoop
 			}
+			rawJob, ok := event.Object.(*batchv1.Job)
+			if !ok {
+				t.Fatal("expected Job object, got %T", event.Object)
+				return
+			}
+
+			if rawJob.Name != name {
+				t.Logf("unexpected job name: %s, skipping", rawJob.Name)
+				continue
+			}
+
 			t.Logf("Received job event: Type=%s, Object=%T", event.Type, event.Object)
-			job := stream.NewStreamingJobFromV1Job(event.Object.(*batchv1.Job))
+			job := stream.NewStreamingJobFromV1Job(rawJob)
 			jobs[job.UID] = job.IsBackfill()
 			if job.IsCompleted() && !job.IsBackfill() {
 				t.Log("Job is completed, stopping watcher")
@@ -103,15 +115,17 @@ watchLoop:
 	require.True(t, regularFound, "Should have received at least 1 regular job")
 }
 
-func createTestStreamDefinition(t *testing.T, mgr manager.Manager, ctx context.Context) {
+func createTestStreamDefinition(t *testing.T, mgr manager.Manager, ctx context.Context) string {
 	// Create a TestStreamDefinition with dummy data
+	streamId, err := uuid.NewUUID()
+	require.NoError(t, err)
 	testStream := &mockv1.TestStreamDefinition{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "streaming.sneaksanddata.com/v1",
 			Kind:       "TestStreamDefinition",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-stream",
+			Name:      streamId.String(),
 			Namespace: "default",
 		},
 		Spec: mockv1.TestsStreamDefinitionSpec{
@@ -135,9 +149,11 @@ func createTestStreamDefinition(t *testing.T, mgr manager.Manager, ctx context.C
 	}
 
 	// Create the TestStreamDefinition in the cluster
-	err := mgr.GetClient().Create(ctx, testStream)
+	err = mgr.GetClient().Create(ctx, testStream)
 	require.NoError(t, err)
 	t.Logf("Created TestStreamDefinition: %s/%s", testStream.Namespace, testStream.Name)
+
+	return streamId.String()
 }
 
 func createManager(t *testing.T, ctx context.Context, g *errgroup.Group) manager.Manager {
