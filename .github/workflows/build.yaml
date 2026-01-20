@@ -67,8 +67,7 @@ jobs:
             ```${{ fromJSON(steps.coverage.outputs.report) }}```
 
       - name: Finally check coverage
-        if: false # Temporarily disabled until thresholds are adjusted
-        #if: steps.coverage.outcome == 'failure'
+        if: steps.coverage.outcome == 'failure'
         shell: bash
         run: echo "coverage check failed" && exit 1
 
