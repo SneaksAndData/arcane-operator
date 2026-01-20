@@ -78,7 +78,7 @@ watchLoop:
 			}
 			rawJob, ok := event.Object.(*batchv1.Job)
 			if !ok {
-				t.Fatal("expected Job object, got %T", event.Object)
+				t.Fatalf("expected Job object, got %T", event.Object)
 				return
 			}
 

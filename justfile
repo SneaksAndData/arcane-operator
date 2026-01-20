@@ -25,4 +25,4 @@ install-stream:
 mock-stream-plugin:
     helm install arcane-stream-mock oci://ghcr.io/sneaksanddata/helm/arcane-stream-mock \
         --namespace default \
-        --version v1.0.0-1-gc933a72
+        --version v1.0.1
