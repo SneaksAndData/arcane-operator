@@ -9,11 +9,14 @@ import (
 	"github.com/SneaksAndData/arcane-operator/services/controllers/stream"
 	"github.com/SneaksAndData/arcane-operator/services/controllers/stream_class"
 	"github.com/SneaksAndData/arcane-operator/services/job/job_builder"
+	mockv1 "github.com/SneaksAndData/arcane-stream-mock/pkg/apis/streaming/v1"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/sync/errgroup"
 	batchv1 "k8s.io/api/batch/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	apiruntime "k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/kubernetes"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -27,76 +30,111 @@ import (
 	"testing"
 )
 
-var (
-	kubeconfigCmd string
-	kubeConfig    *rest.Config
-	scheme        = apiruntime.NewScheme()
-)
-
 func TestDummyKubeconfigPrint(t *testing.T) {
-	// Arrange
-	ctx, cancel := context.WithCancel(t.Context())
-	g, ctx := errgroup.WithContext(ctx)
+	g, ctx := errgroup.WithContext(t.Context())
 	mgr := createManager(t, ctx, g)
 	t.Cleanup(func() {
-		cancel()
 		err := g.Wait()
-		if err != nil && !errors.Is(err, context.Canceled) {
+		if errors.Is(err, context.Canceled) {
+			return
+		}
+		if err != nil {
 			t.Errorf("manager stopped with error: %v", err)
 		}
 	})
 
 	// Act
-	// Wait for manager to be elected/ready
-
 	<-mgr.Elected()
 
 	// Create Kubernetes job client
-	clientset, err := kubernetes.NewForConfig(kubeConfig)
-	require.NoError(t, err)
 
-	jobClient := clientset.BatchV1().Jobs("")
+	jobClient := clientSet.BatchV1().Jobs("")
 	require.NotNil(t, jobClient)
 
-	t.Log("Job client created successfully")
-
-	// Create a watcher for jobs
 	watcher, err := jobClient.Watch(ctx, metav1.ListOptions{})
-	require.NoError(t, err)
-	require.NotNil(t, watcher)
-
 	t.Cleanup(func() {
 		watcher.Stop()
 	})
+	require.NoError(t, err)
 
-	t.Log("Job watcher created successfully")
+	// Act
+	createTestStreamDefinition(t, mgr, ctx)
 
 	// Collect job events from the watcher channel
-	var jobEvents []interface{}
+	jobs := make(map[types.UID]bool)
 
 	// Watch for job events in the main thread
+watchLoop:
 	for {
 		select {
 		case event, ok := <-watcher.ResultChan():
 			if !ok {
-				t.Log("Watcher channel closed")
-				return
+				t.Error("watcher channel closed")
+				break watchLoop
 			}
 			t.Logf("Received job event: Type=%s, Object=%T", event.Type, event.Object)
 			job := stream.NewStreamingJobFromV1Job(event.Object.(*batchv1.Job))
-			jobEvents = append(jobEvents, job)
-			if job.IsCompleted() && job.Labels["arcane/backfilling"] == "false" {
+			jobs[job.ObjectMeta.UID] = job.IsBackfill()
+			if job.IsCompleted() && !job.IsBackfill() {
 				t.Log("Job is completed, stopping watcher")
-				t.Logf("Total job events collected: %d", len(jobEvents))
-				return
+				break watchLoop
 			}
 		case <-ctx.Done():
-			t.Log("Context cancelled, stopping job watcher")
-			t.Logf("Total job events collected: %d", len(jobEvents))
+			t.Fatal("Job watcher stopped with timeout or cancellation")
 			return
 		}
 	}
 
+	require.GreaterOrEqual(t, len(jobs), 2, "Should have received at least 2 jobs (1 backfill and 1 regular)")
+
+	backfillFound := false
+	regularFound := false
+	for _, isBackfill := range jobs {
+		if isBackfill {
+			backfillFound = true
+		} else {
+			regularFound = true
+		}
+	}
+	require.True(t, backfillFound, "Should have received at least 1 backfill job")
+	require.True(t, regularFound, "Should have received at least 1 regular job")
+}
+
+func createTestStreamDefinition(t *testing.T, mgr manager.Manager, ctx context.Context) {
+	// Create a TestStreamDefinition with dummy data
+	testStream := &mockv1.TestStreamDefinition{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "streaming.sneaksanddata.com/v1",
+			Kind:       "TestStreamDefinition",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-stream",
+			Namespace: "default",
+		},
+		Spec: mockv1.TestsStreamDefinitionSpec{
+			Source:      "mock-source",
+			Destination: "mock-destination",
+			Suspended:   false,
+			JobTemplateRef: corev1.ObjectReference{
+				APIVersion: "streaming.sneaksanddata.com/v1beta1",
+				Kind:       "StreamingJobTemplate",
+				Name:       "arcane-stream-mock",
+				Namespace:  "default",
+			},
+			BackfillJobTemplateRef: corev1.ObjectReference{
+				APIVersion: "streaming.sneaksanddata.com/v1beta1",
+				Kind:       "StreamingJobTemplate",
+				Name:       "arcane-stream-mock",
+				Namespace:  "default",
+			},
+			RunDuration: "15s",
+		},
+	}
+
+	// Create the TestStreamDefinition in the cluster
+	err := mgr.GetClient().Create(ctx, testStream)
+	require.NoError(t, err)
+	t.Logf("Created TestStreamDefinition: %s/%s", testStream.Namespace, testStream.Name)
 }
 
 func createManager(t *testing.T, ctx context.Context, g *errgroup.Group) manager.Manager {
@@ -116,6 +154,13 @@ func createManager(t *testing.T, ctx context.Context, g *errgroup.Group) manager
 	return mgr
 }
 
+var (
+	kubeconfigCmd string
+	kubeConfig    *rest.Config
+	scheme        = apiruntime.NewScheme()
+	clientSet     *kubernetes.Clientset
+)
+
 func TestMain(m *testing.M) {
 	flag.Parse()
 	if testing.Short() {
@@ -130,6 +175,11 @@ func TestMain(m *testing.M) {
 		panic(fmt.Errorf("error reading kubeconfig: %w", err))
 	}
 
+	clientSet, err = kubernetes.NewForConfig(kubeConfig)
+	if err != nil {
+		panic(fmt.Errorf("error creating kubernetes clientSet: %w", err))
+	}
+
 	// Run tests
 	exitCode := m.Run()
 
@@ -139,6 +189,7 @@ func TestMain(m *testing.M) {
 func setupScheme() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 	utilruntime.Must(v1.AddToScheme(scheme))
+	utilruntime.Must(mockv1.AddToScheme(scheme))
 }
 
 func readKubeconfig() (*rest.Config, error) {

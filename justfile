@@ -3,7 +3,7 @@ default:
 
 fresh: stop up
 
-up: start-kind-cluster build-deps integration-tests mock-stream-plugin test-stream-definition
+up: start-kind-cluster build-deps integration-tests mock-stream-plugin
 
 start-kind-cluster:
     kind create cluster
@@ -26,6 +26,3 @@ mock-stream-plugin:
     helm install arcane-stream-mock oci://ghcr.io/sneaksanddata/helm/arcane-stream-mock \
         --namespace default \
         --version v1.0.0
-
-test-stream-definition:
-    kubectl apply -f integration_tests/manifests/test_stream_definition.yaml
