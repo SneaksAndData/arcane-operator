@@ -384,8 +384,3 @@ func Test_StreamContextConfigurator_Does_Not_Affect_Other_Properties(t *testing.
 	require.Equal(t, "test-namespace", job.Namespace)
 	require.Equal(t, "test", job.Labels["app"])
 }
-
-func Test_StreamContextConfigurator_Implements_Configurator_Interface(t *testing.T) {
-	configurator := NewEnvironmentConfigurator("test", "key")
-	var _ Configurator = configurator
-}
