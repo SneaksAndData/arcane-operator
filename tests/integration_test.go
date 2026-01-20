@@ -163,6 +163,7 @@ var (
 )
 
 func TestMain(m *testing.M) {
+	flag.StringVar(&kubeconfigCmd, "kubeconfig-cmd", "/opt/homebrew/bin/kind get kubeconfig", "Command to execute that outputs kubeconfig YAML content")
 	flag.Parse()
 	if testing.Short() {
 		fmt.Println("Skipping integration tests in short mode")
@@ -194,8 +195,6 @@ func setupScheme() {
 }
 
 func readKubeconfig() (*rest.Config, error) {
-	flag.StringVar(&kubeconfigCmd, "kubeconfig-cmd", "/opt/homebrew/bin/kind get kubeconfig", "Command to execute that outputs kubeconfig YAML content")
-	flag.Parse()
 
 	// Parse and execute the command
 	cmdParts := strings.Fields(kubeconfigCmd)
