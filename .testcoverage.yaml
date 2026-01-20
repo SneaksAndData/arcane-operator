@@ -18,3 +18,4 @@ exclude:
     - hack/*.go            # exclude hack folder
     - tests/mocks          # exclude mocks
     - main.go              # application entry point
+    - telemetry/app_metrics.go # telemetry initialization code
