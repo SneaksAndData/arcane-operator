@@ -31,8 +31,7 @@ func Test_NameConfigurator_Empty_Name(t *testing.T) {
 
 	configurator := NewNameConfigurator("")
 	err := configurator.ConfigureJob(job)
-	require.NoError(t, err)
-	require.Equal(t, "", job.Name)
+	require.Error(t, err)
 }
 
 func Test_NameConfigurator_Name_Does_Not_Affect_Other_Properties(t *testing.T) {
