@@ -1,6 +1,9 @@
 package job
 
-import batchv1 "k8s.io/api/batch/v1"
+import (
+	"errors"
+	batchv1 "k8s.io/api/batch/v1"
+)
 
 var _ Configurator = (*nameConfigurator)(nil)
 
@@ -10,6 +13,9 @@ type nameConfigurator struct {
 }
 
 func (c *nameConfigurator) ConfigureJob(job *batchv1.Job) error {
+	if c.name == "" {
+		return errors.New("job name cannot be empty in nameConfigurator")
+	}
 	job.Name = c.name
 	return nil
 }

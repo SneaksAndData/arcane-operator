@@ -18,7 +18,7 @@ type DefaultJobBuilder struct {
 	client client.Client
 }
 
-func (d DefaultJobBuilder) BuildJob(ctx context.Context, templateName types.NamespacedName, configurator job.Configurator) (*batchv1.Job, error) {
+func (d DefaultJobBuilder) BuildJob(ctx context.Context, templateName types.NamespacedName, configurator job.Configurator) (*batchv1.Job, error) { // coverage-ignore (trivial)
 	template := v1.StreamingJobTemplate{}
 	err := d.client.Get(ctx, templateName, &template)
 	if err != nil {

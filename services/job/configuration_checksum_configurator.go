@@ -1,6 +1,8 @@
 package job
 
 import (
+	"errors"
+
 	batchv1 "k8s.io/api/batch/v1"
 )
 
@@ -13,6 +15,10 @@ type ConfigurationChecksumConfigurator struct {
 
 // ConfigureJob sets the configuration checksum annotation on the job.
 func (c *ConfigurationChecksumConfigurator) ConfigureJob(job *batchv1.Job) error {
+	if c.configurationChecksum == "" {
+		return errors.New("configuration checksum cannot be empty")
+	}
+
 	if job.Annotations == nil {
 		job.Annotations = make(map[string]string)
 	}

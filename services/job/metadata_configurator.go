@@ -17,6 +17,13 @@ type metadataConfigurator struct {
 }
 
 func (f metadataConfigurator) ConfigureJob(job *batchv1.Job) error {
+	if f.streamId == "" {
+		return fmt.Errorf("streamId cannot be empty")
+	}
+	if f.streamKind == "" {
+		return fmt.Errorf("streamKind cannot be empty")
+	}
+
 	err := f.addEnvironmentVariable(job, "STREAMCONTEXT__STREAM_ID", f.streamId)
 	if err != nil {
 		return err

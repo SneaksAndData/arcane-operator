@@ -2,6 +2,7 @@ package job
 
 import (
 	"github.com/stretchr/testify/require"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"testing"
 
 	batchv1 "k8s.io/api/batch/v1"
@@ -28,8 +29,13 @@ func Test_BackfillConfigurator_Labels_False(t *testing.T) {
 }
 
 func Test_BackfillConfigurator_Labels_Not_Empty(t *testing.T) {
-	job := &batchv1.Job{}
-	job.Labels["arcane/backfilling"] = "SomeValue"
+	job := &batchv1.Job{
+		ObjectMeta: metav1.ObjectMeta{
+			Labels: map[string]string{
+				"existing-label": "existing-value",
+			},
+		},
+	}
 	configurator := NewBackfillConfigurator(false)
 	err := configurator.ConfigureJob(job)
 	require.NoError(t, err)
