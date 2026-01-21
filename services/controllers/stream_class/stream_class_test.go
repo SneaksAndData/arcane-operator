@@ -77,14 +77,15 @@ func Test_UpdatePhase_ToRunning_Idempotence(t *testing.T) {
 		},
 	})
 
+	started := make(chan bool, 10)
 	streamController := mocks.NewMockController[reconcile.Request](mockCtrl)
-	started := make(chan bool, 1)
-	streamController.EXPECT().Start(gomock.Any()).Do(func(ctx context.Context, obj client.Object) {
+	streamController.EXPECT().Start(gomock.Any()).Do(func(ctx context.Context) {
 		started <- true
+		// Do not close the channel here to allow multiple calls. It will make the test easier to reason about.
 	})
 
 	streamReconcilerFactory := mocks.NewMockUnmanagedControllerFactory(mockCtrl)
-	streamReconcilerFactory.EXPECT().CreateStreamController(gomock.Any(), gomock.Any(), gomock.Any()).Return(streamController, nil)
+	streamReconcilerFactory.EXPECT().CreateStreamController(gomock.Any(), gomock.Any(), gomock.Any()).Return(streamController, nil).Times(1)
 
 	reconciler := NewStreamClassReconciler(k8sClient, streamReconcilerFactory)
 

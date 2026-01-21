@@ -78,7 +78,7 @@ func (s *StreamClassReconciler) tryStartStreamController(ctx context.Context, sc
 
 	_, ok := s.streamControllers[name]
 	if ok {
-		logger.V(2).Info("Stream controller is already running")
+		logger.V(0).Info("Stream controller is already running")
 		return s.updatePhase(ctx, sc, name, nextPhase)
 	}
 

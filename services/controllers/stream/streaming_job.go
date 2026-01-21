@@ -9,9 +9,9 @@ import (
 
 type StreamingJob v1.Job
 
-func (j StreamingJob) CurrentConfiguration() (string, error) {
+func (j StreamingJob) CurrentConfiguration() (string, error) { // coverage-ignore (trivial)
 	value, ok := j.Annotations[job.ConfigurationHashAnnotation]
-	if !ok { // coverage-ignore
+	if !ok {
 		return "", fmt.Errorf("job does not contain configuration hash")
 	}
 	return value, nil
@@ -38,6 +38,6 @@ func (j StreamingJob) IsBackfill() bool { // coverage-ignore (trivial)
 	return strings.ToLower(val) == "true"
 }
 
-func NewStreamingJobFromV1Job(job *v1.Job) StreamingJob { // coverage-ignore
+func NewStreamingJobFromV1Job(job *v1.Job) StreamingJob { // coverage-ignore (trivial)
 	return StreamingJob(*job)
 }
