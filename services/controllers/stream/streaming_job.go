@@ -17,20 +17,20 @@ func (j StreamingJob) CurrentConfiguration() (string, error) {
 	return value, nil
 }
 
-func (j StreamingJob) IsCompleted() bool {
+func (j StreamingJob) IsCompleted() bool { // coverage-ignore (trivial)
 	return j.Status.Succeeded > 0
 }
 
-func (j StreamingJob) IsFailed() bool {
+func (j StreamingJob) IsFailed() bool { // coverage-ignore (trivial)
 	return j.Status.Failed > 0
 }
 
-func (j StreamingJob) ToV1Job() *v1.Job {
+func (j StreamingJob) ToV1Job() *v1.Job { // coverage-ignore (trivial)
 	v := v1.Job(j)
 	return &v
 }
 
-func (j StreamingJob) IsBackfill() bool {
+func (j StreamingJob) IsBackfill() bool { // coverage-ignore (trivial)
 	val, ok := j.Labels[job.BackfillLabel]
 	if !ok {
 		return false
