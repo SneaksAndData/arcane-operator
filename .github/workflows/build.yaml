@@ -7,15 +7,12 @@ on:
     branches: [ main ]
     
 env:
-  PROJECT_NAME: Arcane.Operator
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
-  
+
 jobs:
   validate_commit:
     name: Validate commit
     runs-on: ubuntu-latest
-    # Temporarily disable commit validation
     if: ${{ github.ref != 'refs/heads/main' }}
     steps:
       - uses: actions/checkout@v6
@@ -23,7 +20,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v6.1.0
         with:
-          go-version: '1.24.*'
+          go-version: '1.25.*'
 
       - uses: extractions/setup-just@v3
 
@@ -44,11 +41,9 @@ jobs:
 
       - name: Lint
         uses: golangci/golangci-lint-action@v9
-        with:
-          version: v2.1.0
 
       - name: Run unit tests
-        run: go test -v ./... -coverprofile=./cover.out -covermode=atomic -coverpkg=./...
+        run: go test -v ./... -coverprofile=./cover.out -covermode=atomic -coverpkg=./... -short
 
       - name: Check test coverage
         id: coverage
@@ -74,6 +69,9 @@ jobs:
 
       - name: Setup integration tests
         run: just up
+
+      - name: Run integration tests
+        run: go test -v ./tests/... -count=1 -kubeconfig-cmd "kind get kubeconfig" -timeout 3m
 
       - name: Get logs from application pods
         if: always()

@@ -39,7 +39,7 @@ func (f backfillConfigurator) ConfigureJob(job *batchv1.Job) error {
 	if job.Labels == nil {
 		job.Labels = make(map[string]string)
 	}
-	job.Labels["arcane/backfilling"] = strconv.FormatBool(f.value)
+	job.Labels[BackfillLabel] = strconv.FormatBool(f.value)
 
 	return nil
 }
