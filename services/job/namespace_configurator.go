@@ -1,6 +1,10 @@
 package job
 
-import batchv1 "k8s.io/api/batch/v1"
+import (
+	"fmt"
+
+	batchv1 "k8s.io/api/batch/v1"
+)
 
 var _ Configurator = &namespaceConfigurator{}
 
@@ -10,6 +14,9 @@ type namespaceConfigurator struct {
 }
 
 func (f namespaceConfigurator) ConfigureJob(job *batchv1.Job) error {
+	if f.Namespace == "" {
+		return fmt.Errorf("namespace cannot be empty")
+	}
 	job.Namespace = f.Namespace
 	return nil
 }

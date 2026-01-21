@@ -19,7 +19,7 @@ type TypedSecondaryWatcher[object client.Object] struct {
 }
 
 // SetupWithController sets up the watcher with the given controller
-func (w *TypedSecondaryWatcher[object]) SetupWithController(controller controller.Controller, obj object) error {
+func (w *TypedSecondaryWatcher[object]) SetupWithController(controller controller.Controller, obj object) error { // coverage-ignore (trivial)
 	err := controller.Watch(source.Kind(w.cache, obj, w.handler, w.filter))
 	if err != nil {
 		return fmt.Errorf("failed to watch backfills: %w", err)

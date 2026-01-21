@@ -17,6 +17,13 @@ type metadataConfigurator struct {
 }
 
 func (f metadataConfigurator) ConfigureJob(job *batchv1.Job) error {
+	if f.streamId == "" {
+		return fmt.Errorf("streamId cannot be empty")
+	}
+	if f.streamKind == "" {
+		return fmt.Errorf("streamKind cannot be empty")
+	}
+
 	err := f.addEnvironmentVariable(job, "STREAMCONTEXT__STREAM_ID", f.streamId)
 	if err != nil {
 		return err
@@ -39,6 +46,12 @@ func (f metadataConfigurator) ConfigureJob(job *batchv1.Job) error {
 func (f metadataConfigurator) addEnvironmentVariable(job *batchv1.Job, name string, value string) error {
 	envVar := corev1.EnvVar{Name: name, Value: value}
 	for k := range job.Spec.Template.Spec.Containers {
+		if len(job.Spec.Template.Spec.Containers[k].Env) == 0 {
+			job.Spec.Template.Spec.Containers[k].Env = []corev1.EnvVar{
+				envVar,
+			}
+			continue
+		}
 		for v := range job.Spec.Template.Spec.Containers[k].Env {
 			if job.Spec.Template.Spec.Containers[k].Env[v].Name == name {
 				return fmt.Errorf("environment variable %s already present", name)

@@ -10,12 +10,14 @@ import (
 	runtime "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"sync"
 )
 
 var _ reconcile.Reconciler = (*StreamClassReconciler)(nil)
 
 type StreamClassReconciler struct {
 	client                  client.Client
+	rwLock                  sync.RWMutex
 	streamControllers       map[types.NamespacedName]*StreamControllerHandle
 	streamControllerFactory UnmanagedControllerFactory
 }
@@ -69,11 +71,14 @@ func (s *StreamClassReconciler) moveFsm(ctx context.Context, sc *v1.StreamClass,
 }
 
 func (s *StreamClassReconciler) tryStartStreamController(ctx context.Context, sc *v1.StreamClass, name types.NamespacedName, nextPhase v1.Phase) (reconcile.Result, error) {
+	s.rwLock.Lock()
+	defer s.rwLock.Unlock()
+
 	logger := s.getLogger(ctx, name)
 
 	_, ok := s.streamControllers[name]
 	if ok {
-		logger.V(2).Info("Stream controller is already running")
+		logger.V(0).Info("Stream controller is already running")
 		return s.updatePhase(ctx, sc, name, nextPhase)
 	}
 
@@ -99,11 +104,15 @@ func (s *StreamClassReconciler) tryStartStreamController(ctx context.Context, sc
 		}
 	}()
 
+	logger.V(1).Info("Stream controller is started")
 	s.streamControllers[name] = &StreamControllerHandle{cancelFunc: cancelFunc}
 	return s.updatePhase(ctx, sc, name, nextPhase)
 }
 
 func (s *StreamClassReconciler) tryStopStreamController(ctx context.Context, name types.NamespacedName) (reconcile.Result, error) {
+	s.rwLock.Lock()
+	defer s.rwLock.Unlock()
+
 	logger := s.getLogger(ctx, name)
 	_, ok := s.streamControllers[name]
 	if !ok {
