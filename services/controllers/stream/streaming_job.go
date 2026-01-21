@@ -38,6 +38,6 @@ func (j StreamingJob) IsBackfill() bool { // coverage-ignore (trivial)
 	return strings.ToLower(val) == "true"
 }
 
-func NewStreamingJobFromV1Job(job *v1.Job) StreamingJob { // coverage-ignore (constructor)
+func NewStreamingJobFromV1Job(job *v1.Job) StreamingJob { // coverage-ignore
 	return StreamingJob(*job)
 }
