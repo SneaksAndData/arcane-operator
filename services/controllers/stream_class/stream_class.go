@@ -104,6 +104,7 @@ func (s *StreamClassReconciler) tryStartStreamController(ctx context.Context, sc
 		}
 	}()
 
+	logger.V(1).Info("Stream controller is started")
 	s.streamControllers[name] = &StreamControllerHandle{cancelFunc: cancelFunc}
 	return s.updatePhase(ctx, sc, name, nextPhase)
 }

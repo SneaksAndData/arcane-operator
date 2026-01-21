@@ -1,6 +1,7 @@
 package stream_class
 
 import (
+	"context"
 	"fmt"
 	"github.com/SneaksAndData/arcane-operator/tests/mocks"
 	"github.com/google/uuid"
@@ -77,7 +78,10 @@ func Test_UpdatePhase_ToRunning_Idempotence(t *testing.T) {
 	})
 
 	streamController := mocks.NewMockController[reconcile.Request](mockCtrl)
-	streamController.EXPECT().Start(gomock.Any())
+	started := make(chan bool, 1)
+	streamController.EXPECT().Start(gomock.Any()).Do(func(ctx context.Context, obj client.Object) {
+		started <- true
+	})
 
 	streamReconcilerFactory := mocks.NewMockUnmanagedControllerFactory(mockCtrl)
 	streamReconcilerFactory.EXPECT().CreateStreamController(gomock.Any(), gomock.Any(), gomock.Any()).Return(streamController, nil)
@@ -90,6 +94,9 @@ func Test_UpdatePhase_ToRunning_Idempotence(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, result, reconcile.Result{})
 	}
+
+	// Wait for the stream controller to start at least once
+	<-started
 
 	// Assert
 	expectPhase(t, k8sClient, name, v1.PhaseReady)
