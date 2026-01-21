@@ -10,12 +10,14 @@ import (
 	runtime "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"sync"
 )
 
 var _ reconcile.Reconciler = (*StreamClassReconciler)(nil)
 
 type StreamClassReconciler struct {
 	client                  client.Client
+	rwLock                  sync.RWMutex
 	streamControllers       map[types.NamespacedName]*StreamControllerHandle
 	streamControllerFactory UnmanagedControllerFactory
 }
@@ -69,6 +71,9 @@ func (s *StreamClassReconciler) moveFsm(ctx context.Context, sc *v1.StreamClass,
 }
 
 func (s *StreamClassReconciler) tryStartStreamController(ctx context.Context, sc *v1.StreamClass, name types.NamespacedName, nextPhase v1.Phase) (reconcile.Result, error) {
+	s.rwLock.Lock()
+	defer s.rwLock.Unlock()
+
 	logger := s.getLogger(ctx, name)
 
 	_, ok := s.streamControllers[name]
@@ -104,6 +109,9 @@ func (s *StreamClassReconciler) tryStartStreamController(ctx context.Context, sc
 }
 
 func (s *StreamClassReconciler) tryStopStreamController(ctx context.Context, name types.NamespacedName) (reconcile.Result, error) {
+	s.rwLock.Lock()
+	defer s.rwLock.Unlock()
+
 	logger := s.getLogger(ctx, name)
 	_, ok := s.streamControllers[name]
 	if !ok {
