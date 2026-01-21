@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/SneaksAndData/arcane-operator/services/job"
 	v1 "k8s.io/api/batch/v1"
+	"strings"
 )
 
 type StreamingJob v1.Job
@@ -27,6 +28,14 @@ func (j StreamingJob) IsFailed() bool {
 func (j StreamingJob) ToV1Job() *v1.Job {
 	v := v1.Job(j)
 	return &v
+}
+
+func (j StreamingJob) IsBackfill() bool {
+	val, ok := j.Labels[job.BackfillLabel]
+	if !ok {
+		return false
+	}
+	return strings.ToLower(val) == "true"
 }
 
 func NewStreamingJobFromV1Job(job *v1.Job) StreamingJob {
