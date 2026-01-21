@@ -9,6 +9,7 @@ import (
 	"github.com/SneaksAndData/arcane-operator/services/controllers/stream"
 	"github.com/SneaksAndData/arcane-operator/services/controllers/stream_class"
 	"github.com/SneaksAndData/arcane-operator/services/job/job_builder"
+	"github.com/SneaksAndData/arcane-operator/services/ui"
 	mockv1 "github.com/SneaksAndData/arcane-stream-mock/pkg/apis/streaming/v1"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
@@ -21,8 +22,10 @@ import (
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/kubernetes"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	typedcorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/tools/record"
 	"k8s.io/klog/v2"
 	"os"
 	"os/exec"
@@ -163,7 +166,13 @@ func createManager(t *testing.T, ctx context.Context, g *errgroup.Group) manager
 	require.NoError(t, err)
 
 	jobBuilder := job_builder.NewDefaultJobBuilder(mgr.GetClient())
-	controllerFactory := stream.NewStreamControllerFactory(mgr.GetClient(), jobBuilder, mgr)
+
+	eventBroadcaster := record.NewBroadcaster()
+	eventBroadcaster.StartLogging(klog.Infof)
+	eventBroadcaster.StartRecordingToSink(&typedcorev1.EventSinkImpl{Interface: clientSet.CoreV1().Events("")})
+	eventRecorder := eventBroadcaster.NewRecorder(scheme, corev1.EventSource{Component: "Arcane-Operator-Test"})
+	us := ui.NewUserInterfaceService(eventRecorder)
+	controllerFactory := stream.NewStreamControllerFactory(mgr.GetClient(), jobBuilder, mgr, us)
 	err = stream_class.NewStreamClassReconciler(mgr.GetClient(), controllerFactory).SetupWithManager(mgr)
 	require.NoError(t, err)
 

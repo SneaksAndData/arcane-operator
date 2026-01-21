@@ -98,6 +98,7 @@ func (u *unstructuredWrapper) ToUnstructured() *unstructured.Unstructured {
 }
 
 func (u *unstructuredWrapper) SetPhase(phase Phase) error {
+	u.phase = phase
 	return setNestedPhase(u.underlying, phase, "status", "phase")
 }
 
@@ -146,6 +147,20 @@ func (u *unstructuredWrapper) GetJobTemplate(request *v1.BackfillRequest) types.
 			Namespace: namespace,
 		}
 	}
+}
+
+func (u *unstructuredWrapper) SetConditions(conditions []metav1.Condition) error {
+	// Convert conditions to []interface{} for unstructured
+	conditionsSlice := make([]interface{}, len(conditions))
+	for i, cond := range conditions {
+		condMap, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&cond)
+		if err != nil {
+			return fmt.Errorf("failed to convert condition to unstructured: %w", err)
+		}
+		conditionsSlice[i] = condMap
+	}
+
+	return unstructured.SetNestedSlice(u.underlying.Object, conditionsSlice, "status", "conditions")
 }
 
 func (u *unstructuredWrapper) JobConfigurator() job.Configurator {

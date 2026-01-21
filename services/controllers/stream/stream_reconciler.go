@@ -29,10 +29,11 @@ var (
 )
 
 type streamReconciler struct {
-	gvk        schema.GroupVersionKind
-	client     client.Client
-	jobBuilder JobBuilder
-	className  string
+	gvk             schema.GroupVersionKind
+	client          client.Client
+	jobBuilder      JobBuilder
+	className       string
+	lifetimeService LifetimeService
 }
 
 func (s *streamReconciler) SetupUnmanaged(cache cache.Cache, scheme *runtime.Scheme, mapper meta.RESTMapper) (controller.Controller, error) {
@@ -85,12 +86,13 @@ func (s *streamReconciler) SetupUnmanaged(cache cache.Cache, scheme *runtime.Sch
 }
 
 // NewStreamReconciler creates a new StreamReconciler instance.
-func NewStreamReconciler(client client.Client, gvk schema.GroupVersionKind, jobBuilder JobBuilder, className string) controllers.UnmanagedReconciler {
+func NewStreamReconciler(client client.Client, gvk schema.GroupVersionKind, jobBuilder JobBuilder, className string, conditionService LifetimeService) controllers.UnmanagedReconciler {
 	return &streamReconciler{
-		gvk:        gvk,
-		jobBuilder: jobBuilder,
-		client:     client,
-		className:  className,
+		gvk:             gvk,
+		jobBuilder:      jobBuilder,
+		client:          client,
+		className:       className,
+		lifetimeService: conditionService,
 	}
 }
 
@@ -393,6 +395,14 @@ func (s *streamReconciler) updateStreamPhase(ctx context.Context, definition Def
 	err = definition.RecomputeConfiguration(backfillRequest)
 	if err != nil { // coverage-ignore
 		logger.V(0).Error(err, "unable to recompute Stream configuration hash")
+		return reconcile.Result{}, err
+	}
+
+	err = definition.SetConditions(s.lifetimeService.ComputeConditions(definition, backfillRequest))
+	s.lifetimeService.RecordLifetimeEvent(definition, backfillRequest)
+
+	if err != nil { // coverage-ignore
+		logger.V(0).Error(err, "unable to set Stream conditions")
 		return reconcile.Result{}, err
 	}
 

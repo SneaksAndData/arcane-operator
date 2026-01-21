@@ -7,10 +7,15 @@ import (
 	"github.com/SneaksAndData/arcane-operator/services/controllers/stream"
 	"github.com/SneaksAndData/arcane-operator/services/controllers/stream_class"
 	"github.com/SneaksAndData/arcane-operator/services/job/job_builder"
+	"github.com/SneaksAndData/arcane-operator/services/ui"
 	"github.com/SneaksAndData/arcane-operator/telemetry"
+	corev1 "k8s.io/api/core/v1"
 	apiruntime "k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/client-go/kubernetes"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	typedcorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
+	"k8s.io/client-go/tools/record"
 	"k8s.io/klog/v2"
 	controllerruntime "sigs.k8s.io/controller-runtime"
 )
@@ -51,11 +56,24 @@ func main() {
 		return
 	}
 
+	clientSet, err := kubernetes.NewForConfig(mgr.GetConfig())
+	if err != nil {
+		setupLog.V(0).Error(err, "unable to create clientset")
+		return
+	}
+
 	jobBuilder := job_builder.NewDefaultJobBuilder(mgr.GetClient())
+	eventBroadcaster := record.NewBroadcaster()
+	eventBroadcaster.StartLogging(klog.Infof)
+	eventBroadcaster.StartRecordingToSink(&typedcorev1.EventSinkImpl{Interface: clientSet.CoreV1().Events("")})
+	eventRecorder := eventBroadcaster.NewRecorder(scheme, corev1.EventSource{Component: "arcane-operator"})
+	us := ui.NewUserInterfaceService(eventRecorder)
+
 	controllerFactory := stream.NewStreamControllerFactory(
 		mgr.GetClient(),
 		jobBuilder,
 		mgr,
+		us,
 	)
 	err = stream_class.NewStreamClassReconciler(mgr.GetClient(), controllerFactory).SetupWithManager(mgr)
 	if err != nil {

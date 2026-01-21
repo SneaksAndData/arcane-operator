@@ -60,6 +60,9 @@ type Definition interface {
 
 	// GetJobTemplate returns the job template reference based on the stream definition and backfill request.
 	GetJobTemplate(request *v1.BackfillRequest) types.NamespacedName
+
+	// SetConditions returns the current conditions of the stream definition.
+	SetConditions(conditions []metav1.Condition) error
 }
 
 func fromUnstructured(obj *unstructured.Unstructured) (Definition, error) {
