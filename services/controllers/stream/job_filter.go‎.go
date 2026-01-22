@@ -28,7 +28,7 @@ func (j *JobFilter) Delete(_ event.TypedDeleteEvent[*v1.Job]) bool { // coverage
 
 // Update is called when an object is updated.
 func (j *JobFilter) Update(e event.TypedUpdateEvent[*v1.Job]) bool { // coverage-ignore (trivial)
-	return NewStreamingJobFromV1Job(e.ObjectNew).IsCompleted()
+	return NewStreamingJobFromV1Job(e.ObjectNew).IsCompleted() || NewStreamingJobFromV1Job(e.ObjectNew).IsFailed()
 }
 
 // Generic is called for generic events.
