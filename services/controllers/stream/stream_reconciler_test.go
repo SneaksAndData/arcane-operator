@@ -13,6 +13,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	crfake "sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -382,7 +383,7 @@ func Test_UpdatePhase_Backfilling_To_Suspended(t *testing.T) {
 func Test_UpdatePhase_Job_Failed(t *testing.T) {
 	// Arrange
 	k8sClient := setupClient(
-		combined(withNamedStreamDefinition(objectName), withPhase(Backfilling)),
+		combined(withNamedStreamDefinition(objectName), withPhase(Backfilling), withSuspendedSpec(false)),
 		combinedB(withBackfillRequest(objectName), withFailedJob(objectName)),
 	)
 	reconciler := createReconciler(k8sClient, nil, nil)
@@ -465,8 +466,9 @@ func createReconciler(k8sClient client.Client, mockJob *batchv1.Job, mockCtrl *g
 		jobBuilder = mocks.NewMockJobBuilder(mockCtrl)
 		jobBuilder.EXPECT().BuildJob(gomock.Any(), gomock.Any(), gomock.Any()).Return(mockJob, nil).AnyTimes()
 	}
+	recorder := record.NewFakeRecorder(10)
 	gvk := schema.GroupVersionKind{Group: "streaming.sneaksanddata.com", Version: "v1", Kind: "MockStreamDefinition"}
-	return NewStreamReconciler(k8sClient, gvk, jobBuilder, "stream-class")
+	return NewStreamReconciler(k8sClient, gvk, jobBuilder, "stream-class", recorder)
 }
 
 // Helper function that combines multiple definition modifiers into one
@@ -545,7 +547,11 @@ func withCompletedJob(n types.NamespacedName) func(definition *crfake.ClientBuil
 
 func withFailedJob(n types.NamespacedName) func(definition *crfake.ClientBuilder) {
 	return func(client2 *crfake.ClientBuilder) {
+		backoffLimit := int32(1)
 		client2.WithObjects(&batchv1.Job{
+			Spec: batchv1.JobSpec{
+				BackoffLimit: &backoffLimit,
+			},
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: n.Namespace,
 				Name:      n.Name,
