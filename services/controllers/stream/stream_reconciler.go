@@ -14,6 +14,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/tools/record"
 	"k8s.io/klog/v2"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -29,10 +30,11 @@ var (
 )
 
 type streamReconciler struct {
-	gvk        schema.GroupVersionKind
-	client     client.Client
-	jobBuilder JobBuilder
-	className  string
+	gvk           schema.GroupVersionKind
+	client        client.Client
+	jobBuilder    JobBuilder
+	className     string
+	eventRecorder record.EventRecorder
 }
 
 func (s *streamReconciler) SetupUnmanaged(cache cache.Cache, scheme *runtime.Scheme, mapper meta.RESTMapper) (controller.Controller, error) {
@@ -85,12 +87,13 @@ func (s *streamReconciler) SetupUnmanaged(cache cache.Cache, scheme *runtime.Sch
 }
 
 // NewStreamReconciler creates a new StreamReconciler instance.
-func NewStreamReconciler(client client.Client, gvk schema.GroupVersionKind, jobBuilder JobBuilder, className string) controllers.UnmanagedReconciler {
+func NewStreamReconciler(client client.Client, gvk schema.GroupVersionKind, jobBuilder JobBuilder, className string, eventRecorder record.EventRecorder) controllers.UnmanagedReconciler {
 	return &streamReconciler{
-		gvk:        gvk,
-		jobBuilder: jobBuilder,
-		client:     client,
-		className:  className,
+		gvk:           gvk,
+		jobBuilder:    jobBuilder,
+		client:        client,
+		className:     className,
+		eventRecorder: eventRecorder,
 	}
 }
 
@@ -151,48 +154,114 @@ func (s *streamReconciler) moveFsm(ctx context.Context, definition Definition, j
 
 	switch {
 	case job != nil && job.IsFailed():
-		return s.stopStream(ctx, definition, Failed)
+		return s.stopStream(ctx, definition, Failed, func() {
+			s.eventRecorder.Eventf(definition.ToUnstructured(),
+				"Normal",
+				"StreamingJobFailed",
+				"The streaming job %s has failed", job.Name)
+		})
+
 	case phase == Failed:
-		return s.stopStream(ctx, definition, Failed)
+		return s.stopStream(ctx, definition, Failed, func() {
+			s.eventRecorder.Eventf(definition.ToUnstructured(),
+				"Normal",
+				"StreamingJobFailed",
+				"The stream %s has failed", definition.NamespacedName().Name)
+		})
 
 	case phase == New && definition.Suspended():
-		return s.stopStream(ctx, definition, Suspended)
+		return s.stopStream(ctx, definition, Suspended, func() {
+			s.eventRecorder.Eventf(definition.ToUnstructured(),
+				"Normal",
+				"StreamSuspended",
+				"The new stream %s was added in the suspended state, nothing to do", definition.NamespacedName().Name)
+		})
 
 	case phase == New && !definition.Suspended():
-		return s.startBackfill(ctx, definition, Pending)
+		return s.startBackfill(ctx, definition, Pending, func() {
+			s.eventRecorder.Eventf(definition.ToUnstructured(),
+				"Normal",
+				"StreamCreated",
+				"Backfill was requested for the new stream definition: %s", definition.NamespacedName().Name)
+		})
 
 	case phase == Pending && backfillRequest == nil:
-		return s.reconcileJob(ctx, definition, nil, Running)
+		return s.reconcileJob(ctx, definition, nil, Running, nil)
 
 	case phase == Pending && backfillRequest != nil:
-		return s.reconcileJob(ctx, definition, backfillRequest, Backfilling)
+		return s.reconcileJob(ctx, definition, backfillRequest, Backfilling, nil)
 
 	case phase == Running && definition.Suspended():
-		return s.stopStream(ctx, definition, Suspended)
+		return s.stopStream(ctx, definition, Suspended, func() {
+			s.eventRecorder.Eventf(definition.ToUnstructured(),
+				"Normal",
+				"StreamSuspended",
+				"The streaming job for stream %s has been suspended", definition.NamespacedName().Name)
+		})
 
 	case phase == Running && backfillRequest != nil:
-		return s.stopStream(ctx, definition, Pending)
+		return s.stopStream(ctx, definition, Pending, func() {
+			s.eventRecorder.Eventf(definition.ToUnstructured(),
+				"Normal",
+				"BackfillRequested",
+				"A backfill requested for stream %s, stopping the streaming job to start backfilling", definition.NamespacedName().Name)
+		})
 
 	case phase == Running && backfillRequest == nil:
-		return s.reconcileJob(ctx, definition, backfillRequest, Running)
+		return s.reconcileJob(ctx, definition, backfillRequest, Running, func() {
+			s.eventRecorder.Eventf(definition.ToUnstructured(),
+				"Normal",
+				"StreamingContinued",
+				"The streaming job for stream %s is continuing", definition.NamespacedName().Name)
+		})
 
 	case phase == Suspended && backfillRequest != nil:
-		return s.updateStreamPhase(ctx, definition, backfillRequest, Pending)
+		return s.updateStreamPhase(ctx, definition, backfillRequest, Pending, func() {
+			s.eventRecorder.Eventf(definition.ToUnstructured(),
+				"Normal",
+				"BackfillRequested",
+				"A backfill requested for suspended stream %s", definition.NamespacedName().Name)
+		})
 
 	case phase == Suspended && backfillRequest == nil:
-		return s.stopStream(ctx, definition, Suspended)
+		return s.stopStream(ctx, definition, Suspended, func() {
+			s.eventRecorder.Eventf(definition.ToUnstructured(),
+				"Normal",
+				"StreamSuspended",
+				"The stream %s remains suspended", definition.NamespacedName().Name)
+		})
 
 	case phase == Backfilling && definition.Suspended():
-		return s.stopStream(ctx, definition, Suspended)
+		return s.stopStream(ctx, definition, Suspended, func() {
+			s.eventRecorder.Eventf(definition.ToUnstructured(),
+				"Normal",
+				"StreamSuspended",
+				"The backfilling for stream %s has been suspended", definition.NamespacedName().Name)
+		})
 
 	case phase == Backfilling && job == nil:
-		return s.reconcileJob(ctx, definition, backfillRequest, Backfilling)
+		return s.reconcileJob(ctx, definition, backfillRequest, Backfilling, func() {
+			s.eventRecorder.Eventf(definition.ToUnstructured(),
+				"Normal",
+				"BackfillStarted",
+				"Backfill job for stream %s has been started", definition.NamespacedName().Name)
+		})
 
 	case phase == Backfilling && job.IsCompleted():
-		return s.completeBackfill(ctx, job.ToV1Job(), definition, backfillRequest, Pending)
+		return s.completeBackfill(ctx, job.ToV1Job(), definition, backfillRequest, Pending, func() {
+			s.eventRecorder.Eventf(definition.ToUnstructured(),
+				"Normal",
+				"BackfillCompleted",
+				"Backfill for stream %s has been completed", definition.NamespacedName().Name)
+		})
 
 	case phase == Backfilling && !job.IsCompleted():
-		return s.updateStreamPhase(ctx, definition, backfillRequest, Backfilling)
+		return s.updateStreamPhase(ctx, definition, backfillRequest, Backfilling, func() {
+			s.eventRecorder.Eventf(definition.ToUnstructured(),
+				"Normal",
+				"BackfillInProgress",
+				"Backfill for stream %s is still in progress", definition.NamespacedName().Name)
+		})
 
 	}
 
@@ -203,7 +272,7 @@ func (s *streamReconciler) moveFsm(ctx context.Context, definition Definition, j
 	)
 }
 
-func (s *streamReconciler) stopStream(ctx context.Context, definition Definition, nextPhase Phase) (reconcile.Result, error) {
+func (s *streamReconciler) stopStream(ctx context.Context, definition Definition, nextPhase Phase, eventFunc func()) (reconcile.Result, error) {
 	j := &batchv1.Job{}
 	j.SetName(definition.NamespacedName().Name)
 	j.SetNamespace(definition.NamespacedName().Namespace)
@@ -212,10 +281,10 @@ func (s *streamReconciler) stopStream(ctx context.Context, definition Definition
 		return reconcile.Result{}, err
 	}
 
-	return s.updateStreamPhase(ctx, definition, nil, nextPhase)
+	return s.updateStreamPhase(ctx, definition, nil, nextPhase, eventFunc)
 }
 
-func (s *streamReconciler) startBackfill(ctx context.Context, definition Definition, nextPhase Phase) (reconcile.Result, error) {
+func (s *streamReconciler) startBackfill(ctx context.Context, definition Definition, nextPhase Phase, eventFunc func()) (reconcile.Result, error) {
 
 	logger := s.getLogger(ctx, definition.NamespacedName())
 	logger.V(2).Info("starting backfill by creating a backfill request")
@@ -237,10 +306,10 @@ func (s *streamReconciler) startBackfill(ctx context.Context, definition Definit
 		return reconcile.Result{}, err
 	}
 
-	return s.updateStreamPhase(ctx, definition, backfillRequest, nextPhase)
+	return s.updateStreamPhase(ctx, definition, backfillRequest, nextPhase, eventFunc)
 }
 
-func (s *streamReconciler) reconcileJob(ctx context.Context, definition Definition, backfillRequest *v1.BackfillRequest, nextPhase Phase) (reconcile.Result, error) {
+func (s *streamReconciler) reconcileJob(ctx context.Context, definition Definition, backfillRequest *v1.BackfillRequest, nextPhase Phase, eventFunc func()) (reconcile.Result, error) {
 	logger := s.getLogger(ctx, definition.NamespacedName())
 	v1job := batchv1.Job{}
 	err := s.client.Get(ctx, definition.NamespacedName(), &v1job)
@@ -265,7 +334,7 @@ func (s *streamReconciler) reconcileJob(ctx context.Context, definition Definiti
 			logger.V(0).Error(err, "unable to update Stream to unsuspended state")
 			return reconcile.Result{}, err
 		}
-		return s.updateStreamPhase(ctx, definition, backfillRequest, nextPhase)
+		return s.updateStreamPhase(ctx, definition, backfillRequest, nextPhase, eventFunc)
 	}
 
 	equals, err := s.compareConfigurations(ctx, v1job, definition)
@@ -275,7 +344,7 @@ func (s *streamReconciler) reconcileJob(ctx context.Context, definition Definiti
 
 	if equals {
 		logger.V(1).Info("Backfill job already exists with matching configuration, skipping creation")
-		return s.updateStreamPhase(ctx, definition, &v1.BackfillRequest{}, nextPhase)
+		return s.updateStreamPhase(ctx, definition, &v1.BackfillRequest{}, nextPhase, eventFunc)
 	}
 
 	err = s.client.Delete(ctx, &v1job, client.PropagationPolicy(metav1.DeletePropagationBackground))
@@ -287,7 +356,7 @@ func (s *streamReconciler) reconcileJob(ctx context.Context, definition Definiti
 	if err != nil { // coverage-ignore
 		return reconcile.Result{}, err
 	}
-	return s.updateStreamPhase(ctx, definition, backfillRequest, nextPhase)
+	return s.updateStreamPhase(ctx, definition, backfillRequest, nextPhase, eventFunc)
 }
 
 func (s *streamReconciler) compareConfigurations(ctx context.Context, v1job batchv1.Job, definition Definition) (bool, error) {
@@ -307,7 +376,7 @@ func (s *streamReconciler) compareConfigurations(ctx context.Context, v1job batc
 	return jobConfiguration == definitionConfiguration, nil
 }
 
-func (s *streamReconciler) completeBackfill(ctx context.Context, job *batchv1.Job, definition Definition, request *v1.BackfillRequest, nextStatus Phase) (reconcile.Result, error) {
+func (s *streamReconciler) completeBackfill(ctx context.Context, job *batchv1.Job, definition Definition, request *v1.BackfillRequest, nextStatus Phase, eventFunc func()) (reconcile.Result, error) {
 	if job != nil {
 		err := s.client.Delete(ctx, job)
 		if client.IgnoreNotFound(err) != nil {
@@ -325,7 +394,7 @@ func (s *streamReconciler) completeBackfill(ctx context.Context, job *batchv1.Jo
 		return reconcile.Result{}, err
 	}
 
-	return s.updateStreamPhase(ctx, definition, nil, nextStatus)
+	return s.updateStreamPhase(ctx, definition, nil, nextStatus, eventFunc)
 }
 
 func (s *streamReconciler) startNewJob(ctx context.Context, definition Definition, request *v1.BackfillRequest) error {
@@ -377,7 +446,7 @@ func (s *streamReconciler) getLogger(_ context.Context, request types.Namespaced
 		WithValues("namespace", request.Namespace, "name", request.Name, "kind", s.gvk.Kind)
 }
 
-func (s *streamReconciler) updateStreamPhase(ctx context.Context, definition Definition, backfillRequest *v1.BackfillRequest, next Phase) (reconcile.Result, error) {
+func (s *streamReconciler) updateStreamPhase(ctx context.Context, definition Definition, backfillRequest *v1.BackfillRequest, next Phase, eventFunc func()) (reconcile.Result, error) {
 	logger := s.getLogger(ctx, definition.NamespacedName())
 	if definition.GetPhase() == next { // coverage-ignore
 		logger.V(0).Info("Stream phase is already set to", "phase", definition.GetPhase())
@@ -396,11 +465,22 @@ func (s *streamReconciler) updateStreamPhase(ctx context.Context, definition Def
 		return reconcile.Result{}, err
 	}
 
+	err = definition.SetConditions(definition.ComputeConditions(backfillRequest))
+
+	if err != nil { // coverage-ignore
+		logger.V(0).Error(err, "unable to set Stream conditions")
+		return reconcile.Result{}, err
+	}
+
 	statusUpdate := definition.ToUnstructured().DeepCopy()
 	err = s.client.Status().Update(ctx, statusUpdate)
 	if err != nil { // coverage-ignore
 		logger.V(1).Error(err, "unable to update Stream status")
 		return reconcile.Result{}, err
+	}
+
+	if eventFunc != nil {
+		eventFunc()
 	}
 
 	return reconcile.Result{}, nil
