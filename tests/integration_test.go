@@ -19,6 +19,7 @@ import (
 	apiruntime "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	typedcorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
@@ -64,43 +65,25 @@ func Test_CreateStream(t *testing.T) {
 	require.NoError(t, err)
 
 	// Act
-	name := createTestStreamDefinition(t, mgr, ctx)
+	name := createTestStreamDefinition(t, mgr, false)
 
 	// Collect job events from the watcher channel
 	jobs := make(map[types.UID]bool)
 
 	// Watch for job events in the main thread
-watchLoop:
-	for {
-		select {
-		case event, ok := <-watcher.ResultChan():
-			if !ok {
-				t.Error("watcher channel closed")
-				break watchLoop
-			}
-			rawJob, ok := event.Object.(*batchv1.Job)
-			if !ok {
-				t.Fatalf("expected Job object, got %T", event.Object)
-				return
-			}
+	waitForJob(t, watcher, name,
 
-			if rawJob.Name != name {
-				t.Logf("unexpected job name: %s, skipping", rawJob.Name)
-				continue
-			}
-
-			t.Logf("Received job event: Type=%s, Object=%T", event.Type, event.Object)
-			job := stream.NewStreamingJobFromV1Job(rawJob)
+		func(job stream.StreamingJob) {
 			jobs[job.UID] = job.IsBackfill()
+		},
+
+		func(job stream.StreamingJob) bool {
 			if job.IsCompleted() && !job.IsBackfill() {
 				t.Log("Job is completed, stopping watcher")
-				break watchLoop
+				return true
 			}
-		case <-ctx.Done():
-			t.Fatal("Job watcher stopped with timeout or cancellation")
-			return
-		}
-	}
+			return false
+		})
 
 	require.GreaterOrEqual(t, len(jobs), 2, "Should have received at least 2 jobs (1 backfill and 1 regular), but got %d", len(jobs))
 
@@ -117,7 +100,93 @@ watchLoop:
 	require.True(t, regularFound, "Should have received at least 1 regular job")
 }
 
-func createTestStreamDefinition(t *testing.T, mgr manager.Manager, ctx context.Context) string {
+// Test_CreateStream verifies that creating a TestStreamDefinition results in the creation of both backfill and regular streaming jobs.
+// It watches for Job events in the Kubernetes cluster and checks that at least one backfill job and one regular job are created and completed.
+func Test_CreateFailedStream(t *testing.T) {
+	g, ctx := errgroup.WithContext(t.Context())
+	mgr := createManager(t, ctx, g)
+	t.Cleanup(func() {
+		err := g.Wait()
+		if errors.Is(err, context.Canceled) {
+			return
+		}
+		if err != nil {
+			t.Errorf("manager stopped with error: %v", err)
+		}
+	})
+
+	// Act
+	<-mgr.Elected()
+
+	// Create Kubernetes job client
+
+	jobClient := clientSet.BatchV1().Jobs("")
+	require.NotNil(t, jobClient)
+
+	watcher, err := jobClient.Watch(ctx, metav1.ListOptions{})
+	t.Cleanup(func() {
+		watcher.Stop()
+	})
+	require.NoError(t, err)
+
+	// Act
+	name := createTestStreamDefinition(t, mgr, true)
+
+	// Collect job events from the watcher channel
+	jobs := make(map[types.UID]bool)
+
+	// Watch for job events in the main thread
+	waitForJob(t, watcher, name,
+
+		func(job stream.StreamingJob) {
+			jobs[job.UID] = job.IsFailed()
+		},
+
+		func(job stream.StreamingJob) bool {
+			if job.IsFailed() {
+				t.Log("Job is expectedly failed, stopping watcher")
+				return true
+			}
+			return false
+		})
+
+	require.Equal(t, 1, len(jobs))
+}
+
+func waitForJob(t *testing.T, watcher watch.Interface, name string, handleEvent func(job stream.StreamingJob), isCompleted func(job stream.StreamingJob) bool) {
+	for {
+		select {
+		case event, ok := <-watcher.ResultChan():
+			if !ok {
+				t.Error("watcher channel closed")
+				return
+			}
+			rawJob, ok := event.Object.(*batchv1.Job)
+			if !ok {
+				t.Fatalf("expected Job object, got %T", event.Object)
+				return
+			}
+
+			if rawJob.Name != name {
+				t.Logf("unexpected job name: %s, skipping", rawJob.Name)
+				continue
+			}
+
+			t.Logf("Received job event: Type=%s, Object=%T", event.Type, event.Object)
+			job := stream.NewStreamingJobFromV1Job(rawJob)
+			handleEvent(job)
+			if isCompleted(job) {
+				t.Log("Job is isCompleted, stopping watcher")
+				return
+			}
+		case <-t.Context().Done():
+			t.Fatal("Job watcher stopped with timeout or cancellation")
+			return
+		}
+	}
+}
+
+func createTestStreamDefinition(t *testing.T, mgr manager.Manager, shouldFail bool) string {
 	// Create a TestStreamDefinition with dummy data
 	streamId, err := uuid.NewUUID()
 	require.NoError(t, err)
@@ -134,6 +203,7 @@ func createTestStreamDefinition(t *testing.T, mgr manager.Manager, ctx context.C
 			Source:      "mock-source",
 			Destination: "mock-destination",
 			Suspended:   false,
+			ShouldFail:  shouldFail,
 			JobTemplateRef: corev1.ObjectReference{
 				APIVersion: "streaming.sneaksanddata.com/v1",
 				Kind:       "StreamingJobTemplate",
@@ -151,7 +221,7 @@ func createTestStreamDefinition(t *testing.T, mgr manager.Manager, ctx context.C
 	}
 
 	// Create the TestStreamDefinition in the cluster
-	err = mgr.GetClient().Create(ctx, testStream)
+	err = mgr.GetClient().Create(t.Context(), testStream)
 	require.NoError(t, err)
 	t.Logf("Created TestStreamDefinition: %s/%s", testStream.Namespace, testStream.Name)
 

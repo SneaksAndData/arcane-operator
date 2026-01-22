@@ -22,7 +22,7 @@ func (j StreamingJob) IsCompleted() bool { // coverage-ignore (trivial)
 }
 
 func (j StreamingJob) IsFailed() bool { // coverage-ignore (trivial)
-	return j.Status.Failed > 0 && j.Status.Failed == *j.Spec.BackoffLimit
+	return j.Status.Failed > 0 && j.Status.Failed > *j.Spec.BackoffLimit
 }
 
 func (j StreamingJob) ToV1Job() *v1.Job { // coverage-ignore (trivial)
