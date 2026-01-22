@@ -48,8 +48,12 @@ func Test_UpdatePhase_ToRunning(t *testing.T) {
 		},
 	})
 
+	started := make(chan bool, 10)
 	streamController := mocks.NewMockController[reconcile.Request](mockCtrl)
-	streamController.EXPECT().Start(gomock.Any())
+	streamController.EXPECT().Start(gomock.Any()).Do(func(ctx context.Context) {
+		started <- true
+		// Do not close the channel here to allow multiple calls. It will make the test easier to reason about.
+	})
 
 	streamReconcilerFactory := mocks.NewMockUnmanagedControllerFactory(mockCtrl)
 	streamReconcilerFactory.EXPECT().CreateStreamController(gomock.Any(), gomock.Any(), gomock.Any()).Return(streamController, nil)
@@ -60,6 +64,9 @@ func Test_UpdatePhase_ToRunning(t *testing.T) {
 	result, err := reconciler.Reconcile(t.Context(), reconcile.Request{NamespacedName: types.NamespacedName{Name: name}})
 	require.NoError(t, err)
 	require.Equal(t, result, reconcile.Result{})
+
+	// Wait for the stream controller to start at least once
+	<-started
 
 	// Assert
 	expectPhase(t, k8sClient, name, v1.PhaseReady)
