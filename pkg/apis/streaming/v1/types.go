@@ -53,6 +53,11 @@ type StreamClassStatus struct {
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:scope=Cluster,shortName=sc
 // +kubebuilder:object:root=true
+// +kubebuilder:printcolumn:name="ApiGroupRef",type=string,JSONPath=`.spec.apiGroupRef`
+// +kubebuilder:printcolumn:name="ApiVersion",type=string,JSONPath=`.spec.apiVersion`
+// +kubebuilder:printcolumn:name="KindRef",type=string,JSONPath=`.spec.kindRef`
+// +kubebuilder:printcolumn:name="PluralName",type=string,JSONPath=`.spec.pluralName`
+// +kubebuilder:printcolumn:name="Phase",type=string,JSONPath=`.status.phase`
 type StreamClass struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -69,13 +74,15 @@ type StreamClassList struct {
 	Items           []StreamClass `json:"items"`
 }
 
+// StreamingJobTemplate is a schema for streaming job templates
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +kubebuilder:resource:scope=Namespaced,shortName=sjt
 // +kubebuilder:subresource:status
 // +kubebuilder:object:root=true
-
-// StreamingJobTemplate is a schema for streaming job templates
+// +kubebuilder:printcolumn:name="MemoryLimit",type=string,JSONPath=`.spec.spec.template.spec.containers[0].resources.limits.memory`
+// +kubebuilder:printcolumn:name="CpuLimit",type=string,JSONPath=`.spec.spec.template.spec.containers[0].resources.limits.cpu`
+// +kubebuilder:printcolumn:name="Image",type=string,JSONPath=`.spec.spec.template.spec.containers[0].image`
 type StreamingJobTemplate struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -118,6 +125,8 @@ type BackfillRequestStatus struct {
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:scope=Namespaced,shortName=bfr
 // +kubebuilder:object:root=true
+// +kubebuilder:printcolumn:name="StreamClass",type=string,JSONPath=`.spec.streamClass`
+// +kubebuilder:printcolumn:name="StreamId",type=string,JSONPath=`.spec.streamId`
 type BackfillRequest struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
