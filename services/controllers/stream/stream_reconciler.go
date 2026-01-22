@@ -309,7 +309,7 @@ func (s *streamReconciler) startBackfill(ctx context.Context, definition Definit
 	return s.updateStreamPhase(ctx, definition, backfillRequest, nextPhase, eventFunc)
 }
 
-func (s *streamReconciler) reconcileJob(ctx context.Context, definition Definition, backfillRequest *v1.BackfillRequest, nextPhase Phase, f func()) (reconcile.Result, error) {
+func (s *streamReconciler) reconcileJob(ctx context.Context, definition Definition, backfillRequest *v1.BackfillRequest, nextPhase Phase, eventFunc func()) (reconcile.Result, error) {
 	logger := s.getLogger(ctx, definition.NamespacedName())
 	v1job := batchv1.Job{}
 	err := s.client.Get(ctx, definition.NamespacedName(), &v1job)
@@ -334,7 +334,7 @@ func (s *streamReconciler) reconcileJob(ctx context.Context, definition Definiti
 			logger.V(0).Error(err, "unable to update Stream to unsuspended state")
 			return reconcile.Result{}, err
 		}
-		return s.updateStreamPhase(ctx, definition, backfillRequest, nextPhase, f)
+		return s.updateStreamPhase(ctx, definition, backfillRequest, nextPhase, eventFunc)
 	}
 
 	equals, err := s.compareConfigurations(ctx, v1job, definition)
@@ -344,7 +344,7 @@ func (s *streamReconciler) reconcileJob(ctx context.Context, definition Definiti
 
 	if equals {
 		logger.V(1).Info("Backfill job already exists with matching configuration, skipping creation")
-		return s.updateStreamPhase(ctx, definition, &v1.BackfillRequest{}, nextPhase, nil)
+		return s.updateStreamPhase(ctx, definition, &v1.BackfillRequest{}, nextPhase, eventFunc)
 	}
 
 	err = s.client.Delete(ctx, &v1job, client.PropagationPolicy(metav1.DeletePropagationBackground))
@@ -356,7 +356,7 @@ func (s *streamReconciler) reconcileJob(ctx context.Context, definition Definiti
 	if err != nil { // coverage-ignore
 		return reconcile.Result{}, err
 	}
-	return s.updateStreamPhase(ctx, definition, backfillRequest, nextPhase, f)
+	return s.updateStreamPhase(ctx, definition, backfillRequest, nextPhase, eventFunc)
 }
 
 func (s *streamReconciler) compareConfigurations(ctx context.Context, v1job batchv1.Job, definition Definition) (bool, error) {
@@ -376,7 +376,7 @@ func (s *streamReconciler) compareConfigurations(ctx context.Context, v1job batc
 	return jobConfiguration == definitionConfiguration, nil
 }
 
-func (s *streamReconciler) completeBackfill(ctx context.Context, job *batchv1.Job, definition Definition, request *v1.BackfillRequest, nextStatus Phase, f func()) (reconcile.Result, error) {
+func (s *streamReconciler) completeBackfill(ctx context.Context, job *batchv1.Job, definition Definition, request *v1.BackfillRequest, nextStatus Phase, eventFunc func()) (reconcile.Result, error) {
 	if job != nil {
 		err := s.client.Delete(ctx, job)
 		if client.IgnoreNotFound(err) != nil {
@@ -394,7 +394,7 @@ func (s *streamReconciler) completeBackfill(ctx context.Context, job *batchv1.Jo
 		return reconcile.Result{}, err
 	}
 
-	return s.updateStreamPhase(ctx, definition, nil, nextStatus, f)
+	return s.updateStreamPhase(ctx, definition, nil, nextStatus, eventFunc)
 }
 
 func (s *streamReconciler) startNewJob(ctx context.Context, definition Definition, request *v1.BackfillRequest) error {

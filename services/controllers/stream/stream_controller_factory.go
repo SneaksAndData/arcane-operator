@@ -13,24 +13,24 @@ import (
 var _ stream_class.UnmanagedControllerFactory = (*streamControllerFactory)(nil)
 
 type streamControllerFactory struct {
-	client          client.Client
-	jobBuilder      JobBuilder
-	manager         manager.Manager
-	lifetimeService record.EventRecorder
+	client        client.Client
+	jobBuilder    JobBuilder
+	manager       manager.Manager
+	eventRecorder record.EventRecorder
 }
 
 func (s streamControllerFactory) CreateStreamController(_ context.Context, gvk schema.GroupVersionKind, className string) (controller.Controller, error) { // coverage-ignore (trivial)
-	streamReconciler := NewStreamReconciler(s.client, gvk, s.jobBuilder, className, s.lifetimeService)
+	streamReconciler := NewStreamReconciler(s.client, gvk, s.jobBuilder, className, s.eventRecorder)
 	unmanaged, err := streamReconciler.SetupUnmanaged(s.manager.GetCache(), s.manager.GetScheme(), s.manager.GetRESTMapper())
 	return unmanaged, err
 }
 
 // NewStreamControllerFactory creates a new instance of StreamControllerFactory
-func NewStreamControllerFactory(client client.Client, jobBuilder JobBuilder, manager manager.Manager, conditionService record.EventRecorder) stream_class.UnmanagedControllerFactory { // coverage-ignore (trivial)
+func NewStreamControllerFactory(client client.Client, jobBuilder JobBuilder, manager manager.Manager, eventRecorder record.EventRecorder) stream_class.UnmanagedControllerFactory { // coverage-ignore (trivial)
 	return &streamControllerFactory{
-		client:          client,
-		jobBuilder:      jobBuilder,
-		manager:         manager,
-		lifetimeService: conditionService,
+		client:        client,
+		jobBuilder:    jobBuilder,
+		manager:       manager,
+		eventRecorder: eventRecorder,
 	}
 }

@@ -383,7 +383,7 @@ func Test_UpdatePhase_Backfilling_To_Suspended(t *testing.T) {
 func Test_UpdatePhase_Job_Failed(t *testing.T) {
 	// Arrange
 	k8sClient := setupClient(
-		combined(withNamedStreamDefinition(objectName), withPhase(Backfilling)),
+		combined(withNamedStreamDefinition(objectName), withPhase(Backfilling), withSuspendedSpec(false)),
 		combinedB(withBackfillRequest(objectName), withFailedJob(objectName)),
 	)
 	reconciler := createReconciler(k8sClient, nil, nil)
@@ -547,7 +547,11 @@ func withCompletedJob(n types.NamespacedName) func(definition *crfake.ClientBuil
 
 func withFailedJob(n types.NamespacedName) func(definition *crfake.ClientBuilder) {
 	return func(client2 *crfake.ClientBuilder) {
+		backoffLimit := int32(1)
 		client2.WithObjects(&batchv1.Job{
+			Spec: batchv1.JobSpec{
+				BackoffLimit: &backoffLimit,
+			},
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: n.Namespace,
 				Name:      n.Name,

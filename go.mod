@@ -5,7 +5,7 @@ go 1.25.0
 require (
 	github.com/DataDog/datadog-api-client-go/v2 v2.50.0
 	github.com/DataDog/datadog-go/v5 v5.8.1
-	github.com/SneaksAndData/arcane-stream-mock v1.0.2-0.20260121132409-363dd2b5b431
+	github.com/SneaksAndData/arcane-stream-mock v1.0.0
 	github.com/go-logr/logr v1.4.3
 	github.com/google/uuid v1.6.0
 	github.com/samber/slog-datadog/v2 v2.10.2
