@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/SneaksAndData/arcane-operator/services/controllers/stream_class"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -15,7 +16,7 @@ type streamControllerFactory struct {
 	client          client.Client
 	jobBuilder      JobBuilder
 	manager         manager.Manager
-	lifetimeService LifetimeService
+	lifetimeService record.EventRecorder
 }
 
 func (s streamControllerFactory) CreateStreamController(_ context.Context, gvk schema.GroupVersionKind, className string) (controller.Controller, error) { // coverage-ignore (trivial)
@@ -25,7 +26,7 @@ func (s streamControllerFactory) CreateStreamController(_ context.Context, gvk s
 }
 
 // NewStreamControllerFactory creates a new instance of StreamControllerFactory
-func NewStreamControllerFactory(client client.Client, jobBuilder JobBuilder, manager manager.Manager, conditionService LifetimeService) stream_class.UnmanagedControllerFactory { // coverage-ignore (trivial)
+func NewStreamControllerFactory(client client.Client, jobBuilder JobBuilder, manager manager.Manager, conditionService record.EventRecorder) stream_class.UnmanagedControllerFactory { // coverage-ignore (trivial)
 	return &streamControllerFactory{
 		client:          client,
 		jobBuilder:      jobBuilder,

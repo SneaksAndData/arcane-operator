@@ -63,6 +63,9 @@ type Definition interface {
 
 	// SetConditions returns the current conditions of the stream definition.
 	SetConditions(conditions []metav1.Condition) error
+
+	// ComputeConditions computes the conditions for the stream definition based on the backfill request.
+	ComputeConditions(bfr *v1.BackfillRequest) []metav1.Condition
 }
 
 func fromUnstructured(obj *unstructured.Unstructured) (Definition, error) {

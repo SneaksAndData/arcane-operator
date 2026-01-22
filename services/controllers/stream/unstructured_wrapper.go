@@ -163,6 +163,73 @@ func (u *unstructuredWrapper) SetConditions(conditions []metav1.Condition) error
 	return unstructured.SetNestedSlice(u.underlying.Object, conditionsSlice, "status", "conditions")
 }
 
+func (u *unstructuredWrapper) ComputeConditions(bfr *v1.BackfillRequest) []metav1.Condition {
+	switch u.GetPhase() {
+	case Pending:
+		return []metav1.Condition{
+			{
+				Type:    "Warning",
+				Status:  metav1.ConditionTrue,
+				Reason:  "StreamPending",
+				Message: "The stream is pending and will start soon",
+				LastTransitionTime: metav1.Time{
+					Time: metav1.Now().Time,
+				},
+			},
+		}
+	case Backfilling:
+		return []metav1.Condition{
+			{
+				Type:    "Ready",
+				Status:  metav1.ConditionTrue,
+				Reason:  "StreamBackfilling",
+				Message: "The stream is currently backfilling data, request ID: " + bfr.Name,
+				LastTransitionTime: metav1.Time{
+					Time: metav1.Now().Time,
+				},
+			},
+		}
+	case Running:
+		return []metav1.Condition{
+			{
+				Type:    "Ready",
+				Status:  metav1.ConditionTrue,
+				Reason:  "StreamRunning",
+				Message: "The stream is currently running.",
+				LastTransitionTime: metav1.Time{
+					Time: metav1.Now().Time,
+				},
+			},
+		}
+	case Suspended:
+		return []metav1.Condition{
+			{
+				Type:    "Warning",
+				Status:  metav1.ConditionTrue,
+				Reason:  "StreamSuspended",
+				Message: "The stream is suspended.",
+				LastTransitionTime: metav1.Time{
+					Time: metav1.Now().Time,
+				},
+			},
+		}
+	case Failed:
+		return []metav1.Condition{
+			{
+				Type:    "Error",
+				Status:  metav1.ConditionTrue,
+				Reason:  "StreamFailed",
+				Message: "The stream has failed.",
+				LastTransitionTime: metav1.Time{
+					Time: metav1.Now().Time,
+				},
+			},
+		}
+	default:
+		return []metav1.Condition{}
+	}
+}
+
 func (u *unstructuredWrapper) JobConfigurator() job.Configurator {
 	return job.NewConfiguratorChainBuilder().
 		WithConfigurator(job.NewNameConfigurator(u.underlying.GetName())).

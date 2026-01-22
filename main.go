@@ -7,7 +7,6 @@ import (
 	"github.com/SneaksAndData/arcane-operator/services/controllers/stream"
 	"github.com/SneaksAndData/arcane-operator/services/controllers/stream_class"
 	"github.com/SneaksAndData/arcane-operator/services/job/job_builder"
-	"github.com/SneaksAndData/arcane-operator/services/ui"
 	"github.com/SneaksAndData/arcane-operator/telemetry"
 	corev1 "k8s.io/api/core/v1"
 	apiruntime "k8s.io/apimachinery/pkg/runtime"
@@ -67,13 +66,12 @@ func main() {
 	eventBroadcaster.StartLogging(klog.Infof)
 	eventBroadcaster.StartRecordingToSink(&typedcorev1.EventSinkImpl{Interface: clientSet.CoreV1().Events("")})
 	eventRecorder := eventBroadcaster.NewRecorder(scheme, corev1.EventSource{Component: "arcane-operator"})
-	us := ui.NewUserInterfaceService(eventRecorder)
 
 	controllerFactory := stream.NewStreamControllerFactory(
 		mgr.GetClient(),
 		jobBuilder,
 		mgr,
-		us,
+		eventRecorder,
 	)
 	err = stream_class.NewStreamClassReconciler(mgr.GetClient(), controllerFactory).SetupWithManager(mgr)
 	if err != nil {
