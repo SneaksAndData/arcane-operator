@@ -33,32 +33,17 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"strings"
 	"testing"
+	"time"
 )
 
 // Test_CreateStream verifies that creating a TestStreamDefinition results in the creation of both backfill and regular streaming jobs.
 // It watches for Job events in the Kubernetes cluster and checks that at least one backfill job and one regular job are created and completed.
 func Test_CreateStream(t *testing.T) {
-	g, ctx := errgroup.WithContext(t.Context())
-	mgr := createManager(t, ctx, g)
-	t.Cleanup(func() {
-		err := g.Wait()
-		if errors.Is(err, context.Canceled) {
-			return
-		}
-		if err != nil {
-			t.Errorf("manager stopped with error: %v", err)
-		}
-	})
-
-	// Act
-	<-mgr.Elected()
-
-	// Create Kubernetes job client
-
+	// Arrange
 	jobClient := clientSet.BatchV1().Jobs("")
 	require.NotNil(t, jobClient)
 
-	watcher, err := jobClient.Watch(ctx, metav1.ListOptions{})
+	watcher, err := jobClient.Watch(t.Context(), metav1.ListOptions{})
 	t.Cleanup(func() {
 		watcher.Stop()
 	})
@@ -103,27 +88,11 @@ func Test_CreateStream(t *testing.T) {
 // Test_CreateStream verifies that creating a TestStreamDefinition results in the creation of both backfill and regular streaming jobs.
 // It watches for Job events in the Kubernetes cluster and checks that at least one backfill job and one regular job are created and completed.
 func Test_CreateFailedStream(t *testing.T) {
-	g, ctx := errgroup.WithContext(t.Context())
-	mgr := createManager(t, ctx, g)
-	t.Cleanup(func() {
-		err := g.Wait()
-		if errors.Is(err, context.Canceled) {
-			return
-		}
-		if err != nil {
-			t.Errorf("manager stopped with error: %v", err)
-		}
-	})
-
-	// Act
-	<-mgr.Elected()
-
-	// Create Kubernetes job client
-
+	// Arrange
 	jobClient := clientSet.BatchV1().Jobs("")
 	require.NotNil(t, jobClient)
 
-	watcher, err := jobClient.Watch(ctx, metav1.ListOptions{})
+	watcher, err := jobClient.Watch(t.Context(), metav1.ListOptions{})
 	t.Cleanup(func() {
 		watcher.Stop()
 	})
@@ -151,6 +120,32 @@ func Test_CreateFailedStream(t *testing.T) {
 		})
 
 	require.Equal(t, 1, len(jobs))
+
+	// Verify that the stream definition is marked as Failed
+	ticker := time.NewTicker(100 * time.Millisecond)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-t.Context().Done():
+			return
+		case <-ticker.C:
+			streamDefinition := &mockv1.TestStreamDefinition{}
+			err := mgr.GetClient().Get(t.Context(), types.NamespacedName{
+				Name:      name,
+				Namespace: "default",
+			}, streamDefinition)
+			require.NoError(t, err)
+
+			if streamDefinition.Status.Phase == "Failed" {
+				t.Logf("StreamDefinition %s/%s is in Failed phase as expected", streamDefinition.Namespace, streamDefinition.Name)
+				return
+			} else {
+				t.Logf("StreamDefinition %s/%s is in %s phase, waiting for Failed phase", streamDefinition.Namespace, streamDefinition.Name, streamDefinition.Status.Phase)
+			}
+		}
+	}
+
 }
 
 func waitForJob(t *testing.T, watcher watch.Interface, name string, handleEvent func(job stream.StreamingJob), isCompleted func(job stream.StreamingJob) bool) {
@@ -228,11 +223,13 @@ func createTestStreamDefinition(t *testing.T, mgr manager.Manager, shouldFail bo
 	return streamId.String()
 }
 
-func createManager(t *testing.T, ctx context.Context, g *errgroup.Group) manager.Manager {
+func createManager(ctx context.Context, g *errgroup.Group) (manager.Manager, error) {
 	mgr, err := controllerruntime.NewManager(kubeConfig, controllerruntime.Options{
 		Scheme: scheme,
 	})
-	require.NoError(t, err)
+	if err != nil {
+		return nil, fmt.Errorf("unable to start manager: %w", err)
+	}
 
 	jobBuilder := job_builder.NewDefaultJobBuilder(mgr.GetClient())
 
@@ -241,14 +238,22 @@ func createManager(t *testing.T, ctx context.Context, g *errgroup.Group) manager
 	eventBroadcaster.StartRecordingToSink(&typedcorev1.EventSinkImpl{Interface: clientSet.CoreV1().Events("")})
 	eventRecorder := eventBroadcaster.NewRecorder(scheme, corev1.EventSource{Component: "Arcane-Operator-Test"})
 	controllerFactory := stream.NewStreamControllerFactory(mgr.GetClient(), jobBuilder, mgr, eventRecorder)
-	err = stream_class.NewStreamClassReconciler(mgr.GetClient(), controllerFactory).SetupWithManager(mgr)
-	require.NoError(t, err)
+
+	controllerId, err := uuid.NewUUID()
+	if err != nil {
+		return nil, fmt.Errorf("unable to generate controller ID: %w", err)
+	}
+
+	err = stream_class.NewStreamClassReconciler(mgr.GetClient(), controllerFactory).SetupWithManager(mgr, controllerId.String())
+	if err != nil {
+		return nil, fmt.Errorf("unable to setup StreamClassReconciler: %w", err)
+	}
 
 	g.Go(func() error {
 		return mgr.Start(ctx)
 	})
 
-	return mgr
+	return mgr, nil
 }
 
 var (
@@ -256,6 +261,7 @@ var (
 	kubeConfig    *rest.Config
 	scheme        = apiruntime.NewScheme()
 	clientSet     *kubernetes.Clientset
+	mgr           manager.Manager
 )
 
 func TestMain(m *testing.M) {
@@ -284,6 +290,26 @@ func TestMain(m *testing.M) {
 		panic(fmt.Errorf("error creating kubernetes clientSet: %w", err))
 	}
 
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	g, ctx := errgroup.WithContext(ctx)
+	mgr, err = createManager(ctx, g)
+	if err != nil {
+		panic(fmt.Errorf("error creating manager: %w", err))
+	}
+	defer func() {
+		err := g.Wait()
+		if errors.Is(err, context.Canceled) {
+			return
+		}
+		if err != nil {
+			panic(fmt.Errorf("error running manager: %w", err))
+		}
+	}()
+
+	// Act
+	<-mgr.Elected()
 	// Run tests
 	exitCode := m.Run()
 
