@@ -15,6 +15,7 @@ import (
 	"golang.org/x/sync/errgroup"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	apiruntime "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -139,13 +140,18 @@ func Test_CreateFailedStream(t *testing.T) {
 
 			if streamDefinition.Status.Phase == "Failed" {
 				t.Logf("StreamDefinition %s/%s is in Failed phase as expected", streamDefinition.Namespace, streamDefinition.Name)
+
+				// Verify that the job does not exist in the cluster
+				err = mgr.GetClient().Get(t.Context(), types.NamespacedName{Name: name, Namespace: "default"}, &batchv1.Job{})
+				require.Error(t, err)
+				require.True(t, apierrors.IsNotFound(err), "Expected job to be not found after failure")
+
 				return
 			} else {
 				t.Logf("StreamDefinition %s/%s is in %s phase, waiting for Failed phase", streamDefinition.Namespace, streamDefinition.Name, streamDefinition.Status.Phase)
 			}
 		}
 	}
-
 }
 
 func waitForJob(t *testing.T, watcher watch.Interface, name string, handleEvent func(job stream.StreamingJob), isCompleted func(job stream.StreamingJob) bool) {
