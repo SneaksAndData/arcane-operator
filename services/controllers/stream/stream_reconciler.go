@@ -156,7 +156,7 @@ func (s *streamReconciler) moveFsm(ctx context.Context, definition Definition, j
 	case job != nil && job.IsFailed():
 		return s.stopStream(ctx, definition, Failed, func() {
 			s.eventRecorder.Eventf(definition.ToUnstructured(),
-				"Normal",
+				"Warning",
 				"StreamingJobFailed",
 				"The streaming job %s has failed", job.Name)
 		})
@@ -180,7 +180,7 @@ func (s *streamReconciler) moveFsm(ctx context.Context, definition Definition, j
 	case phase == Failed:
 		return s.stopStream(ctx, definition, Failed, func() {
 			s.eventRecorder.Eventf(definition.ToUnstructured(),
-				"Normal",
+				"Warning",
 				"StreamingJobFailed",
 				"The stream %s has failed", definition.NamespacedName().Name)
 		})
