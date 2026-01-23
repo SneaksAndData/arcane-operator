@@ -2,9 +2,10 @@ package stream_class
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	v1 "github.com/SneaksAndData/arcane-operator/pkg/apis/streaming/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/klog/v2"
 	runtime "sigs.k8s.io/controller-runtime"
@@ -36,7 +37,7 @@ func (s *StreamClassReconciler) Reconcile(ctx context.Context, request reconcile
 
 	sc := &v1.StreamClass{}
 	err := s.client.Get(ctx, request.NamespacedName, sc)
-	deleted := errors.IsNotFound(err)
+	deleted := apierrors.IsNotFound(err)
 	if client.IgnoreNotFound(err) != nil {
 		logger.V(0).Error(err, "unable to get stream class")
 	}
@@ -92,6 +93,10 @@ func (s *StreamClassReconciler) tryStartStreamController(ctx context.Context, sc
 	controllerContext, cancelFunc := context.WithCancel(ctx)
 	go func() {
 		err := controller.Start(controllerContext)
+		if errors.Is(err, context.Canceled) {
+			logger.V(1).Info("stream controller is stopped")
+			return
+		}
 		if err != nil {
 			logger := s.getLogger(ctx, name)
 			logger.V(0).Error(err, "stream controller exited with error")

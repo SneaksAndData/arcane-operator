@@ -25,4 +25,6 @@ install-stream:
 mock-stream-plugin:
     helm install arcane-stream-mock oci://ghcr.io/sneaksanddata/helm/arcane-stream-mock \
         --namespace default \
-        --version v1.0.1-5-g21bdef4
+        --set jobTemplateSettings.podFailurePolicySettings.retryOnExitCodes="{120,121}" \
+        --set jobTemplateSettings.backoffLimit=1 \
+        --version v1.0.2

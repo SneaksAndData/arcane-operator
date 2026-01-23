@@ -560,10 +560,14 @@ func withFailedJob(n types.NamespacedName) func(definition *crfake.ClientBuilder
 				},
 			},
 			Status: batchv1.JobStatus{
-				Failed: 1,
+				Failed: 2,
 				Conditions: []batchv1.JobCondition{
 					{
-						Type:   batchv1.JobComplete,
+						Type:   batchv1.JobFailed,
+						Status: corev1.ConditionTrue,
+					},
+					{
+						Type:   batchv1.JobFailed,
 						Status: corev1.ConditionTrue,
 					},
 				},
