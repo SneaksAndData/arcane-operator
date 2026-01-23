@@ -156,15 +156,31 @@ func (s *streamReconciler) moveFsm(ctx context.Context, definition Definition, j
 	case job != nil && job.IsFailed():
 		return s.stopStream(ctx, definition, Failed, func() {
 			s.eventRecorder.Eventf(definition.ToUnstructured(),
-				"Normal",
+				"Warning",
 				"StreamingJobFailed",
 				"The streaming job %s has failed", job.Name)
+		})
+
+	case phase == Failed && definition.Suspended() && backfillRequest != nil:
+		return s.completeBackfill(ctx, job, definition, backfillRequest, Suspended, func() {
+			s.eventRecorder.Eventf(definition.ToUnstructured(),
+				"Normal",
+				"StreamSuspended",
+				"The stream was suspended")
+		})
+
+	case phase == Failed && definition.Suspended() && backfillRequest == nil:
+		return s.stopStream(ctx, definition, Suspended, func() {
+			s.eventRecorder.Eventf(definition.ToUnstructured(),
+				"Normal",
+				"StreamSuspended",
+				"The stream was suspended")
 		})
 
 	case phase == Failed:
 		return s.stopStream(ctx, definition, Failed, func() {
 			s.eventRecorder.Eventf(definition.ToUnstructured(),
-				"Normal",
+				"Warning",
 				"StreamingJobFailed",
 				"The stream %s has failed", definition.NamespacedName().Name)
 		})
@@ -215,7 +231,7 @@ func (s *streamReconciler) moveFsm(ctx context.Context, definition Definition, j
 				"The streaming job for stream %s is continuing", definition.NamespacedName().Name)
 		})
 
-	case phase == Suspended && backfillRequest != nil:
+	case phase == Suspended && backfillRequest != nil && !definition.Suspended():
 		return s.updateStreamPhase(ctx, definition, backfillRequest, Pending, func() {
 			s.eventRecorder.Eventf(definition.ToUnstructured(),
 				"Normal",
@@ -223,12 +239,20 @@ func (s *streamReconciler) moveFsm(ctx context.Context, definition Definition, j
 				"A backfill requested for suspended stream %s", definition.NamespacedName().Name)
 		})
 
-	case phase == Suspended && backfillRequest == nil:
+	case phase == Suspended && backfillRequest == nil && definition.Suspended():
 		return s.stopStream(ctx, definition, Suspended, func() {
 			s.eventRecorder.Eventf(definition.ToUnstructured(),
 				"Normal",
 				"StreamSuspended",
 				"The stream %s remains suspended", definition.NamespacedName().Name)
+		})
+
+	case phase == Suspended && !definition.Suspended():
+		return s.updateStreamPhase(ctx, definition, backfillRequest, Pending, func() {
+			s.eventRecorder.Eventf(definition.ToUnstructured(),
+				"Normal",
+				"StreamResumed",
+				"The stream %s has been resumed", definition.NamespacedName().Name)
 		})
 
 	case phase == Backfilling && definition.Suspended():
@@ -247,15 +271,15 @@ func (s *streamReconciler) moveFsm(ctx context.Context, definition Definition, j
 				"Backfill job for stream %s has been started", definition.NamespacedName().Name)
 		})
 
-	case phase == Backfilling && job.IsCompleted():
-		return s.completeBackfill(ctx, job.ToV1Job(), definition, backfillRequest, Pending, func() {
+	case phase == Backfilling && job != nil && job.IsCompleted():
+		return s.completeBackfill(ctx, job, definition, backfillRequest, Pending, func() {
 			s.eventRecorder.Eventf(definition.ToUnstructured(),
 				"Normal",
 				"BackfillCompleted",
 				"Backfill for stream %s has been completed", definition.NamespacedName().Name)
 		})
 
-	case phase == Backfilling && !job.IsCompleted():
+	case phase == Backfilling && job != nil && !job.IsCompleted():
 		return s.updateStreamPhase(ctx, definition, backfillRequest, Backfilling, func() {
 			s.eventRecorder.Eventf(definition.ToUnstructured(),
 				"Normal",
@@ -376,9 +400,9 @@ func (s *streamReconciler) compareConfigurations(ctx context.Context, v1job batc
 	return jobConfiguration == definitionConfiguration, nil
 }
 
-func (s *streamReconciler) completeBackfill(ctx context.Context, job *batchv1.Job, definition Definition, request *v1.BackfillRequest, nextStatus Phase, eventFunc func()) (reconcile.Result, error) {
+func (s *streamReconciler) completeBackfill(ctx context.Context, job *StreamingJob, definition Definition, request *v1.BackfillRequest, nextStatus Phase, eventFunc func()) (reconcile.Result, error) {
 	if job != nil {
-		err := s.client.Delete(ctx, job)
+		err := s.client.Delete(ctx, job.ToV1Job())
 		if client.IgnoreNotFound(err) != nil {
 			return reconcile.Result{}, err
 		}
