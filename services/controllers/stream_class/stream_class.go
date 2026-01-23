@@ -45,8 +45,8 @@ func (s *StreamClassReconciler) Reconcile(ctx context.Context, request reconcile
 	return s.moveFsm(ctx, sc, deleted, request.NamespacedName)
 }
 
-func (s *StreamClassReconciler) SetupWithManager(mgr runtime.Manager, name string) error {
-	return runtime.NewControllerManagedBy(mgr).Named(name).For(&v1.StreamClass{}).Complete(s)
+func (s *StreamClassReconciler) SetupWithManager(mgr runtime.Manager) error {
+	return runtime.NewControllerManagedBy(mgr).For(&v1.StreamClass{}).Complete(s)
 }
 
 func (s *StreamClassReconciler) getLogger(ctx context.Context, request types.NamespacedName) klog.Logger {

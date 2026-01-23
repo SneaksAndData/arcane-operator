@@ -239,12 +239,7 @@ func createManager(ctx context.Context, g *errgroup.Group) (manager.Manager, err
 	eventRecorder := eventBroadcaster.NewRecorder(scheme, corev1.EventSource{Component: "Arcane-Operator-Test"})
 	controllerFactory := stream.NewStreamControllerFactory(mgr.GetClient(), jobBuilder, mgr, eventRecorder)
 
-	controllerId, err := uuid.NewUUID()
-	if err != nil {
-		return nil, fmt.Errorf("unable to generate controller ID: %w", err)
-	}
-
-	err = stream_class.NewStreamClassReconciler(mgr.GetClient(), controllerFactory).SetupWithManager(mgr, controllerId.String())
+	err = stream_class.NewStreamClassReconciler(mgr.GetClient(), controllerFactory).SetupWithManager(mgr)
 	if err != nil {
 		return nil, fmt.Errorf("unable to setup StreamClassReconciler: %w", err)
 	}
