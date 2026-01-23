@@ -7,6 +7,7 @@ import (
 	"github.com/SneaksAndData/arcane-operator/services/controllers"
 	"github.com/SneaksAndData/arcane-operator/services/job"
 	batchv1 "k8s.io/api/batch/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -156,7 +157,7 @@ func (s *streamReconciler) moveFsm(ctx context.Context, definition Definition, j
 	case job != nil && job.IsFailed():
 		return s.stopStream(ctx, definition, Failed, func() {
 			s.eventRecorder.Eventf(definition.ToUnstructured(),
-				"Normal",
+				corev1.EventTypeWarning,
 				"StreamingJobFailed",
 				"The streaming job %s has failed", job.Name)
 		})
@@ -164,7 +165,7 @@ func (s *streamReconciler) moveFsm(ctx context.Context, definition Definition, j
 	case phase == Failed && definition.Suspended() && backfillRequest != nil:
 		return s.completeBackfill(ctx, job, definition, backfillRequest, Suspended, func() {
 			s.eventRecorder.Eventf(definition.ToUnstructured(),
-				"Normal",
+				corev1.EventTypeNormal,
 				"StreamSuspended",
 				"The stream was suspended")
 		})
@@ -172,7 +173,7 @@ func (s *streamReconciler) moveFsm(ctx context.Context, definition Definition, j
 	case phase == Failed && definition.Suspended() && backfillRequest == nil:
 		return s.stopStream(ctx, definition, Suspended, func() {
 			s.eventRecorder.Eventf(definition.ToUnstructured(),
-				"Normal",
+				corev1.EventTypeNormal,
 				"StreamSuspended",
 				"The stream was suspended")
 		})
@@ -180,7 +181,7 @@ func (s *streamReconciler) moveFsm(ctx context.Context, definition Definition, j
 	case phase == Failed:
 		return s.stopStream(ctx, definition, Failed, func() {
 			s.eventRecorder.Eventf(definition.ToUnstructured(),
-				"Normal",
+				corev1.EventTypeWarning,
 				"StreamingJobFailed",
 				"The stream %s has failed", definition.NamespacedName().Name)
 		})
@@ -188,7 +189,7 @@ func (s *streamReconciler) moveFsm(ctx context.Context, definition Definition, j
 	case phase == New && definition.Suspended():
 		return s.stopStream(ctx, definition, Suspended, func() {
 			s.eventRecorder.Eventf(definition.ToUnstructured(),
-				"Normal",
+				corev1.EventTypeNormal,
 				"StreamSuspended",
 				"The new stream %s was added in the suspended state, nothing to do", definition.NamespacedName().Name)
 		})
@@ -196,7 +197,7 @@ func (s *streamReconciler) moveFsm(ctx context.Context, definition Definition, j
 	case phase == New && !definition.Suspended():
 		return s.startBackfill(ctx, definition, Pending, func() {
 			s.eventRecorder.Eventf(definition.ToUnstructured(),
-				"Normal",
+				corev1.EventTypeNormal,
 				"StreamCreated",
 				"Backfill was requested for the new stream definition: %s", definition.NamespacedName().Name)
 		})
@@ -210,7 +211,7 @@ func (s *streamReconciler) moveFsm(ctx context.Context, definition Definition, j
 	case phase == Running && definition.Suspended():
 		return s.stopStream(ctx, definition, Suspended, func() {
 			s.eventRecorder.Eventf(definition.ToUnstructured(),
-				"Normal",
+				corev1.EventTypeNormal,
 				"StreamSuspended",
 				"The streaming job for stream %s has been suspended", definition.NamespacedName().Name)
 		})
@@ -218,7 +219,7 @@ func (s *streamReconciler) moveFsm(ctx context.Context, definition Definition, j
 	case phase == Running && backfillRequest != nil:
 		return s.stopStream(ctx, definition, Pending, func() {
 			s.eventRecorder.Eventf(definition.ToUnstructured(),
-				"Normal",
+				corev1.EventTypeNormal,
 				"BackfillRequested",
 				"A backfill requested for stream %s, stopping the streaming job to start backfilling", definition.NamespacedName().Name)
 		})
@@ -226,7 +227,7 @@ func (s *streamReconciler) moveFsm(ctx context.Context, definition Definition, j
 	case phase == Running && backfillRequest == nil:
 		return s.reconcileJob(ctx, definition, backfillRequest, Running, func() {
 			s.eventRecorder.Eventf(definition.ToUnstructured(),
-				"Normal",
+				corev1.EventTypeNormal,
 				"StreamingContinued",
 				"The streaming job for stream %s is continuing", definition.NamespacedName().Name)
 		})
@@ -234,7 +235,7 @@ func (s *streamReconciler) moveFsm(ctx context.Context, definition Definition, j
 	case phase == Suspended && backfillRequest != nil && !definition.Suspended():
 		return s.updateStreamPhase(ctx, definition, backfillRequest, Pending, func() {
 			s.eventRecorder.Eventf(definition.ToUnstructured(),
-				"Normal",
+				corev1.EventTypeNormal,
 				"BackfillRequested",
 				"A backfill requested for suspended stream %s", definition.NamespacedName().Name)
 		})
@@ -242,7 +243,7 @@ func (s *streamReconciler) moveFsm(ctx context.Context, definition Definition, j
 	case phase == Suspended && backfillRequest == nil && definition.Suspended():
 		return s.stopStream(ctx, definition, Suspended, func() {
 			s.eventRecorder.Eventf(definition.ToUnstructured(),
-				"Normal",
+				corev1.EventTypeNormal,
 				"StreamSuspended",
 				"The stream %s remains suspended", definition.NamespacedName().Name)
 		})
@@ -250,7 +251,7 @@ func (s *streamReconciler) moveFsm(ctx context.Context, definition Definition, j
 	case phase == Suspended && !definition.Suspended():
 		return s.updateStreamPhase(ctx, definition, backfillRequest, Pending, func() {
 			s.eventRecorder.Eventf(definition.ToUnstructured(),
-				"Normal",
+				corev1.EventTypeNormal,
 				"StreamResumed",
 				"The stream %s has been resumed", definition.NamespacedName().Name)
 		})
@@ -258,7 +259,7 @@ func (s *streamReconciler) moveFsm(ctx context.Context, definition Definition, j
 	case phase == Backfilling && definition.Suspended():
 		return s.stopStream(ctx, definition, Suspended, func() {
 			s.eventRecorder.Eventf(definition.ToUnstructured(),
-				"Normal",
+				corev1.EventTypeNormal,
 				"StreamSuspended",
 				"The backfilling for stream %s has been suspended", definition.NamespacedName().Name)
 		})
@@ -266,7 +267,7 @@ func (s *streamReconciler) moveFsm(ctx context.Context, definition Definition, j
 	case phase == Backfilling && job == nil:
 		return s.reconcileJob(ctx, definition, backfillRequest, Backfilling, func() {
 			s.eventRecorder.Eventf(definition.ToUnstructured(),
-				"Normal",
+				corev1.EventTypeNormal,
 				"BackfillStarted",
 				"Backfill job for stream %s has been started", definition.NamespacedName().Name)
 		})
@@ -274,7 +275,7 @@ func (s *streamReconciler) moveFsm(ctx context.Context, definition Definition, j
 	case phase == Backfilling && job != nil && job.IsCompleted():
 		return s.completeBackfill(ctx, job, definition, backfillRequest, Pending, func() {
 			s.eventRecorder.Eventf(definition.ToUnstructured(),
-				"Normal",
+				corev1.EventTypeNormal,
 				"BackfillCompleted",
 				"Backfill for stream %s has been completed", definition.NamespacedName().Name)
 		})
@@ -282,7 +283,7 @@ func (s *streamReconciler) moveFsm(ctx context.Context, definition Definition, j
 	case phase == Backfilling && job != nil && !job.IsCompleted():
 		return s.updateStreamPhase(ctx, definition, backfillRequest, Backfilling, func() {
 			s.eventRecorder.Eventf(definition.ToUnstructured(),
-				"Normal",
+				corev1.EventTypeNormal,
 				"BackfillInProgress",
 				"Backfill for stream %s is still in progress", definition.NamespacedName().Name)
 		})
