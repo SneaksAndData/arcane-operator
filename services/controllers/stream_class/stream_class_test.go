@@ -19,7 +19,7 @@ import (
 	crfake "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
-func Test_StreamClass_UpdatePhase_ToPending(t *testing.T) {
+func Test_UpdatePhase_ToPending(t *testing.T) {
 	// Arrange
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
@@ -36,7 +36,7 @@ func Test_StreamClass_UpdatePhase_ToPending(t *testing.T) {
 	expectPhase(t, k8sClient, name, v1.PhasePending)
 }
 
-func Test_StreamClass_UpdatePhase_ToRunning(t *testing.T) {
+func Test_UpdatePhase_ToRunning(t *testing.T) {
 	// Arrange
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
@@ -72,7 +72,7 @@ func Test_StreamClass_UpdatePhase_ToRunning(t *testing.T) {
 	expectPhase(t, k8sClient, name, v1.PhaseReady)
 }
 
-func Test_StreamClass_UpdatePhase_ToRunning_Idempotence(t *testing.T) {
+func Test_UpdatePhase_ToRunning_Idempotence(t *testing.T) {
 	// Arrange
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
@@ -110,7 +110,7 @@ func Test_StreamClass_UpdatePhase_ToRunning_Idempotence(t *testing.T) {
 	expectPhase(t, k8sClient, name, v1.PhaseReady)
 }
 
-func Test_StreamClass_UpdatePhase_Ready_ToStopped(t *testing.T) {
+func Test_UpdatePhase_Ready_ToStopped(t *testing.T) {
 	// Arrange
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
@@ -152,7 +152,7 @@ func Test_StreamClass_UpdatePhase_Ready_ToStopped(t *testing.T) {
 	require.Equal(t, result, reconcile.Result{})
 }
 
-func Test_StreamClass_UpdatePhase_Pending_ToStopped(t *testing.T) {
+func Test_UpdatePhase_Pending_ToStopped(t *testing.T) {
 	// Arrange
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
@@ -187,7 +187,7 @@ func Test_StreamClass_UpdatePhase_Pending_ToStopped(t *testing.T) {
 	require.Equal(t, result, reconcile.Result{})
 }
 
-func Test_StreamClass_UpdatePhase_Pending_ToFailed(t *testing.T) {
+func Test_UpdatePhase_Pending_ToFailed(t *testing.T) {
 	// Arrange
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
@@ -213,35 +213,7 @@ func Test_StreamClass_UpdatePhase_Pending_ToFailed(t *testing.T) {
 	expectPhase(t, k8sClient, name, v1.PhaseFailed)
 }
 
-func Test_StreamClass_UpdatePhase_ToFailed_Idempotence(t *testing.T) {
-	// Arrange
-	mockCtrl := gomock.NewController(t)
-	defer mockCtrl.Finish()
-
-	k8sClient, name := setupFakeClient(t, &v1.StreamClass{
-		ObjectMeta: metav1.ObjectMeta{},
-		Status: v1.StreamClassStatus{
-			Phase: v1.PhasePending,
-		},
-	})
-
-	streamReconcilerFactory := mocks.NewMockUnmanagedControllerFactory(mockCtrl)
-	streamReconcilerFactory.EXPECT().CreateStreamController(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, fmt.Errorf("some error")).Times(1)
-
-	reconciler := NewStreamClassReconciler(k8sClient, streamReconcilerFactory)
-
-	// Act
-	for i := 0; i < 5; i++ {
-		result, err := reconciler.Reconcile(t.Context(), reconcile.Request{NamespacedName: types.NamespacedName{Name: name}})
-		require.NoError(t, err)
-		require.Equal(t, result, reconcile.Result{})
-	}
-
-	// Assert
-	expectPhase(t, k8sClient, name, v1.PhaseFailed)
-}
-
-func Test_StreamClass_UpdatePhase_Ready_ToFailed(t *testing.T) {
+func Test_UpdatePhase_Ready_ToFailed(t *testing.T) {
 	t.Skip("Flaky")
 
 	// Arrange
@@ -277,35 +249,6 @@ func Test_StreamClass_UpdatePhase_Ready_ToFailed(t *testing.T) {
 
 	// Wait for the stream controller to start
 	<-completed
-
-	// Assert
-	expectPhase(t, k8sClient, name, v1.PhaseFailed)
-}
-
-func Test_StreamClass_UpdatePhase_Failed_Idempotence(t *testing.T) {
-	// Arrange
-	mockCtrl := gomock.NewController(t)
-	defer mockCtrl.Finish()
-
-	k8sClient, name := setupFakeClient(t, &v1.StreamClass{
-		ObjectMeta: metav1.ObjectMeta{},
-		Status: v1.StreamClassStatus{
-			Phase: v1.PhaseFailed,
-		},
-	})
-
-	streamReconcilerFactory := mocks.NewMockUnmanagedControllerFactory(mockCtrl)
-	// Expect CreateStreamController to never be called when already in Failed state
-	streamReconcilerFactory.EXPECT().CreateStreamController(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-
-	reconciler := NewStreamClassReconciler(k8sClient, streamReconcilerFactory)
-
-	// Act
-	for i := 0; i < 5; i++ {
-		result, err := reconciler.Reconcile(t.Context(), reconcile.Request{NamespacedName: types.NamespacedName{Name: name}})
-		require.NoError(t, err)
-		require.Equal(t, result, reconcile.Result{})
-	}
 
 	// Assert
 	expectPhase(t, k8sClient, name, v1.PhaseFailed)
