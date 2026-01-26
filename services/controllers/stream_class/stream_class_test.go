@@ -19,7 +19,7 @@ import (
 	crfake "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
-func Test_UpdatePhase_ToPending(t *testing.T) {
+func Test_StreamClass_UpdatePhase_ToPending(t *testing.T) {
 	// Arrange
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
@@ -36,7 +36,7 @@ func Test_UpdatePhase_ToPending(t *testing.T) {
 	expectPhase(t, k8sClient, name, v1.PhasePending)
 }
 
-func Test_UpdatePhase_ToRunning(t *testing.T) {
+func Test_StreamClass_UpdatePhase_ToRunning(t *testing.T) {
 	// Arrange
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
@@ -110,7 +110,7 @@ func Test_StreamClass_UpdatePhase_ToRunning_Idempotence(t *testing.T) {
 	expectPhase(t, k8sClient, name, v1.PhaseReady)
 }
 
-func Test_UpdatePhase_Ready_ToStopped(t *testing.T) {
+func Test_StreamClass_UpdatePhase_Ready_ToStopped(t *testing.T) {
 	// Arrange
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
@@ -152,7 +152,7 @@ func Test_UpdatePhase_Ready_ToStopped(t *testing.T) {
 	require.Equal(t, result, reconcile.Result{})
 }
 
-func Test_UpdatePhase_Pending_ToStopped(t *testing.T) {
+func Test_StreamClass_UpdatePhase_Pending_ToStopped(t *testing.T) {
 	// Arrange
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
@@ -187,7 +187,7 @@ func Test_UpdatePhase_Pending_ToStopped(t *testing.T) {
 	require.Equal(t, result, reconcile.Result{})
 }
 
-func Test_UpdatePhase_Pending_ToFailed(t *testing.T) {
+func Test_StreamClass_UpdatePhase_Pending_ToFailed(t *testing.T) {
 	// Arrange
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
@@ -213,7 +213,7 @@ func Test_UpdatePhase_Pending_ToFailed(t *testing.T) {
 	expectPhase(t, k8sClient, name, v1.PhaseFailed)
 }
 
-func Test_UpdatePhase_ToFailed_Idempotence(t *testing.T) {
+func Test_StreamClass_UpdatePhase_ToFailed_Idempotence(t *testing.T) {
 	// Arrange
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
@@ -241,7 +241,7 @@ func Test_UpdatePhase_ToFailed_Idempotence(t *testing.T) {
 	expectPhase(t, k8sClient, name, v1.PhaseFailed)
 }
 
-func Test_UpdatePhase_Ready_ToFailed(t *testing.T) {
+func Test_StreamClass_UpdatePhase_Ready_ToFailed(t *testing.T) {
 	t.Skip("Flaky")
 
 	// Arrange
@@ -282,7 +282,7 @@ func Test_UpdatePhase_Ready_ToFailed(t *testing.T) {
 	expectPhase(t, k8sClient, name, v1.PhaseFailed)
 }
 
-func Test_UpdatePhase_Failed_Idempotence(t *testing.T) {
+func Test_StreamClass_UpdatePhase_Failed_Idempotence(t *testing.T) {
 	// Arrange
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
