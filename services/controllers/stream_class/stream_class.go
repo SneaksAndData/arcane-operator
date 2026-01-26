@@ -63,7 +63,7 @@ func (s *StreamClassReconciler) moveFsm(ctx context.Context, sc *v1.StreamClass,
 		return s.tryStartStreamController(ctx, sc, name, v1.PhaseReady)
 	case deleted:
 		return s.tryStopStreamController(ctx, name)
-	case sc.Status.Phase == v1.PhaseFailed:
+	case sc.Status.Phase == "Failed":
 		return s.tryStopStreamController(ctx, name)
 	}
 
