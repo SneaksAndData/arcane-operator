@@ -1,16 +1,15 @@
-{{- if .Values.rbac.clusterRole.streamClassViewer.create -}}
+{{- if .Values.rbac.clusterRole.backfillRequestViewer.create -}}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: {{ include "app.clusteRole.streamClassViewer" . }}
+  name: {{ include "app.clusteRole.backfillRequestViewer" . }}
   labels:
     rbac.authorization.k8s.io/aggregate-to-edit: "true"
-    rbac.authorization.k8s.io/aggregate-to-view: "true"
     {{- include "app.labels" $ | nindent 4 }}
-    {{- with .Values.rbac.clusterRole.streamClassViewer.additionalLabels }}
+    {{- with .Values.rbac.clusterRole.backfillRequestViewer.additionalLabels }}
       {{- toYaml . | nindent 4 }}
     {{- end }}
-  {{- with .Values.rbac.clusterRole.streamClassViewer.additionalAnnotations }}
+  {{- with .Values.rbac.clusterRole.backfillRequestViewer.additionalAnnotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
   {{- end }}
@@ -22,5 +21,6 @@ rules:
     apiGroups:
       - streaming.sneaksanddata.com
     resources:
-      - streamclasses
+      - backfillrequests
+      - backfillrequests/status
 {{- end }}
