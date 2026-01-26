@@ -63,6 +63,8 @@ func (s *StreamClassReconciler) moveFsm(ctx context.Context, sc *v1.StreamClass,
 		return s.tryStartStreamController(ctx, sc, name, v1.PhaseReady)
 	case deleted:
 		return s.tryStopStreamController(ctx, name)
+	case sc.Status.Phase == v1.PhaseFailed:
+		return s.tryStopStreamController(ctx, name)
 	}
 
 	return reconcile.Result{}, fmt.Errorf("failed to reconcile StreamClass FSM for %s. Current state: %s",
