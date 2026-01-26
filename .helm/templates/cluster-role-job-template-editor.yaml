@@ -22,5 +22,5 @@ rules:
     apiGroups:
       - streaming.sneaksanddata.com
     resources:
-      - streaming-job-templates
+      - streamingjobtemplates
 {{- end }}

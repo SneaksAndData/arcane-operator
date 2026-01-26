@@ -137,3 +137,25 @@ Generate the job template viewer cluster role name
 {{- end }}
 {{- end }}
 
+{{/*
+Generate the job template viewer cluster role name
+*/}}
+{{- define "app.clusteRole.backfillRequestViewer" -}}
+{{- if .Values.rbac.clusterRole.streamClassViewer.nameOverride }}
+{{- .Values.rbac.clusterRole.streamClassViewer.nameOverride }}
+{{- else }}
+{{- printf "%s-backfill-request-viewer" (include "app.fullname" .) }}
+{{- end }}
+{{- end }}
+
+{{/*
+Generate the job template viewer cluster role name
+*/}}
+{{- define "app.clusteRole.backfillRequestEditor" -}}
+{{- if .Values.rbac.clusterRole.streamClassViewer.nameOverride }}
+{{- .Values.rbac.clusterRole.streamClassViewer.nameOverride }}
+{{- else }}
+{{- printf "%s-backfill-request-editor" (include "app.fullname" .) }}
+{{- end }}
+{{- end }}
+
