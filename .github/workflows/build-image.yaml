@@ -54,6 +54,18 @@ jobs:
           use: true
           platforms: linux/arm64,linux/amd64
 
+      # bandaid Microsoft: https://github.com/actions/runner-images/issues/2840#issuecomment-1284059930
+      - name: Claim disk space
+        run: |
+          # Remove unused tools
+          sudo rm -rf /opt/microsoft                #   783M
+          sudo rm -rf /usr/lib/llvm-*               #  1900M
+          sudo rm -rf /usr/local/julia*             #  1008M
+          sudo rm -rf /usr/local/share/chromium     #   613M
+          sudo rm -rf /usr/local/share/powershell   #  1244M
+          sudo rm -rf /usr/share/swift              #  3207M
+          sudo df -TBG /     
+
       - name: Build and push Docker image
         uses: docker/build-push-action@v6.18.0
         with:

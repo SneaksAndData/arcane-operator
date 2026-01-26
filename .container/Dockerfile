@@ -10,12 +10,13 @@ WORKDIR /app
 COPY . ./
 
 
-RUN go install github.com/DataDog/orchestrion@v1.6.0 \
+RUN go install github.com/DataDog/orchestrion@v1.7.0 \
     && orchestrion pin \
     && go mod tidy \
     && go mod verify \
     && go mod vendor \
-    && CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH GOFLAGS="${GOFLAGS} '-toolexec=orchestrion toolexec'" go build -o /app -v ./...
+    && CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH GOFLAGS="${GOFLAGS} '-toolexec=orchestrion toolexec'" go build -ldflags "-X github.com/SneaksAndData/arcane-operator/pkg/buildmeta.AppVersion=$APPVERSION -X github.com/SneaksAndData/arcane-operator/pkg/buildmeta.BuildNumber=$BUILDNUMBER" -o /app -v ./...
+
 
 
 # Deploy the application binary into a lean image
