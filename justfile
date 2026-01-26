@@ -27,4 +27,4 @@ mock-stream-plugin:
         --namespace default \
         --set jobTemplateSettings.podFailurePolicySettings.retryOnExitCodes="{120,121}" \
         --set jobTemplateSettings.backoffLimit=1 \
-        --version v1.0.2
+        --version v1.0.3
