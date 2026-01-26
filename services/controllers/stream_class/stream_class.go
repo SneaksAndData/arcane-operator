@@ -57,13 +57,13 @@ func (s *StreamClassReconciler) getLogger(ctx context.Context, request types.Nam
 
 func (s *StreamClassReconciler) moveFsm(ctx context.Context, sc *v1.StreamClass, deleted bool, name types.NamespacedName) (reconcile.Result, error) {
 	switch {
-	case !deleted && sc.Status.Phase == v1.PhaseNew:
+	case !deleted && sc.Status.Phase == "":
 		return s.updatePhase(ctx, sc, name, v1.PhasePending)
-	case !deleted && (sc.Status.Phase == v1.PhasePending || sc.Status.Phase == v1.PhaseReady):
+	case !deleted && (sc.Status.Phase == "Pending" || sc.Status.Phase == "Ready"):
 		return s.tryStartStreamController(ctx, sc, name, v1.PhaseReady)
 	case deleted:
 		return s.tryStopStreamController(ctx, name)
-	case sc.Status.Phase == v1.PhaseFailed:
+	case sc.Status.Phase == "Failed":
 		return s.tryStopStreamController(ctx, name)
 	}
 
