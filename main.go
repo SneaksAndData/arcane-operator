@@ -66,11 +66,13 @@ func main() {
 		ShutdownTimeout: 5 * time.Second,
 	})
 
-	err = probesService.ListenAndServe(ctx)
-	if err != nil {
-		setupLog.V(0).Error(err, "unable to start health probes server")
-		panic(err)
-	}
+	go func() {
+		err := probesService.ListenAndServe(ctx)
+		if err != nil {
+			setupLog.V(0).Error(err, "unable to start health probes server")
+			panic(err)
+		}
+	}()
 
 	config, err := initKubeconfig(kubeconfigCmd, logger)
 	if err != nil {
