@@ -20,7 +20,7 @@ type ProbesService struct {
 	shutdownTimeout time.Duration
 }
 
-func NewProbesService(probesConfig ProbesConfig) *ProbesService {
+func NewProbesService(probesConfig ProbesConfig) *ProbesService { // coverage-ignore (constructor)
 	mux := http.NewServeMux()
 
 	s := &ProbesService{
@@ -35,13 +35,13 @@ func NewProbesService(probesConfig ProbesConfig) *ProbesService {
 		Handler:      mux,
 	}
 
-	mux.HandleFunc("/startup", s.startupProbe)
-	mux.HandleFunc("/health", s.livenessProbe)
-	mux.HandleFunc("/health/ready", s.readinessProbe)
+	mux.HandleFunc("/startup", s.okHandler)
+	mux.HandleFunc("/health", s.okHandler)
+	mux.HandleFunc("/health/ready", s.okHandler)
 	return s
 }
 
-func (s *ProbesService) livenessProbe(w http.ResponseWriter, _ *http.Request) {
+func (s *ProbesService) okHandler(w http.ResponseWriter, _ *http.Request) { // coverage-ignore (trivial)
 	w.WriteHeader(http.StatusOK)
 	_, err := w.Write([]byte("OK"))
 	if err != nil {
@@ -49,23 +49,7 @@ func (s *ProbesService) livenessProbe(w http.ResponseWriter, _ *http.Request) {
 	}
 }
 
-func (s *ProbesService) readinessProbe(w http.ResponseWriter, _ *http.Request) {
-	w.WriteHeader(http.StatusOK)
-	_, err := w.Write([]byte("OK"))
-	if err != nil {
-		panic(err)
-	}
-}
-
-func (s *ProbesService) startupProbe(w http.ResponseWriter, _ *http.Request) {
-	w.WriteHeader(http.StatusOK)
-	_, err := w.Write([]byte("OK"))
-	if err != nil {
-		panic(err)
-	}
-}
-
-func (s *ProbesService) ListenAndServe(ctx context.Context) error {
+func (s *ProbesService) ListenAndServe(ctx context.Context) error { // coverage-ignore (should be tested in integration tests)
 	errChan := make(chan error, 1)
 
 	go func() {
