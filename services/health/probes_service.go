@@ -21,20 +21,23 @@ type ProbesService struct {
 }
 
 func NewProbesService(probesConfig ProbesConfig) *ProbesService {
+	mux := http.NewServeMux()
+
 	s := &ProbesService{
-		addr: probesConfig.Addr,
-		srv: &http.Server{
-			Addr:         probesConfig.Addr,
-			WriteTimeout: probesConfig.WriteTimeout,
-			ReadTimeout:  probesConfig.ReadTimeout,
-		},
+		addr:            probesConfig.Addr,
 		shutdownTimeout: probesConfig.ShutdownTimeout,
 	}
 
-	http.HandleFunc("/startup", s.startupProbe)
-	http.HandleFunc("/health", s.livenessProbe)
-	http.HandleFunc("/health/ready", s.readinessProbe)
+	s.srv = &http.Server{
+		Addr:         probesConfig.Addr,
+		WriteTimeout: probesConfig.WriteTimeout,
+		ReadTimeout:  probesConfig.ReadTimeout,
+		Handler:      mux,
+	}
 
+	mux.HandleFunc("/startup", s.startupProbe)
+	mux.HandleFunc("/health", s.livenessProbe)
+	mux.HandleFunc("/health/ready", s.readinessProbe)
 	return s
 }
 
