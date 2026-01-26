@@ -46,7 +46,7 @@ spec:
         imagePullPolicy: "{{ .Values.image.pullPolicy }}"
         livenessProbe:
           httpGet:
-            port: 8080
+            port: {{ .Values.settings.probes.port }}
             path: /health
           initialDelaySeconds: 10
           timeoutSeconds: 5
@@ -55,8 +55,8 @@ spec:
           failureThreshold: 10
         readinessProbe:
           httpGet:
-            port: 8080
-            path: /health
+            port: {{ .Values.settings.probes.port }}
+            path: /health/ready
           initialDelaySeconds: 10
           timeoutSeconds: 5
           periodSeconds: 30
@@ -67,6 +67,14 @@ spec:
             value: {{ .Values.environment }}
           - name: APPLICATION_VERSION
             value: "{{ (default (printf "v%s" .Chart.AppVersion) .Values.image.tag) }}"
+          - name: ARCANE_OPERATOR__PROBES__ADDR
+            value: {{ .Values.settings.probes.listenAddrOverride | default (printf "0.0.0.0:%v" .Values.settings.probes.port) }}
+          - name: ARCANE_OPERATOR__PROBES__WRITE_TIMEOUT
+            value: {{ .Values.settings.probes.writeTimeout | default  "15s"}}
+          - name: ARCANE_OPERATOR__PROBES__READ_TIMEOUT
+            value: {{ .Values.settings.probes.writeTimeout | default  "15s"}}
+          - name: ARCANE_OPERATOR__PROBES__SHUTDOWN_TIMEOUT
+            value: {{ .Values.settings.probes.writeTimeout | default  "5s"}}
           {{- with .Values.extraEnv }}
             {{- toYaml . | nindent 12 }}
           {{- end }}

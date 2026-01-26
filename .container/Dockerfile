@@ -1,4 +1,4 @@
-﻿FROM golang:1.25-bookworm AS build-stage
+﻿FROM --platform=$BUILDPLATFORM golang:1.25-bookworm AS build-stage
 
 ARG TARGETOS 
 ARG TARGETARCH
@@ -26,7 +26,7 @@ WORKDIR /app
 
 COPY --from=build-stage /app /app
 
-COPY .container/appconfig.yaml /app/appconfig.yaml
+COPY appconfig.yaml /app/appconfig.yaml
 
 USER nonroot:nonroot
 

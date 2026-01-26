@@ -1,0 +1,5 @@
+probes:
+  addr: ":8888"
+  write-timeout: 15s
+  read-timeout: 15s
+  shutdown-timeout: 5s

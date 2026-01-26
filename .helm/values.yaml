@@ -184,32 +184,25 @@ securityContext:
     type: RuntimeDefault
 
 settings:
-  # Settings for the streaming Job Maintenance controller
-  jobMaintenanceController:
-    
-    # The namespace where the streaming jobs are created and maintained
-    # Defaults to the namespace where the operator is deployed
-    jobNamespace: ""
-    
-    # The maximum number of streaming job events in the Akka event buffer
-    # If the number of events exceeds this value, the service throws an exception
-    # and will be restarted by the Deployment controller
-    maxEventBufferCapacity: 10000
-    
-  # Settings for the StreamClass controller
-  streamClassController:
-    
-    # The namespace where the streaming jobs are created and maintained
-    # Defaults to the namespace where the operator is deployed
-    streamClassesNamespace: ""
-    
-    # The maximum number of streaming job events in the Akka event buffer
-    # If the number of events exceeds this value, the service throws an exception
-    # and will be restarted by the Deployment controller
-    maxEventBufferCapacity: 10000
 
-    # Custom logger configuration
-  customLoggingProperties: { }
-  
-  # Custom logger minimum level overrides
-  customLoggingMinimumLevel: { }
+  # Configuration for the health probes
+  probes:
+
+    ## Address override for the probes to listen on (overrides the port setting or interface binding)
+    ## If not set, defaults to "0.0.0.0:<port>"
+    listenAddrOverride: ""
+
+    ## Port for the health probes to listen on
+    port: 8888
+
+    ## Timeout for write operations
+    ## If not set, defaults to 15s
+    writeTimeout: ""
+
+    ## Timeout for read operations
+    ## If not set, defaults to 15s
+    readTimeout: ""
+
+    ## Timeout for server shutdown
+    ## If not set, defaults to 5s
+    shutdownTimeout: ""
