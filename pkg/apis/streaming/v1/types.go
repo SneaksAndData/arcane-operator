@@ -10,6 +10,7 @@ import (
 type Phase string
 
 const (
+	PhaseNew     Phase = ""
 	PhasePending Phase = "Pending"
 	PhaseReady   Phase = "Ready"
 	PhaseFailed  Phase = "Failed"

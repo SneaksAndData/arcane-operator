@@ -1,15 +1,15 @@
-{{- if .Values.rbac.clusterRole.streamClassEditor.create -}}
+{{- if .Values.rbac.clusterRole.backfillRequestEditor.create -}}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: {{ include "app.clusteRole.streamClassEditor" . }}
+  name: {{ include "app.clusteRole.backfillRequestEditor" . }}
   labels:
     rbac.authorization.k8s.io/aggregate-to-edit: "true"
     {{- include "app.labels" $ | nindent 4 }}
-    {{- with .Values.rbac.clusterRole.streamClassEditor.additionalLabels }}
+    {{- with .Values.rbac.clusterRole.backfillRequestEditor.additionalLabels }}
       {{- toYaml . | nindent 4 }}
     {{- end }}
-  {{- with .Values.rbac.clusterRole.streamClassEditor.additionalAnnotations }}
+  {{- with .Values.rbac.clusterRole.backfillRequestEditor.additionalAnnotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
   {{- end }}
@@ -22,6 +22,6 @@ rules:
     apiGroups:
       - streaming.sneaksanddata.com
     resources:
-      - streamclasses
-      - streamclasses/status
+      - backfillrequests
+      - backfillrequests/status
 {{- end }}
