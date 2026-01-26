@@ -10,10 +10,10 @@ import (
 )
 
 const (
-	EnvPrefix = "ARCANE_OPERATOR_" // varnames will be NEXUS__MY_ENV_VAR or NEXUS__SECTION1__SECTION2__MY_ENV_VAR
+	EnvPrefix = "ARCANE_OPERATOR_" // var names will be ARCANE_OPERATOR__MY_ENV_VAR or ARCANE_OPERATOR__SECTION1__SECTION2__MY_ENV_VAR
 )
 
-func configExists(configPath string) (bool, error) {
+func configExists(configPath string) (bool, error) { // coverage-ignore (this should be covered in integration tests)
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
 		return false, nil
 	} else if err != nil { // coverage-ignore
@@ -23,7 +23,7 @@ func configExists(configPath string) (bool, error) {
 	}
 }
 
-func LoadConfig[T any](ctx context.Context) (*T, error) {
+func LoadConfig[T any](ctx context.Context) (*T, error) { // coverage-ignore (this should be covered in integration tests)
 	logger := klog.FromContext(ctx)
 	customViper := viper.NewWithOptions(viper.KeyDelimiter("__"))
 	customViper.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
