@@ -9,6 +9,7 @@ import (
 	"github.com/SneaksAndData/arcane-operator/pkg/signals"
 	"github.com/SneaksAndData/arcane-operator/services/controllers/stream"
 	"github.com/SneaksAndData/arcane-operator/services/controllers/stream_class"
+	"github.com/SneaksAndData/arcane-operator/services/health"
 	"github.com/SneaksAndData/arcane-operator/services/job/job_builder"
 	"github.com/SneaksAndData/arcane-operator/telemetry"
 	corev1 "k8s.io/api/core/v1"
@@ -25,6 +26,7 @@ import (
 	controllerruntime "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"strings"
+	"time"
 )
 
 var (
@@ -55,6 +57,19 @@ func main() {
 
 	if err != nil {
 		logger.V(0).Error(err, "one of the logging handlers cannot be configured")
+	}
+
+	probesService := health.NewProbesService(health.ProbesConfig{
+		Addr:            "[::]:8080",
+		WriteTimeout:    5 * time.Second,
+		ReadTimeout:     5 * time.Second,
+		ShutdownTimeout: 5 * time.Second,
+	})
+
+	err = probesService.ListenAndServe(ctx)
+	if err != nil {
+		setupLog.V(0).Error(err, "unable to start health probes server")
+		panic(err)
 	}
 
 	config, err := initKubeconfig(kubeconfigCmd, logger)
