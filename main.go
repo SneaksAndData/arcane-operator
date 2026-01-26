@@ -60,7 +60,7 @@ func main() {
 	}
 
 	probesService := health.NewProbesService(health.ProbesConfig{
-		Addr:            "[::]:8080",
+		Addr:            ":8080",
 		WriteTimeout:    5 * time.Second,
 		ReadTimeout:     5 * time.Second,
 		ShutdownTimeout: 5 * time.Second,
