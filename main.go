@@ -5,6 +5,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"github.com/SneaksAndData/arcane-operator/config"
 	"github.com/SneaksAndData/arcane-operator/pkg/apis/streaming/v1"
 	"github.com/SneaksAndData/arcane-operator/pkg/signals"
 	"github.com/SneaksAndData/arcane-operator/services/controllers/stream"
@@ -26,7 +27,6 @@ import (
 	controllerruntime "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"strings"
-	"time"
 )
 
 var (
@@ -59,12 +59,12 @@ func main() {
 		logger.V(0).Error(err, "one of the logging handlers cannot be configured")
 	}
 
-	probesService := health.NewProbesService(health.ProbesConfig{
-		Addr:            ":8080",
-		WriteTimeout:    5 * time.Second,
-		ReadTimeout:     5 * time.Second,
-		ShutdownTimeout: 5 * time.Second,
-	})
+	appConfig, err := config.LoadConfig[config.AppConfig](ctx)
+	if err != nil {
+		logger.V(0).Error(err, "unable to load application configuration")
+		panic(err)
+	}
+	probesService := health.NewProbesService(appConfig.ProbesConfiguration)
 
 	go func() {
 		err := probesService.ListenAndServe(ctx)
@@ -74,13 +74,13 @@ func main() {
 		}
 	}()
 
-	config, err := initKubeconfig(kubeconfigCmd, logger)
+	kubeconfig, err := initKubeconfig(kubeconfigCmd, logger)
 	if err != nil {
 		setupLog.V(0).Error(err, "unable to get kubeconfig")
 		panic(err)
 	}
 
-	mgr, err := controllerruntime.NewManager(config, controllerruntime.Options{
+	mgr, err := controllerruntime.NewManager(kubeconfig, controllerruntime.Options{
 		Scheme: scheme,
 	})
 	if err != nil {

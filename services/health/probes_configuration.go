@@ -5,14 +5,14 @@ import "time"
 // ProbesConfig holds configuration for health probes service.
 type ProbesConfig struct {
 	// Addr is the address the health probes server listens on.
-	Addr string `json:"addr"`
+	Addr string `mapstructure:"addr,omitempty"`
 
 	// WriteTimeout is the maximum duration before timing out writes of the health probes server.
-	WriteTimeout time.Duration `json:"writeTimeout"`
+	WriteTimeout time.Duration `mapstructure:"write-timeout,omitempty"`
 
 	// ReadTimeout is the maximum duration before timing out reads of the health probes server.
-	ReadTimeout time.Duration `json:"readTimeout"`
+	ReadTimeout time.Duration `mapstructure:"read-timeout,omitempty"`
 
 	// ShutdownTimeout is the maximum duration for the health probes server to shut down gracefully.
-	ShutdownTimeout time.Duration `json:"shutdownTimeout"`
+	ShutdownTimeout time.Duration `mapstructure:"shutdown-timeout,omitempty"`
 }

@@ -67,6 +67,8 @@ spec:
             value: {{ .Values.environment }}
           - name: APPLICATION_VERSION
             value: "{{ (default (printf "v%s" .Chart.AppVersion) .Values.image.tag) }}"
+          - name: ARCANE_OPERATOR__PROBES__ADDR
+            value: ":8888" #TODO: add overrides
           {{- with .Values.extraEnv }}
             {{- toYaml . | nindent 12 }}
           {{- end }}
