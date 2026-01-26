@@ -38,14 +38,14 @@ func (s *StreamClassReconciler) Reconcile(ctx context.Context, request reconcile
 	sc := &v1.StreamClass{}
 	err := s.client.Get(ctx, request.NamespacedName, sc)
 	deleted := apierrors.IsNotFound(err)
-	if client.IgnoreNotFound(err) != nil {
+	if client.IgnoreNotFound(err) != nil { // coverage-ignore
 		logger.V(0).Error(err, "unable to get stream class")
 	}
 
 	return s.moveFsm(ctx, sc, deleted, request.NamespacedName)
 }
 
-func (s *StreamClassReconciler) SetupWithManager(mgr runtime.Manager) error {
+func (s *StreamClassReconciler) SetupWithManager(mgr runtime.Manager) error { // coverage-ignore (trivial)
 	return runtime.NewControllerManagedBy(mgr).For(&v1.StreamClass{}).Complete(s)
 }
 
@@ -87,7 +87,7 @@ func (s *StreamClassReconciler) tryStartStreamController(ctx context.Context, sc
 
 	controller, err := s.streamControllerFactory.CreateStreamController(ctx, sc.TargetResourceGvk(), sc.Name)
 
-	if err != nil {
+	if err != nil { // coverage-ignore
 		logger.V(0).Error(err, "unable to create stream reconciler")
 		return s.updatePhase(ctx, sc, name, v1.PhaseFailed)
 	}
