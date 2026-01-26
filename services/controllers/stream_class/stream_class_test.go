@@ -72,7 +72,7 @@ func Test_UpdatePhase_ToRunning(t *testing.T) {
 	expectPhase(t, k8sClient, name, v1.PhaseReady)
 }
 
-func Test_UpdatePhase_ToRunning_Idempotence(t *testing.T) {
+func Test_StreamClass_UpdatePhase_ToRunning_Idempotence(t *testing.T) {
 	// Arrange
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()

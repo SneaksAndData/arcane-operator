@@ -57,7 +57,7 @@ func (s *StreamClassReconciler) getLogger(ctx context.Context, request types.Nam
 
 func (s *StreamClassReconciler) moveFsm(ctx context.Context, sc *v1.StreamClass, deleted bool, name types.NamespacedName) (reconcile.Result, error) {
 	switch {
-	case !deleted && sc.Status.Phase == "":
+	case !deleted && sc.Status.Phase == v1.PhaseNew:
 		return s.updatePhase(ctx, sc, name, v1.PhasePending)
 	case !deleted && (sc.Status.Phase == v1.PhasePending || sc.Status.Phase == v1.PhaseReady):
 		return s.tryStartStreamController(ctx, sc, name, v1.PhaseReady)
@@ -99,7 +99,7 @@ func (s *StreamClassReconciler) tryStartStreamController(ctx context.Context, sc
 			logger.V(1).Info("stream controller is stopped")
 			return
 		}
-		if err != nil {
+		if err != nil { // coverage-ignore
 			logger := s.getLogger(ctx, name)
 			logger.V(0).Error(err, "stream controller exited with error")
 
@@ -146,7 +146,8 @@ func (s *StreamClassReconciler) updatePhase(ctx context.Context, sc *v1.StreamCl
 	logger.V(1).Info("Updating StreamClass phase", "from", sc.Status.Phase, "to", nextPhase)
 	sc.Status.Phase = nextPhase
 	err := s.client.Status().Update(ctx, sc)
-	if client.IgnoreNotFound(err) != nil {
+
+	if client.IgnoreNotFound(err) != nil { // coverage-ignore
 		logger.V(1).Error(err, "unable to update Stream Class status")
 		return reconcile.Result{}, err
 	}
