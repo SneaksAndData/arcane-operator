@@ -26,12 +26,13 @@ func (in *StreamClass) TargetResourceGvk() schema.GroupVersionKind {
 var _ job.ConfiguratorProvider = (*BackfillRequest)(nil)
 
 // JobConfigurator returns a JobConfigurator for the BackfillRequest
-func (in *BackfillRequest) JobConfigurator() job.Configurator {
+func (in *BackfillRequest) JobConfigurator() (job.Configurator, error) {
 	if in == nil {
-		return nil
+		return nil, nil
 	}
-	return job.NewConfiguratorChainBuilder().
+	configurator := job.NewConfiguratorChainBuilder().
 		WithConfigurator(job.NewEnvironmentConfigurator(in.Spec, "OVERRIDE")).
 		WithConfigurator(job.NewBackfillConfigurator(true)).
 		Build()
+	return configurator, nil
 }

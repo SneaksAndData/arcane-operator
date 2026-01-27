@@ -3,7 +3,7 @@ default:
 
 fresh: stop up
 
-up: start-kind-cluster build-deps integration-tests mock-stream-plugin
+up: start-kind-cluster build-deps integration-tests mock-stream-plugin manifests
 
 start-kind-cluster:
     kind create cluster
@@ -27,4 +27,7 @@ mock-stream-plugin:
         --namespace default \
         --set jobTemplateSettings.podFailurePolicySettings.retryOnExitCodes="{120,121}" \
         --set jobTemplateSettings.backoffLimit=1 \
-        --version v1.0.3
+        --version v1.0.3-1-gfebded6
+
+manifests:
+    kubectl apply -f integration_tests/manifests/*.yaml

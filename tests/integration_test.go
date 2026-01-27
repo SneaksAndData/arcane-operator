@@ -218,6 +218,9 @@ func createTestStreamDefinition(t *testing.T, mgr manager.Manager, shouldFail bo
 				Namespace:  "default",
 			},
 			RunDuration: "15s",
+			TestSecretRef: &corev1.LocalObjectReference{
+				Name: "test-secret",
+			},
 		},
 	}
 

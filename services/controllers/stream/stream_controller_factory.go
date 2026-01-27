@@ -2,6 +2,7 @@ package stream
 
 import (
 	"context"
+	v1 "github.com/SneaksAndData/arcane-operator/pkg/apis/streaming/v1"
 	"github.com/SneaksAndData/arcane-operator/services/controllers/stream_class"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/tools/record"
@@ -19,8 +20,8 @@ type streamControllerFactory struct {
 	eventRecorder record.EventRecorder
 }
 
-func (s streamControllerFactory) CreateStreamController(_ context.Context, gvk schema.GroupVersionKind, className string) (controller.Controller, error) { // coverage-ignore (trivial)
-	streamReconciler := NewStreamReconciler(s.client, gvk, s.jobBuilder, className, s.eventRecorder)
+func (s streamControllerFactory) CreateStreamController(_ context.Context, gvk schema.GroupVersionKind, streamClass *v1.StreamClass) (controller.Controller, error) { // coverage-ignore (trivial)
+	streamReconciler := NewStreamReconciler(s.client, gvk, s.jobBuilder, streamClass, s.eventRecorder)
 	unmanaged, err := streamReconciler.SetupUnmanaged(s.manager.GetCache(), s.manager.GetScheme(), s.manager.GetRESTMapper())
 	return unmanaged, err
 }
