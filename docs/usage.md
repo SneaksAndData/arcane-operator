@@ -95,10 +95,9 @@ spec:
   # Standard Kubernetes Job spec
   template:
     spec:
-      restartPolicy: Never
       containers:
       - name: stream-processor
-        image: ghcr.io/sneaksanddata/arcane-stream-sqlserver-change-tracking:v1.0.0
+        image: ghcr.io/sneaksanddata/arcane-stream-sqlserver-change-tracking:v1.0.12
         resources:
           limits:
             memory: "2Gi"
@@ -106,11 +105,6 @@ spec:
           requests:
             memory: "1Gi"
             cpu: "500m"
-        env:
-        - name: LOG_LEVEL
-          value: "INFO"
-        - name: METRICS_ENABLED
-          value: "true"
 ```
 
 ### Stream Definitions
@@ -149,6 +143,10 @@ spec:
     name: sqlserver-backfill-template
     namespace: data-streaming  # optional, defaults to stream's namespace
 ```
+
+>[!IMPORTANT]
+> Each streaming plugin defines its own stream CRD with specific fields.
+> Refer to the plugin documentation for details on available stream definitions and their configurations.
 
 ### BackfillRequest
 
