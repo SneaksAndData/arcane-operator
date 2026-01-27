@@ -30,7 +30,7 @@ func Test_SecretReferenceConfigurator_Add_SecretRef_To_Empty_Job(t *testing.T) {
 	require.NotNil(t, job.Spec.Template.Spec.Containers[0].EnvFrom)
 	require.Len(t, job.Spec.Template.Spec.Containers[0].EnvFrom, 1)
 	require.NotNil(t, job.Spec.Template.Spec.Containers[0].EnvFrom[0].SecretRef)
-	require.Equal(t, &corev1.LocalObjectReference{Name: "my-secret"}, job.Spec.Template.Spec.Containers[0].EnvFrom[0].SecretRef.Name)
+	require.Equal(t, "my-secret", job.Spec.Template.Spec.Containers[0].EnvFrom[0].SecretRef.Name)
 }
 
 func Test_SecretReferenceConfigurator_Append_To_Existing_EnvFrom(t *testing.T) {
@@ -182,13 +182,13 @@ func Test_SecretReferenceConfigurator_Affects_All_Containers(t *testing.T) {
 
 	// Verify all containers have the secret reference
 	require.Len(t, job.Spec.Template.Spec.Containers[0].EnvFrom, 1)
-	require.Equal(t, &corev1.LocalObjectReference{Name: "my-secret"}, job.Spec.Template.Spec.Containers[0].EnvFrom[0].SecretRef.Name)
+	require.Equal(t, "my-secret", job.Spec.Template.Spec.Containers[0].EnvFrom[0].SecretRef.Name)
 
 	require.Len(t, job.Spec.Template.Spec.Containers[1].EnvFrom, 1)
-	require.Equal(t, &corev1.LocalObjectReference{Name: "my-secret"}, job.Spec.Template.Spec.Containers[1].EnvFrom[0].SecretRef.Name)
+	require.Equal(t, "my-secret", job.Spec.Template.Spec.Containers[1].EnvFrom[0].SecretRef.Name)
 
 	require.Len(t, job.Spec.Template.Spec.Containers[2].EnvFrom, 1)
-	require.Equal(t, &corev1.LocalObjectReference{Name: "my-secret"}, job.Spec.Template.Spec.Containers[2].EnvFrom[0].SecretRef.Name)
+	require.Equal(t, "my-secret", job.Spec.Template.Spec.Containers[2].EnvFrom[0].SecretRef.Name)
 }
 
 func Test_SecretReferenceConfigurator_With_Existing_SecretRef(t *testing.T) {
