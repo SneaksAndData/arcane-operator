@@ -3,7 +3,7 @@
 <img src="docs/images/arcane-logo.png" width="100" height="100" alt="logo"> 
 
 [![Run tests with coverage](https://github.com/SneaksAndData/arcane-operator/actions/workflows/build.yaml/badge.svg)](https://github.com/SneaksAndData/arcane-operator/actions/workflows/build.yaml)
-[![C#](https://img.shields.io/badge/C%23-8-blue.svg)](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-versioning)
+![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/sneaksAndData/arcane-operator)
 ![GitHub Release Date](https://img.shields.io/github/release-date/sneaksanddata/arcane-operator)
 
 
@@ -83,18 +83,22 @@ The most significant milestones are listed below:
 
 - [x] Support for ZIO-based streaming plugins
 - [ ] Add contribution guidelines
-- [ ] Rewrite the operator in Go
+- [x] Rewrite the operator in Go
 - [ ] Complete transition from Akka.NET to ZIO for the remaining streaming plugins
 
 # Streaming plugins
 
-### Available ZIO-based streaming plugins
+## Available ZIO-based streaming plugins
 * Sql Server streaming plugin: [arcane-stream-sqlserver-change-tracking](https://github.com/SneaksAndData/arcane-stream-sqlserver-change-tracking)
 * Microsoft Synapse streaming plugin: [arcane-stream-microsoft-synapse-link](https://github.com/SneaksAndData/arcane-stream-microsoft-synapse-link)
+* Parquet streaming plugin: [arcane-stream-parquet](https://github.com/SneaksAndData/arcane-stream-parquet)
+* JSON streaming plugin: [arcane-stream-json](https://github.com/SneaksAndData/arcane-stream-json)
 
-### Available Akka-based streaming plugins
+## Available Akka-based streaming plugins
 * REST-api streaming plugin: [arcane-stream-rest-api](https://github.com/SneaksAndData/arcane-stream-rest-api)
 
+# User guide
+-- TBD --
 
 # Monitoring and observability
 -- TBD --
