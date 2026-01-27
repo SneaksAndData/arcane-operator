@@ -98,7 +98,9 @@ The most significant milestones are listed below:
 * REST-api streaming plugin: [arcane-stream-rest-api](https://github.com/SneaksAndData/arcane-stream-rest-api)
 
 # User guide
--- TBD --
+Detailed Arcane user guide is available in the [docs/user_guide.md](docs/usage.md) file.
+User scenarios cheat sheet is available in the [docs/user_scenarios.md](docs/user_scenarios.md) file.
+
 
 # Monitoring and observability
 -- TBD --
