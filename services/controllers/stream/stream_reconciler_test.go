@@ -516,7 +516,7 @@ func createReconciler(k8sClient client.Client, mockJob *batchv1.Job, mockCtrl *g
 	}
 	recorder := record.NewFakeRecorder(10)
 	gvk := schema.GroupVersionKind{Group: "streaming.sneaksanddata.com", Version: "v1", Kind: "MockStreamDefinition"}
-	return NewStreamReconciler(k8sClient, gvk, jobBuilder, "stream-class", recorder)
+	return NewStreamReconciler(k8sClient, gvk, jobBuilder, &v1.StreamClass{ObjectMeta: metav1.ObjectMeta{Name: "stream-class"}}, recorder)
 }
 
 // Helper function that combines multiple definition modifiers into one
