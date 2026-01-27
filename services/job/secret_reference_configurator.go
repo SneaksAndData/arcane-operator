@@ -19,7 +19,7 @@ func (s secretReferenceConfigurator) ConfigureJob(job *batchv1.Job) error {
 	if s.reference.Name == "" {
 		return fmt.Errorf("secretReferenceConfigurator reference name is empty")
 	}
-	if job.Spec.Template.Spec.Containers == nil || len(job.Spec.Template.Spec.Containers) == 0 {
+	if len(job.Spec.Template.Spec.Containers) == 0 {
 		return nil
 	}
 
