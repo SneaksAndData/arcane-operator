@@ -83,7 +83,7 @@ func (s *StreamClassReconciler) tryStartStreamController(ctx context.Context, sc
 		return s.updatePhase(ctx, sc, name, nextPhase)
 	}
 
-	controller, err := s.streamControllerFactory.CreateStreamController(ctx, sc.TargetResourceGvk(), sc.Name)
+	controller, err := s.streamControllerFactory.CreateStreamController(ctx, sc.TargetResourceGvk(), sc)
 
 	if err != nil {
 		logger.V(0).Error(err, "unable to create stream reconciler")

@@ -23,6 +23,9 @@ type MockStreamDefinitionSpec struct {
 
 	// BackfillJobTemplateRef represents a reference to the job template.
 	BackfillJobTemplateRef v1.ObjectReference `json:"backfillJobTemplateRef"`
+
+	// SecretRef
+	SecretRef v1.LocalObjectReference `json:"secretRef,omitempty"`
 }
 
 type MockStreamDefinitionStatus struct {

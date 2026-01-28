@@ -2,6 +2,7 @@ package stream_class
 
 import (
 	"context"
+	v1 "github.com/SneaksAndData/arcane-operator/pkg/apis/streaming/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 )
@@ -11,5 +12,5 @@ import (
 type UnmanagedControllerFactory interface {
 
 	// CreateStreamController creates an unmanaged controller for the given GroupVersionKind (GVK).
-	CreateStreamController(ctx context.Context, gvk schema.GroupVersionKind, className string) (controller.Controller, error)
+	CreateStreamController(ctx context.Context, gvk schema.GroupVersionKind, streamClass *v1.StreamClass) (controller.Controller, error)
 }
