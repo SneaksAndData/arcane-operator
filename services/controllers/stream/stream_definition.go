@@ -3,6 +3,7 @@ package stream
 import (
 	v1 "github.com/SneaksAndData/arcane-operator/pkg/apis/streaming/v1"
 	"github.com/SneaksAndData/arcane-operator/services/job"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
@@ -66,6 +67,9 @@ type Definition interface {
 
 	// ComputeConditions computes the conditions for the stream definition based on the backfill request.
 	ComputeConditions(bfr *v1.BackfillRequest) []metav1.Condition
+
+	// GetReferenceForSecret returns a LocalObjectReference for the given secret name.
+	GetReferenceForSecret(name string) (*corev1.LocalObjectReference, error)
 }
 
 func fromUnstructured(obj *unstructured.Unstructured) (Definition, error) {

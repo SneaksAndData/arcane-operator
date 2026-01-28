@@ -230,8 +230,8 @@ func (u *unstructuredWrapper) ComputeConditions(bfr *v1.BackfillRequest) []metav
 	}
 }
 
-func (u *unstructuredWrapper) JobConfigurator() job.Configurator {
-	return job.NewConfiguratorChainBuilder().
+func (u *unstructuredWrapper) JobConfigurator() (job.Configurator, error) {
+	configurator := job.NewConfiguratorChainBuilder().
 		WithConfigurator(job.NewNameConfigurator(u.underlying.GetName())).
 		WithConfigurator(job.NewNamespaceConfigurator(u.underlying.GetNamespace())).
 		WithConfigurator(job.NewMetadataConfigurator(u.underlying.GetName(), u.underlying.GetKind())).
@@ -239,6 +239,26 @@ func (u *unstructuredWrapper) JobConfigurator() job.Configurator {
 		WithConfigurator(job.NewEnvironmentConfigurator(u.underlying.Object["spec"], "SPEC")).
 		WithConfigurator(job.NewOwnerConfigurator(u.ToOwnerReference())).
 		Build()
+	return configurator, nil
+}
+
+func (u *unstructuredWrapper) GetReferenceForSecret(fieldName string) (*corev1.LocalObjectReference, error) {
+	secretRef, found, err := unstructured.NestedFieldCopy(u.underlying.Object, "spec", fieldName)
+	if err != nil || !found {
+		return nil, fmt.Errorf("spec/%s field not found in object", fieldName)
+	}
+
+	m, ok := secretRef.(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("spec/%s is not an object", fieldName)
+	}
+
+	var ref corev1.LocalObjectReference
+	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(m, &ref); err != nil {
+		return nil, fmt.Errorf("failed to convert %s to LocalObjectReference: %w", fieldName, err)
+	}
+
+	return &ref, nil
 }
 
 func (u *unstructuredWrapper) Validate() error {
