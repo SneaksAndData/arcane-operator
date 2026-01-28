@@ -4,5 +4,5 @@ package job
 type ConfiguratorProvider interface {
 
 	// JobConfigurator returns a JobConfigurator for the current instance.
-	JobConfigurator() Configurator
+	JobConfigurator() (Configurator, error)
 }

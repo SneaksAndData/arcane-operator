@@ -13,6 +13,7 @@ import (
 	context "context"
 	reflect "reflect"
 
+	v1 "github.com/SneaksAndData/arcane-operator/pkg/apis/streaming/v1"
 	gomock "go.uber.org/mock/gomock"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	controller "sigs.k8s.io/controller-runtime/pkg/controller"
@@ -43,16 +44,16 @@ func (m *MockUnmanagedControllerFactory) EXPECT() *MockUnmanagedControllerFactor
 }
 
 // CreateStreamController mocks base method.
-func (m *MockUnmanagedControllerFactory) CreateStreamController(ctx context.Context, gvk schema.GroupVersionKind, className string) (controller.Controller, error) {
+func (m *MockUnmanagedControllerFactory) CreateStreamController(ctx context.Context, gvk schema.GroupVersionKind, streamClass *v1.StreamClass) (controller.Controller, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateStreamController", ctx, gvk, className)
+	ret := m.ctrl.Call(m, "CreateStreamController", ctx, gvk, streamClass)
 	ret0, _ := ret[0].(controller.Controller)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // CreateStreamController indicates an expected call of CreateStreamController.
-func (mr *MockUnmanagedControllerFactoryMockRecorder) CreateStreamController(ctx, gvk, className any) *gomock.Call {
+func (mr *MockUnmanagedControllerFactoryMockRecorder) CreateStreamController(ctx, gvk, streamClass any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateStreamController", reflect.TypeOf((*MockUnmanagedControllerFactory)(nil).CreateStreamController), ctx, gvk, className)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateStreamController", reflect.TypeOf((*MockUnmanagedControllerFactory)(nil).CreateStreamController), ctx, gvk, streamClass)
 }

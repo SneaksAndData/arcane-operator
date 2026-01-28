@@ -33,12 +33,12 @@ type streamReconciler struct {
 	gvk           schema.GroupVersionKind
 	client        client.Client
 	jobBuilder    JobBuilder
-	className     string
+	streamClass   *v1.StreamClass
 	eventRecorder record.EventRecorder
 }
 
 func (s *streamReconciler) SetupUnmanaged(cache cache.Cache, scheme *runtime.Scheme, mapper meta.RESTMapper) (controller.Controller, error) {
-	controllerName := s.className + "-controller"
+	controllerName := s.streamClass.Name + "-controller"
 	newController, err := controller.NewUnmanaged(controllerName, controller.Options{Reconciler: s})
 
 	if err != nil {
@@ -66,7 +66,7 @@ func (s *streamReconciler) SetupUnmanaged(cache cache.Cache, scheme *runtime.Sch
 	}
 
 	err = NewTypedSecondaryWatcherBuilder[*v1.BackfillRequest]().
-		WithFilter(NewBackfillRequestFilter(s.className)).
+		WithFilter(NewBackfillRequestFilter(s.streamClass.Name)).
 		WithCache(cache).
 		WithHandler(handler.TypedEnqueueRequestsFromMapFunc(func(ctx context.Context, obj *v1.BackfillRequest) []reconcile.Request {
 			return []reconcile.Request{{
@@ -87,12 +87,12 @@ func (s *streamReconciler) SetupUnmanaged(cache cache.Cache, scheme *runtime.Sch
 }
 
 // NewStreamReconciler creates a new StreamReconciler instance.
-func NewStreamReconciler(client client.Client, gvk schema.GroupVersionKind, jobBuilder JobBuilder, className string, eventRecorder record.EventRecorder) controllers.UnmanagedReconciler {
+func NewStreamReconciler(client client.Client, gvk schema.GroupVersionKind, jobBuilder JobBuilder, streamClass *v1.StreamClass, eventRecorder record.EventRecorder) controllers.UnmanagedReconciler {
 	return &streamReconciler{
 		gvk:           gvk,
 		jobBuilder:    jobBuilder,
 		client:        client,
-		className:     className,
+		streamClass:   streamClass,
 		eventRecorder: eventRecorder,
 	}
 }
@@ -320,7 +320,7 @@ func (s *streamReconciler) startBackfill(ctx context.Context, definition Definit
 		},
 		Spec: v1.BackfillRequestSpec{
 			StreamId:    definition.NamespacedName().Name,
-			StreamClass: s.className,
+			StreamClass: s.streamClass.Name,
 		},
 	}
 
@@ -430,12 +430,31 @@ func (s *streamReconciler) startNewJob(ctx context.Context, definition Definitio
 		return fmt.Errorf("failed to compute stream configuration: %w", err)
 	}
 
-	configurator := job.NewConfiguratorChainBuilder().
-		WithConfigurator(definition.ToConfiguratorProvider().JobConfigurator()).
-		WithConfigurator(request.JobConfigurator()).
-		WithConfigurator(job.NewConfigurationChecksumConfigurator(streamConfiguration))
+	definitionConfigurator, err := definition.ToConfiguratorProvider().JobConfigurator()
+	if err != nil { // coverage-ignore
+		logger.V(0).Error(err, "failed to get definition configurator")
+		return err
+	}
 
-	j, err := s.jobBuilder.BuildJob(ctx, templateReference, configurator)
+	secretsConfigurator, err := NewStreamMetadataService(s.streamClass, definition).JobConfigurator()
+	if err != nil { // coverage-ignore
+		logger.V(0).Error(err, "failed to get metadata configurator")
+		return err
+	}
+
+	backfillRequestConfigurator, err := request.JobConfigurator()
+	if err != nil { // coverage-ignore
+		logger.V(0).Error(err, "failed to get backfill request configurator")
+		return err
+	}
+
+	combinedConfigurator := job.NewConfiguratorChainBuilder().
+		WithConfigurator(definitionConfigurator).
+		WithConfigurator(backfillRequestConfigurator).
+		WithConfigurator(job.NewConfigurationChecksumConfigurator(streamConfiguration)).
+		WithConfigurator(secretsConfigurator)
+
+	j, err := s.jobBuilder.BuildJob(ctx, templateReference, combinedConfigurator)
 	if err != nil { // coverage-ignore
 		logger.V(0).Error(err, "failed to build job")
 		return err
