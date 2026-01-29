@@ -249,7 +249,10 @@ func createManager(ctx context.Context, g *errgroup.Group) (manager.Manager, err
 	eventRecorder := eventBroadcaster.NewRecorder(scheme, corev1.EventSource{Component: "Arcane-Operator-Test"})
 	controllerFactory := stream.NewStreamControllerFactory(mgr.GetClient(), jobBuilder, mgr, eventRecorder)
 
-	reporter := telemetry.NewPeriodicMetricsReporter(telemetry.GetClient(ctx))
+	reporter := telemetry.NewPeriodicMetricsReporter(telemetry.GetClient(ctx), &telemetry.PeriodicMetricsReporterConfig{
+		ReportInterval: 1 * time.Minute,
+		InitialDelay:   1 * time.Minute,
+	})
 	// We don't start the reporter here, as we don't need metrics for the tests.
 	err = stream_class.NewStreamClassReconciler(mgr.GetClient(), controllerFactory, reporter).SetupWithManager(mgr)
 	if err != nil {
