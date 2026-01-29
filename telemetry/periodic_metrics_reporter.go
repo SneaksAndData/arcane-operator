@@ -40,18 +40,20 @@ func (d *PeriodicMetricsReporter) AddStreamClass(kind string, metricName string,
 // When context is cancelled, the reporting loop exits.
 func (d *PeriodicMetricsReporter) RunPeriodicMetricsReporter(ctx context.Context) { // coverage-ignore (should be tested in integration tests)
 	time.Sleep(d.settings.InitialDelay)
+	ticker := time.NewTicker(d.settings.ReportInterval)
+	defer ticker.Stop()
+
 	for {
 		select {
 		case <-ctx.Done():
 			return
-		default:
+		case <-ticker.C:
 			d.lock.RLock()
 			for _, metric := range d.streamClassMetrics {
 				Increment(d.client, metric.metricName, metric.metricTags)
 			}
 			d.lock.RUnlock()
 		}
-		time.Sleep(d.settings.ReportInterval)
 	}
 }
 
