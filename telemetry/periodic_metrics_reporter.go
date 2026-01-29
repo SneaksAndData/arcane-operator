@@ -5,6 +5,7 @@ import (
 	"github.com/DataDog/datadog-go/v5/statsd"
 	"github.com/SneaksAndData/arcane-operator/services/controllers/stream_class"
 	"sync"
+	"time"
 )
 
 var _ stream_class.StreamClassMetricsReporter = (*PeriodicMetricsReporter)(nil)
@@ -13,6 +14,7 @@ type PeriodicMetricsReporter struct {
 	streamClassMetrics map[string]streamClassMetric
 	lock               sync.RWMutex
 	client             *statsd.Client
+	settings           *PeriodicMetricsReporterConfig
 }
 
 func (d *PeriodicMetricsReporter) RemoveStreamClass(kind string) {
@@ -37,6 +39,7 @@ func (d *PeriodicMetricsReporter) AddStreamClass(kind string, metricName string,
 // It reports a metric for each registered stream class at regular intervals.
 // When context is cancelled, the reporting loop exits.
 func (d *PeriodicMetricsReporter) RunPeriodicMetricsReporter(ctx context.Context) {
+	time.Sleep(d.settings.InitialDelay)
 	for {
 		select {
 		case <-ctx.Done():
@@ -48,12 +51,14 @@ func (d *PeriodicMetricsReporter) RunPeriodicMetricsReporter(ctx context.Context
 			}
 			d.lock.RUnlock()
 		}
+		time.Sleep(d.settings.ReportInterval)
 	}
 }
 
-func NewPeriodicMetricsReporter(client *statsd.Client) *PeriodicMetricsReporter {
+func NewPeriodicMetricsReporter(client *statsd.Client, settings *PeriodicMetricsReporterConfig) *PeriodicMetricsReporter {
 	return &PeriodicMetricsReporter{
 		streamClassMetrics: make(map[string]streamClassMetric),
 		client:             client,
+		settings:           settings,
 	}
 }

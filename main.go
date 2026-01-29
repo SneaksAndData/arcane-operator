@@ -50,9 +50,6 @@ func main() {
 
 	ctx = telemetry.WithStatsd(ctx, "arcane.operator")
 	appLogger, err := telemetry.ConfigureLogger(ctx, map[string]string{"environment": "local"}, "info")
-	reporter := telemetry.NewPeriodicMetricsReporter(telemetry.GetClient(ctx))
-
-	go reporter.RunPeriodicMetricsReporter(ctx)
 
 	klog.SetSlogLogger(appLogger)
 	klog.InitFlags(nil)
@@ -69,7 +66,6 @@ func main() {
 		panic(err)
 	}
 	probesService := health.NewProbesService(appConfig.ProbesConfiguration)
-
 	go func() {
 		err := probesService.ListenAndServe(ctx)
 		if err != nil {
@@ -77,6 +73,9 @@ func main() {
 			panic(err)
 		}
 	}()
+
+	reporter := telemetry.NewPeriodicMetricsReporter(telemetry.GetClient(ctx), &appConfig.PeriodicMetricsReporterConfiguration)
+	go reporter.RunPeriodicMetricsReporter(ctx)
 
 	kubeconfig, err := initKubeconfig(kubeconfigCmd, logger)
 	if err != nil {
