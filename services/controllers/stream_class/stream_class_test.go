@@ -25,7 +25,7 @@ func Test_UpdatePhase_ToPending(t *testing.T) {
 	defer mockCtrl.Finish()
 	k8sClient, name := setupFakeClient(t, &v1.StreamClass{ObjectMeta: metav1.ObjectMeta{}})
 	streamReconcilerFactory := mocks.NewMockUnmanagedControllerFactory(mockCtrl)
-	reconciler := NewStreamClassReconciler(k8sClient, streamReconcilerFactory)
+	reconciler := NewStreamClassReconciler(k8sClient, streamReconcilerFactory, mocks.NewMockStreamClassMetricsReporter(mockCtrl))
 
 	// Act
 	result, err := reconciler.Reconcile(t.Context(), reconcile.Request{NamespacedName: types.NamespacedName{Name: name}})
@@ -58,7 +58,7 @@ func Test_UpdatePhase_ToRunning(t *testing.T) {
 	streamReconcilerFactory := mocks.NewMockUnmanagedControllerFactory(mockCtrl)
 	streamReconcilerFactory.EXPECT().CreateStreamController(gomock.Any(), gomock.Any(), gomock.Any()).Return(streamController, nil)
 
-	reconciler := NewStreamClassReconciler(k8sClient, streamReconcilerFactory)
+	reconciler := NewStreamClassReconciler(k8sClient, streamReconcilerFactory, mocks.NewMockStreamClassMetricsReporter(mockCtrl))
 
 	// Act
 	result, err := reconciler.Reconcile(t.Context(), reconcile.Request{NamespacedName: types.NamespacedName{Name: name}})
@@ -94,7 +94,7 @@ func Test_UpdatePhase_ToRunning_Idempotence(t *testing.T) {
 	streamReconcilerFactory := mocks.NewMockUnmanagedControllerFactory(mockCtrl)
 	streamReconcilerFactory.EXPECT().CreateStreamController(gomock.Any(), gomock.Any(), gomock.Any()).Return(streamController, nil).Times(1)
 
-	reconciler := NewStreamClassReconciler(k8sClient, streamReconcilerFactory)
+	reconciler := NewStreamClassReconciler(k8sClient, streamReconcilerFactory, mocks.NewMockStreamClassMetricsReporter(mockCtrl))
 
 	// Act
 	for i := 0; i < 5; i++ {
@@ -128,7 +128,7 @@ func Test_UpdatePhase_Ready_ToStopped(t *testing.T) {
 	streamReconcilerFactory := mocks.NewMockUnmanagedControllerFactory(mockCtrl)
 	streamReconcilerFactory.EXPECT().CreateStreamController(gomock.Any(), gomock.Any(), gomock.Any()).Return(streamController, nil)
 
-	reconciler := NewStreamClassReconciler(k8sClient, streamReconcilerFactory)
+	reconciler := NewStreamClassReconciler(k8sClient, streamReconcilerFactory, mocks.NewMockStreamClassMetricsReporter(mockCtrl))
 
 	// Start the stream controller first
 	result, err := reconciler.Reconcile(t.Context(), reconcile.Request{NamespacedName: types.NamespacedName{Name: name}})
@@ -163,7 +163,7 @@ func Test_UpdatePhase_Pending_ToStopped(t *testing.T) {
 
 	streamReconcilerFactory := mocks.NewMockUnmanagedControllerFactory(mockCtrl)
 
-	reconciler := NewStreamClassReconciler(k8sClient, streamReconcilerFactory)
+	reconciler := NewStreamClassReconciler(k8sClient, streamReconcilerFactory, mocks.NewMockStreamClassMetricsReporter(mockCtrl))
 
 	// Transit the stream class to Pending state first
 	result, err := reconciler.Reconcile(t.Context(), reconcile.Request{NamespacedName: types.NamespacedName{Name: name}})
@@ -202,7 +202,7 @@ func Test_UpdatePhase_Pending_ToFailed(t *testing.T) {
 	streamReconcilerFactory := mocks.NewMockUnmanagedControllerFactory(mockCtrl)
 	streamReconcilerFactory.EXPECT().CreateStreamController(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, fmt.Errorf("some error"))
 
-	reconciler := NewStreamClassReconciler(k8sClient, streamReconcilerFactory)
+	reconciler := NewStreamClassReconciler(k8sClient, streamReconcilerFactory, mocks.NewMockStreamClassMetricsReporter(mockCtrl))
 
 	// Act
 	result, err := reconciler.Reconcile(t.Context(), reconcile.Request{NamespacedName: types.NamespacedName{Name: name}})
@@ -240,7 +240,7 @@ func Test_UpdatePhase_Ready_ToFailed(t *testing.T) {
 	cacheProvider := mocks.NewMockCacheProvider(mockCtrl)
 	cacheProvider.EXPECT().GetCache().Return(nil).Times(1)
 
-	reconciler := NewStreamClassReconciler(k8sClient, streamReconcilerFactory)
+	reconciler := NewStreamClassReconciler(k8sClient, streamReconcilerFactory, mocks.NewMockStreamClassMetricsReporter(mockCtrl))
 
 	// Start the stream controller first
 	result, err := reconciler.Reconcile(t.Context(), reconcile.Request{NamespacedName: types.NamespacedName{Name: name}})
