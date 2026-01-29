@@ -9,6 +9,7 @@ import (
 	"github.com/SneaksAndData/arcane-operator/services/controllers/stream"
 	"github.com/SneaksAndData/arcane-operator/services/controllers/stream_class"
 	"github.com/SneaksAndData/arcane-operator/services/job/job_builder"
+	"github.com/SneaksAndData/arcane-operator/telemetry"
 	mockv1 "github.com/SneaksAndData/arcane-stream-mock/pkg/apis/streaming/v1"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
@@ -248,7 +249,9 @@ func createManager(ctx context.Context, g *errgroup.Group) (manager.Manager, err
 	eventRecorder := eventBroadcaster.NewRecorder(scheme, corev1.EventSource{Component: "Arcane-Operator-Test"})
 	controllerFactory := stream.NewStreamControllerFactory(mgr.GetClient(), jobBuilder, mgr, eventRecorder)
 
-	err = stream_class.NewStreamClassReconciler(mgr.GetClient(), controllerFactory).SetupWithManager(mgr)
+	reporter := telemetry.NewPeriodicMetricsReporter(telemetry.GetClient(ctx))
+	// We don't start the reporter here, as we don't need metrics for the tests.
+	err = stream_class.NewStreamClassReconciler(mgr.GetClient(), controllerFactory, reporter).SetupWithManager(mgr)
 	if err != nil {
 		return nil, fmt.Errorf("unable to setup StreamClassReconciler: %w", err)
 	}
