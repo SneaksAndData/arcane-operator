@@ -55,7 +55,7 @@ func (d *PeriodicMetricsReporter) RunPeriodicMetricsReporter(ctx context.Context
 	}
 }
 
-func NewPeriodicMetricsReporter(client *statsd.Client, settings *PeriodicMetricsReporterConfig) *PeriodicMetricsReporter {
+func NewPeriodicMetricsReporter(client *statsd.Client, settings *PeriodicMetricsReporterConfig) *PeriodicMetricsReporter { // coverage-ignore (constructor)
 	return &PeriodicMetricsReporter{
 		streamClassMetrics: make(map[string]streamClassMetric),
 		client:             client,
