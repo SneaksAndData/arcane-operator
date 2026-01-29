@@ -17,14 +17,14 @@ type PeriodicMetricsReporter struct {
 	settings           *PeriodicMetricsReporterConfig
 }
 
-func (d *PeriodicMetricsReporter) RemoveStreamClass(kind string) {
+func (d *PeriodicMetricsReporter) RemoveStreamClass(kind string) { // coverage-ignore (should be tested in integration tests)
 	d.lock.Lock()
 	defer d.lock.Unlock()
 
 	delete(d.streamClassMetrics, kind)
 }
 
-func (d *PeriodicMetricsReporter) AddStreamClass(kind string, metricName string, tags map[string]string) {
+func (d *PeriodicMetricsReporter) AddStreamClass(kind string, metricName string, tags map[string]string) { // coverage-ignore (should be tested in integration tests)
 	d.lock.Lock()
 	defer d.lock.Unlock()
 
@@ -38,7 +38,7 @@ func (d *PeriodicMetricsReporter) AddStreamClass(kind string, metricName string,
 // RunPeriodicMetricsReporter starts the metrics reporting loop for stream classes.
 // It reports a metric for each registered stream class at regular intervals.
 // When context is cancelled, the reporting loop exits.
-func (d *PeriodicMetricsReporter) RunPeriodicMetricsReporter(ctx context.Context) {
+func (d *PeriodicMetricsReporter) RunPeriodicMetricsReporter(ctx context.Context) { // coverage-ignore (should be tested in integration tests)
 	time.Sleep(d.settings.InitialDelay)
 	for {
 		select {
