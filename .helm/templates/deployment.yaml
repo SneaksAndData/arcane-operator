@@ -75,6 +75,43 @@ spec:
             value: {{ .Values.settings.probes.writeTimeout | default  "15s"}}
           - name: ARCANE_OPERATOR__PROBES__SHUTDOWN_TIMEOUT
             value: {{ .Values.settings.probes.writeTimeout | default  "5s"}}
+      {{- if .Values.datadog.enabled }}
+          - name: DATADOG__API_KEY
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.datadog.apiKeySecret | quote }}
+                key: {{ .Values.datadog.apiKeySecretKey | quote }}
+          - name: DATADOG__ENDPOINT
+            value: {{ .Values.datadog.endpoint | quote }}
+          - name: DATADOG__APPLICATION_HOST
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+        {{- if .Values.datadog.enableOriginDetection }}
+          - name: DD_ENTITY_ID
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.uid
+        {{- end }}
+        {{- if .Values.datadog.tracer.enabled }}
+          - name: DD_INSTRUMENTATION_TELEMETRY_ENABLED
+            value: {{ .Values.datadog.tracer.disable_vendor_telemetry | quote }}
+          - name: DD_TRACE_ENABLED
+            value: {{ .Values.datadog.tracer.enabled | quote }}
+          - name: DD_TRACE_AGENT_URL
+            value: {{ .Values.datadog.tracer.agent_url | quote }}
+          - name: DD_ENV
+            value: {{ .Values.datadog.tracer.service_env | quote }}
+        {{- end }}
+          - name: DATADOG__SERVICE_NAME
+            value: {{ .Values.datadog.serviceName }}
+          - name: DD_SERVICE
+            value: {{ .Values.datadog.serviceName }}
+          - name: DD_VERSION
+            value: "{{ (default (printf "v%s" .Chart.AppVersion) .Values.image.tag) }}"
+          - name: DD_DOGSTATSD_URL
+            value: {{ .Values.datadog.statsdUrl | quote }}
+      {{- end }}
           {{- with .Values.extraEnv }}
             {{- toYaml . | nindent 12 }}
           {{- end }}
