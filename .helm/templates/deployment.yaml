@@ -95,7 +95,7 @@ spec:
         {{- end }}
         {{- if .Values.datadog.tracer.enabled }}
           - name: DD_INSTRUMENTATION_TELEMETRY_ENABLED
-            value: {{ .Values.datadog.tracer.disable_vendor_telemetry | quote }}
+            value: {{ not .Values.datadog.tracer.disable_vendor_telemetry | quote }}
           - name: DD_TRACE_ENABLED
             value: {{ .Values.datadog.tracer.enabled | quote }}
           - name: DD_TRACE_AGENT_URL
