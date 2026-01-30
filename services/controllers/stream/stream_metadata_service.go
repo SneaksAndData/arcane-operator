@@ -1,7 +1,6 @@
 package stream
 
 import (
-	"fmt"
 	v1 "github.com/SneaksAndData/arcane-operator/pkg/apis/streaming/v1"
 	"github.com/SneaksAndData/arcane-operator/services/job"
 )
@@ -16,12 +15,8 @@ type streamClassMetadataService struct {
 func (s streamClassMetadataService) JobConfigurator() (job.Configurator, error) {
 	builder := job.NewConfiguratorChainBuilder()
 
-	for _, secretName := range s.streamClass.Spec.SecretRefs {
-		name, err := s.streamDefinition.GetReferenceForSecret(secretName)
-		if err != nil {
-			return nil, fmt.Errorf("error getting secret reference: %w", err)
-		}
-		builder = builder.WithConfigurator(job.NewSecretReferenceConfigurator(name))
+	for _, referenceFieldName := range s.streamClass.Spec.SecretRefs {
+		builder = builder.WithConfigurator(job.NewSecretReferenceConfigurator(referenceFieldName, s.streamDefinition))
 	}
 
 	return builder.Build(), nil

@@ -7,6 +7,7 @@ import (
 	"github.com/SneaksAndData/arcane-operator/services/controllers"
 	"github.com/SneaksAndData/arcane-operator/services/job"
 	batchv1 "k8s.io/api/batch/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -457,6 +458,10 @@ func (s *streamReconciler) startNewJob(ctx context.Context, definition Definitio
 	j, err := s.jobBuilder.BuildJob(ctx, templateReference, combinedConfigurator)
 	if err != nil { // coverage-ignore
 		logger.V(0).Error(err, "failed to build job")
+		s.eventRecorder.Eventf(definition.ToUnstructured(),
+			corev1.EventTypeWarning,
+			"FailedCreateJob",
+			"failed to create job: %v", err)
 		return err
 	}
 

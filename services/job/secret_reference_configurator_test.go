@@ -1,6 +1,8 @@
 package job
 
 import (
+	"github.com/SneaksAndData/arcane-operator/tests/mocks/job_mock"
+	"go.uber.org/mock/gomock"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -24,7 +26,12 @@ func Test_SecretReferenceConfigurator_Add_SecretRef_To_Empty_Job(t *testing.T) {
 		},
 	}
 
-	configurator := NewSecretReferenceConfigurator(&corev1.LocalObjectReference{Name: "my-secret"})
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	mockProvider := job_mock.NewMockSecretReferenceProvider(mockCtrl)
+	mockProvider.EXPECT().GetReferenceForSecret("test-secret").Return(&corev1.LocalObjectReference{Name: "my-secret"}, nil)
+
+	configurator := NewSecretReferenceConfigurator("test-secret", mockProvider)
 	err := configurator.ConfigureJob(job)
 	require.NoError(t, err)
 	require.NotNil(t, job.Spec.Template.Spec.Containers[0].EnvFrom)
@@ -58,7 +65,12 @@ func Test_SecretReferenceConfigurator_Append_To_Existing_EnvFrom(t *testing.T) {
 		},
 	}
 
-	configurator := NewSecretReferenceConfigurator(&corev1.LocalObjectReference{Name: "new-secret"})
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	mockProvider := job_mock.NewMockSecretReferenceProvider(mockCtrl)
+	mockProvider.EXPECT().GetReferenceForSecret("test-secret").Return(&corev1.LocalObjectReference{Name: "new-secret"}, nil)
+
+	configurator := NewSecretReferenceConfigurator("test-secret", mockProvider)
 	err := configurator.ConfigureJob(job)
 	require.NoError(t, err)
 	require.Len(t, job.Spec.Template.Spec.Containers[0].EnvFrom, 2)
@@ -79,7 +91,12 @@ func Test_SecretReferenceConfigurator_No_Containers(t *testing.T) {
 		},
 	}
 
-	configurator := NewSecretReferenceConfigurator(&corev1.LocalObjectReference{Name: "my-secret"})
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	mockProvider := job_mock.NewMockSecretReferenceProvider(mockCtrl)
+	mockProvider.EXPECT().GetReferenceForSecret("test-secret").Return(&corev1.LocalObjectReference{Name: "my-secret"}, nil)
+
+	configurator := NewSecretReferenceConfigurator("test-secret", mockProvider)
 	err := configurator.ConfigureJob(job)
 	require.NoError(t, err)
 	require.Empty(t, job.Spec.Template.Spec.Containers)
@@ -96,7 +113,12 @@ func Test_SecretReferenceConfigurator_Nil_Containers(t *testing.T) {
 		},
 	}
 
-	configurator := NewSecretReferenceConfigurator(&corev1.LocalObjectReference{Name: "my-secret"})
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	mockProvider := job_mock.NewMockSecretReferenceProvider(mockCtrl)
+	mockProvider.EXPECT().GetReferenceForSecret("test-secret").Return(&corev1.LocalObjectReference{Name: "my-secret"}, nil)
+
+	configurator := NewSecretReferenceConfigurator("test-secret", mockProvider)
 	err := configurator.ConfigureJob(job)
 	require.NoError(t, err)
 	require.Nil(t, job.Spec.Template.Spec.Containers)
@@ -118,11 +140,18 @@ func Test_SecretReferenceConfigurator_Multiple_Secrets(t *testing.T) {
 		},
 	}
 
-	configurator1 := NewSecretReferenceConfigurator(&corev1.LocalObjectReference{Name: "first-secret"})
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+
+	mockProvider1 := job_mock.NewMockSecretReferenceProvider(mockCtrl)
+	mockProvider1.EXPECT().GetReferenceForSecret("secret1").Return(&corev1.LocalObjectReference{Name: "first-secret"}, nil)
+	configurator1 := NewSecretReferenceConfigurator("secret1", mockProvider1)
 	err := configurator1.ConfigureJob(job)
 	require.NoError(t, err)
 
-	configurator2 := NewSecretReferenceConfigurator(&corev1.LocalObjectReference{Name: "second-secret"})
+	mockProvider2 := job_mock.NewMockSecretReferenceProvider(mockCtrl)
+	mockProvider2.EXPECT().GetReferenceForSecret("secret2").Return(&corev1.LocalObjectReference{Name: "second-secret"}, nil)
+	configurator2 := NewSecretReferenceConfigurator("secret2", mockProvider2)
 	err = configurator2.ConfigureJob(job)
 	require.NoError(t, err)
 
@@ -147,7 +176,12 @@ func Test_SecretReferenceConfigurator_Empty_Secret_Name(t *testing.T) {
 		},
 	}
 
-	configurator := NewSecretReferenceConfigurator(&corev1.LocalObjectReference{Name: ""})
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	mockProvider := job_mock.NewMockSecretReferenceProvider(mockCtrl)
+	mockProvider.EXPECT().GetReferenceForSecret("test-secret").Return(&corev1.LocalObjectReference{Name: ""}, nil)
+
+	configurator := NewSecretReferenceConfigurator("test-secret", mockProvider)
 	err := configurator.ConfigureJob(job)
 	require.EqualError(t, err, "secretReferenceConfigurator reference name is empty")
 }
@@ -176,7 +210,12 @@ func Test_SecretReferenceConfigurator_Affects_All_Containers(t *testing.T) {
 		},
 	}
 
-	configurator := NewSecretReferenceConfigurator(&corev1.LocalObjectReference{Name: "my-secret"})
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	mockProvider := job_mock.NewMockSecretReferenceProvider(mockCtrl)
+	mockProvider.EXPECT().GetReferenceForSecret("test-secret").Return(&corev1.LocalObjectReference{Name: "my-secret"}, nil)
+
+	configurator := NewSecretReferenceConfigurator("test-secret", mockProvider)
 	err := configurator.ConfigureJob(job)
 	require.NoError(t, err)
 
@@ -216,7 +255,12 @@ func Test_SecretReferenceConfigurator_With_Existing_SecretRef(t *testing.T) {
 		},
 	}
 
-	configurator := NewSecretReferenceConfigurator(&corev1.LocalObjectReference{Name: "new-secret"})
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	mockProvider := job_mock.NewMockSecretReferenceProvider(mockCtrl)
+	mockProvider.EXPECT().GetReferenceForSecret("test-secret").Return(&corev1.LocalObjectReference{Name: "new-secret"}, nil)
+
+	configurator := NewSecretReferenceConfigurator("test-secret", mockProvider)
 	err := configurator.ConfigureJob(job)
 	require.NoError(t, err)
 

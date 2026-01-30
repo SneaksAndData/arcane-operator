@@ -9,14 +9,16 @@ import (
 var _ Configurator = &secretReferenceConfigurator{}
 
 type secretReferenceConfigurator struct {
-	reference *corev1.LocalObjectReference
+	referenceFieldName string
+	streamDefinition   SecretReferenceProvider
 }
 
 func (s secretReferenceConfigurator) ConfigureJob(job *batchv1.Job) error {
-	if s.reference == nil {
-		return fmt.Errorf("secretReferenceConfigurator reference is nil")
+	reference, err := s.streamDefinition.GetReferenceForSecret(s.referenceFieldName)
+	if err != nil {
+		return fmt.Errorf("error getting secret reference: %w", err)
 	}
-	if s.reference.Name == "" {
+	if reference.Name == "" {
 		return fmt.Errorf("secretReferenceConfigurator reference name is empty")
 	}
 	if len(job.Spec.Template.Spec.Containers) == 0 {
@@ -31,7 +33,7 @@ func (s secretReferenceConfigurator) ConfigureJob(job *batchv1.Job) error {
 
 		job.Spec.Template.Spec.Containers[i].EnvFrom = append(job.Spec.Template.Spec.Containers[i].EnvFrom, corev1.EnvFromSource{
 			SecretRef: &corev1.SecretEnvSource{
-				LocalObjectReference: *s.reference,
+				LocalObjectReference: *reference,
 			},
 		})
 	}
@@ -39,8 +41,9 @@ func (s secretReferenceConfigurator) ConfigureJob(job *batchv1.Job) error {
 	return nil
 }
 
-func NewSecretReferenceConfigurator(reference *corev1.LocalObjectReference) Configurator {
+func NewSecretReferenceConfigurator(referenceFieldName string, sd SecretReferenceProvider) Configurator {
 	return &secretReferenceConfigurator{
-		reference: reference,
+		referenceFieldName: referenceFieldName,
+		streamDefinition:   sd,
 	}
 }

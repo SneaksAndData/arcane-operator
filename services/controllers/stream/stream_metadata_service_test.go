@@ -124,39 +124,6 @@ func Test_StreamMetadataService_JobConfigurator_SingleSecretRef(t *testing.T) {
 	require.Equal(t, "databaseCredentials", job.Spec.Template.Spec.Containers[0].EnvFrom[0].SecretRef.Name)
 }
 
-func Test_StreamMetadataService_JobConfigurator_MissingSecretField(t *testing.T) {
-	// Arrange
-	streamClass := &v1.StreamClass{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "test-stream-class",
-		},
-		Spec: v1.StreamClassSpec{
-			APIGroupRef: "streaming.sneaksanddata.com",
-			APIVersion:  "v1",
-			KindRef:     "MockStreamDefinition",
-			PluralName:  "mockstreamdefinitions",
-			SecretRefs:  []string{"nonExistentSecret"},
-		},
-	}
-
-	fakeClient := setupFakeClient(nil)
-	unstructuredObj, err := getUnstructured(t, fakeClient)
-	require.NoError(t, err)
-
-	streamDefinition, err := fromUnstructured(&unstructuredObj)
-	require.NoError(t, err)
-
-	service := NewStreamMetadataService(streamClass, streamDefinition)
-
-	// Act
-	configurator, err := service.JobConfigurator()
-
-	// Assert
-	require.Error(t, err)
-	require.Nil(t, configurator)
-	require.ErrorContains(t, err, "error getting secret reference")
-}
-
 func Test_StreamMetadataService_JobConfigurator_NilSecretRefs(t *testing.T) {
 	// Arrange
 	streamClass := &v1.StreamClass{
@@ -341,40 +308,6 @@ func Test_StreamMetadataService_JobConfigurator_PreservesExistingEnvFrom(t *test
 	require.Equal(t, "existing-configmap", job.Spec.Template.Spec.Containers[0].EnvFrom[0].ConfigMapRef.Name)
 	require.NotNil(t, job.Spec.Template.Spec.Containers[0].EnvFrom[1].SecretRef)
 	require.Equal(t, "my-secret", job.Spec.Template.Spec.Containers[0].EnvFrom[1].SecretRef.Name)
-}
-
-func Test_StreamMetadataService_JobConfigurator_PartialFailure(t *testing.T) {
-	// Arrange
-	streamClass := &v1.StreamClass{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "test-stream-class",
-		},
-		Spec: v1.StreamClassSpec{
-			APIGroupRef: "streaming.sneaksanddata.com",
-			APIVersion:  "v1",
-			KindRef:     "MockStreamDefinition",
-			PluralName:  "mockstreamdefinitions",
-			SecretRefs:  []string{"secretRef", "nonExistentSecret"},
-		},
-	}
-
-	fakeClient := setupFakeClientWithSecrets("databaseCredentials")
-	unstructuredObj, err := getUnstructured(t, fakeClient)
-	require.NoError(t, err)
-
-	streamDefinition, err := fromUnstructured(&unstructuredObj)
-	require.NoError(t, err)
-
-	service := NewStreamMetadataService(streamClass, streamDefinition)
-
-	// Act
-	configurator, err := service.JobConfigurator()
-
-	// Assert - should fail on the first missing secret
-	require.Error(t, err)
-	require.Nil(t, configurator)
-	require.ErrorContains(t, err, "error getting secret reference")
-	require.ErrorContains(t, err, "nonExistentSecret")
 }
 
 // setupFakeClientWithSecrets creates a fake client with a MockStreamDefinition that has secret references
