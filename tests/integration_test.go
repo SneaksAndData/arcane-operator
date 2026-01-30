@@ -254,7 +254,7 @@ func createManager(ctx context.Context, g *errgroup.Group) (manager.Manager, err
 		InitialDelay:   1 * time.Minute,
 	})
 	// We don't start the reporter here, as we don't need metrics for the tests.
-	err = stream_class.NewStreamClassReconciler(mgr.GetClient(), controllerFactory, reporter).SetupWithManager(mgr)
+	err = stream_class.NewStreamClassReconciler(mgr.GetClient(), controllerFactory, reporter, eventRecorder).SetupWithManager(mgr)
 	if err != nil {
 		return nil, fmt.Errorf("unable to setup StreamClassReconciler: %w", err)
 	}

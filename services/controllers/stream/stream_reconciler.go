@@ -297,7 +297,7 @@ func (s *streamReconciler) moveFsm(ctx context.Context, definition Definition, j
 	)
 }
 
-func (s *streamReconciler) stopStream(ctx context.Context, definition Definition, nextPhase Phase, eventFunc func()) (reconcile.Result, error) {
+func (s *streamReconciler) stopStream(ctx context.Context, definition Definition, nextPhase Phase, eventFunc controllers.EventFunc) (reconcile.Result, error) {
 	j := &batchv1.Job{}
 	j.SetName(definition.NamespacedName().Name)
 	j.SetNamespace(definition.NamespacedName().Namespace)
@@ -309,7 +309,7 @@ func (s *streamReconciler) stopStream(ctx context.Context, definition Definition
 	return s.updateStreamPhase(ctx, definition, nil, nextPhase, eventFunc)
 }
 
-func (s *streamReconciler) startBackfill(ctx context.Context, definition Definition, nextPhase Phase, eventFunc func()) (reconcile.Result, error) {
+func (s *streamReconciler) startBackfill(ctx context.Context, definition Definition, nextPhase Phase, eventFunc controllers.EventFunc) (reconcile.Result, error) {
 
 	logger := s.getLogger(ctx, definition.NamespacedName())
 	logger.V(2).Info("starting backfill by creating a backfill request")
@@ -334,7 +334,7 @@ func (s *streamReconciler) startBackfill(ctx context.Context, definition Definit
 	return s.updateStreamPhase(ctx, definition, backfillRequest, nextPhase, eventFunc)
 }
 
-func (s *streamReconciler) reconcileJob(ctx context.Context, definition Definition, backfillRequest *v1.BackfillRequest, nextPhase Phase, eventFunc func()) (reconcile.Result, error) {
+func (s *streamReconciler) reconcileJob(ctx context.Context, definition Definition, backfillRequest *v1.BackfillRequest, nextPhase Phase, eventFunc controllers.EventFunc) (reconcile.Result, error) {
 	logger := s.getLogger(ctx, definition.NamespacedName())
 	v1job := batchv1.Job{}
 	err := s.client.Get(ctx, definition.NamespacedName(), &v1job)
@@ -401,7 +401,7 @@ func (s *streamReconciler) compareConfigurations(ctx context.Context, v1job batc
 	return jobConfiguration == definitionConfiguration, nil
 }
 
-func (s *streamReconciler) completeBackfill(ctx context.Context, job *StreamingJob, definition Definition, request *v1.BackfillRequest, nextStatus Phase, eventFunc func()) (reconcile.Result, error) {
+func (s *streamReconciler) completeBackfill(ctx context.Context, job *StreamingJob, definition Definition, request *v1.BackfillRequest, nextStatus Phase, eventFunc controllers.EventFunc) (reconcile.Result, error) {
 	if job != nil {
 		err := s.client.Delete(ctx, job.ToV1Job())
 		if client.IgnoreNotFound(err) != nil {
@@ -494,7 +494,7 @@ func (s *streamReconciler) getLogger(_ context.Context, request types.Namespaced
 		WithValues("namespace", request.Namespace, "name", request.Name, "kind", s.gvk.Kind)
 }
 
-func (s *streamReconciler) updateStreamPhase(ctx context.Context, definition Definition, backfillRequest *v1.BackfillRequest, next Phase, eventFunc func()) (reconcile.Result, error) {
+func (s *streamReconciler) updateStreamPhase(ctx context.Context, definition Definition, backfillRequest *v1.BackfillRequest, next Phase, eventFunc controllers.EventFunc) (reconcile.Result, error) {
 	logger := s.getLogger(ctx, definition.NamespacedName())
 	if definition.GetPhase() == next { // coverage-ignore
 		logger.V(0).Info("Stream phase is already set to", "phase", definition.GetPhase())
