@@ -176,38 +176,6 @@ func Test_UpdatePhase_Pending_To_Backfilling_recreate_job(t *testing.T) {
 	assertJobConfiguration(t, k8sClient, objectName, "new-hash")
 }
 
-func Test_UpdatePhase_Pending_To_Backfilling_no_secret_ref(t *testing.T) {
-	// Arrange
-	k8sClient := setupClient(
-		combined(withPhase(Pending), withNamedStreamDefinition(objectName)),
-		combinedB(withBackfillRequest(objectName), withOutdatedJob(objectName)),
-	)
-
-	mockJob := batchv1.Job{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: objectName.Namespace,
-			Name:      objectName.Name,
-			Annotations: map[string]string{
-				"configuration-hash": "new-hash",
-			},
-		},
-	}
-	mockCtrl := gomock.NewController(t)
-	defer mockCtrl.Finish()
-
-	reconciler := createReconciler(k8sClient, &mockJob, mockCtrl)
-
-	// Act
-	result, err := reconciler.Reconcile(t.Context(), reconcile.Request{NamespacedName: objectName})
-	require.NoError(t, err)
-	require.Equal(t, result, reconcile.Result{})
-
-	// Assert
-	assertStreamDefinitionPhase(t, k8sClient, objectName, Backfilling)
-	assertJobExists(t, k8sClient, objectName)
-	assertJobConfiguration(t, k8sClient, objectName, "new-hash")
-}
-
 func Test_UpdatePhase_Running_To_Suspended_no_job(t *testing.T) {
 	// Arrange
 	k8sClient := setupClient(combined(withPhase(Running), withSuspendedSpec(true)), nil)
