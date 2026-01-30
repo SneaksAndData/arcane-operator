@@ -15,8 +15,9 @@ import (
 )
 
 var (
-	_ Definition               = (*unstructuredWrapper)(nil)
-	_ job.ConfiguratorProvider = (*unstructuredWrapper)(nil)
+	_ Definition                  = (*unstructuredWrapper)(nil)
+	_ job.ConfiguratorProvider    = (*unstructuredWrapper)(nil)
+	_ job.SecretReferenceProvider = (*unstructuredWrapper)(nil)
 )
 
 type unstructuredWrapper struct {
