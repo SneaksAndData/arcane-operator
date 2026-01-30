@@ -103,7 +103,7 @@ func main() {
 		mgr,
 		eventRecorder,
 	)
-	err = stream_class.NewStreamClassReconciler(mgr.GetClient(), controllerFactory, reporter).SetupWithManager(mgr)
+	err = stream_class.NewStreamClassReconciler(mgr.GetClient(), controllerFactory, reporter, eventRecorder).SetupWithManager(mgr)
 
 	if err != nil {
 		setupLog.V(0).Error(err, "unable to create controller", "controller", "StreamClass")
