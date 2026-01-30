@@ -28,12 +28,13 @@ type StreamClassReconciler struct {
 	eventRecorder           record.EventRecorder
 }
 
-func NewStreamClassReconciler(client client.Client, streamControllerFactory UnmanagedControllerFactory, reporter StreamClassMetricsReporter) *StreamClassReconciler {
+func NewStreamClassReconciler(client client.Client, streamControllerFactory UnmanagedControllerFactory, reporter StreamClassMetricsReporter, eventRecorder record.EventRecorder) *StreamClassReconciler {
 	return &StreamClassReconciler{
 		client:                  client,
 		streamControllers:       make(map[types.NamespacedName]*StreamControllerHandle),
 		streamControllerFactory: streamControllerFactory,
 		reporter:                reporter,
+		eventRecorder:           eventRecorder,
 	}
 }
 
