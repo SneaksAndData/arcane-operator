@@ -21,13 +21,15 @@ type StreamClassReconciler struct {
 	rwLock                  sync.RWMutex
 	streamControllers       map[types.NamespacedName]*StreamControllerHandle
 	streamControllerFactory UnmanagedControllerFactory
+	reporter                StreamClassMetricsReporter
 }
 
-func NewStreamClassReconciler(client client.Client, streamControllerFactory UnmanagedControllerFactory) *StreamClassReconciler {
+func NewStreamClassReconciler(client client.Client, streamControllerFactory UnmanagedControllerFactory, reporter StreamClassMetricsReporter) *StreamClassReconciler {
 	return &StreamClassReconciler{
 		client:                  client,
 		streamControllers:       make(map[types.NamespacedName]*StreamControllerHandle),
 		streamControllerFactory: streamControllerFactory,
+		reporter:                reporter,
 	}
 }
 
@@ -110,7 +112,12 @@ func (s *StreamClassReconciler) tryStartStreamController(ctx context.Context, sc
 	}()
 
 	logger.V(1).Info("Stream controller is started")
-	s.streamControllers[name] = &StreamControllerHandle{cancelFunc: cancelFunc}
+	s.streamControllers[name] = &StreamControllerHandle{
+		cancelFunc: cancelFunc,
+		gvk:        sc.TargetResourceGvk(),
+	}
+	s.reporter.AddStreamClass(sc.TargetResourceGvk().Kind, "stream_class", sc.MetricsTags())
+
 	return s.updatePhase(ctx, sc, name, nextPhase)
 }
 
@@ -126,6 +133,9 @@ func (s *StreamClassReconciler) tryStopStreamController(ctx context.Context, nam
 	}
 	s.streamControllers[name].cancelFunc()
 	logger.V(2).Info("Stream controller is stopped")
+	s.reporter.RemoveStreamClass(s.streamControllers[name].gvk.Kind)
+
+	delete(s.streamControllers, name)
 	return s.updatePhase(ctx, nil, name, v1.PhaseStopped)
 }
 

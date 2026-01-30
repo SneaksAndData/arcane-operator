@@ -206,3 +206,43 @@ settings:
     ## Timeout for server shutdown
     ## If not set, defaults to 5s
     shutdownTimeout: ""
+
+# Observability settings for Datadog
+datadog:
+
+  # if enabled, will set Datadog-specific environment variables on the container
+  enabled: false
+
+  # Datadog endpoint to sink logs to
+  endpoint: "datadoghq.eu"
+
+  # Name for a Secret resource that contains Datadog API Key to use for log submissions
+  apiKeySecret: "secretName"
+
+  # Key in the secret that contains datadog api key
+  apiKeySecretKey: "secretKey"
+
+  # Datadog Service Name parameter
+  serviceName: "arcane-operator"
+
+  # value to use as a DogStatsd server url
+  # Examples: udp://127.0.0.1:8125 or unix:///path/to/dsd.socket
+  # https://github.com/DataDog/datadog-go?tab=readme-ov-file#unix-domain-sockets-client
+  statsdUrl: unix:///var/run/datadog/dsd.socket
+
+  # enables metric origin detection by setting DD_ENTITY_ID
+  enableOriginDetection: true
+
+  # Datadog tracing via Orchestrion
+  tracer:
+    # enable tracer
+    enabled: false
+
+    # UDS/HTTP url for the tracer
+    agent_url: unix:///var/run/datadog/apm.socket
+
+    # disable Datadog product info collection
+    disable_vendor_telemetry: true
+
+    # service environment tag
+    service_env: development

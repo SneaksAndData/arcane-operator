@@ -3,3 +3,7 @@ probes:
   write-timeout: 15s
   read-timeout: 15s
   shutdown-timeout: 5s
+
+periodic-metrics-reporter:
+  initial-delay: 5s
+  report-interval: 30s

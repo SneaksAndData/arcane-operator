@@ -50,6 +50,7 @@ func main() {
 
 	ctx = telemetry.WithStatsd(ctx, "arcane.operator")
 	appLogger, err := telemetry.ConfigureLogger(ctx, map[string]string{"environment": "local"}, "info")
+
 	klog.SetSlogLogger(appLogger)
 	klog.InitFlags(nil)
 	logger := klog.FromContext(ctx)
@@ -65,7 +66,6 @@ func main() {
 		panic(err)
 	}
 	probesService := health.NewProbesService(appConfig.ProbesConfiguration)
-
 	go func() {
 		err := probesService.ListenAndServe(ctx)
 		if err != nil {
@@ -73,6 +73,9 @@ func main() {
 			panic(err)
 		}
 	}()
+
+	reporter := telemetry.NewPeriodicMetricsReporter(telemetry.GetClient(ctx), &appConfig.PeriodicMetricsReporterConfiguration)
+	go reporter.RunPeriodicMetricsReporter(ctx)
 
 	kubeconfig, err := initKubeconfig(kubeconfigCmd, logger)
 	if err != nil {
@@ -100,7 +103,7 @@ func main() {
 		mgr,
 		eventRecorder,
 	)
-	err = stream_class.NewStreamClassReconciler(mgr.GetClient(), controllerFactory).SetupWithManager(mgr)
+	err = stream_class.NewStreamClassReconciler(mgr.GetClient(), controllerFactory, reporter).SetupWithManager(mgr)
 
 	if err != nil {
 		setupLog.V(0).Error(err, "unable to create controller", "controller", "StreamClass")
@@ -115,12 +118,12 @@ func main() {
 }
 
 func initKubeconfig(kubeconfigCmd string, logger klog.Logger) (*rest.Config, error) {
-	config, err := controllerruntime.GetConfig()
+	kubeconfig, err := controllerruntime.GetConfig()
 	if err == nil {
-		return config, nil
+		return kubeconfig, nil
 	}
 
-	logger.V(0).Error(err, "unable to get kubeconfig from in-cluster config, trying command")
+	logger.V(0).Error(err, "unable to get kubeconfig from in-cluster kubeconfig, trying command")
 	cmdParts := strings.Fields(kubeconfigCmd)
 	cmd := exec.Command(cmdParts[0], cmdParts[1:]...)
 	output, err := cmd.Output()
