@@ -68,7 +68,7 @@ func main() {
 	probesService := health.NewProbesService(appConfig.ProbesConfiguration)
 	go func() {
 		err := probesService.ListenAndServe(ctx)
-		if err != nil {
+		if err != nil && !errors.Is(err, context.Canceled) {
 			setupLog.V(0).Error(err, "unable to start health probes server")
 			panic(err)
 		}

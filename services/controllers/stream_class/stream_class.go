@@ -149,7 +149,7 @@ func (s *StreamClassReconciler) tryStartStreamController(ctx context.Context, sc
 		}
 	}()
 
-	logger.V(1).Info("Stream controller is started")
+	logger.V(0).Info("Stream controller is started")
 	s.streamControllers[name] = &StreamControllerHandle{
 		cancelFunc: cancelFunc,
 		gvk:        sc.TargetResourceGvk(),
@@ -166,11 +166,11 @@ func (s *StreamClassReconciler) tryStopStreamController(ctx context.Context, nam
 	logger := s.getLogger(ctx, name)
 	_, ok := s.streamControllers[name]
 	if !ok {
-		logger.V(2).Info("Stream controller is not running")
+		logger.V(0).Info("Stream controller is not running")
 		return reconcile.Result{}, nil
 	}
 	s.streamControllers[name].cancelFunc()
-	logger.V(2).Info("Stream controller is stopped")
+	logger.V(0).Info("Stream controller is stopped")
 	s.reporter.RemoveStreamClass(s.streamControllers[name].gvk.Kind)
 
 	delete(s.streamControllers, name)
@@ -185,20 +185,22 @@ func (s *StreamClassReconciler) updatePhase(ctx context.Context, sc *v1.StreamCl
 	}
 
 	if sc.Status.Phase == nextPhase {
-		logger.V(2).Info("StreamClass phase is already set to", sc.Status.Phase)
+		logger.V(0).Info("StreamClass phase is already set to", sc.Status.Phase)
 		return reconcile.Result{}, nil
 	}
 
-	logger.V(1).Info("Updating StreamClass phase", "from", sc.Status.Phase, "to", nextPhase)
+	logger.V(0).Info("Updating StreamClass phase", "from", sc.Status.Phase, "to", nextPhase)
 	sc.Status.Phase = nextPhase
 	err := s.client.Status().Update(ctx, sc)
-	if client.IgnoreNotFound(err) != nil {
-		logger.V(1).Error(err, "unable to update Stream Class status")
-		return reconcile.Result{}, err
-	}
 
 	if eventFunc != nil {
 		eventFunc()
 	}
+
+	if client.IgnoreNotFound(err) != nil {
+		logger.V(0).Error(err, "unable to update Stream Class status")
+		return reconcile.Result{}, err
+	}
+
 	return reconcile.Result{}, nil
 }
