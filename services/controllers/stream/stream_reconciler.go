@@ -491,7 +491,7 @@ func (s *streamReconciler) getBackfillRequest(ctx context.Context, definition De
 func (s *streamReconciler) getLogger(_ context.Context, request types.NamespacedName) klog.Logger {
 	return klog.Background().
 		WithName("StreamReconciler").
-		WithValues("namespace", request.Namespace, "name", request.Name, "kind", s.gvk.Kind)
+		WithValues("namespace", request.Namespace, "streamId", request.Name, "streamKind", s.gvk.Kind)
 }
 
 func (s *streamReconciler) updateStreamPhase(ctx context.Context, definition Definition, backfillRequest *v1.BackfillRequest, next Phase, eventFunc controllers.EventFunc) (reconcile.Result, error) {

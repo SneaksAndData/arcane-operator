@@ -82,9 +82,16 @@ func ConfigureLogger(ctx context.Context, globalTags map[string]string, logLevel
 		return slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slogLevel})), err
 	}
 	apiClient, ctx := newDatadogClient(loggerConfig.Endpoint, loggerConfig.ApiKey, ctx)
+	options := slogdatadog.Option{
+		Level:      slogLevel,
+		Client:     apiClient,
+		Context:    ctx,
+		Timeout:    5 * time.Second,
+		Hostname:   loggerConfig.Hostname,
+		Service:    loggerConfig.ServiceName,
+		GlobalTags: globalTags}
 	return slog.New(
-		slogmulti.Fanout(
-			slogdatadog.Option{Level: slogLevel, Client: apiClient, Context: ctx, Timeout: 5 * time.Second, Hostname: loggerConfig.Hostname, Service: loggerConfig.ServiceName, GlobalTags: globalTags}.NewDatadogHandler(), // first send to Datadog handler
+		slogmulti.Fanout(options.NewDatadogHandler(), // first send to Datadog handler
 			slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slogLevel}), // then to second handler: stdout
 		),
 	), nil

@@ -11,5 +11,9 @@ type AppConfig struct {
 	// ProbesConfiguration holds the configuration for health probes.
 	ProbesConfiguration health.ProbesConfig `mapstructure:"probes,omitempty"`
 
+	// PeriodicMetricsReporterConfiguration holds the configuration for periodic metrics reporting.
 	PeriodicMetricsReporterConfiguration telemetry.PeriodicMetricsReporterConfig `mapstructure:"periodic-metrics-reporter,omitempty"`
+
+	// Telemetry holds the telemetry configuration settings.
+	Telemetry telemetry.Config `mapstructure:"telemetry,omitempty"`
 }
