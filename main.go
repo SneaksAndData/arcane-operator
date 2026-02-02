@@ -23,6 +23,7 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/klog/v2"
+	"os"
 	"os/exec"
 	controllerruntime "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -48,8 +49,18 @@ func main() {
 
 	ctx := signals.SetupSignalHandler()
 
+	appConfig, err := config.LoadConfig[config.AppConfig](ctx)
+	if err != nil {
+		panic(err)
+	}
+
 	ctx = telemetry.WithStatsd(ctx, "arcane.operator")
-	appLogger, err := telemetry.ConfigureLogger(ctx, map[string]string{"environment": "local", "Application": "Arcane.Operator"}, "info")
+	tags := map[string]string{
+		"environment": os.Getenv("APPLICATION_ENVIRONMENT"),
+		"application": "Arcane.Operator",
+		"clusterName": appConfig.Telemetry.ClusterName,
+	}
+	appLogger, err := telemetry.ConfigureLogger(ctx, tags, "info")
 
 	klog.SetSlogLogger(appLogger)
 	klog.InitFlags(nil)
@@ -60,11 +71,6 @@ func main() {
 		logger.V(0).Error(err, "one of the logging handlers cannot be configured")
 	}
 
-	appConfig, err := config.LoadConfig[config.AppConfig](ctx)
-	if err != nil {
-		logger.V(0).Error(err, "unable to load application configuration")
-		panic(err)
-	}
 	probesService := health.NewProbesService(appConfig.ProbesConfiguration)
 	go func() {
 		err := probesService.ListenAndServe(ctx)

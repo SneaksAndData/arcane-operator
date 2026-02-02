@@ -32,6 +32,7 @@ func LoadConfig[T any](ctx context.Context) (*T, error) { // coverage-ignore (th
 
 	exists, err := configExists(localConfig)
 	if err != nil {
+		logger.V(0).Error(err, "error checking config for existence")
 		return nil, fmt.Errorf("error checking config for existance: %w", err)
 	}
 
@@ -55,6 +56,7 @@ func LoadConfig[T any](ctx context.Context) (*T, error) { // coverage-ignore (th
 	err = customViper.Unmarshal(&appConfig)
 
 	if err != nil { // coverage-ignore
+		logger.V(0).Error(err, "error unmarshalling config")
 		return nil, fmt.Errorf("error unmarshalling config: %w", err)
 	}
 

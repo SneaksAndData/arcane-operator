@@ -207,6 +207,14 @@ settings:
     ## If not set, defaults to 5s
     shutdownTimeout: ""
 
+  # Generic telemetry settings
+  telemetry:
+    # Log level for the operator
+    logLevel: "Info"
+
+    # Name of the cluster the operator is deployed in
+    clusterName: "arcane-cluster"
+
 # Observability settings for Datadog
 datadog:
 
