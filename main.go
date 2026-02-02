@@ -49,7 +49,7 @@ func main() {
 	ctx := signals.SetupSignalHandler()
 
 	ctx = telemetry.WithStatsd(ctx, "arcane.operator")
-	appLogger, err := telemetry.ConfigureLogger(ctx, map[string]string{"environment": "local"}, "info")
+	appLogger, err := telemetry.ConfigureLogger(ctx, map[string]string{"environment": "local", "Application": "Arcane.Operator"}, "info")
 
 	klog.SetSlogLogger(appLogger)
 	klog.InitFlags(nil)
