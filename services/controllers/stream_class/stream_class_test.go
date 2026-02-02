@@ -275,6 +275,46 @@ func Test_UpdatePhase_Ready_ToFailed(t *testing.T) {
 	expectPhase(t, k8sClient, name, v1.PhaseFailed)
 }
 
+func Test_UpdatePhase_Failed_ToReady(t *testing.T) {
+	// Arrange
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+
+	k8sClient, name := setupFakeClient(t, &v1.StreamClass{
+		ObjectMeta: metav1.ObjectMeta{},
+		Status: v1.StreamClassStatus{
+			Phase: v1.PhaseFailed,
+		},
+	})
+
+	completed := make(chan struct{})
+	defer close(completed)
+	streamController := mocks.NewMockController[reconcile.Request](mockCtrl)
+	streamController.EXPECT().Start(gomock.Any()).Do(func(arg any) {
+		completed <- struct{}{}
+	}).Return(nil)
+
+	streamReconcilerFactory := mocks.NewMockUnmanagedControllerFactory(mockCtrl)
+	streamReconcilerFactory.EXPECT().CreateStreamController(gomock.Any(), gomock.Any(), gomock.Any()).Return(streamController, nil)
+
+	metricsMock := mocks.NewMockStreamClassMetricsReporter(mockCtrl)
+	metricsMock.EXPECT().AddStreamClass(gomock.Any(), gomock.Any(), gomock.Any())
+
+	recorder := record.NewFakeRecorder(10)
+	reconciler := NewStreamClassReconciler(k8sClient, streamReconcilerFactory, metricsMock, recorder)
+
+	// Start the stream controller first
+	result, err := reconciler.Reconcile(t.Context(), reconcile.Request{NamespacedName: types.NamespacedName{Name: name}})
+	require.NoError(t, err)
+	require.Equal(t, result, reconcile.Result{})
+
+	// Wait for the stream controller to start
+	<-completed
+
+	// Assert
+	expectPhase(t, k8sClient, name, v1.PhaseReady)
+}
+
 func expectPhase(t *testing.T, k8sClient client.WithWatch, name string, phase v1.Phase) {
 	sc2 := &v1.StreamClass{}
 	err := k8sClient.Get(t.Context(), types.NamespacedName{Name: name}, sc2)
