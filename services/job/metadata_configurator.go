@@ -56,8 +56,8 @@ func (f metadataConfigurator) addEnvironmentVariable(job *batchv1.Job, name stri
 			if job.Spec.Template.Spec.Containers[k].Env[v].Name == name {
 				return fmt.Errorf("environment variable %s already present", name)
 			}
-			job.Spec.Template.Spec.Containers[k].Env = append(job.Spec.Template.Spec.Containers[k].Env, envVar)
 		}
+		job.Spec.Template.Spec.Containers[k].Env = append(job.Spec.Template.Spec.Containers[k].Env, envVar)
 	}
 	return nil
 }
