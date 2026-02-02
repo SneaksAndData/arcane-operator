@@ -15,5 +15,5 @@ type AppConfig struct {
 	PeriodicMetricsReporterConfiguration telemetry.PeriodicMetricsReporterConfig `mapstructure:"periodic-metrics-reporter,omitempty"`
 
 	// Telemetry holds the telemetry configuration settings.
-	Telemetry telemetry.Config `mapstructure:"logging,omitempty"`
+	Telemetry telemetry.Config `mapstructure:"telemetry,omitempty"`
 }

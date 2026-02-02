@@ -56,9 +56,9 @@ func main() {
 
 	ctx = telemetry.WithStatsd(ctx, "arcane.operator")
 	tags := map[string]string{
-		"environment": os.Getenv("APPLICATION_ENVIRONMENT"),
-		"application": "Arcane.Operator",
-		"clusterName": appConfig.Telemetry.ClusterName,
+		"environment":  os.Getenv("APPLICATION_ENVIRONMENT"),
+		"application":  "Arcane.Operator",
+		"cluster-name": appConfig.Telemetry.ClusterName,
 	}
 	appLogger, err := telemetry.ConfigureLogger(ctx, tags, "info")
 

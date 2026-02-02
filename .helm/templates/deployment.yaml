@@ -78,7 +78,7 @@ spec:
           - name: ARCANE_OPERATOR__TELEMETRY__CLUSTER_NAME
             value: {{ .Values.settings.telemetry.clusterName | default  "arcane-cluster"}}
           - name: ARCANE_OPERATOR__TELEMETRY__LOG_LEVEL
-            value: {{ .Values.settings.telemetry.clusterName | default  "arcane-cluster"}}
+            value: {{ .Values.settings.telemetry.logLevel | default  "info"}}
       {{- if .Values.datadog.enabled }}
           - name: DATADOG__API_KEY
             valueFrom:
