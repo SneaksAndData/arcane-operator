@@ -80,7 +80,7 @@ spec:
           - name: ARCANE_OPERATOR__TELEMETRY__LOG_LEVEL
             value: {{ .Values.settings.telemetry.logLevel | default  "info"}}
           - name: ARCANE_OPERATOR__TELEMETRY__METRICS_BIND_ADDRESS
-            value: {{ .Values.settings.telemetry.metricsBindAddress | default  ":9090" }}
+            value: {{ .Values.settings.telemetry.metricsBindAddressOverride | default (printf "0.0.0.0:%v" .Values.settings.telemetry.metricsPort) }}
       {{- if .Values.datadog.enabled }}
           - name: DATADOG__API_KEY
             valueFrom:
