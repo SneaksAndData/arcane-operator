@@ -295,11 +295,8 @@ garbageCollector:
   # Restart policy for the job (OnFailure, Never)
   restartPolicy: "OnFailure"
 
-  # Additional command line arguments for the garbage collector
-  args: []
-  # Example:
-  #  - --max-age=7d
-  #  - --dry-run=false
+  # Maximum length of the BackfillRequest deletion history
+  historyLimit: 10
 
   # Resource constraints for the garbage collector job
   resources: {}

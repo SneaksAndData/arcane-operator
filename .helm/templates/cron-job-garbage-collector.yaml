@@ -55,21 +55,21 @@ spec:
             image: "{{ include "app.garbageCollectorImage" . }}"
             imagePullPolicy: "{{ .Values.garbageCollector.image.pullPolicy }}"
             command:
-              - /app/arcane-operator
-              - garbage-collect
-            {{- with .Values.garbageCollector.args }}
-            args:
-              {{- toYaml . | nindent 14 }}
-            {{- end }}
+                - /bin/sh
+                - -c
+                - |
+                  kubectl get backfillrequests --all-namespaces \
+                    --field-selector spec.completed=true \
+                    --sort-by=metadata.creationTimestamp \
+                    --no-headers \
+                    --output custom-columns="NAMESPACE:.metadata.namespace,NAME:.metadata.name" \
+                  | head -n $HISTORY_LIMIT  \
+                  | xargs --no-run-if-empty -n2 kubectl delete backfillrequests --namespace
             env:
-              - name: ASPNETCORE_ENVIRONMENT
-                value: {{ .Values.environment }}
               - name: APPLICATION_VERSION
                 value: "{{ (default (printf "v%s" .Chart.AppVersion) .Values.garbageCollector.image.tag) }}"
-              - name: ARCANE_OPERATOR__TELEMETRY__CLUSTER_NAME
-                value: {{ .Values.settings.telemetry.clusterName | default  "arcane-cluster"}}
-              - name: ARCANE_OPERATOR__TELEMETRY__LOG_LEVEL
-                value: {{ .Values.settings.telemetry.logLevel | default  "info"}}
+              - name: HISTORY_LIMIT
+                value: "{{ .Values.garbageCollector.historyLimit }}"
           {{- if .Values.datadog.enabled }}
               - name: DATADOG__API_KEY
                 valueFrom:
