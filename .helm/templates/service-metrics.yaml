@@ -11,8 +11,8 @@ metadata:
 spec:
   type: ClusterIP
   ports:
-    - port: 9090
-      targetPort: 9090
+    - port: {{ .Values.settings.telemetry.metricsPort }}
+      targetPort: {{ .Values.settings.telemetry.metricsPort }}
       protocol: TCP
       name: metrics
   selector:
