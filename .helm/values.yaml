@@ -262,3 +262,53 @@ datadog:
 
     # service environment tag
     service_env: development
+
+# Garbage collector configuration
+garbageCollector:
+
+  # Enable garbage collector CronJob
+  enabled: false
+
+  # Image configuration for garbage collector
+  image:
+    # Repository to pull the image from
+    repository: "ghcr.io/sneaksanddata/arcane-operator"
+
+    # Tag to pull (defaults to the chart appVersion)
+    tag: ""
+
+    # Image pull policy
+    pullPolicy: "IfNotPresent"
+
+  # Cron schedule for the garbage collector (e.g., "0 2 * * *" for daily at 2 AM)
+  schedule: "0 2 * * *"
+
+  # Number of successful finished jobs to retain
+  successfulJobsHistoryLimit: 3
+
+  # Number of failed finished jobs to retain
+  failedJobsHistoryLimit: 1
+
+  # Number of retries before considering a job as failed
+  backoffLimit: 3
+
+  # Restart policy for the job (OnFailure, Never)
+  restartPolicy: "OnFailure"
+
+  # Additional command line arguments for the garbage collector
+  args: []
+  # Example:
+  #  - --max-age=7d
+  #  - --dry-run=false
+
+  # Resource constraints for the garbage collector job
+  resources: {}
+  # Example:
+  #
+  #  requests:
+  #    cpu: 100m
+  #    memory: 128Mi
+  #  limits:
+  #    cpu: 500m
+  #    memory: 512Mi
+
