@@ -215,6 +215,14 @@ settings:
     # Name of the cluster the operator is deployed in
     clusterName: "arcane-cluster"
 
+    # Metrics bind port
+    metricsPort: 9090
+
+    # Address to bind the metrics endpoint to
+    # Note that if this is overridden, a corresponding Service resource must be created to expose the metrics endpoint
+    metricsBindAddressOverride: ""
+
+
 # Observability settings for Datadog
 datadog:
 

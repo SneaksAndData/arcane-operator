@@ -27,6 +27,7 @@ import (
 	"os/exec"
 	controllerruntime "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"strings"
 )
 
@@ -90,6 +91,9 @@ func main() {
 	}
 
 	mgr, err := controllerruntime.NewManager(kubeconfig, controllerruntime.Options{
+		Metrics: metricsserver.Options{
+			BindAddress: appConfig.Telemetry.MetricsBindAddress,
+		},
 		Scheme: scheme,
 	})
 	if err != nil {
