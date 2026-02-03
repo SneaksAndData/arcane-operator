@@ -6,4 +6,7 @@ type Config struct {
 
 	// ClusterName sets the name of the cluster where the application is running.
 	ClusterName string `mapstructure:"cluster-name,omitempty"`
+
+	// MetricsBindAddress sets the address for binding the metrics server.
+	MetricsBindAddress string `mapstructure:"metrics-bind-address,omitempty"`
 }

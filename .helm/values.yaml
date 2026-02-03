@@ -215,6 +215,9 @@ settings:
     # Name of the cluster the operator is deployed in
     clusterName: "arcane-cluster"
 
+    # Address to bind the metrics endpoint to
+    metricsBindAddress: ":9090"
+
 # Observability settings for Datadog
 datadog:
 

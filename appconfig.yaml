@@ -11,3 +11,4 @@ periodic-metrics-reporter:
 telemetry:
   log-level: "Info"
   cluster-name: "arcane-cluster"
+  metrics-bind-address: ":9090"
