@@ -1,0 +1,23 @@
+apiVersion: streaming.sneaksanddata.com/v1
+kind: TestStreamDefinition
+metadata:
+  generateName: mock-stream-
+  namespace: arcane-stream-mock
+spec:
+  backfillJobTemplateRef:
+    apiVersion: streaming.sneaksanddata.com/v1
+    kind: StreamingJobTemplate
+    name: arcane-stream-mock-standard-job
+    namespace: arcane-stream-mock
+  destination: mock-destination
+  jobTemplateRef:
+    apiVersion: streaming.sneaksanddata.com/v1
+    kind: StreamingJobTemplate
+    name: arcane-stream-mock-standard-job
+    namespace: arcane-stream-mock
+  runDuration: 360s
+  shouldFail: false
+  source: mock-source
+  suspended: true
+  testSecretRef:
+    name: test-secret
