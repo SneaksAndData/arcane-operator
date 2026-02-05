@@ -27,3 +27,12 @@ If the stream **is suspended**, you need to create backfill request first and th
 If your stream has failed, you can set `spec.suspended` to `true` to stop the stream.
 To avoid data loss, you may create a backfill request that fills in any gaps occurred during the failure.
 After that, you can set `spec.suspended` to `false` to restart the stream.
+
+## I deleted tha pod and my stream transitioned to failed state, how do I avoid that in the future?
+Arcane streaming is built on top of Kubernetes Jobs. By default, when a pod is deleted manually or due to node eviction,
+all containers in the pod receive a SIGTERM signal and have a grace period to shut down gracefully **with exit code 0**.
+If the containers do not shut down within the grace period, the pod is forcefully terminated. If the pod is terminated
+with a non-zero exit code, Kubernetes counts this pod **as failed** and the job may transition to a failed state.
+It's a responsibility of the user and/or the plugin developer to ensure that the streaming job handles termination signals
+gracefully and exits with code 0 or the exit code that returned by the plugin executable on termination is
+[added to the job's podFailurePolicy](https://kubernetes.io/docs/tasks/job/pod-failure-policy/).
