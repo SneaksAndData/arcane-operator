@@ -497,7 +497,7 @@ func (s *streamReconciler) getLogger(_ context.Context, request types.Namespaced
 func (s *streamReconciler) updateStreamPhase(ctx context.Context, definition Definition, backfillRequest *v1.BackfillRequest, next Phase, eventFunc controllers.EventFunc) (reconcile.Result, error) {
 	logger := s.getLogger(ctx, definition.NamespacedName())
 	if definition.GetPhase() == next { // coverage-ignore
-		logger.V(0).Info("Stream phase is already set to", "phase", definition.GetPhase())
+		logger.V(0).Info("Stream phase is already set", "phase", definition.GetPhase())
 		return reconcile.Result{}, nil
 	}
 	logger.V(0).Info("updating Stream status", "from", definition.GetPhase(), "to", next)
