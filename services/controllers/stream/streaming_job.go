@@ -18,7 +18,12 @@ func (j StreamingJob) CurrentConfiguration() (string, error) { // coverage-ignor
 }
 
 func (j StreamingJob) IsCompleted() bool { // coverage-ignore (trivial)
-	return j.Status.Succeeded > 0
+	for _, condition := range j.Status.Conditions {
+		if condition.Type == v1.JobComplete && condition.Status == "True" {
+			return true
+		}
+	}
+	return false
 }
 
 func (j StreamingJob) IsFailed() bool { // coverage-ignore (trivial)
