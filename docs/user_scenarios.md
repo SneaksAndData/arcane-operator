@@ -23,6 +23,18 @@ The backfill request will be picked up by the operator, which will create a Kube
 
 If the stream **is suspended**, you need to create backfill request first and then unsuspend the stream.
 
+Example backfill request:
+```yaml
+apiVersion: streaming.sneaksanddata.com/v1
+kind: BackfillRequest
+metadata:
+  name: my-backfill-request
+  namespace: arcane-stream-mock
+spec:
+  streamClass: arcane-stream-mock
+  streamId: my-stream
+```
+
 ## My stream has failed and I want to restart it
 If your stream has failed, you can set `spec.suspended` to `true` to stop the stream.
 To avoid data loss, you may create a backfill request that fills in any gaps occurred during the failure.
