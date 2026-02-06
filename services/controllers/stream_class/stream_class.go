@@ -71,14 +71,14 @@ func (s *StreamClassReconciler) moveFsm(ctx context.Context, sc *v1.StreamClass,
 		return s.tryStopStreamController(ctx, name, nil)
 
 	case sc.Status.Phase == "":
-		return s.updatePhase(ctx, sc, name, v1.PhasePending, func() {
+		return s.updatePhase(ctx, unsetRetry(sc), name, v1.PhasePending, func() {
 			s.eventRecorder.Event(sc,
 				corev1.EventTypeNormal,
 				"StreamClassCreated",
 				"New StreamClass has been created and is pending processing")
 		})
 	case sc.Status.Phase == v1.PhasePending:
-		return s.tryStartStreamController(ctx, sc, name, v1.PhaseReady, func() {
+		return s.tryStartStreamController(ctx, unsetRetry(sc), name, v1.PhaseReady, func() {
 			s.eventRecorder.Event(sc,
 				corev1.EventTypeNormal,
 				"StreamClassReady",
@@ -91,23 +91,24 @@ func (s *StreamClassReconciler) moveFsm(ctx context.Context, sc *v1.StreamClass,
 	case sc.Status.Phase == v1.PhaseFailed && sc.Status.ReconcileAfter != nil:
 		logger.V(0).Info("Found StreamClass in Failed state, attempting to recover")
 		t := time.Until(*sc.Status.ReconcileAfter)
-		if t <= 0 {
-			logger.V(0).Info("ReconcileAfter time has passed, attempting to restart stream controller")
-			return s.tryStartStreamController(ctx, sc, name, v1.PhaseReady, func() {
-				s.eventRecorder.Event(sc,
-					corev1.EventTypeNormal,
-					"StreamClassRecovered",
-					"StreamClass has been recovered from Failed state and stream controller has been restarted")
-			})
+		if t >= 0 {
+			logger.V(0).Info("StreamClass is in Failed state, waiting until ReconcileAfter time to attempt recovery",
+				"reconcileAfter",
+				sc.Status.ReconcileAfter)
+			return reconcile.Result{RequeueAfter: t}, nil
 		}
-		logger.V(0).Info("StreamClass is in Failed state, waiting until ReconcileAfter time to attempt recovery",
-			"reconcileAfter",
-			sc.Status.ReconcileAfter)
-		return reconcile.Result{RequeueAfter: t}, nil
+
+		logger.V(0).Info("ReconcileAfter time has passed, attempting to restart stream controller")
+		return s.tryStartStreamController(ctx, unsetRetry(sc), name, v1.PhaseReady, func() {
+			s.eventRecorder.Event(sc,
+				corev1.EventTypeNormal,
+				"StreamClassRecovered",
+				"StreamClass has been recovered from Failed state and stream controller has been restarted")
+		})
 
 	case sc.Status.Phase == v1.PhaseReady:
 		return s.tryStartStreamController(ctx, sc, name, v1.PhaseReady, func() {
-			s.eventRecorder.Event(sc,
+			s.eventRecorder.Event(unsetRetry(sc),
 				corev1.EventTypeNormal,
 				"StreamClassReconciled",
 				"StreamClass is reconciled and stream controller is running")
@@ -176,6 +177,11 @@ func (s *StreamClassReconciler) tryStartStreamController(ctx context.Context, sc
 	s.reporter.AddStreamClass(sc.TargetResourceGvk().Kind, "stream_class", sc.MetricsTags())
 
 	return s.updatePhase(ctx, sc, name, nextPhase, eventFunc)
+}
+
+func unsetRetry(sc *v1.StreamClass) *v1.StreamClass {
+	sc.Status.ReconcileAfter = nil
+	return sc
 }
 
 func (s *StreamClassReconciler) setForRetry(ctx context.Context, sc *v1.StreamClass, name types.NamespacedName, logger klog.Logger) error {
