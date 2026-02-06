@@ -8,6 +8,7 @@ import (
 	"github.com/SneaksAndData/arcane-operator/services/controllers"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/klog/v2"
@@ -15,6 +16,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sync"
+	"time"
 )
 
 var _ reconcile.Reconciler = (*StreamClassReconciler)(nil)
@@ -69,31 +71,44 @@ func (s *StreamClassReconciler) moveFsm(ctx context.Context, sc *v1.StreamClass,
 		return s.tryStopStreamController(ctx, name, nil)
 
 	case sc.Status.Phase == "":
-		return s.updatePhase(ctx, sc, name, v1.PhasePending, func() {
+		return s.updatePhase(ctx, unsetRetry(sc), name, v1.PhasePending, func() {
 			s.eventRecorder.Event(sc,
 				corev1.EventTypeNormal,
 				"StreamClassCreated",
 				"New StreamClass has been created and is pending processing")
 		})
 	case sc.Status.Phase == v1.PhasePending:
-		return s.tryStartStreamController(ctx, sc, name, v1.PhaseReady, func() {
+		return s.tryStartStreamController(ctx, unsetRetry(sc), name, v1.PhaseReady, func() {
 			s.eventRecorder.Event(sc,
 				corev1.EventTypeNormal,
 				"StreamClassReady",
 				"StreamClass is ready and stream controller has been started")
 		})
-	case sc.Status.Phase == v1.PhaseFailed:
+	case sc.Status.Phase == v1.PhaseFailed && sc.Status.ReconcileAfter == nil:
+		logger.V(0).Info("StreamClass is in Failed state with no scheduled retry, not attempting to recover")
+		return reconcile.Result{}, nil
+
+	case sc.Status.Phase == v1.PhaseFailed && sc.Status.ReconcileAfter != nil:
 		logger.V(0).Info("Found StreamClass in Failed state, attempting to recover")
-		return s.tryStartStreamController(ctx, sc, name, v1.PhaseReady, func() {
+		t := time.Until(*sc.Status.ReconcileAfter)
+		if t >= 0 {
+			logger.V(0).Info("StreamClass is in Failed state, waiting until ReconcileAfter time to attempt recovery",
+				"reconcileAfter",
+				sc.Status.ReconcileAfter)
+			return reconcile.Result{RequeueAfter: t}, nil
+		}
+
+		logger.V(0).Info("ReconcileAfter time has passed, attempting to restart stream controller")
+		return s.tryStartStreamController(ctx, unsetRetry(sc), name, v1.PhaseReady, func() {
 			s.eventRecorder.Event(sc,
-				corev1.EventTypeWarning,
+				corev1.EventTypeNormal,
 				"StreamClassRecovered",
-				"StreamClass was found in Failed state and recovery was attempted")
+				"StreamClass has been recovered from Failed state and stream controller has been restarted")
 		})
 
 	case sc.Status.Phase == v1.PhaseReady:
 		return s.tryStartStreamController(ctx, sc, name, v1.PhaseReady, func() {
-			s.eventRecorder.Event(sc,
+			s.eventRecorder.Event(unsetRetry(sc),
 				corev1.EventTypeNormal,
 				"StreamClassReconciled",
 				"StreamClass is reconciled and stream controller is running")
@@ -129,12 +144,17 @@ func (s *StreamClassReconciler) tryStartStreamController(ctx context.Context, sc
 	go func() {
 		err := controller.Start(controllerContext)
 		if errors.Is(err, context.Canceled) {
-			logger.V(1).Info("stream controller is stopped")
+			logger.V(0).Info("stream controller is stopped")
 			return
 		}
 		if err != nil {
 			logger := s.getLogger(ctx, name)
 			logger.V(0).Error(err, "stream controller exited with error")
+
+			if apierrors.IsForbidden(err) {
+				err = s.setForRetry(ctx, sc, name, logger)
+				return
+			}
 
 			_, err = s.updatePhase(ctx, sc, name, v1.PhaseFailed, func() {
 				s.eventRecorder.Event(sc,
@@ -157,6 +177,26 @@ func (s *StreamClassReconciler) tryStartStreamController(ctx context.Context, sc
 	s.reporter.AddStreamClass(sc.TargetResourceGvk().Kind, "stream_class", sc.MetricsTags())
 
 	return s.updatePhase(ctx, sc, name, nextPhase, eventFunc)
+}
+
+func unsetRetry(sc *v1.StreamClass) *v1.StreamClass {
+	sc.Status.ReconcileAfter = nil
+	return sc
+}
+
+func (s *StreamClassReconciler) setForRetry(ctx context.Context, sc *v1.StreamClass, name types.NamespacedName, logger klog.Logger) error {
+	now := metav1.Now().Add(time.Second * 10) // TODO: make the retry delay configurable and implement exponential backoff
+	sc.Status.ReconcileAfter = &now
+	_, err := s.updatePhase(ctx, sc, name, v1.PhaseFailed, func() {
+		s.eventRecorder.Eventf(sc,
+			corev1.EventTypeWarning,
+			"StreamControllerError",
+			"Stream controller exited with error, next reconcile attempt at %s, StreamClass moved to Failed state", sc.Status.ReconcileAfter.Format(time.RFC3339))
+	})
+	if err != nil {
+		logger.V(0).Error(err, "unable to update StreamClass phase to Failed after stream controller exited with error")
+	}
+	return err
 }
 
 func (s *StreamClassReconciler) tryStopStreamController(ctx context.Context, name types.NamespacedName, eventFunc controllers.EventFunc) (reconcile.Result, error) {
