@@ -3,6 +3,7 @@ package v1
 import (
 	batchv1 "k8s.io/api/batch/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"time"
 )
 
 // Phase represents the current phase of the stream class
@@ -43,6 +44,9 @@ type StreamClassStatus struct {
 
 	// Conditions represent the latest available observations
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
+
+	// ReconcileAfter is the time after which the stream class should be reconciled again
+	ReconcileAfter *time.Time `json:"reconcileAfter,omitempty"`
 }
 
 // StreamClass is the Schema for the stream class API
