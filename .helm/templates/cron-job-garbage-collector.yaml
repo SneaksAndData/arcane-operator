@@ -86,11 +86,11 @@ spec:
               {{- with .Values.extraVolumes }}
                 {{- toYaml . | nindent 12 }}
               {{- end }}
-          {{- with .Values.tolerations }}
+          {{- with .Values.garbageCollector.tolerations }}
           tolerations:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          {{- with .Values.affinity }}
+          {{- with .Values.garbageCollector.affinity }}
           affinity:
             {{- toYaml . | nindent 12 }}
           {{- end }}

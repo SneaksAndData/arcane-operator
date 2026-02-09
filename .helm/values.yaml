@@ -272,10 +272,13 @@ garbageCollector:
   # Image configuration for garbage collector
   image:
     # Repository to pull the image from
-    repository: "ghcr.io/sneaksanddata/arcane-operator"
+    # Note: This image should contain the kubectl binary to allow the garbage collector to delete old BackfillRequest resources
+    # By default it is set to snd-cli-go, which is a lightweight image containing the kubectl binary and the SND CLI
+    # tool, but it can be overridden to use a custom image if needed
+    repository: "public.ecr.aws/ecco-sneaks-and-data/snd-cli-go"
 
-    # Tag to pull (defaults to the chart appVersion)
-    tag: ""
+    # Tag to pull
+    tag: "1.3.4"
 
     # Image pull policy
     pullPolicy: "IfNotPresent"
@@ -309,3 +312,8 @@ garbageCollector:
   #    cpu: 500m
   #    memory: 512Mi
 
+  # Node labels for pod assignment
+  tolerations: { }
+
+  # Node labels for pod assignment
+  affinity: { }
