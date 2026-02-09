@@ -120,7 +120,11 @@ func main() {
 		panic(err)
 	}
 
-	err = mgr.Start(context.Background())
+	err = mgr.Start(ctx)
+	if errors.Is(err, context.Canceled) {
+		logger.V(0).Info("App stopped due to context cancellation")
+		return
+	}
 	if err != nil {
 		setupLog.V(0).Error(err, "problem running manager")
 		panic(err)
