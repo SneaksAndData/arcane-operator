@@ -105,6 +105,7 @@ type BackfillRequestSpec struct {
 	StreamId string `json:"streamId"`
 
 	// Completed indicates whether the backfill request has been completed
+	// +kubebuilder:default=false
 	Completed bool `json:"completed,omitempty"`
 }
 
@@ -125,6 +126,7 @@ type BackfillRequestStatus struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:printcolumn:name="StreamClass",type=string,JSONPath=`.spec.streamClass`
 // +kubebuilder:printcolumn:name="StreamId",type=string,JSONPath=`.spec.streamId`
+// +kubebuilder:printcolumn:name="Completed",type=string,JSONPath=`.spec.completed`
 // +kubebuilder:selectablefield:JSONPath=.spec.completed
 type BackfillRequest struct {
 	metav1.TypeMeta   `json:",inline"`
