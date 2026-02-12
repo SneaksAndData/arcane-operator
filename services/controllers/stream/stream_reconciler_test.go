@@ -3,6 +3,7 @@ package stream
 import (
 	v1 "github.com/SneaksAndData/arcane-operator/pkg/apis/streaming/v1"
 	testv1 "github.com/SneaksAndData/arcane-operator/pkg/test/apis_test/streaming/v1"
+	v2 "github.com/SneaksAndData/arcane-operator/pkg/test/generated/applyconfiguration/streaming/v1"
 	"github.com/SneaksAndData/arcane-operator/tests/mocks"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -17,6 +18,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	crfake "sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"strings"
 	"testing"
 )
 
@@ -533,7 +535,17 @@ func createReconciler(k8sClient client.Client, mockJob *batchv1.Job, mockCtrl *g
 	}
 	recorder := record.NewFakeRecorder(10)
 	gvk := schema.GroupVersionKind{Group: "streaming.sneaksanddata.com", Version: "v1", Kind: "MockStreamDefinition"}
-	return NewStreamReconciler(k8sClient, gvk, jobBuilder, &v1.StreamClass{ObjectMeta: metav1.ObjectMeta{Name: "stream-class"}}, recorder)
+	mock := v2.MockStreamDefinition("name", "namespace")
+	sc := v1.StreamClass{
+		ObjectMeta: metav1.ObjectMeta{Name: "stream-class"},
+		Spec: v1.StreamClassSpec{
+			APIGroupRef: strings.Split(*mock.GetAPIVersion(), "/")[0],
+			APIVersion:  strings.Split(*mock.GetAPIVersion(), "/")[1],
+			KindRef:     *mock.TypeMetaApplyConfiguration.Kind,
+			PluralName:  "mockstreamdefinitions",
+		},
+	}
+	return NewStreamReconciler(k8sClient, gvk, jobBuilder, &sc, recorder)
 }
 
 // Helper function that combines multiple definition modifiers into one
