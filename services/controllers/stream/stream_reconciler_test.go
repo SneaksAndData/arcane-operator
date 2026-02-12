@@ -225,6 +225,23 @@ func Test_UpdatePhase_Running_To_Suspended_to_Pending(t *testing.T) {
 	assertStreamDefinitionPhase(t, k8sClient, objectName, Pending)
 }
 
+func Test_UpdatePhase_Running_To_Suspended_to_Pending_With_BFR(t *testing.T) {
+	// Arrange
+	k8sClient := setupClient(
+		combined(withNamedStreamDefinition(objectName), combined(withPhase(Suspended), withSuspendedSpec(true))),
+		combinedB(withBackfillRequest(objectName)),
+	)
+	reconciler := createReconciler(k8sClient, nil, nil)
+
+	// Act
+	result, err := reconciler.Reconcile(t.Context(), reconcile.Request{NamespacedName: objectName})
+	require.NoError(t, err)
+	require.Equal(t, result, reconcile.Result{})
+
+	// Assert
+	assertStreamDefinitionPhase(t, k8sClient, objectName, Pending)
+}
+
 func Test_UpdatePhase_Running_with_BackfillRequest_no_job(t *testing.T) {
 	// Arrange
 	k8sClient := setupClient(
