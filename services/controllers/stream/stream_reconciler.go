@@ -232,7 +232,7 @@ func (s *streamReconciler) moveFsm(ctx context.Context, definition Definition, j
 				"The streaming job for stream %s is continuing", definition.NamespacedName().Name)
 		})
 
-	case phase == Suspended && backfillRequest != nil && !definition.Suspended():
+	case phase == Suspended && backfillRequest != nil:
 		return s.updateStreamPhase(ctx, definition, backfillRequest, Pending, func() {
 			s.eventRecorder.Eventf(definition.ToUnstructured(),
 				"Normal",
