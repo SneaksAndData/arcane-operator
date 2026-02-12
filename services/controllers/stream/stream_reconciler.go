@@ -103,9 +103,7 @@ func (s *streamReconciler) Reconcile(ctx context.Context, request reconcile.Requ
 	logger := s.getLogger(ctx, request.NamespacedName)
 	logger.V(0).Info("Reconciling the Stream resource")
 
-	maybeSd := unstructured.Unstructured{}
-	maybeSd.SetGroupVersionKind(s.gvk)
-	err := s.client.Get(ctx, request.NamespacedName, &maybeSd)
+	streamDefinition, err := GetStreamForClass(ctx, s.client, s.streamClass, request.NamespacedName)
 
 	if errors.IsNotFound(err) { // coverage-ignore
 		logger.V(0).Info("stream resource not found, might have been deleted")
@@ -114,12 +112,6 @@ func (s *streamReconciler) Reconcile(ctx context.Context, request reconcile.Requ
 
 	if client.IgnoreNotFound(err) != nil { // coverage-ignore
 		logger.V(0).Error(err, "unable to fetch Stream resource")
-		return reconcile.Result{}, err
-	}
-
-	streamDefinition, err := fromUnstructured(&maybeSd)
-	if err != nil { // coverage-ignore
-		logger.Error(err, "failed to parse Stream definition")
 		return reconcile.Result{}, err
 	}
 

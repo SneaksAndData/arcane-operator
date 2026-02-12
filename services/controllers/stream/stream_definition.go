@@ -1,12 +1,15 @@
 package stream
 
 import (
+	"context"
+	"fmt"
 	v1 "github.com/SneaksAndData/arcane-operator/pkg/apis/streaming/v1"
 	"github.com/SneaksAndData/arcane-operator/services/job"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type Phase string
@@ -78,8 +81,20 @@ func fromUnstructured(obj *unstructured.Unstructured) (Definition, error) {
 	}
 
 	err := v.Validate()
+	if err != nil { // coverage-ignore
+		return nil, fmt.Errorf("failed to parse Stream definition: %w", err)
+	}
+	return &v, nil
+}
+
+// GetStreamForClass retrieves the stream definition for a given stream class and namespaced name.
+func GetStreamForClass(ctx context.Context, client client.Client, sc *v1.StreamClass, name types.NamespacedName) (Definition, error) {
+	gvk := sc.TargetResourceGvk()
+	maybeSd := unstructured.Unstructured{}
+	maybeSd.SetGroupVersionKind(gvk)
+	err := client.Get(ctx, name, &maybeSd)
 	if err != nil {
 		return nil, err
 	}
-	return &v, nil
+	return fromUnstructured(&maybeSd)
 }
