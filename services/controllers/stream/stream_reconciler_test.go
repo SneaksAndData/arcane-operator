@@ -541,7 +541,7 @@ func createReconciler(k8sClient client.Client, mockJob *batchv1.Job, mockCtrl *g
 		Spec: v1.StreamClassSpec{
 			APIGroupRef: strings.Split(*mock.GetAPIVersion(), "/")[0],
 			APIVersion:  strings.Split(*mock.GetAPIVersion(), "/")[1],
-			KindRef:     *mock.TypeMetaApplyConfiguration.Kind,
+			KindRef:     *mock.Kind,
 			PluralName:  "mockstreamdefinitions",
 		},
 	}
