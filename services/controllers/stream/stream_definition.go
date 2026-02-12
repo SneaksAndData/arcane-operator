@@ -75,7 +75,7 @@ type Definition interface {
 	GetReferenceForSecret(name string) (*corev1.LocalObjectReference, error)
 }
 
-func fromUnstructured(obj *unstructured.Unstructured) (Definition, error) {
+func FromUnstructured(obj *unstructured.Unstructured) (Definition, error) {
 	v := unstructuredWrapper{
 		underlying: obj,
 	}
@@ -96,5 +96,5 @@ func GetStreamForClass(ctx context.Context, client client.Client, sc *v1.StreamC
 	if err != nil {
 		return nil, err
 	}
-	return fromUnstructured(&maybeSd)
+	return FromUnstructured(&maybeSd)
 }
