@@ -262,3 +262,58 @@ datadog:
 
     # service environment tag
     service_env: development
+
+# Garbage collector configuration
+garbageCollector:
+
+  # Enable garbage collector CronJob
+  enabled: false
+
+  # Image configuration for garbage collector
+  image:
+    # Repository to pull the image from
+    # Note: This image should contain the kubectl binary to allow the garbage collector to delete old BackfillRequest resources
+    # By default it is set to snd-cli-go, which is a lightweight image containing the kubectl binary and the SND CLI
+    # tool, but it can be overridden to use a custom image if needed
+    repository: "public.ecr.aws/ecco-sneaks-and-data/snd-cli-go"
+
+    # Tag to pull
+    tag: "1.3.4"
+
+    # Image pull policy
+    pullPolicy: "IfNotPresent"
+
+  # Cron schedule for the garbage collector (e.g., "0 2 * * *" for daily at 2 AM)
+  schedule: "0 2 * * *"
+
+  # Number of successful finished jobs to retain
+  successfulJobsHistoryLimit: 3
+
+  # Number of failed finished jobs to retain
+  failedJobsHistoryLimit: 1
+
+  # Number of retries before considering a job as failed
+  backoffLimit: 3
+
+  # Restart policy for the job (OnFailure, Never)
+  restartPolicy: "OnFailure"
+
+  # Maximum length of the BackfillRequest deletion history
+  historyLimit: 300
+
+  # Resource constraints for the garbage collector job
+  resources: {}
+  # Example:
+  #
+  #  requests:
+  #    cpu: 100m
+  #    memory: 128Mi
+  #  limits:
+  #    cpu: 500m
+  #    memory: 512Mi
+
+  # Node labels for pod assignment
+  tolerations: { }
+
+  # Node labels for pod assignment
+  affinity: { }

@@ -57,6 +57,13 @@ Generage image reference based on image repository and tag
 {{- end }}
 
 {{/*
+Generate garbage collector image reference based on image repository and tag
+*/}}
+{{- define "app.garbageCollectorImage" -}}
+{{- printf "%s:%s" .Values.garbageCollector.image.repository  (default (printf "%s" .Chart.AppVersion) .Values.garbageCollector.image.tag) }}
+{{- end }}
+
+{{/*
 Generage common labels
 */}}
 {{- define "app.labels" -}}

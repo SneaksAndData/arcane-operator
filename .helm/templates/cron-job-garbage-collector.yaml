@@ -1,0 +1,98 @@
+{{- if .Values.garbageCollector.enabled }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "app.name" . }}-garbage-collector
+  labels:
+    {{- include "app.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: garbage-collector
+  {{- with .Values.additionalAnnotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  schedule: {{ .Values.garbageCollector.schedule | quote }}
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: {{ .Values.garbageCollector.successfulJobsHistoryLimit | default 3 }}
+  failedJobsHistoryLimit: {{ .Values.garbageCollector.failedJobsHistoryLimit | default 1 }}
+  jobTemplate:
+    metadata:
+      labels:
+        {{- include "app.labels" $ | nindent 8 }}
+        app.kubernetes.io/component: garbage-collector
+      {{- with .Values.additionalAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      backoffLimit: {{ .Values.garbageCollector.backoffLimit | default 3 }}
+      template:
+        metadata:
+          labels:
+            {{- include "app.labels" $ | nindent 12 }}
+            app.kubernetes.io/component: garbage-collector
+          {{- with .Values.additionalAnnotations }}
+          annotations:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+        spec:
+          {{- with .Values.imagePullSecrets }}
+          imagePullSecrets:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          serviceAccountName: {{ include "app.serviceAccountName" . }}
+          restartPolicy: {{ .Values.garbageCollector.restartPolicy | default "OnFailure" }}
+          {{- with .Values.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          containers:
+          - name: garbage-collector
+            {{- with .Values.securityContext }}
+            securityContext:
+              {{- toYaml . | nindent 14 }}
+            {{- end }}
+            image: "{{ include "app.garbageCollectorImage" . }}"
+            imagePullPolicy: "{{ .Values.garbageCollector.image.pullPolicy }}"
+            command:
+                - /bin/sh
+                - -c
+                - |
+                  kubectl get backfillrequests --all-namespaces \
+                    --field-selector spec.completed=true \
+                    --sort-by=metadata.creationTimestamp \
+                    --no-headers \
+                    --output custom-columns="NAMESPACE:.metadata.namespace,NAME:.metadata.name" \
+                  | head -n $HISTORY_LIMIT  \
+                  | xargs --no-run-if-empty -n2 kubectl delete backfillrequests --namespace
+            env:
+              - name: HISTORY_LIMIT
+                value: "{{ .Values.garbageCollector.historyLimit }}"
+            {{- if .Values.extraEnvFrom }}
+            envFrom:
+              {{- with .Values.extraEnvFrom }}
+                {{- toYaml . | nindent 14 }}
+              {{- end }}
+            {{- end }}
+            volumeMounts:
+              {{- with .Values.extraVolumeMounts }}
+                {{- toYaml . | nindent 14 }}
+              {{- end }}
+            {{- with .Values.garbageCollector.resources }}
+            resources:
+              {{- toYaml . | nindent 14 }}
+            {{- end }}
+          volumes:
+              {{- with .Values.extraVolumes }}
+                {{- toYaml . | nindent 12 }}
+              {{- end }}
+          {{- with .Values.garbageCollector.tolerations }}
+          tolerations:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.garbageCollector.affinity }}
+          affinity:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+{{- end }}
+
