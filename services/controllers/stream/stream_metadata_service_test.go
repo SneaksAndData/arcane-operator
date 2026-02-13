@@ -33,7 +33,7 @@ func Test_StreamMetadataService_JobConfigurator_NoSecretRefs(t *testing.T) {
 	unstructuredObj, err := getUnstructured(t, fakeClient)
 	require.NoError(t, err)
 
-	streamDefinition, err := fromUnstructured(&unstructuredObj)
+	streamDefinition, err := FromUnstructured(&unstructuredObj)
 	require.NoError(t, err)
 
 	service := NewStreamMetadataService(streamClass, streamDefinition)
@@ -87,7 +87,7 @@ func Test_StreamMetadataService_JobConfigurator_SingleSecretRef(t *testing.T) {
 	unstructuredObj, err := getUnstructured(t, fakeClient)
 	require.NoError(t, err)
 
-	streamDefinition, err := fromUnstructured(&unstructuredObj)
+	streamDefinition, err := FromUnstructured(&unstructuredObj)
 	require.NoError(t, err)
 
 	service := NewStreamMetadataService(streamClass, streamDefinition)
@@ -143,7 +143,7 @@ func Test_StreamMetadataService_JobConfigurator_NilSecretRefs(t *testing.T) {
 	unstructuredObj, err := getUnstructured(t, fakeClient)
 	require.NoError(t, err)
 
-	streamDefinition, err := fromUnstructured(&unstructuredObj)
+	streamDefinition, err := FromUnstructured(&unstructuredObj)
 	require.NoError(t, err)
 
 	service := NewStreamMetadataService(streamClass, streamDefinition)
@@ -197,7 +197,7 @@ func Test_StreamMetadataService_JobConfigurator_MultipleContainers(t *testing.T)
 	unstructuredObj, err := getUnstructured(t, fakeClient)
 	require.NoError(t, err)
 
-	streamDefinition, err := fromUnstructured(&unstructuredObj)
+	streamDefinition, err := FromUnstructured(&unstructuredObj)
 	require.NoError(t, err)
 
 	service := NewStreamMetadataService(streamClass, streamDefinition)
@@ -261,7 +261,7 @@ func Test_StreamMetadataService_JobConfigurator_PreservesExistingEnvFrom(t *test
 	unstructuredObj, err := getUnstructured(t, fakeClient)
 	require.NoError(t, err)
 
-	streamDefinition, err := fromUnstructured(&unstructuredObj)
+	streamDefinition, err := FromUnstructured(&unstructuredObj)
 	require.NoError(t, err)
 
 	service := NewStreamMetadataService(streamClass, streamDefinition)
