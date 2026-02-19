@@ -262,7 +262,7 @@ func (u *unstructuredWrapper) GetReferenceForSecret(fieldName string) (*corev1.L
 	return &ref, nil
 }
 
-func (u *unstructuredWrapper) UpdateUnderlyingObject(processor func(*unstructured.Unstructured) error) error {
+func (u *unstructuredWrapper) UpdateUnderlyingObject(processor func(*unstructured.Unstructured) error) error { // coverage-ignore (trivial)
 	return processor(u.underlying)
 }
 
