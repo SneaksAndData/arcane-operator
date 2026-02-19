@@ -73,6 +73,12 @@ type Definition interface {
 
 	// GetReferenceForSecret returns a LocalObjectReference for the given secret name.
 	GetReferenceForSecret(name string) (*corev1.LocalObjectReference, error)
+
+	// UpdateUnderlyingObject allows for direct updates to the underlying unstructured object, which can be useful
+	// for operations that require modifying fields not exposed by the Definition interface.
+	// The definition implementation is responsible for ensuring that any changes made to the underlying
+	// object are consistent with the Definition's state and behavior.
+	UpdateUnderlyingObject(processor func(*unstructured.Unstructured) error) error
 }
 
 func FromUnstructured(obj *unstructured.Unstructured) (Definition, error) {

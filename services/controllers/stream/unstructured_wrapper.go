@@ -262,6 +262,10 @@ func (u *unstructuredWrapper) GetReferenceForSecret(fieldName string) (*corev1.L
 	return &ref, nil
 }
 
+func (u *unstructuredWrapper) UpdateUnderlyingObject(processor func(*unstructured.Unstructured) error) error {
+	return processor(u.underlying)
+}
+
 func (u *unstructuredWrapper) Validate() error {
 	err := u.extractPhase()
 	if err != nil {
