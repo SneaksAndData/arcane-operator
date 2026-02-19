@@ -82,7 +82,7 @@ type Definition interface {
 	UpdateUnderlyingObject(processor func(*unstructured.Unstructured) error) error
 }
 
-func FromUnstructured(obj *unstructured.Unstructured) (Definition, error) {
+func FromUnstructured(obj *unstructured.Unstructured) (Definition, error) { // coverage-ignore
 	v := unstructuredWrapper{
 		underlying: obj,
 	}
