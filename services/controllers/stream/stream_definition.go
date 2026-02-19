@@ -44,6 +44,7 @@ type Definition interface {
 	NamespacedName() types.NamespacedName
 
 	// ToUnstructured converts the stream definition to an unstructured object.
+	// This method can return a copy of the underlying object, so it should not be used for modifications.
 	ToUnstructured() *unstructured.Unstructured
 
 	// SetPhase sets the status of the stream definition.
