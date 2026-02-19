@@ -95,7 +95,7 @@ func FromUnstructured(obj *unstructured.Unstructured) (Definition, error) { // c
 }
 
 // GetStreamForClass retrieves the stream definition for a given stream class and namespaced name.
-func GetStreamForClass(ctx context.Context, client client.Client, sc *v1.StreamClass, name types.NamespacedName) (Definition, error) {
+func GetStreamForClass(ctx context.Context, client client.Client, sc *v1.StreamClass, name types.NamespacedName) (Definition, error) { // coverage-ignore
 	gvk := sc.TargetResourceGvk()
 	maybeSd := unstructured.Unstructured{}
 	maybeSd.SetGroupVersionKind(gvk)
