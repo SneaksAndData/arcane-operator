@@ -50,6 +50,11 @@ gracefully and exits with code 0 or the exit code that returned by the plugin ex
 [added to the job's podFailurePolicy](https://kubernetes.io/docs/tasks/job/pod-failure-policy/).
 
 ## I want to update a stream definition while backfill is in progress. What should I expect?
-Currently, if you apply any changes to a stream definition YAML, while there is an **active** backfill request, Operator will **restart** the backfill to apply your changes.
+Currently, if you apply any changes to a stream definition YAML, while there is an **active** backfill request,
+Operator will **restart** the backfill to apply your changes.
 
 This behaviour will be improved once [lock-on](https://github.com/SneaksAndData/arcane-operator/issues/235) is implemented.
+
+## What happens if I delete a backfill request while the backfill job is running?
+If you delete a backfill request while the backfill job is running, the operator will stop the backfill job 
+and restart it in the streaming mode.
