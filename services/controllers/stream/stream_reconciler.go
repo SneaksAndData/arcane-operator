@@ -265,11 +265,19 @@ func (s *streamReconciler) moveFsm(ctx context.Context, definition Definition, j
 		})
 
 	case phase == Backfilling && definition.Suspended():
-		return s.stopStream(ctx, definition, Suspended, func() {
+		return s.completeBackfill(ctx, job, definition, backfillRequest, Suspended, func() {
 			s.eventRecorder.Eventf(definition.ToUnstructured(),
 				"Normal",
 				"StreamSuspended",
 				"The backfilling for stream %s has been suspended", definition.NamespacedName().Name)
+		})
+
+	case phase == Backfilling && backfillRequest == nil:
+		return s.completeBackfill(ctx, job, definition, backfillRequest, Pending, func() {
+			s.eventRecorder.Eventf(definition.ToUnstructured(),
+				"Normal",
+				"BackfillNotRequested",
+				"The backfill request for stream %s not found, probably deleted", definition.NamespacedName().Name)
 		})
 
 	case phase == Backfilling && job == nil:
@@ -417,14 +425,17 @@ func (s *streamReconciler) completeBackfill(ctx context.Context, job *StreamingJ
 		}
 	}
 
-	request.Spec.Completed = true
-	err := s.client.Update(ctx, request)
-	if err != nil { // coverage-ignore
-		return reconcile.Result{}, err
-	}
-	err = s.client.Status().Update(ctx, request)
-	if err != nil { // coverage-ignore
-		return reconcile.Result{}, err
+	if request != nil {
+		request.Spec.Completed = true
+		err := s.client.Update(ctx, request)
+		if err != nil { // coverage-ignore
+			return reconcile.Result{}, err
+		}
+		err = s.client.Status().Update(ctx, request)
+		if err != nil { // coverage-ignore
+			return reconcile.Result{}, err
+		}
+
 	}
 
 	return s.updateStreamPhase(ctx, definition, nil, nextStatus, eventFunc)
