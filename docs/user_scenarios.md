@@ -48,3 +48,8 @@ with a non-zero exit code, Kubernetes counts this pod **as failed** and the job 
 It's a responsibility of the user and/or the plugin developer to ensure that the streaming job handles termination signals
 gracefully and exits with code 0 or the exit code that returned by the plugin executable on termination is
 [added to the job's podFailurePolicy](https://kubernetes.io/docs/tasks/job/pod-failure-policy/).
+
+## I want to update a stream definition while backfill is in progress. What should I expect?
+Currently, if you apply any changes to a stream definition YAML, while there is an **active** backfill request, Operator will **restart** the backfill to apply your changes.
+
+This behaviour will be improved once [lock-on](https://github.com/SneaksAndData/arcane-operator/issues/235) is implemented.
