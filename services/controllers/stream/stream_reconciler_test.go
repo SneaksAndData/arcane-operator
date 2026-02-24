@@ -413,7 +413,7 @@ func Test_UpdatePhase_Backfilling_To_Suspended(t *testing.T) {
 	// Assert
 	assertStreamDefinitionPhase(t, k8sClient, objectName, Suspended)
 	assertJobNotExists(t, k8sClient, objectName)
-	assertBackfillRequestNotCompleted(t, k8sClient)
+	assertBackfillRequestCompleted(t, k8sClient)
 }
 
 func Test_UpdatePhase_Backfilling_Job_Failed(t *testing.T) {
@@ -433,6 +433,29 @@ func Test_UpdatePhase_Backfilling_Job_Failed(t *testing.T) {
 	assertStreamDefinitionPhase(t, k8sClient, objectName, Failed)
 	assertJobNotExists(t, k8sClient, objectName)
 	assertBackfillRequestCompleted(t, k8sClient)
+}
+
+func Test_UpdatePhase_Backfilling_To_Running(t *testing.T) {
+	// Arrange
+	k8sClient := setupClient(
+		combined(withNamedStreamDefinition(objectName), withPhase(Backfilling), withSuspendedSpec(false)),
+		withOutdatedJob(objectName),
+	)
+
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+
+	mockJob := batchv1.Job{ObjectMeta: metav1.ObjectMeta{Namespace: objectName.Namespace, Name: objectName.Name}}
+	reconciler := createReconciler(k8sClient, &mockJob, mockCtrl)
+
+	// Act
+	result, err := reconciler.Reconcile(t.Context(), reconcile.Request{NamespacedName: objectName})
+	require.NoError(t, err)
+	require.Equal(t, result, reconcile.Result{})
+
+	// Assert
+	assertStreamDefinitionPhase(t, k8sClient, objectName, Pending)
+	assertJobNotExists(t, k8sClient, objectName)
 }
 
 func Test_UpdatePhase_Failed_to_Failed(t *testing.T) {
