@@ -11,7 +11,7 @@ import (
 	"github.com/SneaksAndData/arcane-operator/services/job/job_builder"
 	"github.com/SneaksAndData/arcane-operator/telemetry"
 	mockv1 "github.com/SneaksAndData/arcane-stream-mock/pkg/apis/streaming/v1"
-	"github.com/google/uuid"
+	streaming "github.com/SneaksAndData/arcane-stream-mock/pkg/generated/clientset/versioned"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/sync/errgroup"
 	batchv1 "k8s.io/api/batch/v1"
@@ -52,7 +52,7 @@ func Test_CreateStream(t *testing.T) {
 	require.NoError(t, err)
 
 	// Act
-	name := createTestStreamDefinition(t, mgr, false)
+	name := createTestStreamDefinition(t, false)
 
 	// Collect job events from the watcher channel
 	jobs := make(map[types.UID]bool)
@@ -101,7 +101,7 @@ func Test_CreateFailedStream(t *testing.T) {
 	require.NoError(t, err)
 
 	// Act
-	name := createTestStreamDefinition(t, mgr, true)
+	name := createTestStreamDefinition(t, true)
 
 	// Collect job events from the watcher channel
 	jobs := make(map[types.UID]bool)
@@ -188,18 +188,16 @@ func waitForJob(t *testing.T, watcher watch.Interface, name string, handleEvent 
 	}
 }
 
-func createTestStreamDefinition(t *testing.T, mgr manager.Manager, shouldFail bool) string {
+func createTestStreamDefinition(t *testing.T, shouldFail bool) string {
 	// Create a TestStreamDefinition with dummy data
-	streamId, err := uuid.NewUUID()
-	require.NoError(t, err)
-	testStream := &mockv1.TestStreamDefinition{
+	testStream := mockv1.TestStreamDefinition{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "streaming.sneaksanddata.com/v1",
 			Kind:       "TestStreamDefinition",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      streamId.String(),
-			Namespace: "default",
+			GenerateName: "integration-test-stream-",
+			Namespace:    "default",
 		},
 		Spec: mockv1.TestsStreamDefinitionSpec{
 			Source:      "mock-source",
@@ -225,12 +223,14 @@ func createTestStreamDefinition(t *testing.T, mgr manager.Manager, shouldFail bo
 		},
 	}
 
-	// Create the TestStreamDefinition in the cluster
-	err = mgr.GetClient().Create(t.Context(), testStream)
+	newStream, err := streamingClientSet.
+		StreamingV1().
+		TestStreamDefinitions(testStream.Namespace).
+		Create(t.Context(), &testStream, metav1.CreateOptions{})
 	require.NoError(t, err)
-	t.Logf("Created TestStreamDefinition: %s/%s", testStream.Namespace, testStream.Name)
+	t.Logf("Created TestStreamDefinition: %s/%s", newStream.Namespace, newStream.Name)
 
-	return streamId.String()
+	return newStream.Name
 }
 
 func createManager(ctx context.Context, g *errgroup.Group) (manager.Manager, error) {
@@ -267,11 +267,12 @@ func createManager(ctx context.Context, g *errgroup.Group) (manager.Manager, err
 }
 
 var (
-	kubeconfigCmd string
-	kubeConfig    *rest.Config
-	scheme        = apiruntime.NewScheme()
-	clientSet     *kubernetes.Clientset
-	mgr           manager.Manager
+	kubeconfigCmd      string
+	kubeConfig         *rest.Config
+	scheme             = apiruntime.NewScheme()
+	streamingClientSet *streaming.Clientset
+	clientSet          *kubernetes.Clientset
+	mgr                manager.Manager
 )
 
 func TestMain(m *testing.M) {
@@ -298,6 +299,11 @@ func TestMain(m *testing.M) {
 	clientSet, err = kubernetes.NewForConfig(kubeConfig)
 	if err != nil {
 		panic(fmt.Errorf("error creating kubernetes clientSet: %w", err))
+	}
+
+	streamingClientSet, err = streaming.NewForConfig(kubeConfig)
+	if err != nil {
+		panic(fmt.Errorf("error creating streaming clientSet: %w", err))
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
