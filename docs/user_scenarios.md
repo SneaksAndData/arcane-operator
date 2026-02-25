@@ -21,8 +21,6 @@ This will stop the streaming job and prevent it from processing any new data.
 To start backfill for an existing stream, you need to create a backfill request custom resource (CR) that references the stream.
 The backfill request will be picked up by the operator, which will create a Kubernetes job to run the backfill process.
 
-If the stream **is suspended**, you need to create backfill request first and then unsuspend the stream.
-
 Example backfill request:
 ```yaml
 apiVersion: streaming.sneaksanddata.com/v1
