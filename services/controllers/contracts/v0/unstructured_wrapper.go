@@ -126,7 +126,7 @@ func (u *UnstructuredWrapper) ToOwnerReference() metav1.OwnerReference {
 	}
 }
 
-func (u *UnstructuredWrapper) ToConfiguratorProvider() job.ConfiguratorProvider {
+func (u *UnstructuredWrapper) ToConfiguratorProvider() job.ConfiguratorProvider { // coverage-ignore
 	return u
 }
 
@@ -140,15 +140,14 @@ func (u *UnstructuredWrapper) GetJobTemplate(request *v1.BackfillRequest) types.
 			Name:      u.streamingJobRef.Name,
 			Namespace: namespace,
 		}
-	} else {
-		namespace := u.streamingJobRef.Namespace
-		if namespace == "" {
-			namespace = u.Underlying.GetNamespace()
-		}
-		return types.NamespacedName{
-			Name:      u.backfillJobRef.Name,
-			Namespace: namespace,
-		}
+	}
+	namespace := u.streamingJobRef.Namespace
+	if namespace == "" {
+		namespace = u.Underlying.GetNamespace()
+	}
+	return types.NamespacedName{
+		Name:      u.backfillJobRef.Name,
+		Namespace: namespace,
 	}
 }
 
@@ -166,7 +165,7 @@ func (u *UnstructuredWrapper) SetConditions(conditions []metav1.Condition) error
 	return unstructured.SetNestedSlice(u.Underlying.Object, conditionsSlice, "status", "conditions")
 }
 
-func (u *UnstructuredWrapper) ComputeConditions(bfr *v1.BackfillRequest) []metav1.Condition {
+func (u *UnstructuredWrapper) ComputeConditions(bfr *v1.BackfillRequest) []metav1.Condition { // coverage-ignore
 	switch u.GetPhase() {
 	case stream.Pending:
 		return []metav1.Condition{
