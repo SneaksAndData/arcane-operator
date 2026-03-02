@@ -373,11 +373,11 @@ func (s *streamReconciler) reconcileJob(ctx context.Context, definition Definiti
 			logger.V(0).Error(err, "unable to unsuspend Stream")
 			return reconcile.Result{}, err
 		}
-		err = s.client.Update(ctx, definition.ToUnstructured())
-		if err != nil { // coverage-ignore
-			logger.V(0).Error(err, "unable to update Stream to unsuspended state")
-			return reconcile.Result{}, err
-		}
+		//err = s.client.Update(ctx, definition.ToUnstructured())
+		//if err != nil { // coverage-ignore
+		//	logger.V(0).Error(err, "unable to update Stream to unsuspended state")
+		//	return reconcile.Result{}, err
+		//}
 		return s.updateStreamPhase(ctx, definition, backfillRequest, nextPhase, eventFunc)
 	}
 
@@ -518,10 +518,12 @@ func (s *streamReconciler) getLogger(_ context.Context, request types.Namespaced
 
 func (s *streamReconciler) updateStreamPhase(ctx context.Context, definition Definition, backfillRequest *v1.BackfillRequest, next Phase, eventFunc controllers.EventFunc) (reconcile.Result, error) {
 	logger := s.getLogger(ctx, definition.NamespacedName())
+
 	if definition.GetPhase() == next { // coverage-ignore
 		logger.V(1).Info("Stream phase is already set", "phase", definition.GetPhase())
 		return reconcile.Result{}, nil
 	}
+
 	logger.V(0).Info("updating Stream status", "from", definition.GetPhase(), "to", next)
 	err := definition.SetPhase(next)
 	if err != nil { // coverage-ignore
