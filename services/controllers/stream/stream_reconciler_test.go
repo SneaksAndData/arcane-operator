@@ -1,6 +1,9 @@
 package stream
 
 import (
+	"strings"
+	"testing"
+
 	v1 "github.com/SneaksAndData/arcane-operator/pkg/apis/streaming/v1"
 	testv1 "github.com/SneaksAndData/arcane-operator/pkg/test/apis_test/streaming/v1"
 	v2 "github.com/SneaksAndData/arcane-operator/pkg/test/generated/applyconfiguration/streaming/v1"
@@ -11,6 +14,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
@@ -18,8 +22,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	crfake "sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"strings"
-	"testing"
 )
 
 var objectName types.NamespacedName = types.NamespacedName{Name: "stream1", Namespace: "default"}
@@ -591,7 +593,9 @@ func createReconciler(k8sClient client.Client, mockJob *batchv1.Job, mockCtrl *g
 			PluralName:  "mockstreamdefinitions",
 		},
 	}
-	return NewStreamReconciler(k8sClient, gvk, jobBuilder, &sc, recorder)
+	return NewStreamReconciler(k8sClient, gvk, jobBuilder, &sc, recorder, func(unstructured *unstructured.Unstructured) Definition {
+		definition := &testv1.MockStreamDefinition{}
+	})
 }
 
 // Helper function that combines multiple definition modifiers into one

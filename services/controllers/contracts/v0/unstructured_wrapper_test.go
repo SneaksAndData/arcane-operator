@@ -1,8 +1,12 @@
-package stream
+package v0
 
 import (
+	"testing"
+
 	v1 "github.com/SneaksAndData/arcane-operator/pkg/apis/streaming/v1"
 	testv1 "github.com/SneaksAndData/arcane-operator/pkg/test/apis_test/streaming/v1"
+	"github.com/SneaksAndData/arcane-operator/services/controllers/contracts/constructors"
+	"github.com/SneaksAndData/arcane-operator/services/controllers/stream"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -12,7 +16,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	crfake "sigs.k8s.io/controller-runtime/pkg/client/fake"
-	"testing"
 )
 
 func Test_GetPhase(t *testing.T) {
@@ -22,11 +25,11 @@ func Test_GetPhase(t *testing.T) {
 	require.NoError(t, err)
 
 	// Act
-	wrapper, err := FromUnstructured(&unstructuredObj)
+	wrapper, err := constructors.FromUnstructured(&unstructuredObj)
 
 	// Assert
 	require.NoError(t, err)
-	require.Equal(t, Phase("Running"), wrapper.GetPhase())
+	require.Equal(t, stream.Phase("Running"), wrapper.GetPhase())
 }
 
 func Test_Suspended(t *testing.T) {
@@ -39,7 +42,7 @@ func Test_Suspended(t *testing.T) {
 	require.NoError(t, err)
 
 	// Act
-	wrapper, err := FromUnstructured(&unstructuredObj)
+	wrapper, err := constructors.FromUnstructured(&unstructuredObj)
 
 	// Assert
 	require.NoError(t, err)
@@ -58,7 +61,7 @@ func Test_CurrentConfiguration(t *testing.T) {
 	require.NoError(t, err)
 
 	// Act
-	wrapper, err := FromUnstructured(&unstructuredObj)
+	wrapper, err := constructors.FromUnstructured(&unstructuredObj)
 	require.NotNil(t, wrapper)
 	require.NoError(t, err)
 	currentConfig, err := wrapper.CurrentConfiguration(nil)
@@ -71,7 +74,7 @@ func Test_CurrentConfiguration(t *testing.T) {
 	unstructuredObj, err = getUnstructured(t, fakeClient)
 	require.NoError(t, err)
 
-	wrapper, err = FromUnstructured(&unstructuredObj)
+	wrapper, err = constructors.FromUnstructured(&unstructuredObj)
 	require.NoError(t, err)
 	require.NotNil(t, wrapper)
 
@@ -91,7 +94,7 @@ func Test_LastAppliedConfiguration(t *testing.T) {
 	require.NoError(t, err)
 
 	// Act
-	wrapper, err := FromUnstructured(&unstructuredObj)
+	wrapper, err := constructors.FromUnstructured(&unstructuredObj)
 	require.NotNil(t, wrapper)
 	require.NoError(t, err)
 
@@ -126,7 +129,7 @@ func Test_NamespacedName(t *testing.T) {
 	require.NoError(t, err)
 
 	// Act
-	wrapper, err := FromUnstructured(&unstructuredObj)
+	wrapper, err := constructors.FromUnstructured(&unstructuredObj)
 	require.NoError(t, err)
 	require.NotNil(t, wrapper)
 
@@ -141,13 +144,13 @@ func Test_SetPhase(t *testing.T) {
 	unstructuredObj, err := getUnstructured(t, fakeClient)
 	require.NoError(t, err)
 
-	wrapper, err := FromUnstructured(&unstructuredObj)
+	wrapper, err := constructors.FromUnstructured(&unstructuredObj)
 	require.NotNil(t, wrapper)
 	require.NoError(t, err)
 
 	// Act
 
-	err = wrapper.SetPhase(Backfilling)
+	err = wrapper.SetPhase(stream.Backfilling)
 	require.NoError(t, err)
 	us := wrapper.ToUnstructured()
 	err = fakeClient.Status().Update(t.Context(), us)
@@ -156,12 +159,12 @@ func Test_SetPhase(t *testing.T) {
 	unstructuredObj, err = getUnstructured(t, fakeClient)
 	require.NoError(t, err)
 
-	wrapper, err = FromUnstructured(&unstructuredObj)
+	wrapper, err = constructors.FromUnstructured(&unstructuredObj)
 	require.NotNil(t, wrapper)
 	require.NoError(t, err)
 
 	// Assert
-	require.Equal(t, Phase("Backfilling"), wrapper.GetPhase())
+	require.Equal(t, stream.Phase("Backfilling"), wrapper.GetPhase())
 }
 
 func Test_GetStreamingJobName(t *testing.T) {
@@ -172,7 +175,7 @@ func Test_GetStreamingJobName(t *testing.T) {
 	require.NoError(t, err)
 
 	// Act
-	wrapper, err := FromUnstructured(&unstructuredObj)
+	wrapper, err := constructors.FromUnstructured(&unstructuredObj)
 	require.NotNil(t, wrapper)
 	require.NoError(t, err)
 
@@ -189,7 +192,7 @@ func Test_GetBackfillJobName(t *testing.T) {
 	require.NoError(t, err)
 
 	// Act
-	wrapper, err := FromUnstructured(&unstructuredObj)
+	wrapper, err := constructors.FromUnstructured(&unstructuredObj)
 	require.NotNil(t, wrapper)
 	require.NoError(t, err)
 
@@ -206,7 +209,7 @@ func Test_ToOwnerReference(t *testing.T) {
 	require.NoError(t, err)
 
 	// Act
-	wrapper, err := FromUnstructured(&unstructuredObj)
+	wrapper, err := constructors.FromUnstructured(&unstructuredObj)
 	require.NotNil(t, wrapper)
 	require.NoError(t, err)
 
@@ -227,7 +230,7 @@ func Test_StateString(t *testing.T) {
 	require.NoError(t, err)
 
 	// Act
-	wrapper, err := FromUnstructured(&unstructuredObj)
+	wrapper, err := constructors.FromUnstructured(&unstructuredObj)
 	require.NotNil(t, wrapper)
 	require.NoError(t, err)
 
@@ -246,7 +249,7 @@ func Test_SetSuspended(t *testing.T) {
 	require.NoError(t, err)
 
 	// Act
-	wrapper, err := FromUnstructured(&unstructuredObj)
+	wrapper, err := constructors.FromUnstructured(&unstructuredObj)
 	require.NotNil(t, wrapper)
 	require.NoError(t, err)
 	err = wrapper.SetSuspended(true)
