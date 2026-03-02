@@ -373,11 +373,11 @@ func (s *streamReconciler) reconcileJob(ctx context.Context, definition Definiti
 			logger.V(0).Error(err, "unable to unsuspend Stream")
 			return reconcile.Result{}, err
 		}
-		//err = s.client.Update(ctx, definition.ToUnstructured())
-		//if err != nil { // coverage-ignore
-		//	logger.V(0).Error(err, "unable to update Stream to unsuspended state")
-		//	return reconcile.Result{}, err
-		//}
+		err = s.client.Update(ctx, definition.ToUnstructured())
+		if err != nil { // coverage-ignore
+			logger.V(0).Error(err, "unable to update Stream to unsuspended state")
+			return reconcile.Result{}, err
+		}
 		return s.updateStreamPhase(ctx, definition, backfillRequest, nextPhase, eventFunc)
 	}
 
@@ -525,7 +525,14 @@ func (s *streamReconciler) updateStreamPhase(ctx context.Context, definition Def
 	}
 
 	logger.V(0).Info("updating Stream status", "from", definition.GetPhase(), "to", next)
-	err := definition.SetPhase(next)
+
+	// Refetch the definition to ensure we have the latest version before updating status
+	definition, err := GetStreamForClass(ctx, s.client, s.streamClass, definition.NamespacedName(), s.definitionParser)
+	if err != nil {
+		logger.V(0).Error(err, "unable to fetch Stream for status update")
+		return reconcile.Result{}, err
+	}
+	err = definition.SetPhase(next)
 	if err != nil { // coverage-ignore
 		logger.V(0).Error(err, "unable to set Stream status")
 		return reconcile.Result{}, err
