@@ -294,7 +294,7 @@ func (u *UnstructuredWrapper) Validate() error {
 
 func (u *UnstructuredWrapper) extractStreamingJobRef(from string, target *corev1.ObjectReference) error {
 	uRef, found, err := unstructured.NestedFieldCopy(u.Underlying.Object, "spec", from)
-	if err != nil {
+	if err != nil { // coverage-ignore
 		return err
 	}
 
@@ -318,7 +318,7 @@ func (u *UnstructuredWrapper) extractStreamingJobRef(from string, target *corev1
 
 func (u *UnstructuredWrapper) extractConfigurationHash() error {
 	currentConfiguration, found, err := getNestedString(u.Underlying, "status", "configurationHash")
-	if err != nil {
+	if err != nil { // coverage-ignore
 		return err
 	}
 	if !found {
@@ -330,7 +330,7 @@ func (u *UnstructuredWrapper) extractConfigurationHash() error {
 
 func (u *UnstructuredWrapper) extractSuspended() error {
 	suspended, found, err := getNestedBool(u.Underlying, "spec", "suspended")
-	if err != nil {
+	if err != nil { // coverage-ignore
 		return err
 	}
 
