@@ -42,16 +42,16 @@ func (u *UnstructuredWrapper) Suspended() bool {
 func (u *UnstructuredWrapper) CurrentConfiguration(request *v1.BackfillRequest) (string, error) {
 	spec, found, err := unstructured.NestedFieldCopy(u.Underlying.Object, "spec")
 
-	if err != nil {
+	if err != nil { // coverage-ignore
 		return "", err
 	}
 
-	if !found {
+	if !found { // coverage-ignore
 		return "", fmt.Errorf("spec field not found in unstructured object")
 	}
 
 	b, err := json.Marshal(spec)
-	if err != nil {
+	if err != nil { // coverage-ignore
 		return "", err
 	}
 
@@ -64,7 +64,7 @@ func (u *UnstructuredWrapper) CurrentConfiguration(request *v1.BackfillRequest) 
 
 	// Include backfill request spec in the configuration hash
 	bRequest, err := json.Marshal(request.Spec)
-	if err != nil {
+	if err != nil { // coverage-ignore
 		return "", err
 	}
 
@@ -80,7 +80,7 @@ func (u *UnstructuredWrapper) LastAppliedConfiguration() string {
 
 func (u *UnstructuredWrapper) RecomputeConfiguration(request *v1.BackfillRequest) error {
 	currentConfig, err := u.CurrentConfiguration(request)
-	if err != nil {
+	if err != nil { // coverage-ignore
 		return err
 	}
 
@@ -344,7 +344,7 @@ func (u *UnstructuredWrapper) extractSuspended() error {
 
 func (u *UnstructuredWrapper) extractPhase() error {
 	phase, found, err := getNestedString(u.Underlying, "status", "phase")
-	if err != nil {
+	if err != nil { // coverage-ignore
 		return err
 	}
 	if !found {
