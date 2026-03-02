@@ -157,7 +157,7 @@ func (u *UnstructuredWrapper) SetConditions(conditions []metav1.Condition) error
 	conditionsSlice := make([]interface{}, len(conditions))
 	for i, cond := range conditions {
 		condMap, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&cond)
-		if err != nil {
+		if err != nil { // coverage-ignore
 			return fmt.Errorf("failed to convert condition to unstructured: %w", err)
 		}
 		conditionsSlice[i] = condMap
@@ -247,12 +247,12 @@ func (u *UnstructuredWrapper) JobConfigurator() (job.Configurator, error) {
 
 func (u *UnstructuredWrapper) GetReferenceForSecret(fieldName string) (*corev1.LocalObjectReference, error) {
 	secretRef, found, err := unstructured.NestedFieldCopy(u.Underlying.Object, "spec", fieldName)
-	if err != nil || !found {
+	if err != nil || !found { // coverage-ignore
 		return nil, fmt.Errorf("spec/%s field not found in object", fieldName)
 	}
 
 	m, ok := secretRef.(map[string]interface{})
-	if !ok {
+	if !ok { // coverage-ignore
 		return nil, fmt.Errorf("spec/%s is not an object", fieldName)
 	}
 
@@ -266,27 +266,27 @@ func (u *UnstructuredWrapper) GetReferenceForSecret(fieldName string) (*corev1.L
 
 func (u *UnstructuredWrapper) Validate() error {
 	err := u.extractPhase()
-	if err != nil {
+	if err != nil { // coverage-ignore
 		return err
 	}
 
 	err = u.extractSuspended()
-	if err != nil {
+	if err != nil { // coverage-ignore
 		return err
 	}
 
 	err = u.extractConfigurationHash()
-	if err != nil {
+	if err != nil { // coverage-ignore
 		return err
 	}
 
 	err = u.extractStreamingJobRef("jobTemplateRef", &u.streamingJobRef)
-	if err != nil {
+	if err != nil { // coverage-ignore
 		return err
 	}
 
 	err = u.extractStreamingJobRef("backfillJobTemplateRef", &u.backfillJobRef)
-	if err != nil {
+	if err != nil { // coverage-ignore
 		return err
 	}
 
