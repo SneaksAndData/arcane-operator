@@ -5,6 +5,7 @@ import (
 
 	v1 "github.com/SneaksAndData/arcane-operator/pkg/apis/streaming/v1"
 	testv1 "github.com/SneaksAndData/arcane-operator/pkg/test/apis_test/streaming/v1"
+	"github.com/SneaksAndData/arcane-operator/services/controllers/contracts/constructors"
 	"github.com/stretchr/testify/require"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -33,7 +34,7 @@ func Test_StreamMetadataService_JobConfigurator_NoSecretRefs(t *testing.T) {
 	unstructuredObj, err := getUnstructured(t, fakeClient)
 	require.NoError(t, err)
 
-	streamDefinition, err := FromUnstructured(&unstructuredObj)
+	streamDefinition, err := constructors.FromUnstructured(&unstructuredObj)
 	require.NoError(t, err)
 
 	service := NewStreamMetadataService(streamClass, streamDefinition)
@@ -87,7 +88,7 @@ func Test_StreamMetadataService_JobConfigurator_SingleSecretRef(t *testing.T) {
 	unstructuredObj, err := getUnstructured(t, fakeClient)
 	require.NoError(t, err)
 
-	streamDefinition, err := FromUnstructured(&unstructuredObj)
+	streamDefinition, err := constructors.FromUnstructured(&unstructuredObj)
 	require.NoError(t, err)
 
 	service := NewStreamMetadataService(streamClass, streamDefinition)
@@ -143,7 +144,7 @@ func Test_StreamMetadataService_JobConfigurator_NilSecretRefs(t *testing.T) {
 	unstructuredObj, err := getUnstructured(t, fakeClient)
 	require.NoError(t, err)
 
-	streamDefinition, err := FromUnstructured(&unstructuredObj)
+	streamDefinition, err := constructors.FromUnstructured(&unstructuredObj)
 	require.NoError(t, err)
 
 	service := NewStreamMetadataService(streamClass, streamDefinition)
@@ -197,7 +198,7 @@ func Test_StreamMetadataService_JobConfigurator_MultipleContainers(t *testing.T)
 	unstructuredObj, err := getUnstructured(t, fakeClient)
 	require.NoError(t, err)
 
-	streamDefinition, err := FromUnstructured(&unstructuredObj)
+	streamDefinition, err := constructors.FromUnstructured(&unstructuredObj)
 	require.NoError(t, err)
 
 	service := NewStreamMetadataService(streamClass, streamDefinition)
@@ -261,7 +262,7 @@ func Test_StreamMetadataService_JobConfigurator_PreservesExistingEnvFrom(t *test
 	unstructuredObj, err := getUnstructured(t, fakeClient)
 	require.NoError(t, err)
 
-	streamDefinition, err := FromUnstructured(&unstructuredObj)
+	streamDefinition, err := constructors.FromUnstructured(&unstructuredObj)
 	require.NoError(t, err)
 
 	service := NewStreamMetadataService(streamClass, streamDefinition)

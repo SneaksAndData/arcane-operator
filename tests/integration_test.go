@@ -5,7 +5,14 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"os"
+	"os/exec"
+	"strings"
+	"testing"
+	"time"
+
 	"github.com/SneaksAndData/arcane-operator/pkg/apis/streaming/v1"
+	"github.com/SneaksAndData/arcane-operator/services/controllers/contracts/constructors"
 	"github.com/SneaksAndData/arcane-operator/services/controllers/stream"
 	"github.com/SneaksAndData/arcane-operator/services/controllers/stream_class"
 	"github.com/SneaksAndData/arcane-operator/services/job/job_builder"
@@ -29,13 +36,8 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/klog/v2"
-	"os"
-	"os/exec"
 	controllerruntime "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-	"strings"
-	"testing"
-	"time"
 )
 
 // Test_CreateStream verifies that creating a TestStreamDefinition results in the creation of both backfill and regular streaming jobs.
@@ -247,7 +249,7 @@ func createManager(ctx context.Context, g *errgroup.Group) (manager.Manager, err
 	eventBroadcaster.StartLogging(klog.Infof)
 	eventBroadcaster.StartRecordingToSink(&typedcorev1.EventSinkImpl{Interface: clientSet.CoreV1().Events("")})
 	eventRecorder := eventBroadcaster.NewRecorder(scheme, corev1.EventSource{Component: "Arcane-Operator-Test"})
-	controllerFactory := stream.NewStreamControllerFactory(mgr.GetClient(), jobBuilder, mgr, eventRecorder)
+	controllerFactory := stream.NewStreamControllerFactory(mgr.GetClient(), jobBuilder, mgr, eventRecorder, constructors.FromUnstructured)
 
 	reporter := telemetry.NewPeriodicMetricsReporter(telemetry.GetClient(ctx), &telemetry.PeriodicMetricsReporterConfig{
 		ReportInterval: 1 * time.Minute,
