@@ -97,5 +97,5 @@ func (m *MockController[request]) Watch(src source.TypedSource[reconcile.Request
 // Watch indicates an expected call of Watch.
 func (mr *MockControllerMockRecorder[request]) Watch(src any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetupWithController", reflect.TypeOf((*MockController[request])(nil).Watch), src)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Watch", reflect.TypeOf((*MockController[request])(nil).Watch), src)
 }
