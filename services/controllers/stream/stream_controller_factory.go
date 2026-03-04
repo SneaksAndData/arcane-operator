@@ -2,6 +2,7 @@ package stream
 
 import (
 	"context"
+
 	v1 "github.com/SneaksAndData/arcane-operator/pkg/apis/streaming/v1"
 	"github.com/SneaksAndData/arcane-operator/services/controllers/stream_class"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -14,24 +15,26 @@ import (
 var _ stream_class.UnmanagedControllerFactory = (*streamControllerFactory)(nil)
 
 type streamControllerFactory struct {
-	client        client.Client
-	jobBuilder    JobBuilder
-	manager       manager.Manager
-	eventRecorder record.EventRecorder
+	client           client.Client
+	jobBuilder       JobBuilder
+	manager          manager.Manager
+	eventRecorder    record.EventRecorder
+	definitionParser DefinitionParser
 }
 
 func (s streamControllerFactory) CreateStreamController(_ context.Context, gvk schema.GroupVersionKind, streamClass *v1.StreamClass) (controller.Controller, error) { // coverage-ignore (trivial)
-	streamReconciler := NewStreamReconciler(s.client, gvk, s.jobBuilder, streamClass, s.eventRecorder)
+	streamReconciler := NewStreamReconciler(s.client, gvk, s.jobBuilder, streamClass, s.eventRecorder, s.definitionParser)
 	unmanaged, err := streamReconciler.SetupUnmanaged(s.manager.GetCache(), s.manager.GetScheme(), s.manager.GetRESTMapper())
 	return unmanaged, err
 }
 
 // NewStreamControllerFactory creates a new instance of StreamControllerFactory
-func NewStreamControllerFactory(client client.Client, jobBuilder JobBuilder, manager manager.Manager, eventRecorder record.EventRecorder) stream_class.UnmanagedControllerFactory { // coverage-ignore (trivial)
+func NewStreamControllerFactory(client client.Client, jobBuilder JobBuilder, manager manager.Manager, eventRecorder record.EventRecorder, definitionParser DefinitionParser) stream_class.UnmanagedControllerFactory { // coverage-ignore (trivial)
 	return &streamControllerFactory{
-		client:        client,
-		jobBuilder:    jobBuilder,
-		manager:       manager,
-		eventRecorder: eventRecorder,
+		client:           client,
+		jobBuilder:       jobBuilder,
+		manager:          manager,
+		eventRecorder:    eventRecorder,
+		definitionParser: definitionParser,
 	}
 }
