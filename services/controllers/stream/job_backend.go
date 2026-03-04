@@ -34,11 +34,12 @@ type JobBackend struct {
 	eventRecorder record.EventRecorder
 }
 
-func NewJobBackend(client client.Client, jobBuilder JobBuilder, eventRecorder record.EventRecorder) *JobBackend {
+func NewJobBackend(client client.Client, jobBuilder JobBuilder, eventRecorder record.EventRecorder, phaseManager PhaseManager) *JobBackend {
 	return &JobBackend{
 		client:        client,
 		jobBuilder:    jobBuilder,
 		eventRecorder: eventRecorder,
+		phaseManager:  phaseManager,
 	}
 }
 
