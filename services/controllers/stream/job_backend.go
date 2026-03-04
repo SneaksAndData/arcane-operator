@@ -15,6 +15,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/klog/v2"
@@ -43,13 +44,14 @@ func NewJobBackend(client client.Client, jobBuilder JobBuilder, eventRecorder re
 	}
 }
 
-func (j *JobBackend) SetupWithController(cache cache.Cache, scheme *runtime.Scheme, mapper meta.RESTMapper, controller controller.Controller, manger PhaseManager) error {
-	resource := &unstructured.Unstructured{}
-	j.phaseManager = manger
+func (j *JobBackend) SetupWithController(cache cache.Cache, scheme *runtime.Scheme, mapper meta.RESTMapper, controller controller.Controller, manager PhaseManager, primaryGvk schema.GroupVersionKind) error {
+	primaryResource := &unstructured.Unstructured{}
+	primaryResource.SetGroupVersionKind(primaryGvk)
+	j.phaseManager = manager
 	return watchers.NewTypedSecondaryWatcherBuilder[*batchv1.Job]().
 		WithFilter(NewJobFilter()).
 		WithCache(cache).
-		WithHandler(handler.TypedEnqueueRequestForOwner[*batchv1.Job](scheme, mapper, resource, handler.OnlyControllerOwner())).
+		WithHandler(handler.TypedEnqueueRequestForOwner[*batchv1.Job](scheme, mapper, primaryResource, handler.OnlyControllerOwner())).
 		Build().
 		SetupWithController(controller, &batchv1.Job{})
 }

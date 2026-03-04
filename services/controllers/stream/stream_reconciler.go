@@ -48,7 +48,7 @@ func (s *streamReconciler) SetupUnmanaged(cache cache.Cache, scheme *runtime.Sch
 		return nil, fmt.Errorf("failed to start unmanaged stream controller: %w", err)
 	}
 
-	err = s.backendResourceManager.SetupWithController(cache, scheme, mapper, newController, s)
+	err = s.backendResourceManager.SetupWithController(cache, scheme, mapper, newController, s, s.gvk)
 	if err != nil {
 		return nil, fmt.Errorf("failed to start backend resource watcher: %w", err)
 	}

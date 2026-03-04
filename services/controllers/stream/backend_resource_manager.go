@@ -7,6 +7,7 @@ import (
 	"github.com/SneaksAndData/arcane-operator/services/controllers"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime"
+	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -17,7 +18,7 @@ import (
 type BackendResourceManager interface {
 
 	// SetupWithController sets up the necessary watches and handlers for the backend resources with the provided controller.
-	SetupWithController(cache cache.Cache, scheme *runtime.Scheme, mapper meta.RESTMapper, controller controller.Controller, manager PhaseManager) error
+	SetupWithController(cache cache.Cache, scheme *runtime.Scheme, mapper meta.RESTMapper, controller controller.Controller, manager PhaseManager, primaryGvk schema.GroupVersionKind) error
 
 	// Get retrieves the current state of the backend resource associated with the given stream definition.
 	Get(ctx context.Context, key client.ObjectKey) (*StreamingJob, error)
