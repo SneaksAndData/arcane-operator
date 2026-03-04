@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/SneaksAndData/arcane-operator/pkg/apis/streaming/v1"
+	"github.com/SneaksAndData/arcane-operator/services"
 	"github.com/SneaksAndData/arcane-operator/services/controllers/contracts/v0"
 	"github.com/SneaksAndData/arcane-operator/services/controllers/stream"
 	"github.com/SneaksAndData/arcane-operator/services/controllers/stream_class"
@@ -249,7 +250,7 @@ func createManager(ctx context.Context, g *errgroup.Group) (manager.Manager, err
 	eventBroadcaster.StartLogging(klog.Infof)
 	eventBroadcaster.StartRecordingToSink(&typedcorev1.EventSinkImpl{Interface: clientSet.CoreV1().Events("")})
 	eventRecorder := eventBroadcaster.NewRecorder(scheme, corev1.EventSource{Component: "Arcane-Operator-Test"})
-	controllerFactory := stream.NewStreamControllerFactory(mgr.GetClient(), jobBuilder, mgr, eventRecorder, v0.FromUnstructured)
+	controllerFactory := services.NewStreamControllerFactory(mgr.GetClient(), jobBuilder, mgr, eventRecorder, v0.FromUnstructured)
 
 	reporter := telemetry.NewPeriodicMetricsReporter(telemetry.GetClient(ctx), &telemetry.PeriodicMetricsReporterConfig{
 		ReportInterval: 1 * time.Minute,
