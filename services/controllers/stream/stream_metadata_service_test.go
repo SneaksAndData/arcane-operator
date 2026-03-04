@@ -4,14 +4,12 @@ import (
 	"testing"
 
 	v1 "github.com/SneaksAndData/arcane-operator/pkg/apis/streaming/v1"
-	testv1 "github.com/SneaksAndData/arcane-operator/pkg/test/apis_test/streaming/v1"
+	"github.com/SneaksAndData/arcane-operator/tests/mocks/job_mock"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	crfake "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 func Test_StreamMetadataService_JobConfigurator_NoSecretRefs(t *testing.T) {
@@ -29,14 +27,10 @@ func Test_StreamMetadataService_JobConfigurator_NoSecretRefs(t *testing.T) {
 		},
 	}
 
-	fakeClient := setupFakeClient(nil)
-	unstructuredObj, err := getUnstructured(t, fakeClient)
-	require.NoError(t, err)
-
-	streamDefinition, err := FromUnstructured(&unstructuredObj)
-	require.NoError(t, err)
-
-	service := NewStreamMetadataService(streamClass, streamDefinition)
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	mockProvider := job_mock.NewMockSecretReferenceProvider(mockCtrl)
+	service := NewStreamMetadataService(streamClass, mockProvider)
 
 	// Act
 	configurator, err := service.JobConfigurator()
@@ -83,14 +77,14 @@ func Test_StreamMetadataService_JobConfigurator_SingleSecretRef(t *testing.T) {
 		},
 	}
 
-	fakeClient := setupFakeClientWithSecrets("databaseCredentials")
-	unstructuredObj, err := getUnstructured(t, fakeClient)
-	require.NoError(t, err)
-
-	streamDefinition, err := FromUnstructured(&unstructuredObj)
-	require.NoError(t, err)
-
-	service := NewStreamMetadataService(streamClass, streamDefinition)
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	mockProvider := job_mock.NewMockSecretReferenceProvider(mockCtrl)
+	mockProvider.EXPECT().
+		GetReferenceForSecret("secretRef").
+		Return(&corev1.LocalObjectReference{Name: "databaseCredentials"}, nil).
+		Times(1)
+	service := NewStreamMetadataService(streamClass, mockProvider)
 
 	// Act
 	configurator, err := service.JobConfigurator()
@@ -139,14 +133,10 @@ func Test_StreamMetadataService_JobConfigurator_NilSecretRefs(t *testing.T) {
 		},
 	}
 
-	fakeClient := setupFakeClient(nil)
-	unstructuredObj, err := getUnstructured(t, fakeClient)
-	require.NoError(t, err)
-
-	streamDefinition, err := FromUnstructured(&unstructuredObj)
-	require.NoError(t, err)
-
-	service := NewStreamMetadataService(streamClass, streamDefinition)
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	mockProvider := job_mock.NewMockSecretReferenceProvider(mockCtrl)
+	service := NewStreamMetadataService(streamClass, mockProvider)
 
 	// Act
 	configurator, err := service.JobConfigurator()
@@ -193,14 +183,14 @@ func Test_StreamMetadataService_JobConfigurator_MultipleContainers(t *testing.T)
 		},
 	}
 
-	fakeClient := setupFakeClientWithSecrets("databaseCredentials")
-	unstructuredObj, err := getUnstructured(t, fakeClient)
-	require.NoError(t, err)
-
-	streamDefinition, err := FromUnstructured(&unstructuredObj)
-	require.NoError(t, err)
-
-	service := NewStreamMetadataService(streamClass, streamDefinition)
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	mockProvider := job_mock.NewMockSecretReferenceProvider(mockCtrl)
+	mockProvider.EXPECT().
+		GetReferenceForSecret("secretRef").
+		Return(&corev1.LocalObjectReference{Name: "databaseCredentials"}, nil).
+		Times(1)
+	service := NewStreamMetadataService(streamClass, mockProvider)
 
 	// Act
 	configurator, err := service.JobConfigurator()
@@ -257,14 +247,14 @@ func Test_StreamMetadataService_JobConfigurator_PreservesExistingEnvFrom(t *test
 		},
 	}
 
-	fakeClient := setupFakeClientWithSecrets("my-secret")
-	unstructuredObj, err := getUnstructured(t, fakeClient)
-	require.NoError(t, err)
-
-	streamDefinition, err := FromUnstructured(&unstructuredObj)
-	require.NoError(t, err)
-
-	service := NewStreamMetadataService(streamClass, streamDefinition)
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	mockProvider := job_mock.NewMockSecretReferenceProvider(mockCtrl)
+	mockProvider.EXPECT().
+		GetReferenceForSecret("secretRef").
+		Return(&corev1.LocalObjectReference{Name: "my-secret"}, nil).
+		Times(1)
+	service := NewStreamMetadataService(streamClass, mockProvider)
 
 	// Act
 	configurator, err := service.JobConfigurator()
@@ -308,30 +298,4 @@ func Test_StreamMetadataService_JobConfigurator_PreservesExistingEnvFrom(t *test
 	require.Equal(t, "existing-configmap", job.Spec.Template.Spec.Containers[0].EnvFrom[0].ConfigMapRef.Name)
 	require.NotNil(t, job.Spec.Template.Spec.Containers[0].EnvFrom[1].SecretRef)
 	require.Equal(t, "my-secret", job.Spec.Template.Spec.Containers[0].EnvFrom[1].SecretRef.Name)
-}
-
-// setupFakeClientWithSecrets creates a fake client with a MockStreamDefinition that has secret references
-func setupFakeClientWithSecrets(secrets string) client.WithWatch {
-	sd := testv1.MockStreamDefinition{
-		ObjectMeta: metav1.ObjectMeta{Name: "sd1"},
-		Spec: testv1.MockStreamDefinitionSpec{
-			SecretRef: corev1.LocalObjectReference{Name: secrets},
-		},
-		Status: testv1.MockStreamDefinitionStatus{
-			Phase: "Running",
-		},
-	}
-
-	scheme := runtime.NewScheme()
-	_ = testv1.AddToScheme(scheme)
-	_ = v1.AddToScheme(scheme)
-	_ = corev1.AddToScheme(scheme)
-
-	k8sClient := crfake.NewClientBuilder().
-		WithStatusSubresource(&testv1.MockStreamDefinition{}).
-		WithScheme(scheme).
-		WithObjects(&sd).
-		Build()
-
-	return k8sClient
 }

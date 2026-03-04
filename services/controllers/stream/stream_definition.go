@@ -2,7 +2,7 @@ package stream
 
 import (
 	"context"
-	"fmt"
+
 	v1 "github.com/SneaksAndData/arcane-operator/pkg/apis/streaming/v1"
 	"github.com/SneaksAndData/arcane-operator/services/job"
 	corev1 "k8s.io/api/core/v1"
@@ -75,20 +75,13 @@ type Definition interface {
 	GetReferenceForSecret(name string) (*corev1.LocalObjectReference, error)
 }
 
-func FromUnstructured(obj *unstructured.Unstructured) (Definition, error) {
-	v := unstructuredWrapper{
-		underlying: obj,
-	}
-
-	err := v.Validate()
-	if err != nil { // coverage-ignore
-		return nil, fmt.Errorf("failed to parse Stream definition: %w", err)
-	}
-	return &v, nil
-}
+// DefinitionParser is a function type that takes an unstructured object and returns a validated Definition or an
+// error if the parsing fails. This allows for flexible parsing logic that can be customized based on the specific
+// structure of the unstructured object.
+type DefinitionParser func(*unstructured.Unstructured) (Definition, error)
 
 // GetStreamForClass retrieves the stream definition for a given stream class and namespaced name.
-func GetStreamForClass(ctx context.Context, client client.Client, sc *v1.StreamClass, name types.NamespacedName) (Definition, error) {
+func GetStreamForClass(ctx context.Context, client client.Client, sc *v1.StreamClass, name types.NamespacedName, definitionParser DefinitionParser) (Definition, error) {
 	gvk := sc.TargetResourceGvk()
 	maybeSd := unstructured.Unstructured{}
 	maybeSd.SetGroupVersionKind(gvk)
@@ -96,5 +89,5 @@ func GetStreamForClass(ctx context.Context, client client.Client, sc *v1.StreamC
 	if err != nil {
 		return nil, err
 	}
-	return FromUnstructured(&maybeSd)
+	return definitionParser(&maybeSd)
 }

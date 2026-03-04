@@ -3,6 +3,7 @@ package stream
 import (
 	"context"
 	"fmt"
+
 	v1 "github.com/SneaksAndData/arcane-operator/pkg/apis/streaming/v1"
 	"github.com/SneaksAndData/arcane-operator/services/controllers"
 	"github.com/SneaksAndData/arcane-operator/services/job"
@@ -31,11 +32,12 @@ var (
 )
 
 type streamReconciler struct {
-	gvk           schema.GroupVersionKind
-	client        client.Client
-	jobBuilder    JobBuilder
-	streamClass   *v1.StreamClass
-	eventRecorder record.EventRecorder
+	gvk              schema.GroupVersionKind
+	client           client.Client
+	jobBuilder       JobBuilder
+	streamClass      *v1.StreamClass
+	eventRecorder    record.EventRecorder
+	definitionParser DefinitionParser
 }
 
 func (s *streamReconciler) SetupUnmanaged(cache cache.Cache, scheme *runtime.Scheme, mapper meta.RESTMapper) (controller.Controller, error) {
@@ -88,13 +90,14 @@ func (s *streamReconciler) SetupUnmanaged(cache cache.Cache, scheme *runtime.Sch
 }
 
 // NewStreamReconciler creates a new StreamReconciler instance.
-func NewStreamReconciler(client client.Client, gvk schema.GroupVersionKind, jobBuilder JobBuilder, streamClass *v1.StreamClass, eventRecorder record.EventRecorder) controllers.UnmanagedReconciler {
+func NewStreamReconciler(client client.Client, gvk schema.GroupVersionKind, jobBuilder JobBuilder, streamClass *v1.StreamClass, eventRecorder record.EventRecorder, definitionParser DefinitionParser) controllers.UnmanagedReconciler {
 	return &streamReconciler{
-		gvk:           gvk,
-		jobBuilder:    jobBuilder,
-		client:        client,
-		streamClass:   streamClass,
-		eventRecorder: eventRecorder,
+		gvk:              gvk,
+		jobBuilder:       jobBuilder,
+		client:           client,
+		streamClass:      streamClass,
+		eventRecorder:    eventRecorder,
+		definitionParser: definitionParser,
 	}
 }
 
@@ -103,7 +106,7 @@ func (s *streamReconciler) Reconcile(ctx context.Context, request reconcile.Requ
 	logger := s.getLogger(ctx, request.NamespacedName)
 	logger.V(0).Info("Reconciling the Stream resource")
 
-	streamDefinition, err := GetStreamForClass(ctx, s.client, s.streamClass, request.NamespacedName)
+	streamDefinition, err := GetStreamForClass(ctx, s.client, s.streamClass, request.NamespacedName, s.definitionParser)
 
 	if errors.IsNotFound(err) { // coverage-ignore
 		logger.V(0).Info("stream resource not found, might have been deleted")
@@ -515,12 +518,21 @@ func (s *streamReconciler) getLogger(_ context.Context, request types.Namespaced
 
 func (s *streamReconciler) updateStreamPhase(ctx context.Context, definition Definition, backfillRequest *v1.BackfillRequest, next Phase, eventFunc controllers.EventFunc) (reconcile.Result, error) {
 	logger := s.getLogger(ctx, definition.NamespacedName())
+
 	if definition.GetPhase() == next { // coverage-ignore
 		logger.V(1).Info("Stream phase is already set", "phase", definition.GetPhase())
 		return reconcile.Result{}, nil
 	}
+
 	logger.V(0).Info("updating Stream status", "from", definition.GetPhase(), "to", next)
-	err := definition.SetPhase(next)
+
+	// Refetch the definition to ensure we have the latest version before updating status
+	definition, err := GetStreamForClass(ctx, s.client, s.streamClass, definition.NamespacedName(), s.definitionParser)
+	if err != nil {
+		logger.V(0).Error(err, "unable to fetch Stream for status update")
+		return reconcile.Result{}, err
+	}
+	err = definition.SetPhase(next)
 	if err != nil { // coverage-ignore
 		logger.V(0).Error(err, "unable to set Stream status")
 		return reconcile.Result{}, err

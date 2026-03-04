@@ -5,9 +5,14 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"os"
+	"os/exec"
+	"strings"
+
 	"github.com/SneaksAndData/arcane-operator/config"
 	"github.com/SneaksAndData/arcane-operator/pkg/apis/streaming/v1"
 	"github.com/SneaksAndData/arcane-operator/pkg/signals"
+	"github.com/SneaksAndData/arcane-operator/services/controllers/contracts/v0"
 	"github.com/SneaksAndData/arcane-operator/services/controllers/stream"
 	"github.com/SneaksAndData/arcane-operator/services/controllers/stream_class"
 	"github.com/SneaksAndData/arcane-operator/services/health"
@@ -23,12 +28,9 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/klog/v2"
-	"os"
-	"os/exec"
 	controllerruntime "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
-	"strings"
 )
 
 var (
@@ -112,6 +114,7 @@ func main() {
 		job_builder.NewDefaultJobBuilder(mgr.GetClient()),
 		mgr,
 		eventRecorder,
+		v0.FromUnstructured,
 	)
 	err = stream_class.NewStreamClassReconciler(mgr.GetClient(), controllerFactory, reporter, eventRecorder).SetupWithManager(mgr)
 

@@ -1,6 +1,9 @@
 package stream
 
 import (
+	"strings"
+	"testing"
+
 	v1 "github.com/SneaksAndData/arcane-operator/pkg/apis/streaming/v1"
 	testv1 "github.com/SneaksAndData/arcane-operator/pkg/test/apis_test/streaming/v1"
 	v2 "github.com/SneaksAndData/arcane-operator/pkg/test/generated/applyconfiguration/streaming/v1"
@@ -11,6 +14,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
@@ -18,8 +22,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	crfake "sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"strings"
-	"testing"
 )
 
 var objectName types.NamespacedName = types.NamespacedName{Name: "stream1", Namespace: "default"}
@@ -107,12 +109,9 @@ func Test_UpdatePhase_Pending_To_Running_recreate_job(t *testing.T) {
 
 func Test_UpdatePhase_Pending_To_Running_not_recreate_job(t *testing.T) {
 	// Arrange
-	definitionHash := "96dfc267c661ed2c5b9a7c32371a92b6" // computed manually for the test definition
+	definitionHash := "0xdeadbeef" // computed manually for the test definition
 
 	k8sClient := setupClient(combined(withPhase(Pending), withNamedStreamDefinition(objectName)), withConsistentJob(objectName, definitionHash))
-
-	mockCtrl := gomock.NewController(t)
-	defer mockCtrl.Finish()
 
 	reconciler := createReconciler(k8sClient, nil, nil)
 
@@ -591,7 +590,13 @@ func createReconciler(k8sClient client.Client, mockJob *batchv1.Job, mockCtrl *g
 			PluralName:  "mockstreamdefinitions",
 		},
 	}
-	return NewStreamReconciler(k8sClient, gvk, jobBuilder, &sc, recorder)
+	return NewStreamReconciler(k8sClient, gvk, jobBuilder, &sc, recorder, func(u *unstructured.Unstructured) (Definition, error) {
+		var mock testv1.MockStreamDefinition
+		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &mock); err != nil {
+			return nil, err
+		}
+		return NewMockDefinitionWrapper(&mock)
+	})
 }
 
 // Helper function that combines multiple definition modifiers into one

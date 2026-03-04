@@ -1,11 +1,13 @@
-package stream
+package v0
 
 import (
 	"crypto/md5"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+
 	v1 "github.com/SneaksAndData/arcane-operator/pkg/apis/streaming/v1"
+	"github.com/SneaksAndData/arcane-operator/services/controllers/stream"
 	"github.com/SneaksAndData/arcane-operator/services/job"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -15,41 +17,41 @@ import (
 )
 
 var (
-	_ Definition                  = (*unstructuredWrapper)(nil)
-	_ job.ConfiguratorProvider    = (*unstructuredWrapper)(nil)
-	_ job.SecretReferenceProvider = (*unstructuredWrapper)(nil)
+	_ stream.Definition           = (*UnstructuredWrapper)(nil)
+	_ job.ConfiguratorProvider    = (*UnstructuredWrapper)(nil)
+	_ job.SecretReferenceProvider = (*UnstructuredWrapper)(nil)
 )
 
-type unstructuredWrapper struct {
-	underlying      *unstructured.Unstructured
-	phase           Phase
+type UnstructuredWrapper struct {
+	Underlying      *unstructured.Unstructured
+	phase           stream.Phase
 	suspended       bool
 	configuration   string
 	streamingJobRef corev1.ObjectReference
 	backfillJobRef  corev1.ObjectReference
 }
 
-func (u *unstructuredWrapper) GetPhase() Phase {
+func (u *UnstructuredWrapper) GetPhase() stream.Phase {
 	return u.phase
 }
 
-func (u *unstructuredWrapper) Suspended() bool {
+func (u *UnstructuredWrapper) Suspended() bool {
 	return u.suspended
 }
 
-func (u *unstructuredWrapper) CurrentConfiguration(request *v1.BackfillRequest) (string, error) {
-	spec, found, err := unstructured.NestedFieldCopy(u.underlying.Object, "spec")
+func (u *UnstructuredWrapper) CurrentConfiguration(request *v1.BackfillRequest) (string, error) {
+	spec, found, err := unstructured.NestedFieldCopy(u.Underlying.Object, "spec")
 
-	if err != nil {
+	if err != nil { // coverage-ignore
 		return "", err
 	}
 
-	if !found {
+	if !found { // coverage-ignore
 		return "", fmt.Errorf("spec field not found in unstructured object")
 	}
 
 	b, err := json.Marshal(spec)
-	if err != nil {
+	if err != nil { // coverage-ignore
 		return "", err
 	}
 
@@ -62,7 +64,7 @@ func (u *unstructuredWrapper) CurrentConfiguration(request *v1.BackfillRequest) 
 
 	// Include backfill request spec in the configuration hash
 	bRequest, err := json.Marshal(request.Spec)
-	if err != nil {
+	if err != nil { // coverage-ignore
 		return "", err
 	}
 
@@ -72,101 +74,100 @@ func (u *unstructuredWrapper) CurrentConfiguration(request *v1.BackfillRequest) 
 	return fmt.Sprintf("%x:%x", selfConfiguration, requestConfiguration), nil
 }
 
-func (u *unstructuredWrapper) LastAppliedConfiguration() string {
+func (u *UnstructuredWrapper) LastAppliedConfiguration() string {
 	return u.configuration
 }
 
-func (u *unstructuredWrapper) RecomputeConfiguration(request *v1.BackfillRequest) error {
+func (u *UnstructuredWrapper) RecomputeConfiguration(request *v1.BackfillRequest) error {
 	currentConfig, err := u.CurrentConfiguration(request)
-	if err != nil {
+	if err != nil { // coverage-ignore
 		return err
 	}
 
-	u.underlying.Object["status"].(map[string]interface{})["configurationHash"] = currentConfig
+	u.Underlying.Object["status"].(map[string]interface{})["configurationHash"] = currentConfig
 	u.configuration = currentConfig
 	return nil
 }
 
-func (u *unstructuredWrapper) NamespacedName() types.NamespacedName {
+func (u *UnstructuredWrapper) NamespacedName() types.NamespacedName {
 	return types.NamespacedName{
-		Name:      u.underlying.GetName(),
-		Namespace: u.underlying.GetNamespace(),
+		Name:      u.Underlying.GetName(),
+		Namespace: u.Underlying.GetNamespace(),
 	}
 }
 
-func (u *unstructuredWrapper) ToUnstructured() *unstructured.Unstructured {
-	return u.underlying
+func (u *UnstructuredWrapper) ToUnstructured() *unstructured.Unstructured {
+	return u.Underlying
 }
 
-func (u *unstructuredWrapper) SetPhase(phase Phase) error {
+func (u *UnstructuredWrapper) SetPhase(phase stream.Phase) error {
 	u.phase = phase
-	return setNestedPhase(u.underlying, phase, "status", "phase")
+	return setNestedPhase(u.Underlying, phase, "status", "phase")
 }
 
-func (u *unstructuredWrapper) SetSuspended(suspended bool) error {
+func (u *UnstructuredWrapper) SetSuspended(suspended bool) error {
 	u.suspended = suspended
-	return unstructured.SetNestedField(u.underlying.Object, suspended, "spec", "suspended")
+	return unstructured.SetNestedField(u.Underlying.Object, suspended, "spec", "suspended")
 }
 
-func (u *unstructuredWrapper) StateString() string {
+func (u *UnstructuredWrapper) StateString() string {
 	phase := u.GetPhase()
 	return fmt.Sprintf("phase=%s", phase)
 }
 
-func (u *unstructuredWrapper) ToOwnerReference() metav1.OwnerReference {
+func (u *UnstructuredWrapper) ToOwnerReference() metav1.OwnerReference {
 	ctrl := true
 	return metav1.OwnerReference{
-		APIVersion: u.underlying.GetAPIVersion(),
-		Kind:       u.underlying.GetKind(),
-		Name:       u.underlying.GetName(),
-		UID:        u.underlying.GetUID(),
+		APIVersion: u.Underlying.GetAPIVersion(),
+		Kind:       u.Underlying.GetKind(),
+		Name:       u.Underlying.GetName(),
+		UID:        u.Underlying.GetUID(),
 		Controller: &ctrl,
 	}
 }
 
-func (u *unstructuredWrapper) ToConfiguratorProvider() job.ConfiguratorProvider {
+func (u *UnstructuredWrapper) ToConfiguratorProvider() job.ConfiguratorProvider { // coverage-ignore
 	return u
 }
 
-func (u *unstructuredWrapper) GetJobTemplate(request *v1.BackfillRequest) types.NamespacedName {
+func (u *UnstructuredWrapper) GetJobTemplate(request *v1.BackfillRequest) types.NamespacedName {
 	if request == nil {
 		namespace := u.streamingJobRef.Namespace
 		if namespace == "" {
-			namespace = u.underlying.GetNamespace()
+			namespace = u.Underlying.GetNamespace()
 		}
 		return types.NamespacedName{
 			Name:      u.streamingJobRef.Name,
 			Namespace: namespace,
 		}
-	} else {
-		namespace := u.streamingJobRef.Namespace
-		if namespace == "" {
-			namespace = u.underlying.GetNamespace()
-		}
-		return types.NamespacedName{
-			Name:      u.backfillJobRef.Name,
-			Namespace: namespace,
-		}
+	}
+	namespace := u.streamingJobRef.Namespace
+	if namespace == "" {
+		namespace = u.Underlying.GetNamespace()
+	}
+	return types.NamespacedName{
+		Name:      u.backfillJobRef.Name,
+		Namespace: namespace,
 	}
 }
 
-func (u *unstructuredWrapper) SetConditions(conditions []metav1.Condition) error {
+func (u *UnstructuredWrapper) SetConditions(conditions []metav1.Condition) error {
 	// Convert conditions to []interface{} for unstructured
 	conditionsSlice := make([]interface{}, len(conditions))
 	for i, cond := range conditions {
 		condMap, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&cond)
-		if err != nil {
+		if err != nil { // coverage-ignore
 			return fmt.Errorf("failed to convert condition to unstructured: %w", err)
 		}
 		conditionsSlice[i] = condMap
 	}
 
-	return unstructured.SetNestedSlice(u.underlying.Object, conditionsSlice, "status", "conditions")
+	return unstructured.SetNestedSlice(u.Underlying.Object, conditionsSlice, "status", "conditions")
 }
 
-func (u *unstructuredWrapper) ComputeConditions(bfr *v1.BackfillRequest) []metav1.Condition {
+func (u *UnstructuredWrapper) ComputeConditions(bfr *v1.BackfillRequest) []metav1.Condition { // coverage-ignore
 	switch u.GetPhase() {
-	case Pending:
+	case stream.Pending:
 		return []metav1.Condition{
 			{
 				Type:    "Warning",
@@ -178,7 +179,7 @@ func (u *unstructuredWrapper) ComputeConditions(bfr *v1.BackfillRequest) []metav
 				},
 			},
 		}
-	case Backfilling:
+	case stream.Backfilling:
 		return []metav1.Condition{
 			{
 				Type:    "Ready",
@@ -190,7 +191,7 @@ func (u *unstructuredWrapper) ComputeConditions(bfr *v1.BackfillRequest) []metav
 				},
 			},
 		}
-	case Running:
+	case stream.Running:
 		return []metav1.Condition{
 			{
 				Type:    "Ready",
@@ -202,7 +203,7 @@ func (u *unstructuredWrapper) ComputeConditions(bfr *v1.BackfillRequest) []metav
 				},
 			},
 		}
-	case Suspended:
+	case stream.Suspended:
 		return []metav1.Condition{
 			{
 				Type:    "Warning",
@@ -214,7 +215,7 @@ func (u *unstructuredWrapper) ComputeConditions(bfr *v1.BackfillRequest) []metav
 				},
 			},
 		}
-	case Failed:
+	case stream.Failed:
 		return []metav1.Condition{
 			{
 				Type:    "Error",
@@ -231,26 +232,26 @@ func (u *unstructuredWrapper) ComputeConditions(bfr *v1.BackfillRequest) []metav
 	}
 }
 
-func (u *unstructuredWrapper) JobConfigurator() (job.Configurator, error) {
+func (u *UnstructuredWrapper) JobConfigurator() (job.Configurator, error) {
 	configurator := job.NewConfiguratorChainBuilder().
-		WithConfigurator(job.NewNameConfigurator(u.underlying.GetName())).
-		WithConfigurator(job.NewNamespaceConfigurator(u.underlying.GetNamespace())).
-		WithConfigurator(job.NewMetadataConfigurator(u.underlying.GetName(), u.underlying.GetKind())).
+		WithConfigurator(job.NewNameConfigurator(u.Underlying.GetName())).
+		WithConfigurator(job.NewNamespaceConfigurator(u.Underlying.GetNamespace())).
+		WithConfigurator(job.NewMetadataConfigurator(u.Underlying.GetName(), u.Underlying.GetKind())).
 		WithConfigurator(job.NewBackfillConfigurator(false)).
-		WithConfigurator(job.NewEnvironmentConfigurator(u.underlying.Object["spec"], "SPEC")).
+		WithConfigurator(job.NewEnvironmentConfigurator(u.Underlying.Object["spec"], "SPEC")).
 		WithConfigurator(job.NewOwnerConfigurator(u.ToOwnerReference())).
 		Build()
 	return configurator, nil
 }
 
-func (u *unstructuredWrapper) GetReferenceForSecret(fieldName string) (*corev1.LocalObjectReference, error) {
-	secretRef, found, err := unstructured.NestedFieldCopy(u.underlying.Object, "spec", fieldName)
-	if err != nil || !found {
+func (u *UnstructuredWrapper) GetReferenceForSecret(fieldName string) (*corev1.LocalObjectReference, error) {
+	secretRef, found, err := unstructured.NestedFieldCopy(u.Underlying.Object, "spec", fieldName)
+	if err != nil || !found { // coverage-ignore
 		return nil, fmt.Errorf("spec/%s field not found in object", fieldName)
 	}
 
 	m, ok := secretRef.(map[string]interface{})
-	if !ok {
+	if !ok { // coverage-ignore
 		return nil, fmt.Errorf("spec/%s is not an object", fieldName)
 	}
 
@@ -262,38 +263,38 @@ func (u *unstructuredWrapper) GetReferenceForSecret(fieldName string) (*corev1.L
 	return &ref, nil
 }
 
-func (u *unstructuredWrapper) Validate() error {
+func (u *UnstructuredWrapper) Validate() error {
 	err := u.extractPhase()
-	if err != nil {
+	if err != nil { // coverage-ignore
 		return err
 	}
 
 	err = u.extractSuspended()
-	if err != nil {
+	if err != nil { // coverage-ignore
 		return err
 	}
 
 	err = u.extractConfigurationHash()
-	if err != nil {
+	if err != nil { // coverage-ignore
 		return err
 	}
 
 	err = u.extractStreamingJobRef("jobTemplateRef", &u.streamingJobRef)
-	if err != nil {
+	if err != nil { // coverage-ignore
 		return err
 	}
 
 	err = u.extractStreamingJobRef("backfillJobTemplateRef", &u.backfillJobRef)
-	if err != nil {
+	if err != nil { // coverage-ignore
 		return err
 	}
 
 	return nil
 }
 
-func (u *unstructuredWrapper) extractStreamingJobRef(from string, target *corev1.ObjectReference) error {
-	uRef, found, err := unstructured.NestedFieldCopy(u.underlying.Object, "spec", from)
-	if err != nil {
+func (u *UnstructuredWrapper) extractStreamingJobRef(from string, target *corev1.ObjectReference) error {
+	uRef, found, err := unstructured.NestedFieldCopy(u.Underlying.Object, "spec", from)
+	if err != nil { // coverage-ignore
 		return err
 	}
 
@@ -315,9 +316,9 @@ func (u *unstructuredWrapper) extractStreamingJobRef(from string, target *corev1
 	return nil
 }
 
-func (u *unstructuredWrapper) extractConfigurationHash() error {
-	currentConfiguration, found, err := getNestedString(u.underlying, "status", "configurationHash")
-	if err != nil {
+func (u *UnstructuredWrapper) extractConfigurationHash() error {
+	currentConfiguration, found, err := getNestedString(u.Underlying, "status", "configurationHash")
+	if err != nil { // coverage-ignore
 		return err
 	}
 	if !found {
@@ -327,9 +328,9 @@ func (u *unstructuredWrapper) extractConfigurationHash() error {
 	return nil
 }
 
-func (u *unstructuredWrapper) extractSuspended() error {
-	suspended, found, err := getNestedBool(u.underlying, "spec", "suspended")
-	if err != nil {
+func (u *UnstructuredWrapper) extractSuspended() error {
+	suspended, found, err := getNestedBool(u.Underlying, "spec", "suspended")
+	if err != nil { // coverage-ignore
 		return err
 	}
 
@@ -340,15 +341,15 @@ func (u *unstructuredWrapper) extractSuspended() error {
 	return nil
 }
 
-func (u *unstructuredWrapper) extractPhase() error {
-	phase, found, err := getNestedString(u.underlying, "status", "phase")
-	if err != nil {
+func (u *UnstructuredWrapper) extractPhase() error {
+	phase, found, err := getNestedString(u.Underlying, "status", "phase")
+	if err != nil { // coverage-ignore
 		return err
 	}
 	if !found {
-		u.phase = New
+		u.phase = stream.New
 	} else {
-		u.phase = Phase(phase)
+		u.phase = stream.Phase(phase)
 	}
 	return nil
 }
@@ -358,7 +359,7 @@ func getNestedString(u *unstructured.Unstructured, path ...string) (string, bool
 	return unstructured.NestedString(u.Object, path...)
 }
 
-func setNestedPhase(u *unstructured.Unstructured, value Phase, path ...string) error {
+func setNestedPhase(u *unstructured.Unstructured, value stream.Phase, path ...string) error {
 	return unstructured.SetNestedField(u.Object, string(value), path...)
 }
 

@@ -9,7 +9,7 @@ var _ job.ConfiguratorProvider = &streamClassMetadataService{}
 
 type streamClassMetadataService struct {
 	streamClass      *v1.StreamClass
-	streamDefinition Definition
+	streamDefinition job.SecretReferenceProvider
 }
 
 func (s streamClassMetadataService) JobConfigurator() (job.Configurator, error) {
@@ -22,7 +22,7 @@ func (s streamClassMetadataService) JobConfigurator() (job.Configurator, error) 
 	return builder.Build(), nil
 }
 
-func NewStreamMetadataService(streamClass *v1.StreamClass, streamDefinition Definition) job.ConfiguratorProvider {
+func NewStreamMetadataService(streamClass *v1.StreamClass, streamDefinition job.SecretReferenceProvider) job.ConfiguratorProvider {
 	return &streamClassMetadataService{
 		streamClass:      streamClass,
 		streamDefinition: streamDefinition,
