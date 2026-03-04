@@ -30,12 +30,12 @@ var _ BackendResourceManager = (*JobBackend)(nil)
 
 type JobBackend struct {
 	client        client.Client
-	phaseManager  PhaseManager
+	phaseManager  StatusManager
 	jobBuilder    JobBuilder
 	eventRecorder record.EventRecorder
 }
 
-func NewJobBackend(client client.Client, jobBuilder JobBuilder, eventRecorder record.EventRecorder, phaseManager PhaseManager) *JobBackend {
+func NewJobBackend(client client.Client, jobBuilder JobBuilder, eventRecorder record.EventRecorder, phaseManager StatusManager) *JobBackend {
 	return &JobBackend{
 		client:        client,
 		jobBuilder:    jobBuilder,
@@ -44,10 +44,9 @@ func NewJobBackend(client client.Client, jobBuilder JobBuilder, eventRecorder re
 	}
 }
 
-func (j *JobBackend) SetupWithController(cache cache.Cache, scheme *runtime.Scheme, mapper meta.RESTMapper, controller controller.Controller, manager PhaseManager, primaryGvk schema.GroupVersionKind) error {
+func (j *JobBackend) SetupWithController(cache cache.Cache, scheme *runtime.Scheme, mapper meta.RESTMapper, controller controller.Controller, primaryGvk schema.GroupVersionKind) error {
 	primaryResource := &unstructured.Unstructured{}
 	primaryResource.SetGroupVersionKind(primaryGvk)
-	j.phaseManager = manager
 	return watchers.NewTypedSecondaryWatcherBuilder[*batchv1.Job]().
 		WithFilter(NewJobFilter()).
 		WithCache(cache).
@@ -139,6 +138,10 @@ func (j *JobBackend) Remove(ctx context.Context, definition Definition, nextPhas
 
 	return j.phaseManager.UpdateStreamPhase(ctx, definition, nil, nextPhase, eventFunc)
 
+}
+
+func (j *JobBackend) NoOp(ctx context.Context, definition Definition, backfillRequest *v1.BackfillRequest, nextPhase Phase, eventFunc controllers.EventFunc) (reconcile.Result, error) {
+	return j.phaseManager.UpdateStreamPhase(ctx, definition, backfillRequest, nextPhase, eventFunc)
 }
 
 func (j *JobBackend) startNewJob(ctx context.Context, definition Definition, request *v1.BackfillRequest, streamClass *v1.StreamClass) error {
