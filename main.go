@@ -12,8 +12,8 @@ import (
 	"github.com/SneaksAndData/arcane-operator/config"
 	"github.com/SneaksAndData/arcane-operator/pkg/apis/streaming/v1"
 	"github.com/SneaksAndData/arcane-operator/pkg/signals"
+	"github.com/SneaksAndData/arcane-operator/services"
 	"github.com/SneaksAndData/arcane-operator/services/controllers/contracts/v0"
-	"github.com/SneaksAndData/arcane-operator/services/controllers/stream"
 	"github.com/SneaksAndData/arcane-operator/services/controllers/stream_class"
 	"github.com/SneaksAndData/arcane-operator/services/health"
 	"github.com/SneaksAndData/arcane-operator/services/job/job_builder"
@@ -109,7 +109,7 @@ func main() {
 		panic(err)
 	}
 
-	controllerFactory := stream.NewStreamControllerFactory(
+	controllerFactory := services.NewStreamControllerFactory(
 		mgr.GetClient(),
 		job_builder.NewDefaultJobBuilder(mgr.GetClient()),
 		mgr,
