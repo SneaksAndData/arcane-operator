@@ -39,7 +39,7 @@ type streamReconciler struct {
 	backfillBackendResourceManager *BackfillBackendResourceManager
 }
 
-func (s *streamReconciler) SetupUnmanaged(cache cache.Cache, scheme *runtime.Scheme, mapper meta.RESTMapper) (controller.Controller, error) {
+func (s *streamReconciler) SetupUnmanaged(cache cache.Cache, scheme *runtime.Scheme, mapper meta.RESTMapper) (controller.Controller, error) { // coverage-ignore (setup is not tested in unit tests)
 	controllerName := s.streamClass.Name + "-controller"
 	newController, err := controller.NewUnmanaged(controllerName, controller.Options{Reconciler: s})
 
