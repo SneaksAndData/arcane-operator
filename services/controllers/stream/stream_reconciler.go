@@ -8,6 +8,7 @@ import (
 	"github.com/SneaksAndData/arcane-operator/services/controllers"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -118,7 +119,7 @@ func (s *streamReconciler) moveFsm(ctx context.Context, definition Definition, j
 
 	switch {
 	case phase == Backfilling && job != nil && job.IsFailed():
-		return s.backendResourceManager.Remove(ctx, definition, Failed, func() {
+		return s.backfillBackendResourceManager.Remove(ctx, definition, Failed, func() {
 			s.eventRecorder.Eventf(definition.ToUnstructured(),
 				"Warning",
 				"StreamingJobFailed",
@@ -134,7 +135,7 @@ func (s *streamReconciler) moveFsm(ctx context.Context, definition Definition, j
 		})
 
 	case phase == Failed && definition.Suspended() && backfillRequest != nil:
-		return s.backendResourceManager.Remove(ctx, definition, Suspended, func() {
+		return s.backfillBackendResourceManager.Remove(ctx, definition, Suspended, func() {
 			s.eventRecorder.Eventf(definition.ToUnstructured(),
 				"Normal",
 				"StreamSuspended",
@@ -174,7 +175,7 @@ func (s *streamReconciler) moveFsm(ctx context.Context, definition Definition, j
 		})
 
 	case phase == New && !definition.Suspended():
-		return s.backfillBackendResourceManager.Apply(ctx, definition, backfillRequest, Pending, s.streamClass, func() {
+		return s.backfillBackendResourceManager.Apply(ctx, definition, s.newBackfillRequest(definition), Pending, s.streamClass, func() {
 			s.eventRecorder.Eventf(definition.ToUnstructured(),
 				"Normal",
 				"StreamCreated",
@@ -298,6 +299,19 @@ func (s *streamReconciler) getBackfillRequest(ctx context.Context, definition De
 	}
 
 	return nil, nil
+}
+
+func (s *streamReconciler) newBackfillRequest(definition Definition) *v1.BackfillRequest {
+	return &v1.BackfillRequest{
+		ObjectMeta: metav1.ObjectMeta{
+			GenerateName: fmt.Sprintf("%s-initial-backfill-", definition.NamespacedName().Name),
+			Namespace:    definition.NamespacedName().Namespace,
+		},
+		Spec: v1.BackfillRequestSpec{
+			StreamId:    definition.NamespacedName().Name,
+			StreamClass: s.streamClass.Name,
+		},
+	}
 }
 
 func (s *streamReconciler) getLogger(_ context.Context, request types.NamespacedName) klog.Logger {
