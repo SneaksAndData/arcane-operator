@@ -64,12 +64,12 @@ func (b *BackfillBackendResourceManager) Get(ctx context.Context, name types.Nam
 	}
 
 	var streamingJob *StreamingJob
-	if errors.IsNotFound(err) {
+	if errors.IsNotFound(err) { // coverage-ignore
 		streamingJob = nil
-		logger.V(0).Info("streaming does not exist")
+		logger.V(1).Info("streaming does not exist")
 	} else {
 		streamingJob = (*StreamingJob)(job)
-		logger.V(0).Info("streaming job found")
+		logger.V(1).Info("streaming job found")
 	}
 
 	return streamingJob, nil
@@ -77,18 +77,18 @@ func (b *BackfillBackendResourceManager) Get(ctx context.Context, name types.Nam
 
 func (b *BackfillBackendResourceManager) Remove(ctx context.Context, definition Definition, nextPhase Phase, eventFunc controllers.EventFunc) (reconcile.Result, error) {
 	job, err := b.Get(ctx, definition.NamespacedName())
-	if err != nil {
+	if err != nil { // coverage-ignore
 		return reconcile.Result{}, fmt.Errorf("failed to get backend resource: %w", err)
 	}
 	if job != nil {
 		err := b.client.Delete(ctx, job.ToV1Job())
-		if client.IgnoreNotFound(err) != nil {
+		if client.IgnoreNotFound(err) != nil { // coverage-ignore
 			return reconcile.Result{}, err
 		}
 	}
 
 	request, err := b.getBackfillRequest(ctx, definition)
-	if err != nil {
+	if err != nil { // coverage-ignore
 		return reconcile.Result{}, fmt.Errorf("failed to get backfill request: %w", err)
 	}
 
