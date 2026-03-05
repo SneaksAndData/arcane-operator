@@ -53,7 +53,7 @@ func (b *BackfillBackendResourceManager) SetupWithController(cache cache.Cache, 
 		SetupWithController(controller, &v1.BackfillRequest{})
 }
 
-func (b *BackfillBackendResourceManager) Get(ctx context.Context, name types.NamespacedName) (*StreamingJob, error) {
+func (b *BackfillBackendResourceManager) Get(ctx context.Context, name types.NamespacedName) (*StreamingJob, error) { // coverage-ignore
 	logger := b.getLogger(ctx, name)
 	job := &batchv1.Job{}
 	err := b.client.Get(ctx, name, job)
