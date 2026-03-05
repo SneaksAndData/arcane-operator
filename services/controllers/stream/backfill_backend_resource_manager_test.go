@@ -45,6 +45,24 @@ func Test_Remove(t *testing.T) {
 	require.NotNil(t, result)
 }
 
+func Test_Remove_WithBackfillRequest(t *testing.T) {
+	k8sClient := SetupClient(objectName,
+		WithNamedStreamDefinition(objectName),
+		CombinedB(WithCompletedJob(objectName), WithBackfillRequest(objectName)),
+	)
+	backfillBackendResourceManager := setupBackfillBackendResourceManagerTest(k8sClient)
+	m, err := NewMockDefinitionWrapper(&testv1.MockStreamDefinition{
+		ObjectMeta: metav1.ObjectMeta{Name: objectName.Name, Namespace: objectName.Namespace},
+	})
+	require.NoError(t, err)
+	result, err := backfillBackendResourceManager.Remove(t.Context(), m, Pending, func() {
+		/* do nothing */
+	})
+	require.NoError(t, err)
+	require.NotNil(t, result)
+	AssertBackfillRequestCompleted(t, k8sClient, objectName)
+}
+
 func setupBackfillBackendResourceManagerTest(k8sClient client.Client) *BackfillBackendResourceManager {
 	mock := v2.MockStreamDefinition("name", "namespace")
 	sc := v1.StreamClass{
