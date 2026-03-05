@@ -37,7 +37,6 @@ func NewBackfillBackendResourceManager(class *v1.StreamClass, client client.Clie
 	}
 }
 
-// SetupWithController sets up the necessary watches and handlers for the backend resources with the provided controller.
 func (b *BackfillBackendResourceManager) SetupWithController(cache cache.Cache, _ *runtime.Scheme, _ meta.RESTMapper, controller controller.Controller, _ schema.GroupVersionKind) error {
 	return watchers.NewTypedSecondaryWatcherBuilder[*v1.BackfillRequest]().
 		WithFilter(NewBackfillRequestFilter(b.streamClass.Name)).
@@ -54,7 +53,6 @@ func (b *BackfillBackendResourceManager) SetupWithController(cache cache.Cache, 
 		SetupWithController(controller, &v1.BackfillRequest{})
 }
 
-// Get retrieves the current state of the backend resource associated with the given stream definition.
 func (b *BackfillBackendResourceManager) Get(ctx context.Context, name types.NamespacedName) (*StreamingJob, error) {
 	logger := b.getLogger(ctx, name)
 	job := &batchv1.Job{}
@@ -77,7 +75,6 @@ func (b *BackfillBackendResourceManager) Get(ctx context.Context, name types.Nam
 	return streamingJob, nil
 }
 
-// Remove deletes the backend resource associated with the given stream definition and updates the stream phase accordingly.
 func (b *BackfillBackendResourceManager) Remove(ctx context.Context, definition Definition, nextPhase Phase, eventFunc controllers.EventFunc) (reconcile.Result, error) {
 	job, err := b.Get(ctx, definition.NamespacedName())
 	if err != nil {
@@ -111,21 +108,9 @@ func (b *BackfillBackendResourceManager) Remove(ctx context.Context, definition 
 	return b.statusManager.UpdateStreamPhase(ctx, definition, nil, nextPhase, eventFunc)
 }
 
-// Apply creates or updates the backend resource based on the provided stream definition and backfill request, and updates the stream phase accordingly.
 func (b *BackfillBackendResourceManager) Apply(ctx context.Context, definition Definition, backfillRequest *v1.BackfillRequest, nextPhase Phase, _ *v1.StreamClass, eventFunc controllers.EventFunc) (reconcile.Result, error) {
 	logger := b.getLogger(ctx, definition.NamespacedName())
 	logger.V(2).Info("starting backfill by creating a backfill request")
-
-	//backfillRequest = &v1.BackfillRequest{
-	//	ObjectMeta: metav1.ObjectMeta{
-	//		GenerateName: fmt.Sprintf("%s-initial-backfill-", definition.NamespacedName().Name),
-	//		Namespace:    definition.NamespacedName().Namespace,
-	//	},
-	//	Spec: v1.BackfillRequestSpec{
-	//		StreamId:    definition.NamespacedName().Name,
-	//		StreamClass: b.streamClass.Name,
-	//	},
-	//}
 
 	err := b.client.Create(ctx, backfillRequest)
 	if err != nil { // coverage-ignore
@@ -136,7 +121,6 @@ func (b *BackfillBackendResourceManager) Apply(ctx context.Context, definition D
 	return b.statusManager.UpdateStreamPhase(ctx, definition, backfillRequest, nextPhase, eventFunc)
 }
 
-// NoOp Does not perform any changes, but updates the stream status.
 func (b *BackfillBackendResourceManager) NoOp(ctx context.Context, definition Definition, backfillRequest *v1.BackfillRequest, nextPhase Phase, eventFunc controllers.EventFunc) (reconcile.Result, error) {
 	return b.statusManager.UpdateStreamPhase(ctx, definition, backfillRequest, nextPhase, eventFunc)
 }
