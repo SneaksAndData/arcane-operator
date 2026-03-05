@@ -26,7 +26,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-var _ BackendResourceManager = (*JobBackend)(nil)
+var (
+	_ BackendResourceManager = (*JobBackend)(nil)
+)
 
 type JobBackend struct {
 	client        client.Client

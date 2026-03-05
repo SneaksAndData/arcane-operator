@@ -599,7 +599,8 @@ func createReconciler(k8sClient client.Client, mockJob *batchv1.Job, mockCtrl *g
 	}
 	statusManager := NewDefaultStatusManager(k8sClient, gvk, &sc, definitionParser)
 	backendResourceManager := NewJobBackend(k8sClient, jobBuilder, recorder, statusManager)
-	return NewStreamReconciler(k8sClient, gvk, jobBuilder, &sc, recorder, definitionParser, statusManager, backendResourceManager)
+	backfillBackendResourceManager := NewBackfillBackendResourceManager(&sc, k8sClient, statusManager)
+	return NewStreamReconciler(k8sClient, gvk, jobBuilder, &sc, recorder, definitionParser, backendResourceManager, backfillBackendResourceManager)
 }
 
 // Helper function that combines multiple definition modifiers into one

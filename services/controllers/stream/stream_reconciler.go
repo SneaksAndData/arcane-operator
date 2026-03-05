@@ -6,10 +6,8 @@ import (
 
 	v1 "github.com/SneaksAndData/arcane-operator/pkg/apis/streaming/v1"
 	"github.com/SneaksAndData/arcane-operator/services/controllers"
-	"github.com/SneaksAndData/arcane-operator/services/watchers"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -30,14 +28,14 @@ var (
 )
 
 type streamReconciler struct {
-	gvk                    schema.GroupVersionKind
-	client                 client.Client
-	jobBuilder             JobBuilder
-	streamClass            *v1.StreamClass
-	eventRecorder          record.EventRecorder
-	definitionParser       DefinitionParser
-	backendResourceManager BackendResourceManager
-	phaseManager           StatusManager
+	gvk                            schema.GroupVersionKind
+	client                         client.Client
+	jobBuilder                     JobBuilder
+	streamClass                    *v1.StreamClass
+	eventRecorder                  record.EventRecorder
+	definitionParser               DefinitionParser
+	backendResourceManager         BackendResourceManager
+	backfillBackendResourceManager *BackfillBackendResourceManager
 }
 
 func (s *streamReconciler) SetupUnmanaged(cache cache.Cache, scheme *runtime.Scheme, mapper meta.RESTMapper) (controller.Controller, error) {
@@ -61,20 +59,7 @@ func (s *streamReconciler) SetupUnmanaged(cache cache.Cache, scheme *runtime.Sch
 		return nil, fmt.Errorf("failed to watch stream resource: %w", err)
 	}
 
-	err = watchers.NewTypedSecondaryWatcherBuilder[*v1.BackfillRequest]().
-		WithFilter(NewBackfillRequestFilter(s.streamClass.Name)).
-		WithCache(cache).
-		WithHandler(handler.TypedEnqueueRequestsFromMapFunc(func(ctx context.Context, obj *v1.BackfillRequest) []reconcile.Request {
-			return []reconcile.Request{{
-				NamespacedName: types.NamespacedName{
-					Namespace: obj.Namespace,
-					Name:      obj.Spec.StreamId,
-				},
-			}}
-		})).
-		Build().
-		SetupWithController(newController, &v1.BackfillRequest{})
-
+	err = s.backfillBackendResourceManager.SetupWithController(cache, scheme, mapper, newController, s.gvk)
 	if err != nil {
 		return nil, fmt.Errorf("failed to watch backfills: %w", err)
 	}
@@ -83,16 +68,16 @@ func (s *streamReconciler) SetupUnmanaged(cache cache.Cache, scheme *runtime.Sch
 }
 
 // NewStreamReconciler creates a new StreamReconciler instance.
-func NewStreamReconciler(client client.Client, gvk schema.GroupVersionKind, jobBuilder JobBuilder, streamClass *v1.StreamClass, eventRecorder record.EventRecorder, definitionParser DefinitionParser, phaseManager StatusManager, manager BackendResourceManager) controllers.UnmanagedReconciler {
+func NewStreamReconciler(client client.Client, gvk schema.GroupVersionKind, jobBuilder JobBuilder, streamClass *v1.StreamClass, eventRecorder record.EventRecorder, definitionParser DefinitionParser, manager BackendResourceManager, backfillResourceManager *BackfillBackendResourceManager) controllers.UnmanagedReconciler {
 	return &streamReconciler{
-		gvk:                    gvk,
-		jobBuilder:             jobBuilder,
-		client:                 client,
-		streamClass:            streamClass,
-		eventRecorder:          eventRecorder,
-		definitionParser:       definitionParser,
-		backendResourceManager: manager,
-		phaseManager:           phaseManager,
+		gvk:                            gvk,
+		jobBuilder:                     jobBuilder,
+		client:                         client,
+		streamClass:                    streamClass,
+		eventRecorder:                  eventRecorder,
+		definitionParser:               definitionParser,
+		backendResourceManager:         manager,
+		backfillBackendResourceManager: backfillResourceManager,
 	}
 }
 
@@ -133,7 +118,7 @@ func (s *streamReconciler) moveFsm(ctx context.Context, definition Definition, j
 
 	switch {
 	case phase == Backfilling && job != nil && job.IsFailed():
-		return s.completeBackfill(ctx, job, definition, backfillRequest, Failed, func() {
+		return s.backendResourceManager.Remove(ctx, definition, Failed, func() {
 			s.eventRecorder.Eventf(definition.ToUnstructured(),
 				"Warning",
 				"StreamingJobFailed",
@@ -149,7 +134,7 @@ func (s *streamReconciler) moveFsm(ctx context.Context, definition Definition, j
 		})
 
 	case phase == Failed && definition.Suspended() && backfillRequest != nil:
-		return s.completeBackfill(ctx, job, definition, backfillRequest, Suspended, func() {
+		return s.backendResourceManager.Remove(ctx, definition, Suspended, func() {
 			s.eventRecorder.Eventf(definition.ToUnstructured(),
 				"Normal",
 				"StreamSuspended",
@@ -189,7 +174,7 @@ func (s *streamReconciler) moveFsm(ctx context.Context, definition Definition, j
 		})
 
 	case phase == New && !definition.Suspended():
-		return s.startBackfill(ctx, definition, Pending, func() {
+		return s.backfillBackendResourceManager.Apply(ctx, definition, backfillRequest, Pending, s.streamClass, func() {
 			s.eventRecorder.Eventf(definition.ToUnstructured(),
 				"Normal",
 				"StreamCreated",
@@ -251,7 +236,7 @@ func (s *streamReconciler) moveFsm(ctx context.Context, definition Definition, j
 		})
 
 	case phase == Backfilling && definition.Suspended():
-		return s.completeBackfill(ctx, job, definition, backfillRequest, Suspended, func() {
+		return s.backfillBackendResourceManager.Remove(ctx, definition, Suspended, func() {
 			s.eventRecorder.Eventf(definition.ToUnstructured(),
 				"Normal",
 				"StreamSuspended",
@@ -259,7 +244,7 @@ func (s *streamReconciler) moveFsm(ctx context.Context, definition Definition, j
 		})
 
 	case phase == Backfilling && backfillRequest == nil:
-		return s.completeBackfill(ctx, job, definition, backfillRequest, Pending, func() {
+		return s.backfillBackendResourceManager.Remove(ctx, definition, Pending, func() {
 			s.eventRecorder.Eventf(definition.ToUnstructured(),
 				"Normal",
 				"BackfillNotRequested",
@@ -275,7 +260,7 @@ func (s *streamReconciler) moveFsm(ctx context.Context, definition Definition, j
 		})
 
 	case phase == Backfilling && job.IsCompleted():
-		return s.completeBackfill(ctx, job, definition, backfillRequest, Pending, func() {
+		return s.backfillBackendResourceManager.Remove(ctx, definition, Pending, func() {
 			s.eventRecorder.Eventf(definition.ToUnstructured(),
 				"Normal",
 				"BackfillCompleted",
@@ -297,55 +282,6 @@ func (s *streamReconciler) moveFsm(ctx context.Context, definition Definition, j
 		definition.NamespacedName().Name,
 		definition.StateString(),
 	)
-}
-
-func (s *streamReconciler) startBackfill(ctx context.Context, definition Definition, nextPhase Phase, eventFunc controllers.EventFunc) (reconcile.Result, error) {
-
-	logger := s.getLogger(ctx, definition.NamespacedName())
-	logger.V(2).Info("starting backfill by creating a backfill request")
-
-	backfillRequest := &v1.BackfillRequest{
-		ObjectMeta: metav1.ObjectMeta{
-			GenerateName: fmt.Sprintf("%s-initial-backfill-", definition.NamespacedName().Name),
-			Namespace:    definition.NamespacedName().Namespace,
-		},
-		Spec: v1.BackfillRequestSpec{
-			StreamId:    definition.NamespacedName().Name,
-			StreamClass: s.streamClass.Name,
-		},
-	}
-
-	err := s.client.Create(ctx, backfillRequest)
-	if err != nil { // coverage-ignore
-		logger.V(0).Error(err, "failed to create backfill request")
-		return reconcile.Result{}, err
-	}
-
-	return s.phaseManager.UpdateStreamPhase(ctx, definition, backfillRequest, nextPhase, eventFunc)
-}
-
-func (s *streamReconciler) completeBackfill(ctx context.Context, job *StreamingJob, definition Definition, request *v1.BackfillRequest, nextStatus Phase, eventFunc controllers.EventFunc) (reconcile.Result, error) {
-	if job != nil {
-		err := s.client.Delete(ctx, job.ToV1Job())
-		if client.IgnoreNotFound(err) != nil {
-			return reconcile.Result{}, err
-		}
-	}
-
-	if request != nil {
-		request.Spec.Completed = true
-		err := s.client.Update(ctx, request)
-		if err != nil { // coverage-ignore
-			return reconcile.Result{}, err
-		}
-		err = s.client.Status().Update(ctx, request)
-		if err != nil { // coverage-ignore
-			return reconcile.Result{}, err
-		}
-
-	}
-
-	return s.phaseManager.UpdateStreamPhase(ctx, definition, nil, nextStatus, eventFunc)
 }
 
 func (s *streamReconciler) getBackfillRequest(ctx context.Context, definition Definition) (*v1.BackfillRequest, error) {
