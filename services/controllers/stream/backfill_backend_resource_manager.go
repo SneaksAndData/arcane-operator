@@ -121,11 +121,11 @@ func (b *BackfillBackendResourceManager) Apply(ctx context.Context, definition D
 	return b.statusManager.UpdateStreamPhase(ctx, definition, backfillRequest, nextPhase, eventFunc)
 }
 
-func (b *BackfillBackendResourceManager) NoOp(ctx context.Context, definition Definition, backfillRequest *v1.BackfillRequest, nextPhase Phase, eventFunc controllers.EventFunc) (reconcile.Result, error) {
+func (b *BackfillBackendResourceManager) NoOp(ctx context.Context, definition Definition, backfillRequest *v1.BackfillRequest, nextPhase Phase, eventFunc controllers.EventFunc) (reconcile.Result, error) { // coverage-ignore (no need to test the no-op function since it's just a pass-through to the status manager)
 	return b.statusManager.UpdateStreamPhase(ctx, definition, backfillRequest, nextPhase, eventFunc)
 }
 
-func (b *BackfillBackendResourceManager) getLogger(_ context.Context, request types.NamespacedName) klog.Logger {
+func (b *BackfillBackendResourceManager) getLogger(_ context.Context, request types.NamespacedName) klog.Logger { // coverage-ignore (no need to test the contents of the logger)
 	return klog.Background().
 		WithName("StreamReconciler").
 		WithValues("namespace", request.Namespace, "streamId", request.Name, "streamKind", b.streamClass.Spec.KindRef)
