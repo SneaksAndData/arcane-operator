@@ -25,8 +25,12 @@ import (
 
 // StreamClassStatusApplyConfiguration represents a declarative configuration of the StreamClassStatus type for use
 // with apply.
+//
+// StreamClassStatus defines the observed state of a stream class
 type StreamClassStatusApplyConfiguration struct {
-	Phase      *streamingv1.Phase                   `json:"phase,omitempty"`
+	// Phase represents the current phase of the stream class
+	Phase *streamingv1.Phase `json:"phase,omitempty"`
+	// Conditions represent the latest available observations
 	Conditions []metav1.ConditionApplyConfiguration `json:"conditions,omitempty"`
 }
 

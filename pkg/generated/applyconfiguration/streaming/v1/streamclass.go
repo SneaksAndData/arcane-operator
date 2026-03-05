@@ -26,6 +26,8 @@ import (
 
 // StreamClassApplyConfiguration represents a declarative configuration of the StreamClass type for use
 // with apply.
+//
+// StreamClass is the Schema for the stream class API
 type StreamClassApplyConfiguration struct {
 	metav1.TypeMetaApplyConfiguration    `json:",inline"`
 	*metav1.ObjectMetaApplyConfiguration `json:"metadata,omitempty"`
@@ -43,6 +45,7 @@ func StreamClass(name, namespace string) *StreamClassApplyConfiguration {
 	b.WithAPIVersion("streaming.sneaksanddata.com/v1")
 	return b
 }
+
 func (b StreamClassApplyConfiguration) IsApplyConfiguration() {}
 
 // WithKind sets the Kind field in the declarative configuration to the given value

@@ -64,7 +64,7 @@ func (b *BackfillBackendResourceManager) Get(ctx context.Context, name types.Nam
 	}
 
 	var streamingJob *StreamingJob
-	if errors.IsNotFound(err) { // coverage-ignore
+	if errors.IsNotFound(err) {
 		streamingJob = nil
 		logger.V(1).Info("streaming does not exist")
 	} else {
