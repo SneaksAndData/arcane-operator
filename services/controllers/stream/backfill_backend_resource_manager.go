@@ -102,7 +102,6 @@ func (b *BackfillBackendResourceManager) Remove(ctx context.Context, definition 
 		if err != nil { // coverage-ignore
 			return reconcile.Result{}, err
 		}
-
 	}
 
 	return b.statusManager.UpdateStreamPhase(ctx, definition, nil, nextPhase, eventFunc)
@@ -121,7 +120,7 @@ func (b *BackfillBackendResourceManager) Apply(ctx context.Context, definition D
 	return b.statusManager.UpdateStreamPhase(ctx, definition, backfillRequest, nextPhase, eventFunc)
 }
 
-func (b *BackfillBackendResourceManager) NoOp(ctx context.Context, definition Definition, backfillRequest *v1.BackfillRequest, nextPhase Phase, eventFunc controllers.EventFunc) (reconcile.Result, error) { // coverage-ignore (no need to test the no-op function since it's just a pass-through to the status manager)
+func (b *BackfillBackendResourceManager) NoOp(ctx context.Context, definition Definition, backfillRequest *v1.BackfillRequest, nextPhase Phase, eventFunc controllers.EventFunc) (reconcile.Result, error) { // coverage-ignore
 	return b.statusManager.UpdateStreamPhase(ctx, definition, backfillRequest, nextPhase, eventFunc)
 }
 

@@ -63,6 +63,37 @@ func Test_Remove_WithBackfillRequest(t *testing.T) {
 	AssertBackfillRequestCompleted(t, k8sClient, objectName)
 }
 
+func Test_Apply(t *testing.T) {
+	k8sClient := SetupClient(objectName, WithNamedStreamDefinition(objectName), nil)
+	backfillBackendResourceManager := setupBackfillBackendResourceManagerTest(k8sClient)
+	m, err := NewMockDefinitionWrapper(&testv1.MockStreamDefinition{
+		ObjectMeta: metav1.ObjectMeta{Name: objectName.Name, Namespace: objectName.Namespace},
+	})
+	require.NoError(t, err)
+	bfr := &v1.BackfillRequest{
+		ObjectMeta: metav1.ObjectMeta{Name: "backfill1", Namespace: objectName.Namespace},
+	}
+	result, err := backfillBackendResourceManager.Apply(t.Context(), m, bfr, Pending, nil, func() {
+		/* do nothing */
+	})
+	require.NoError(t, err)
+	require.NotNil(t, result)
+	AssertBackfillRequestNotCompleted(t, k8sClient, objectName)
+}
+
+func Test_GetBackfillRequest_Empty(t *testing.T) {
+	k8sClient := SetupClient(objectName, WithNamedStreamDefinition(objectName), nil)
+	backfillBackendResourceManager := setupBackfillBackendResourceManagerTest(k8sClient)
+	m, err := NewMockDefinitionWrapper(&testv1.MockStreamDefinition{
+		ObjectMeta: metav1.ObjectMeta{Name: objectName.Name, Namespace: objectName.Namespace},
+	})
+	require.NoError(t, err)
+
+	result, err := backfillBackendResourceManager.GetBackfillRequest(t.Context(), m)
+	require.NoError(t, err)
+	require.Nil(t, result)
+}
+
 func setupBackfillBackendResourceManagerTest(k8sClient client.Client) *BackfillBackendResourceManager {
 	mock := v2.MockStreamDefinition("name", "namespace")
 	sc := v1.StreamClass{
