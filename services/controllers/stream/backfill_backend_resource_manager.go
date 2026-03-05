@@ -80,7 +80,7 @@ func (b *BackfillBackendResourceManager) Remove(ctx context.Context, definition 
 	if err != nil { // coverage-ignore
 		return reconcile.Result{}, fmt.Errorf("failed to get backend resource: %w", err)
 	}
-	if job != nil { // coverage-ignore
+	if job != nil {
 		err := b.client.Delete(ctx, job.ToV1Job())
 		if client.IgnoreNotFound(err) != nil { // coverage-ignore
 			return reconcile.Result{}, err
