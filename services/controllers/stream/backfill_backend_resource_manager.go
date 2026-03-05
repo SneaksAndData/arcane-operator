@@ -29,7 +29,7 @@ type BackfillBackendResourceManager struct {
 	statusManager StatusManager
 }
 
-func NewBackfillBackendResourceManager(class *v1.StreamClass, client client.Client, manager StatusManager) *BackfillBackendResourceManager {
+func NewBackfillBackendResourceManager(class *v1.StreamClass, client client.Client, manager StatusManager) *BackfillBackendResourceManager { // coverage-ignore (constructor)
 	return &BackfillBackendResourceManager{
 		streamClass:   class,
 		client:        client,
