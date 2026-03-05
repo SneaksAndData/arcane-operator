@@ -123,14 +123,7 @@ func (b *BackfillBackendResourceManager) Apply(ctx context.Context, definition D
 func (b *BackfillBackendResourceManager) NoOp(ctx context.Context, definition Definition, backfillRequest *v1.BackfillRequest, nextPhase Phase, eventFunc controllers.EventFunc) (reconcile.Result, error) { // coverage-ignore
 	return b.statusManager.UpdateStreamPhase(ctx, definition, backfillRequest, nextPhase, eventFunc)
 }
-
-func (b *BackfillBackendResourceManager) getLogger(_ context.Context, request types.NamespacedName) klog.Logger { // coverage-ignore (no need to test the contents of the logger)
-	return klog.Background().
-		WithName("StreamReconciler").
-		WithValues("namespace", request.Namespace, "streamId", request.Name, "streamKind", b.streamClass.Spec.KindRef)
-}
-
-func (b *BackfillBackendResourceManager) GetBackfillRequest(ctx context.Context, definition Definition) (*v1.BackfillRequest, error) {
+func (b *BackfillBackendResourceManager) GetBackfillRequest(ctx context.Context, definition Definition) (*v1.BackfillRequest, error) { // coverage-ignore
 	backfillRequestList := &v1.BackfillRequestList{}
 	err := b.client.List(ctx, backfillRequestList, client.InNamespace(definition.NamespacedName().Namespace))
 	if client.IgnoreNotFound(err) != nil { // coverage-ignore
@@ -144,4 +137,10 @@ func (b *BackfillBackendResourceManager) GetBackfillRequest(ctx context.Context,
 	}
 
 	return nil, nil
+}
+
+func (b *BackfillBackendResourceManager) getLogger(_ context.Context, request types.NamespacedName) klog.Logger { // coverage-ignore
+	return klog.Background().
+		WithName("StreamReconciler").
+		WithValues("namespace", request.Namespace, "streamId", request.Name, "streamKind", b.streamClass.Spec.KindRef)
 }
