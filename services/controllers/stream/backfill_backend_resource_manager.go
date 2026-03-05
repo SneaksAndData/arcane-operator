@@ -37,7 +37,7 @@ func NewBackfillBackendResourceManager(class *v1.StreamClass, client client.Clie
 	}
 }
 
-func (b *BackfillBackendResourceManager) SetupWithController(cache cache.Cache, _ *runtime.Scheme, _ meta.RESTMapper, controller controller.Controller, _ schema.GroupVersionKind) error {
+func (b *BackfillBackendResourceManager) SetupWithController(cache cache.Cache, _ *runtime.Scheme, _ meta.RESTMapper, controller controller.Controller, _ schema.GroupVersionKind) error { // coverage-ignore (no need to test the wiring of the controller)
 	return watchers.NewTypedSecondaryWatcherBuilder[*v1.BackfillRequest]().
 		WithFilter(NewBackfillRequestFilter(b.streamClass.Name)).
 		WithCache(cache).
