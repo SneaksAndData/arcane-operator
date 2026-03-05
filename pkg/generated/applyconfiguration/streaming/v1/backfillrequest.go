@@ -26,6 +26,8 @@ import (
 
 // BackfillRequestApplyConfiguration represents a declarative configuration of the BackfillRequest type for use
 // with apply.
+//
+// BackfillRequest is the Schema for the backfill request API
 type BackfillRequestApplyConfiguration struct {
 	metav1.TypeMetaApplyConfiguration    `json:",inline"`
 	*metav1.ObjectMetaApplyConfiguration `json:"metadata,omitempty"`
@@ -43,6 +45,7 @@ func BackfillRequest(name, namespace string) *BackfillRequestApplyConfiguration 
 	b.WithAPIVersion("streaming.sneaksanddata.com/v1")
 	return b
 }
+
 func (b BackfillRequestApplyConfiguration) IsApplyConfiguration() {}
 
 // WithKind sets the Kind field in the declarative configuration to the given value

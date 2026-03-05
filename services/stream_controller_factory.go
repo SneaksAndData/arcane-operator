@@ -26,7 +26,8 @@ type streamControllerFactory struct {
 func (s streamControllerFactory) CreateStreamController(_ context.Context, gvk schema.GroupVersionKind, streamClass *v1.StreamClass) (controller.Controller, error) { // coverage-ignore (trivial)
 	statusManager := stream.NewDefaultStatusManager(s.client, gvk, streamClass, s.definitionParser)
 	backend := stream.NewJobBackend(s.client, s.jobBuilder, s.eventRecorder, statusManager)
-	streamReconciler := stream.NewStreamReconciler(s.client, gvk, s.jobBuilder, streamClass, s.eventRecorder, s.definitionParser, statusManager, backend)
+	backfillBackend := stream.NewBackfillBackendResourceManager(streamClass, s.client, statusManager)
+	streamReconciler := stream.NewStreamReconciler(s.client, gvk, s.jobBuilder, streamClass, s.eventRecorder, s.definitionParser, backend, backfillBackend)
 	unmanaged, err := streamReconciler.SetupUnmanaged(s.manager.GetCache(), s.manager.GetScheme(), s.manager.GetRESTMapper())
 	return unmanaged, err
 }

@@ -27,6 +27,8 @@ import (
 
 // StreamingJobTemplateApplyConfiguration represents a declarative configuration of the StreamingJobTemplate type for use
 // with apply.
+//
+// StreamingJobTemplate is a schema for streaming job templates
 type StreamingJobTemplateApplyConfiguration struct {
 	metav1.TypeMetaApplyConfiguration    `json:",inline"`
 	*metav1.ObjectMetaApplyConfiguration `json:"metadata,omitempty"`
@@ -43,6 +45,7 @@ func StreamingJobTemplate(name, namespace string) *StreamingJobTemplateApplyConf
 	b.WithAPIVersion("streaming.sneaksanddata.com/v1")
 	return b
 }
+
 func (b StreamingJobTemplateApplyConfiguration) IsApplyConfiguration() {}
 
 // WithKind sets the Kind field in the declarative configuration to the given value
