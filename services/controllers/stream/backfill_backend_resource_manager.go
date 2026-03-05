@@ -87,7 +87,7 @@ func (b *BackfillBackendResourceManager) Remove(ctx context.Context, definition 
 		}
 	}
 
-	request, err := b.getBackfillRequest(ctx, definition)
+	request, err := b.GetBackfillRequest(ctx, definition)
 	if err != nil { // coverage-ignore
 		return reconcile.Result{}, fmt.Errorf("failed to get backfill request: %w", err)
 	}
@@ -131,7 +131,7 @@ func (b *BackfillBackendResourceManager) getLogger(_ context.Context, request ty
 		WithValues("namespace", request.Namespace, "streamId", request.Name, "streamKind", b.streamClass.Spec.KindRef)
 }
 
-func (b *BackfillBackendResourceManager) getBackfillRequest(ctx context.Context, definition Definition) (*v1.BackfillRequest, error) {
+func (b *BackfillBackendResourceManager) GetBackfillRequest(ctx context.Context, definition Definition) (*v1.BackfillRequest, error) {
 	backfillRequestList := &v1.BackfillRequestList{}
 	err := b.client.List(ctx, backfillRequestList, client.InNamespace(definition.NamespacedName().Namespace))
 	if client.IgnoreNotFound(err) != nil { // coverage-ignore

@@ -99,7 +99,7 @@ func (s *streamReconciler) Reconcile(ctx context.Context, request reconcile.Requ
 		return reconcile.Result{}, err
 	}
 
-	backfillRequest, err := s.getBackfillRequest(ctx, streamDefinition)
+	backfillRequest, err := s.backfillBackendResourceManager.GetBackfillRequest(ctx, streamDefinition)
 	if client.IgnoreNotFound(err) != nil { // coverage-ignore
 		logger.V(0).Error(err, "unable to fetch BackfillRequest for the Stream, cannot proceed")
 		return reconcile.Result{}, err
@@ -283,22 +283,6 @@ func (s *streamReconciler) moveFsm(ctx context.Context, definition Definition, j
 		definition.NamespacedName().Name,
 		definition.StateString(),
 	)
-}
-
-func (s *streamReconciler) getBackfillRequest(ctx context.Context, definition Definition) (*v1.BackfillRequest, error) {
-	backfillRequestList := &v1.BackfillRequestList{}
-	err := s.client.List(ctx, backfillRequestList, client.InNamespace(definition.NamespacedName().Namespace))
-	if client.IgnoreNotFound(err) != nil { // coverage-ignore
-		return nil, err
-	}
-
-	for _, bfr := range backfillRequestList.Items {
-		if bfr.Spec.StreamId == definition.NamespacedName().Name && !bfr.Spec.Completed {
-			return &bfr, nil
-		}
-	}
-
-	return nil, nil
 }
 
 func (s *streamReconciler) newBackfillRequest(definition Definition) *v1.BackfillRequest {
