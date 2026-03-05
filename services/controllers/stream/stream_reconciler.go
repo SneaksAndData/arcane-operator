@@ -275,7 +275,6 @@ func (s *streamReconciler) moveFsm(ctx context.Context, definition Definition, j
 				"BackfillInProgress",
 				"Backfill for stream %s is still in progress", definition.NamespacedName().Name)
 		})
-
 	}
 
 	return reconcile.Result{}, fmt.Errorf("failed to reconcile Stream FSM for %s/%s. Current state: %s",
