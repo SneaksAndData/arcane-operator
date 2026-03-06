@@ -1,9 +1,6 @@
 package v0
 
 import (
-	"crypto/md5"
-	"encoding/hex"
-	"encoding/json"
 	"fmt"
 
 	v1 "github.com/SneaksAndData/arcane-operator/pkg/apis/streaming/v1"
@@ -23,70 +20,23 @@ var (
 )
 
 type UnstructuredWrapper struct {
+	StatusWrapper
 	Underlying      *unstructured.Unstructured
-	phase           stream.Phase
 	suspended       bool
-	configuration   string
 	streamingJobRef corev1.ObjectReference
 	backfillJobRef  corev1.ObjectReference
 }
 
-func (u *UnstructuredWrapper) GetPhase() stream.Phase {
-	return u.phase
+func NewUnstructuredWrapper() *UnstructuredWrapper {
+	w := &UnstructuredWrapper{
+		Underlying: &unstructured.Unstructured{},
+	}
+	w.StatusWrapper.Underlying = w.Underlying
+	return w
 }
 
 func (u *UnstructuredWrapper) Suspended() bool {
 	return u.suspended
-}
-
-func (u *UnstructuredWrapper) CurrentConfiguration(request *v1.BackfillRequest) (string, error) {
-	spec, found, err := unstructured.NestedFieldCopy(u.Underlying.Object, "spec")
-
-	if err != nil { // coverage-ignore
-		return "", err
-	}
-
-	if !found { // coverage-ignore
-		return "", fmt.Errorf("spec field not found in unstructured object")
-	}
-
-	b, err := json.Marshal(spec)
-	if err != nil { // coverage-ignore
-		return "", err
-	}
-
-	sum := md5.Sum(b)
-	selfConfiguration := hex.EncodeToString(sum[:])
-
-	if request == nil {
-		return selfConfiguration, nil
-	}
-
-	// Include backfill request spec in the configuration hash
-	bRequest, err := json.Marshal(request.Spec)
-	if err != nil { // coverage-ignore
-		return "", err
-	}
-
-	combinedSum := md5.Sum(bRequest)
-	requestConfiguration := hex.EncodeToString(combinedSum[:])
-
-	return fmt.Sprintf("%x:%x", selfConfiguration, requestConfiguration), nil
-}
-
-func (u *UnstructuredWrapper) LastAppliedConfiguration() string {
-	return u.configuration
-}
-
-func (u *UnstructuredWrapper) RecomputeConfiguration(request *v1.BackfillRequest) error {
-	currentConfig, err := u.CurrentConfiguration(request)
-	if err != nil { // coverage-ignore
-		return err
-	}
-
-	u.Underlying.Object["status"].(map[string]interface{})["configurationHash"] = currentConfig
-	u.configuration = currentConfig
-	return nil
 }
 
 func (u *UnstructuredWrapper) NamespacedName() types.NamespacedName {
@@ -98,11 +48,6 @@ func (u *UnstructuredWrapper) NamespacedName() types.NamespacedName {
 
 func (u *UnstructuredWrapper) ToUnstructured() *unstructured.Unstructured {
 	return u.Underlying
-}
-
-func (u *UnstructuredWrapper) SetPhase(phase stream.Phase) error {
-	u.phase = phase
-	return setNestedPhase(u.Underlying, phase, "status", "phase")
 }
 
 func (u *UnstructuredWrapper) SetSuspended(suspended bool) error {
@@ -148,87 +93,6 @@ func (u *UnstructuredWrapper) GetJobTemplate(request *v1.BackfillRequest) types.
 	return types.NamespacedName{
 		Name:      u.backfillJobRef.Name,
 		Namespace: namespace,
-	}
-}
-
-func (u *UnstructuredWrapper) SetConditions(conditions []metav1.Condition) error {
-	// Convert conditions to []interface{} for unstructured
-	conditionsSlice := make([]interface{}, len(conditions))
-	for i, cond := range conditions {
-		condMap, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&cond)
-		if err != nil { // coverage-ignore
-			return fmt.Errorf("failed to convert condition to unstructured: %w", err)
-		}
-		conditionsSlice[i] = condMap
-	}
-
-	return unstructured.SetNestedSlice(u.Underlying.Object, conditionsSlice, "status", "conditions")
-}
-
-func (u *UnstructuredWrapper) ComputeConditions(bfr *v1.BackfillRequest) []metav1.Condition { // coverage-ignore
-	switch u.GetPhase() {
-	case stream.Pending:
-		return []metav1.Condition{
-			{
-				Type:    "Warning",
-				Status:  metav1.ConditionTrue,
-				Reason:  "StreamPending",
-				Message: "The stream is pending and will start soon",
-				LastTransitionTime: metav1.Time{
-					Time: metav1.Now().Time,
-				},
-			},
-		}
-	case stream.Backfilling:
-		return []metav1.Condition{
-			{
-				Type:    "Ready",
-				Status:  metav1.ConditionTrue,
-				Reason:  "StreamBackfilling",
-				Message: "The stream is currently backfilling data, request ID: " + bfr.Name,
-				LastTransitionTime: metav1.Time{
-					Time: metav1.Now().Time,
-				},
-			},
-		}
-	case stream.Running:
-		return []metav1.Condition{
-			{
-				Type:    "Ready",
-				Status:  metav1.ConditionTrue,
-				Reason:  "StreamRunning",
-				Message: "The stream is currently running.",
-				LastTransitionTime: metav1.Time{
-					Time: metav1.Now().Time,
-				},
-			},
-		}
-	case stream.Suspended:
-		return []metav1.Condition{
-			{
-				Type:    "Warning",
-				Status:  metav1.ConditionTrue,
-				Reason:  "StreamSuspended",
-				Message: "The stream is suspended.",
-				LastTransitionTime: metav1.Time{
-					Time: metav1.Now().Time,
-				},
-			},
-		}
-	case stream.Failed:
-		return []metav1.Condition{
-			{
-				Type:    "Error",
-				Status:  metav1.ConditionTrue,
-				Reason:  "StreamFailed",
-				Message: "The stream has failed.",
-				LastTransitionTime: metav1.Time{
-					Time: metav1.Now().Time,
-				},
-			},
-		}
-	default:
-		return []metav1.Condition{}
 	}
 }
 
@@ -316,18 +180,6 @@ func (u *UnstructuredWrapper) extractStreamingJobRef(from string, target *corev1
 	return nil
 }
 
-func (u *UnstructuredWrapper) extractConfigurationHash() error {
-	currentConfiguration, found, err := getNestedString(u.Underlying, "status", "configurationHash")
-	if err != nil { // coverage-ignore
-		return err
-	}
-	if !found {
-		u.configuration = ""
-	}
-	u.configuration = currentConfiguration
-	return nil
-}
-
 func (u *UnstructuredWrapper) extractSuspended() error {
 	suspended, found, err := getNestedBool(u.Underlying, "spec", "suspended")
 	if err != nil { // coverage-ignore
@@ -338,19 +190,6 @@ func (u *UnstructuredWrapper) extractSuspended() error {
 		return fmt.Errorf("spec/suspended field not found in uRef object")
 	}
 	u.suspended = suspended
-	return nil
-}
-
-func (u *UnstructuredWrapper) extractPhase() error {
-	phase, found, err := getNestedString(u.Underlying, "status", "phase")
-	if err != nil { // coverage-ignore
-		return err
-	}
-	if !found {
-		u.phase = stream.New
-	} else {
-		u.phase = stream.Phase(phase)
-	}
 	return nil
 }
 
