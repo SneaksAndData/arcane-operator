@@ -23,9 +23,7 @@ type UnstructuredWrapper struct {
 	StatusWrapper
 
 	Underlying      *unstructured.Unstructured
-	phase           stream.Phase
 	suspended       bool
-	configuration   string
 	streamingJobRef corev1.ObjectReference
 	backfillJobRef  corev1.ObjectReference
 }
