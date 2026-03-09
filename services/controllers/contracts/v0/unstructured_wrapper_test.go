@@ -5,6 +5,7 @@ import (
 
 	v1 "github.com/SneaksAndData/arcane-operator/pkg/apis/streaming/v1"
 	testv1 "github.com/SneaksAndData/arcane-operator/pkg/test/apis_test/streaming/v1"
+	"github.com/SneaksAndData/arcane-operator/services/controllers/contracts"
 	"github.com/SneaksAndData/arcane-operator/services/controllers/stream"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -24,7 +25,7 @@ func Test_GetPhase(t *testing.T) {
 	require.NoError(t, err)
 
 	// Act
-	wrapper, err := FromUnstructured(&unstructuredObj)
+	wrapper, err := contracts.FromUnstructured(&unstructuredObj)
 
 	// Assert
 	require.NoError(t, err)
@@ -41,7 +42,7 @@ func Test_Suspended(t *testing.T) {
 	require.NoError(t, err)
 
 	// Act
-	wrapper, err := FromUnstructured(&unstructuredObj)
+	wrapper, err := contracts.FromUnstructured(&unstructuredObj)
 
 	// Assert
 	require.NoError(t, err)
@@ -60,7 +61,7 @@ func Test_CurrentConfiguration(t *testing.T) {
 	require.NoError(t, err)
 
 	// Act
-	wrapper, err := FromUnstructured(&unstructuredObj)
+	wrapper, err := contracts.FromUnstructured(&unstructuredObj)
 	require.NotNil(t, wrapper)
 	require.NoError(t, err)
 	currentConfig, err := wrapper.CurrentConfiguration(nil)
@@ -73,7 +74,7 @@ func Test_CurrentConfiguration(t *testing.T) {
 	unstructuredObj, err = getUnstructured(t, fakeClient)
 	require.NoError(t, err)
 
-	wrapper, err = FromUnstructured(&unstructuredObj)
+	wrapper, err = contracts.FromUnstructured(&unstructuredObj)
 	require.NoError(t, err)
 	require.NotNil(t, wrapper)
 
@@ -93,7 +94,7 @@ func Test_LastAppliedConfiguration(t *testing.T) {
 	require.NoError(t, err)
 
 	// Act
-	wrapper, err := FromUnstructured(&unstructuredObj)
+	wrapper, err := contracts.FromUnstructured(&unstructuredObj)
 	require.NotNil(t, wrapper)
 	require.NoError(t, err)
 
@@ -128,7 +129,7 @@ func Test_NamespacedName(t *testing.T) {
 	require.NoError(t, err)
 
 	// Act
-	wrapper, err := FromUnstructured(&unstructuredObj)
+	wrapper, err := contracts.FromUnstructured(&unstructuredObj)
 	require.NoError(t, err)
 	require.NotNil(t, wrapper)
 
@@ -143,7 +144,7 @@ func Test_SetPhase(t *testing.T) {
 	unstructuredObj, err := getUnstructured(t, fakeClient)
 	require.NoError(t, err)
 
-	wrapper, err := FromUnstructured(&unstructuredObj)
+	wrapper, err := contracts.FromUnstructured(&unstructuredObj)
 	require.NotNil(t, wrapper)
 	require.NoError(t, err)
 
@@ -158,7 +159,7 @@ func Test_SetPhase(t *testing.T) {
 	unstructuredObj, err = getUnstructured(t, fakeClient)
 	require.NoError(t, err)
 
-	wrapper, err = FromUnstructured(&unstructuredObj)
+	wrapper, err = contracts.FromUnstructured(&unstructuredObj)
 	require.NotNil(t, wrapper)
 	require.NoError(t, err)
 
@@ -174,7 +175,7 @@ func Test_GetStreamingJobName(t *testing.T) {
 	require.NoError(t, err)
 
 	// Act
-	wrapper, err := FromUnstructured(&unstructuredObj)
+	wrapper, err := contracts.FromUnstructured(&unstructuredObj)
 	require.NotNil(t, wrapper)
 	require.NoError(t, err)
 
@@ -191,7 +192,7 @@ func Test_GetBackfillJobName(t *testing.T) {
 	require.NoError(t, err)
 
 	// Act
-	wrapper, err := FromUnstructured(&unstructuredObj)
+	wrapper, err := contracts.FromUnstructured(&unstructuredObj)
 	require.NotNil(t, wrapper)
 	require.NoError(t, err)
 
@@ -208,7 +209,7 @@ func Test_ToOwnerReference(t *testing.T) {
 	require.NoError(t, err)
 
 	// Act
-	wrapper, err := FromUnstructured(&unstructuredObj)
+	wrapper, err := contracts.FromUnstructured(&unstructuredObj)
 	require.NotNil(t, wrapper)
 	require.NoError(t, err)
 
@@ -229,7 +230,7 @@ func Test_StateString(t *testing.T) {
 	require.NoError(t, err)
 
 	// Act
-	wrapper, err := FromUnstructured(&unstructuredObj)
+	wrapper, err := contracts.FromUnstructured(&unstructuredObj)
 	require.NotNil(t, wrapper)
 	require.NoError(t, err)
 
@@ -248,7 +249,7 @@ func Test_SetSuspended(t *testing.T) {
 	require.NoError(t, err)
 
 	// Act
-	wrapper, err := FromUnstructured(&unstructuredObj)
+	wrapper, err := contracts.FromUnstructured(&unstructuredObj)
 	require.NotNil(t, wrapper)
 	require.NoError(t, err)
 	err = wrapper.SetSuspended(true)

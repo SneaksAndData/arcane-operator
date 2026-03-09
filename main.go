@@ -13,7 +13,7 @@ import (
 	"github.com/SneaksAndData/arcane-operator/pkg/apis/streaming/v1"
 	"github.com/SneaksAndData/arcane-operator/pkg/signals"
 	"github.com/SneaksAndData/arcane-operator/services"
-	"github.com/SneaksAndData/arcane-operator/services/controllers/contracts/v0"
+	"github.com/SneaksAndData/arcane-operator/services/controllers/contracts"
 	"github.com/SneaksAndData/arcane-operator/services/controllers/stream_class"
 	"github.com/SneaksAndData/arcane-operator/services/health"
 	"github.com/SneaksAndData/arcane-operator/services/job/job_builder"
@@ -114,7 +114,7 @@ func main() {
 		job_builder.NewDefaultJobBuilder(mgr.GetClient()),
 		mgr,
 		eventRecorder,
-		v0.FromUnstructured,
+		contracts.FromUnstructured,
 	)
 	err = stream_class.NewStreamClassReconciler(mgr.GetClient(), controllerFactory, reporter, eventRecorder).SetupWithManager(mgr)
 

@@ -73,6 +73,9 @@ type Definition interface {
 
 	// GetReferenceForSecret returns a LocalObjectReference for the given secret name.
 	GetReferenceForSecret(name string) (*corev1.LocalObjectReference, error)
+
+	// Validate validates the stream definition and returns an error if any required fields are missing or invalid.
+	Validate() error
 }
 
 // DefinitionParser is a function type that takes an unstructured object and returns a validated Definition or an
