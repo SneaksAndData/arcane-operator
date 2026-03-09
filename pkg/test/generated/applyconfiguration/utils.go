@@ -20,8 +20,10 @@ package applyconfiguration
 
 import (
 	v1 "github.com/SneaksAndData/arcane-operator/pkg/test/apis_test/streaming/v1"
+	v2 "github.com/SneaksAndData/arcane-operator/pkg/test/apis_test/streaming/v2"
 	internal "github.com/SneaksAndData/arcane-operator/pkg/test/generated/applyconfiguration/internal"
 	streamingv1 "github.com/SneaksAndData/arcane-operator/pkg/test/generated/applyconfiguration/streaming/v1"
+	streamingv2 "github.com/SneaksAndData/arcane-operator/pkg/test/generated/applyconfiguration/streaming/v2"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	managedfields "k8s.io/apimachinery/pkg/util/managedfields"
@@ -38,6 +40,22 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &streamingv1.MockStreamDefinitionSpecApplyConfiguration{}
 	case v1.SchemeGroupVersion.WithKind("MockStreamDefinitionStatus"):
 		return &streamingv1.MockStreamDefinitionStatusApplyConfiguration{}
+
+		// Group=streaming.sneaksanddata.com, Version=v2
+	case v2.SchemeGroupVersion.WithKind("BatchBackend"):
+		return &streamingv2.BatchBackendApplyConfiguration{}
+	case v2.SchemeGroupVersion.WithKind("ExecutionSettings"):
+		return &streamingv2.ExecutionSettingsApplyConfiguration{}
+	case v2.SchemeGroupVersion.WithKind("MockStreamDefinition"):
+		return &streamingv2.MockStreamDefinitionApplyConfiguration{}
+	case v2.SchemeGroupVersion.WithKind("MockStreamDefinitionSpec"):
+		return &streamingv2.MockStreamDefinitionSpecApplyConfiguration{}
+	case v2.SchemeGroupVersion.WithKind("MockStreamDefinitionStatus"):
+		return &streamingv2.MockStreamDefinitionStatusApplyConfiguration{}
+	case v2.SchemeGroupVersion.WithKind("RealtimeBackend"):
+		return &streamingv2.RealtimeBackendApplyConfiguration{}
+	case v2.SchemeGroupVersion.WithKind("StreamingBackend"):
+		return &streamingv2.StreamingBackendApplyConfiguration{}
 
 	}
 	return nil
