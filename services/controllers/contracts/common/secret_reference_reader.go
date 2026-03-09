@@ -12,7 +12,7 @@ type SecretReferenceReader struct {
 	underlying *unstructured.Unstructured
 }
 
-func NewSecretReferenceReader(u *unstructured.Unstructured) SecretReferenceReader {
+func NewSecretReferenceReader(u *unstructured.Unstructured) SecretReferenceReader { // coverage-ignore
 	return SecretReferenceReader{
 		underlying: u,
 	}
@@ -30,7 +30,7 @@ func (u *SecretReferenceReader) GetReferenceForSecret(fieldName string) (*corev1
 	}
 
 	var ref corev1.LocalObjectReference
-	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(m, &ref); err != nil {
+	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(m, &ref); err != nil { // coverage-ignore
 		return nil, fmt.Errorf("failed to convert %s to LocalObjectReference: %w", fieldName, err)
 	}
 

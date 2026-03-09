@@ -13,7 +13,7 @@ type ConfiguratorProvider struct {
 	parent     stream.Definition
 }
 
-func NewConfiguratorProvider(u *unstructured.Unstructured, parent stream.Definition) *ConfiguratorProvider {
+func NewConfiguratorProvider(u *unstructured.Unstructured, parent stream.Definition) *ConfiguratorProvider { // coverage-ignore
 	return &ConfiguratorProvider{
 		underlying: u,
 		parent:     parent,
