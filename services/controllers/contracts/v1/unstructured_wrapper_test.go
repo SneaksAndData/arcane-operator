@@ -37,7 +37,7 @@ func Test_GetPhase(t *testing.T) {
 func Test_Suspended(t *testing.T) {
 	// Arrange
 	fakeClient := setupFakeClient(func(sd *testv2.MockStreamDefinition) {
-		sd.Spec.ExecutionSettings.Suspended = true
+		sd.Spec.ExecutionSettings.Suspended = false
 	})
 
 	unstructuredObj, err := getUnstructured(t, fakeClient)
@@ -46,228 +46,268 @@ func Test_Suspended(t *testing.T) {
 	// Act
 	wrapper := NewExecutionSettings(&unstructuredObj)
 	err = wrapper.Validate()
+	require.NoError(t, err)
+
+	err = wrapper.SetSuspended(true)
+	require.NoError(t, err)
+
+	us := wrapper.ToUnstructured()
+	err = fakeClient.Update(t.Context(), us)
+	require.NoError(t, err)
+	unstructuredObj, err = getUnstructured(t, fakeClient)
+	require.NoError(t, err)
+	wrapper = NewExecutionSettings(&unstructuredObj)
+	err = wrapper.Validate()
 
 	// Assert
 	require.NoError(t, err)
 	require.Equal(t, true, wrapper.Suspended())
 }
 
-//
-//func Test_CurrentConfiguration(t *testing.T) {
-//	// Arrange
-//	var streamDefinition *testv1.MockStreamDefinition
-//	fakeClient := setupFakeClient(func(sd *testv1.MockStreamDefinition) {
-//		sd.Spec.Suspended = true
-//		streamDefinition = sd
-//	})
-//
-//	unstructuredObj, err := getUnstructured(t, fakeClient)
-//	require.NoError(t, err)
-//
-//	// Act
-//	wrapper, err := contracts.FromUnstructured(&unstructuredObj)
-//	require.NotNil(t, wrapper)
-//	require.NoError(t, err)
-//	currentConfig, err := wrapper.CurrentConfiguration(nil)
-//	require.NoError(t, err)
-//
-//	streamDefinition.Spec.Destination = "destinationC"
-//	err = fakeClient.Update(t.Context(), streamDefinition)
-//	require.NoError(t, err)
-//
-//	unstructuredObj, err = getUnstructured(t, fakeClient)
-//	require.NoError(t, err)
-//
-//	wrapper, err = contracts.FromUnstructured(&unstructuredObj)
-//	require.NoError(t, err)
-//	require.NotNil(t, wrapper)
-//
-//	updatedConfig, err := wrapper.CurrentConfiguration(nil)
-//	require.NoError(t, err)
-//
-//	// Assert
-//	require.NoError(t, err)
-//	require.NotEqual(t, currentConfig, updatedConfig)
-//}
-//
-//func Test_LastAppliedConfiguration(t *testing.T) {
-//	// Arrange
-//	fakeClient := setupFakeClient(nil)
-//
-//	unstructuredObj, err := getUnstructured(t, fakeClient)
-//	require.NoError(t, err)
-//
-//	// Act
-//	wrapper, err := contracts.FromUnstructured(&unstructuredObj)
-//	require.NotNil(t, wrapper)
-//	require.NoError(t, err)
-//
-//	currentConfig, err := wrapper.CurrentConfiguration(nil)
-//	require.NoError(t, err)
-//
-//	// Precondition: LastAppliedConfiguration is empty before recompute since it hasn't been set yet
-//	lastAppliedConfig := wrapper.LastAppliedConfiguration()
-//	require.Empty(t, lastAppliedConfig)
-//
-//	err = wrapper.RecomputeConfiguration(nil)
-//	require.NoError(t, err)
-//
-//	err = fakeClient.Update(t.Context(), wrapper.ToUnstructured())
-//	require.NoError(t, err)
-//
-//	unstructuredObj, err = getUnstructured(t, fakeClient)
-//	require.NoError(t, err)
-//
-//	lastAppliedConfig = wrapper.LastAppliedConfiguration()
-//
-//	// Assert
-//	require.NoError(t, err)
-//	require.Equal(t, currentConfig, lastAppliedConfig)
-//}
-//
-//func Test_NamespacedName(t *testing.T) {
-//	// Arrange
-//	fakeClient := setupFakeClient(nil)
-//
-//	unstructuredObj, err := getUnstructured(t, fakeClient)
-//	require.NoError(t, err)
-//
-//	// Act
-//	wrapper, err := contracts.FromUnstructured(&unstructuredObj)
-//	require.NoError(t, err)
-//	require.NotNil(t, wrapper)
-//
-//	// Assert
-//	require.Equal(t, types.NamespacedName{Name: "sd1", Namespace: ""}, wrapper.NamespacedName())
-//}
-//
-//func Test_SetPhase(t *testing.T) {
-//	// Arrange
-//	fakeClient := setupFakeClient(nil)
-//
-//	unstructuredObj, err := getUnstructured(t, fakeClient)
-//	require.NoError(t, err)
-//
-//	wrapper, err := contracts.FromUnstructured(&unstructuredObj)
-//	require.NotNil(t, wrapper)
-//	require.NoError(t, err)
-//
-//	// Act
-//
-//	err = wrapper.SetPhase(stream.Backfilling)
-//	require.NoError(t, err)
-//	us := wrapper.ToUnstructured()
-//	err = fakeClient.Status().Update(t.Context(), us)
-//	require.NoError(t, err)
-//
-//	unstructuredObj, err = getUnstructured(t, fakeClient)
-//	require.NoError(t, err)
-//
-//	wrapper, err = contracts.FromUnstructured(&unstructuredObj)
-//	require.NotNil(t, wrapper)
-//	require.NoError(t, err)
-//
-//	// Assert
-//	require.Equal(t, stream.Phase("Backfilling"), wrapper.GetPhase())
-//}
-//
-//func Test_GetStreamingJobName(t *testing.T) {
-//	// Arrange
-//	fakeClient := setupFakeClient(nil)
-//
-//	unstructuredObj, err := getUnstructured(t, fakeClient)
-//	require.NoError(t, err)
-//
-//	// Act
-//	wrapper, err := contracts.FromUnstructured(&unstructuredObj)
-//	require.NotNil(t, wrapper)
-//	require.NoError(t, err)
-//
-//	// Assert
-//	name := types.NamespacedName{Name: "jobTemplate1", Namespace: "default"}
-//	require.Equal(t, name, wrapper.GetJobTemplate(nil))
-//}
-//
-//func Test_GetBackfillJobName(t *testing.T) {
-//	// Arrange
-//	fakeClient := setupFakeClient(nil)
-//
-//	unstructuredObj, err := getUnstructured(t, fakeClient)
-//	require.NoError(t, err)
-//
-//	// Act
-//	wrapper, err := contracts.FromUnstructured(&unstructuredObj)
-//	require.NotNil(t, wrapper)
-//	require.NoError(t, err)
-//
-//	// Assert
-//	name := types.NamespacedName{Name: "backfillJobTemplate1", Namespace: "default"}
-//	require.Equal(t, name, wrapper.GetJobTemplate(&v1.BackfillRequest{}))
-//}
-//
-//func Test_ToOwnerReference(t *testing.T) {
-//	// Arrange
-//	fakeClient := setupFakeClient(nil)
-//
-//	unstructuredObj, err := getUnstructured(t, fakeClient)
-//	require.NoError(t, err)
-//
-//	// Act
-//	wrapper, err := contracts.FromUnstructured(&unstructuredObj)
-//	require.NotNil(t, wrapper)
-//	require.NoError(t, err)
-//
-//	// Assert
-//	ownerReference := wrapper.ToOwnerReference()
-//	require.Equal(t, "MockStreamDefinition", ownerReference.Kind)
-//	require.Equal(t, "streaming.sneaksanddata.com/v1", ownerReference.APIVersion)
-//	require.Equal(t, "sd1", ownerReference.Name)
-//	require.True(t, *ownerReference.Controller)
-//
-//}
-//
-//func Test_StateString(t *testing.T) {
-//	// Arrange
-//	fakeClient := setupFakeClient(nil)
-//
-//	unstructuredObj, err := getUnstructured(t, fakeClient)
-//	require.NoError(t, err)
-//
-//	// Act
-//	wrapper, err := contracts.FromUnstructured(&unstructuredObj)
-//	require.NotNil(t, wrapper)
-//	require.NoError(t, err)
-//
-//	// Assert
-//	stateString := wrapper.StateString()
-//	require.Contains(t, stateString, "phase=Running")
-//}
-//
-//func Test_SetSuspended(t *testing.T) {
-//	// Arrange
-//	fakeClient := setupFakeClient(func(sd *testv1.MockStreamDefinition) {
-//		sd.Spec.Suspended = false
-//	})
-//
-//	unstructuredObj, err := getUnstructured(t, fakeClient)
-//	require.NoError(t, err)
-//
-//	// Act
-//	wrapper, err := contracts.FromUnstructured(&unstructuredObj)
-//	require.NotNil(t, wrapper)
-//	require.NoError(t, err)
-//	err = wrapper.SetSuspended(true)
-//	require.NoError(t, err)
-//
-//	// Assert
-//	suspended := wrapper.Suspended()
-//	require.True(t, suspended)
-//
-//	// Verify underlying unstructured object is updated
-//	require.NoError(t, err)
-//	suspended = unstructuredObj.Object["spec"].(map[string]interface{})["suspended"].(bool)
-//	require.True(t, suspended)
-//}
+func Test_CurrentConfiguration(t *testing.T) {
+	// Arrange
+	var streamDefinition *testv2.MockStreamDefinition
+	fakeClient := setupFakeClient(func(sd *testv2.MockStreamDefinition) {
+		sd.Spec.ExecutionSettings.Suspended = true
+		streamDefinition = sd
+	})
+
+	unstructuredObj, err := getUnstructured(t, fakeClient)
+	require.NoError(t, err)
+
+	// Act
+	wrapper := NewExecutionSettings(&unstructuredObj)
+	err = wrapper.Validate()
+	require.NoError(t, err)
+	require.NotNil(t, wrapper)
+
+	currentConfig, err := wrapper.CurrentConfiguration(nil)
+	require.NoError(t, err)
+
+	streamDefinition.Spec.Destination = "destinationC"
+	err = fakeClient.Update(t.Context(), streamDefinition)
+	require.NoError(t, err)
+
+	unstructuredObj, err = getUnstructured(t, fakeClient)
+	require.NoError(t, err)
+
+	wrapper = NewExecutionSettings(&unstructuredObj)
+	err = wrapper.Validate()
+	require.NotNil(t, wrapper)
+	require.NoError(t, err)
+
+	updatedConfig, err := wrapper.CurrentConfiguration(nil)
+	require.NoError(t, err)
+
+	// Assert
+	require.NoError(t, err)
+	require.NotEqual(t, currentConfig, updatedConfig)
+}
+
+func Test_LastAppliedConfiguration(t *testing.T) {
+	// Arrange
+	fakeClient := setupFakeClient(nil)
+
+	unstructuredObj, err := getUnstructured(t, fakeClient)
+	require.NoError(t, err)
+
+	// Act
+	wrapper := NewExecutionSettings(&unstructuredObj)
+	require.NotNil(t, wrapper)
+
+	err = wrapper.Validate()
+	require.NoError(t, err)
+
+	currentConfig, err := wrapper.CurrentConfiguration(nil)
+	require.NoError(t, err)
+
+	// Precondition: LastAppliedConfiguration is empty before recompute since it hasn't been set yet
+	lastAppliedConfig := wrapper.LastAppliedConfiguration()
+	require.Empty(t, lastAppliedConfig)
+
+	err = wrapper.RecomputeConfiguration(nil)
+	require.NoError(t, err)
+
+	err = fakeClient.Update(t.Context(), wrapper.ToUnstructured())
+	require.NoError(t, err)
+
+	unstructuredObj, err = getUnstructured(t, fakeClient)
+	require.NoError(t, err)
+
+	lastAppliedConfig = wrapper.LastAppliedConfiguration()
+
+	// Assert
+	require.NoError(t, err)
+	require.Equal(t, currentConfig, lastAppliedConfig)
+}
+
+func Test_NamespacedName(t *testing.T) {
+	// Arrange
+	fakeClient := setupFakeClient(nil)
+
+	unstructuredObj, err := getUnstructured(t, fakeClient)
+	require.NoError(t, err)
+
+	// Act
+	wrapper := NewExecutionSettings(&unstructuredObj)
+	require.NotNil(t, wrapper)
+
+	err = wrapper.Validate()
+	require.NoError(t, err)
+
+	// Assert
+	require.Equal(t, types.NamespacedName{Name: "sd1", Namespace: ""}, wrapper.NamespacedName())
+}
+
+func Test_SetPhase(t *testing.T) {
+	// Arrange
+	fakeClient := setupFakeClient(nil)
+
+	unstructuredObj, err := getUnstructured(t, fakeClient)
+	require.NoError(t, err)
+
+	wrapper := NewExecutionSettings(&unstructuredObj)
+	require.NotNil(t, wrapper)
+
+	err = wrapper.Validate()
+	require.NoError(t, err)
+
+	// Act
+
+	err = wrapper.SetPhase(stream.Backfilling)
+	require.NoError(t, err)
+	us := wrapper.ToUnstructured()
+	err = fakeClient.Status().Update(t.Context(), us)
+	require.NoError(t, err)
+
+	unstructuredObj, err = getUnstructured(t, fakeClient)
+	require.NoError(t, err)
+
+	wrapper = NewExecutionSettings(&unstructuredObj)
+	require.NotNil(t, wrapper)
+
+	err = wrapper.Validate()
+	require.NoError(t, err)
+
+	// Assert
+	require.Equal(t, stream.Phase("Backfilling"), wrapper.GetPhase())
+}
+
+func Test_GetStreamingJobName(t *testing.T) {
+	// Arrange
+	fakeClient := setupFakeClient(nil)
+
+	unstructuredObj, err := getUnstructured(t, fakeClient)
+	require.NoError(t, err)
+
+	// Act
+	wrapper := NewExecutionSettings(&unstructuredObj)
+	require.NotNil(t, wrapper)
+
+	err = wrapper.Validate()
+	require.NoError(t, err)
+
+	// Assert
+	name := types.NamespacedName{Name: "jobTemplate1", Namespace: "default"}
+	require.Equal(t, name, wrapper.GetJobTemplate(nil))
+}
+
+func Test_GetBackfillJobName(t *testing.T) {
+	// Arrange
+	fakeClient := setupFakeClient(func(sd *testv2.MockStreamDefinition) {
+		sd.Spec.ExecutionSettings.BackfillJobTemplateRef = corev1.ObjectReference{
+			Name:      "backfillJobTemplate1",
+			Namespace: "default",
+		}
+	})
+
+	unstructuredObj, err := getUnstructured(t, fakeClient)
+	require.NoError(t, err)
+
+	// Act
+	wrapper := NewExecutionSettings(&unstructuredObj)
+	require.NotNil(t, wrapper)
+
+	err = wrapper.Validate()
+	require.NoError(t, err)
+
+	// Assert
+	name := types.NamespacedName{Name: "backfillJobTemplate1", Namespace: "default"}
+	require.Equal(t, name, wrapper.GetJobTemplate(&v1.BackfillRequest{}))
+}
+
+func Test_ToOwnerReference(t *testing.T) {
+	// Arrange
+	fakeClient := setupFakeClient(nil)
+
+	unstructuredObj, err := getUnstructured(t, fakeClient)
+	require.NoError(t, err)
+
+	// Act
+	wrapper := NewExecutionSettings(&unstructuredObj)
+	require.NotNil(t, wrapper)
+
+	err = wrapper.Validate()
+	require.NoError(t, err)
+
+	// Assert
+	ownerReference := wrapper.ToOwnerReference()
+	require.Equal(t, "MockStreamDefinition", ownerReference.Kind)
+	require.Equal(t, "streaming.sneaksanddata.com/v2", ownerReference.APIVersion)
+	require.Equal(t, "sd1", ownerReference.Name)
+	require.True(t, *ownerReference.Controller)
+
+}
+
+func Test_StateString(t *testing.T) {
+	// Arrange
+	fakeClient := setupFakeClient(func(sd *testv2.MockStreamDefinition) {
+		sd.Status.Phase = "Running"
+	})
+
+	unstructuredObj, err := getUnstructured(t, fakeClient)
+	require.NoError(t, err)
+
+	// Act
+	wrapper := NewExecutionSettings(&unstructuredObj)
+	require.NotNil(t, wrapper)
+
+	err = wrapper.Validate()
+	require.NoError(t, err)
+
+	// Assert
+	stateString := wrapper.StateString()
+	require.Contains(t, stateString, "phase=Running")
+}
+
+func Test_SetSuspended(t *testing.T) {
+	// Arrange
+	fakeClient := setupFakeClient(func(sd *testv2.MockStreamDefinition) {
+		sd.Spec.ExecutionSettings.Suspended = false
+	})
+
+	unstructuredObj, err := getUnstructured(t, fakeClient)
+	require.NoError(t, err)
+
+	// Act
+	wrapper := NewExecutionSettings(&unstructuredObj)
+	require.NotNil(t, wrapper)
+
+	err = wrapper.Validate()
+	require.NoError(t, err)
+
+	err = wrapper.SetSuspended(true)
+	require.NoError(t, err)
+
+	// Assert
+	suspended := wrapper.Suspended()
+	require.True(t, suspended)
+
+	// Verify underlying unstructured object is updated
+	require.NoError(t, err)
+	suspended = unstructuredObj.Object["spec"].(map[string]interface{})["suspended"].(bool)
+	require.True(t, suspended)
+}
 
 func setupFakeClient(updateStreamDefinition func(sd *testv2.MockStreamDefinition)) client.WithWatch {
 	sd := testv2.MockStreamDefinition{

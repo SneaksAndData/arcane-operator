@@ -4,10 +4,11 @@ import (
 	"fmt"
 
 	v1 "github.com/SneaksAndData/arcane-operator/pkg/apis/streaming/v1"
+	"github.com/SneaksAndData/arcane-operator/services/controllers/contracts/common"
+	"github.com/SneaksAndData/arcane-operator/services/controllers/contracts/status_v0"
 	"github.com/SneaksAndData/arcane-operator/services/controllers/stream"
 	"github.com/SneaksAndData/arcane-operator/services/job"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -20,7 +21,10 @@ var (
 )
 
 type UnstructuredWrapper struct {
-	StatusWrapper
+	common.SecretReferenceReader
+	*status_v0.StatusWrapper
+	*common.ConfiguratorProvider
+	*common.OwnerReferenceProvider
 
 	Underlying      *unstructured.Unstructured
 	suspended       bool
@@ -30,12 +34,15 @@ type UnstructuredWrapper struct {
 
 // NewUnstructuredWrapper creates a new UnstructuredWrapper from the given unstructured object.
 func NewUnstructuredWrapper(obj *unstructured.Unstructured) stream.Definition {
-	return &UnstructuredWrapper{
+	w := &UnstructuredWrapper{
 		Underlying: obj,
-		StatusWrapper: StatusWrapper{
-			Underlying: obj,
-		},
 	}
+
+	w.StatusWrapper = status_v0.NewStatusWrapper(obj)
+	w.SecretReferenceReader = common.NewSecretReferenceReader(obj)
+	w.ConfiguratorProvider = common.NewConfiguratorProvider(obj, w)
+	w.OwnerReferenceProvider = common.NewOwnerReferenceProvider(obj)
+	return w
 }
 
 func (u *UnstructuredWrapper) Suspended() bool {
@@ -63,21 +70,6 @@ func (u *UnstructuredWrapper) StateString() string {
 	return fmt.Sprintf("phase=%s", phase)
 }
 
-func (u *UnstructuredWrapper) ToOwnerReference() metav1.OwnerReference {
-	ctrl := true
-	return metav1.OwnerReference{
-		APIVersion: u.Underlying.GetAPIVersion(),
-		Kind:       u.Underlying.GetKind(),
-		Name:       u.Underlying.GetName(),
-		UID:        u.Underlying.GetUID(),
-		Controller: &ctrl,
-	}
-}
-
-func (u *UnstructuredWrapper) ToConfiguratorProvider() job.ConfiguratorProvider { // coverage-ignore
-	return u
-}
-
 func (u *UnstructuredWrapper) GetJobTemplate(request *v1.BackfillRequest) types.NamespacedName {
 	if request == nil {
 		namespace := u.streamingJobRef.Namespace
@@ -99,39 +91,8 @@ func (u *UnstructuredWrapper) GetJobTemplate(request *v1.BackfillRequest) types.
 	}
 }
 
-func (u *UnstructuredWrapper) JobConfigurator() (job.Configurator, error) {
-	configurator := job.NewConfiguratorChainBuilder().
-		WithConfigurator(job.NewNameConfigurator(u.Underlying.GetName())).
-		WithConfigurator(job.NewNamespaceConfigurator(u.Underlying.GetNamespace())).
-		WithConfigurator(job.NewMetadataConfigurator(u.Underlying.GetName(), u.Underlying.GetKind())).
-		WithConfigurator(job.NewBackfillConfigurator(false)).
-		WithConfigurator(job.NewEnvironmentConfigurator(u.Underlying.Object["spec"], "SPEC")).
-		WithConfigurator(job.NewOwnerConfigurator(u.ToOwnerReference())).
-		Build()
-	return configurator, nil
-}
-
-func (u *UnstructuredWrapper) GetReferenceForSecret(fieldName string) (*corev1.LocalObjectReference, error) {
-	secretRef, found, err := unstructured.NestedFieldCopy(u.Underlying.Object, "spec", fieldName)
-	if err != nil || !found { // coverage-ignore
-		return nil, fmt.Errorf("spec/%s field not found in object", fieldName)
-	}
-
-	m, ok := secretRef.(map[string]interface{})
-	if !ok { // coverage-ignore
-		return nil, fmt.Errorf("spec/%s is not an object", fieldName)
-	}
-
-	var ref corev1.LocalObjectReference
-	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(m, &ref); err != nil {
-		return nil, fmt.Errorf("failed to convert %s to LocalObjectReference: %w", fieldName, err)
-	}
-
-	return &ref, nil
-}
-
 func (u *UnstructuredWrapper) Validate() error {
-	err := u.extractPhase()
+	err := u.ExtractPhase()
 	if err != nil { // coverage-ignore
 		return err
 	}
@@ -141,7 +102,7 @@ func (u *UnstructuredWrapper) Validate() error {
 		return err
 	}
 
-	err = u.extractConfigurationHash()
+	err = u.ExtractConfigurationHash()
 	if err != nil { // coverage-ignore
 		return err
 	}
@@ -194,15 +155,6 @@ func (u *UnstructuredWrapper) extractSuspended() error {
 	}
 	u.suspended = suspended
 	return nil
-}
-
-// getNestedString reads a string at the given path (e.g. "status","phase").
-func getNestedString(u *unstructured.Unstructured, path ...string) (string, bool, error) {
-	return unstructured.NestedString(u.Object, path...)
-}
-
-func setNestedPhase(u *unstructured.Unstructured, value stream.Phase, path ...string) error {
-	return unstructured.SetNestedField(u.Object, string(value), path...)
 }
 
 func getNestedBool(u *unstructured.Unstructured, path ...string) (bool, bool, error) {

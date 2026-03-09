@@ -24,6 +24,8 @@ const (
 )
 
 type Definition interface {
+	job.ConfiguratorProvider
+
 	// GetPhase returns the current phase of the stream definition.
 	GetPhase() Phase
 
@@ -58,9 +60,6 @@ type Definition interface {
 
 	// ToOwnerReference converts the stream definition to an owner reference.
 	ToOwnerReference() metav1.OwnerReference
-
-	// ToConfiguratorProvider converts the stream definition to a JobConfiguratorProvider.
-	ToConfiguratorProvider() job.ConfiguratorProvider
 
 	// GetJobTemplate returns the job template reference based on the stream definition and backfill request.
 	GetJobTemplate(request *v1.BackfillRequest) types.NamespacedName

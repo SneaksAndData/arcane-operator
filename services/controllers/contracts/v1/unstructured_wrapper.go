@@ -2,41 +2,60 @@ package v1
 
 import (
 	"errors"
+	"fmt"
 
 	v1 "github.com/SneaksAndData/arcane-operator/pkg/apis/streaming/v1"
+	"github.com/SneaksAndData/arcane-operator/services/controllers/contracts/common"
+	"github.com/SneaksAndData/arcane-operator/services/controllers/contracts/status_v0"
 	"github.com/SneaksAndData/arcane-operator/services/controllers/stream"
 	"github.com/SneaksAndData/arcane-operator/services/job"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 )
 
 var (
-	_ stream.Definition = (*ExecutionSettings)(nil)
-	// _ job.ConfiguratorProvider    = (*ExecutionSettings)(nil)
-	// _ job.SecretReferenceProvider = (*ExecutionSettings)(nil)
+	_ stream.Definition           = (*ExecutionSettings)(nil)
+	_ job.ConfiguratorProvider    = (*ExecutionSettings)(nil)
+	_ job.SecretReferenceProvider = (*ExecutionSettings)(nil)
 )
 
-type executionSettingsSpec struct {
-	ExecutionSettings struct {
-		Suspended  bool   `json:"suspended"`
-		APIVersion string `json:"apiVersion"`
-	} `json:"execution"`
-}
-
 type ExecutionSettings struct {
-	*StatusWrapper
-	spec executionSettingsSpec
+	common.SecretReferenceReader
+	*status_v0.StatusWrapper
+	*common.ConfiguratorProvider
+	*common.OwnerReferenceProvider
+	Underlying *unstructured.Unstructured
+
+	spec struct {
+		ExecutionSettings struct {
+			Suspended              bool                    `json:"suspended"`
+			APIVersion             string                  `json:"apiVersion"`
+			BackfillJobTemplateRef *corev1.ObjectReference `json:"backfillJobTemplateRef,omitempty"`
+			StreamingBackend       struct {
+				Realtime *struct {
+					ChangeCaptureInterval string                 `json:"changeCaptureInterval"`
+					JobTemplateRef        corev1.ObjectReference `json:"jobTemplateRef"`
+				} `json:"realtime,omitempty"`
+				Batch *struct {
+					Schedule       string                 `json:"schedule"`
+					JobTemplateRef corev1.ObjectReference `json:"jobTemplateRef"`
+				} `json:"batch,omitempty"`
+			} `json:"streamingBackend"`
+		} `json:"execution"`
+	}
 }
 
 func NewExecutionSettings(u *unstructured.Unstructured) *ExecutionSettings {
-	return &ExecutionSettings{
-		StatusWrapper: &StatusWrapper{
-			underlying: u,
-		},
+	w := &ExecutionSettings{
+		Underlying: u,
 	}
+	w.SecretReferenceReader = common.NewSecretReferenceReader(u)
+	w.ConfiguratorProvider = common.NewConfiguratorProvider(u, w)
+	w.OwnerReferenceProvider = common.NewOwnerReferenceProvider(u)
+	w.StatusWrapper = status_v0.NewStatusWrapper(u)
+	return w
 }
 
 func (e *ExecutionSettings) Suspended() bool {
@@ -45,66 +64,52 @@ func (e *ExecutionSettings) Suspended() bool {
 
 func (e *ExecutionSettings) SetSuspended(suspended bool) error {
 	e.spec.ExecutionSettings.Suspended = suspended
-	u, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&e.spec.ExecutionSettings)
+	err := e.deserializeTo(e.Underlying)
 	if err != nil {
 		return err
 	}
-	spec, ok := e.underlying.Object["spec"].(map[string]interface{})
-	if !ok {
-		return errors.New("failed to convert spec to map[string]interface{}")
-	}
-
-	spec["execution"] = u
 	return nil
 }
 
-func (e *ExecutionSettings) LastAppliedConfiguration() string {
-	//TODO implement me
-	panic("implement me")
-}
-
 func (e *ExecutionSettings) NamespacedName() types.NamespacedName {
-	//TODO implement me
-	panic("implement me")
+	return types.NamespacedName{
+		Namespace: e.Underlying.GetNamespace(),
+		Name:      e.Underlying.GetName(),
+	}
 }
 
 func (e *ExecutionSettings) ToUnstructured() *unstructured.Unstructured {
-	//TODO implement me
-	panic("implement me")
+	return e.Underlying
 }
 
 func (e *ExecutionSettings) StateString() string {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (e *ExecutionSettings) ToOwnerReference() metav1.OwnerReference {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (e *ExecutionSettings) ToConfiguratorProvider() job.ConfiguratorProvider {
-	//TODO implement me
-	panic("implement me")
+	phase := e.GetPhase()
+	return fmt.Sprintf("phase=%s", phase)
 }
 
 func (e *ExecutionSettings) GetJobTemplate(request *v1.BackfillRequest) types.NamespacedName {
-	//TODO implement me
-	panic("implement me")
-}
+	if request != nil {
+		return types.NamespacedName{
+			Name:      e.spec.ExecutionSettings.BackfillJobTemplateRef.Name,
+			Namespace: e.spec.ExecutionSettings.BackfillJobTemplateRef.Namespace,
+		}
+	}
 
-func (e *ExecutionSettings) GetReferenceForSecret(name string) (*corev1.LocalObjectReference, error) {
-	//TODO implement me
-	panic("implement me")
+	if e.spec.ExecutionSettings.StreamingBackend.Realtime != nil {
+		return types.NamespacedName{
+			Name:      e.spec.ExecutionSettings.StreamingBackend.Realtime.JobTemplateRef.Name,
+			Namespace: e.spec.ExecutionSettings.StreamingBackend.Realtime.JobTemplateRef.Namespace,
+		}
+	}
+
+	return types.NamespacedName{
+		Name:      e.spec.ExecutionSettings.StreamingBackend.Batch.JobTemplateRef.Name,
+		Namespace: e.spec.ExecutionSettings.StreamingBackend.Batch.JobTemplateRef.Namespace,
+	}
 }
 
 func (e *ExecutionSettings) Validate() error {
-	err := e.StatusWrapper.validate()
-	if err != nil {
-		return err
-	}
-
-	spec, ok := e.underlying.Object["spec"].(map[string]interface{})
+	spec, ok := e.Underlying.Object["spec"].(map[string]interface{})
 	if !ok {
 		return errors.New("failed to convert spec to map[string]interface{}")
 	}
@@ -114,10 +119,34 @@ func (e *ExecutionSettings) Validate() error {
 		return errors.New("failed to convert execution to map[string]interface{}")
 	}
 
-	err = runtime.DefaultUnstructuredConverter.FromUnstructured(map[string]interface{}{"execution": execution}, &e.spec)
+	err := runtime.DefaultUnstructuredConverter.FromUnstructured(map[string]interface{}{"execution": execution}, &e.spec)
 	if err != nil {
 		return err
 	}
 
+	err = e.ExtractPhase()
+	if err != nil { // coverage-ignore
+		return err
+	}
+
+	err = e.ExtractConfigurationHash()
+	if err != nil { // coverage-ignore
+		return err
+	}
+
+	return nil
+}
+
+func (e *ExecutionSettings) deserializeTo(unstructured *unstructured.Unstructured) error {
+	u, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&e.spec.ExecutionSettings)
+	if err != nil {
+		return err
+	}
+
+	spec, ok := unstructured.Object["spec"].(map[string]interface{})
+	if !ok {
+		return errors.New("failed to convert spec to map[string]interface{}")
+	}
+	spec["execution"] = u
 	return nil
 }
