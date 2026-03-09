@@ -27,7 +27,7 @@ func NewMockDefinitionWrapper(mock *testv1.MockStreamDefinition) (*MockDefinitio
 	wrapper := &MockDefinitionWrapper{
 		underlying: mock,
 	}
-	if err := wrapper.validate(); err != nil {
+	if err := wrapper.Validate(); err != nil {
 		return nil, err
 	}
 	return wrapper, nil
@@ -226,8 +226,8 @@ func (m *MockDefinitionWrapper) JobConfigurator() (job.Configurator, error) {
 	return configurator, nil
 }
 
-// validate validates the underlying mock definition and extracts job references.
-func (m *MockDefinitionWrapper) validate() error {
+// Validate validates the underlying mock definition and extracts job references.
+func (m *MockDefinitionWrapper) Validate() error {
 	if m.underlying == nil {
 		return fmt.Errorf("underlying MockStreamDefinition is nil")
 	}
