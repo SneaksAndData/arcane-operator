@@ -12,13 +12,13 @@ type SecretReferenceReader struct {
 	underlying *unstructured.Unstructured
 }
 
-func NewSecretReferenceReader(u *unstructured.Unstructured) SecretReferenceReader { // coverage-ignore
+func NewSecretReferenceReader(u *unstructured.Unstructured) SecretReferenceReader {
 	return SecretReferenceReader{
 		underlying: u,
 	}
 }
 
-func (u *SecretReferenceReader) GetReferenceForSecret(fieldName string) (*corev1.LocalObjectReference, error) {
+func (u *SecretReferenceReader) GetReferenceForSecret(fieldName string) (*corev1.LocalObjectReference, error) { // coverage-ignore (should be tested in integration tests)
 	secretRef, found, err := unstructured.NestedFieldCopy(u.underlying.Object, "spec", fieldName)
 	if err != nil || !found { // coverage-ignore
 		return nil, fmt.Errorf("spec/%s field not found in object", fieldName)

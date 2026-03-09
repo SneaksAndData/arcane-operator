@@ -13,14 +13,14 @@ type ConfiguratorProvider struct {
 	parent     stream.Definition
 }
 
-func NewConfiguratorProvider(u *unstructured.Unstructured, parent stream.Definition) *ConfiguratorProvider { // coverage-ignore
+func NewConfiguratorProvider(u *unstructured.Unstructured, parent stream.Definition) *ConfiguratorProvider {
 	return &ConfiguratorProvider{
 		underlying: u,
 		parent:     parent,
 	}
 }
 
-func (c *ConfiguratorProvider) JobConfigurator() (job.Configurator, error) {
+func (c *ConfiguratorProvider) JobConfigurator() (job.Configurator, error) { // coverage-ignore (should be tested in integration tests)
 	configurator := job.NewConfiguratorChainBuilder().
 		WithConfigurator(job.NewNameConfigurator(c.underlying.GetName())).
 		WithConfigurator(job.NewNamespaceConfigurator(c.underlying.GetNamespace())).
