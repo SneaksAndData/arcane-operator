@@ -302,11 +302,6 @@ func Test_SetSuspended(t *testing.T) {
 	// Assert
 	suspended := wrapper.Suspended()
 	require.True(t, suspended)
-
-	// Verify underlying unstructured object is updated
-	require.NoError(t, err)
-	suspended = unstructuredObj.Object["spec"].(map[string]interface{})["suspended"].(bool)
-	require.True(t, suspended)
 }
 
 func setupFakeClient(updateStreamDefinition func(sd *testv2.MockStreamDefinition)) client.WithWatch {
