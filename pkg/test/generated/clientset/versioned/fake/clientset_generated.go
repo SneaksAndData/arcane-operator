@@ -23,6 +23,8 @@ import (
 	clientset "github.com/SneaksAndData/arcane-operator/pkg/test/generated/clientset/versioned"
 	streamingv1 "github.com/SneaksAndData/arcane-operator/pkg/test/generated/clientset/versioned/typed/streaming/v1"
 	fakestreamingv1 "github.com/SneaksAndData/arcane-operator/pkg/test/generated/clientset/versioned/typed/streaming/v1/fake"
+	streamingv2 "github.com/SneaksAndData/arcane-operator/pkg/test/generated/clientset/versioned/typed/streaming/v2"
+	fakestreamingv2 "github.com/SneaksAndData/arcane-operator/pkg/test/generated/clientset/versioned/typed/streaming/v2/fake"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
@@ -36,7 +38,7 @@ import (
 // without applying any field management, validations and/or defaults. It shouldn't be considered a replacement
 // for a real clientset and is mostly useful in simple unit tests.
 //
-// DEPRECATED: NewClientset replaces this with support for field management, which significantly improves
+// Deprecated: NewClientset replaces this with support for field management, which significantly improves
 // server side apply testing. NewClientset is only available when apply configurations are generated (e.g.
 // via --with-applyconfig).
 func NewSimpleClientset(objects ...runtime.Object) *Clientset {
@@ -52,8 +54,8 @@ func NewSimpleClientset(objects ...runtime.Object) *Clientset {
 	cs.AddReactor("*", "*", testing.ObjectReaction(o))
 	cs.AddWatchReactor("*", func(action testing.Action) (handled bool, ret watch.Interface, err error) {
 		var opts metav1.ListOptions
-		if watchActcion, ok := action.(testing.WatchActionImpl); ok {
-			opts = watchActcion.ListOptions
+		if watchAction, ok := action.(testing.WatchActionImpl); ok {
+			opts = watchAction.ListOptions
 		}
 		gvr := action.GetResource()
 		ns := action.GetNamespace()
@@ -82,6 +84,17 @@ func (c *Clientset) Discovery() discovery.DiscoveryInterface {
 
 func (c *Clientset) Tracker() testing.ObjectTracker {
 	return c.tracker
+}
+
+// IsWatchListSemanticsSupported informs the reflector that this client
+// doesn't support WatchList semantics.
+//
+// This is a synthetic method whose sole purpose is to satisfy the optional
+// interface check performed by the reflector.
+// Returning true signals that WatchList can NOT be used.
+// No additional logic is implemented here.
+func (c *Clientset) IsWatchListSemanticsUnSupported() bool {
+	return true
 }
 
 // NewClientset returns a clientset that will respond with the provided objects.
@@ -128,4 +141,9 @@ var (
 // StreamingV1 retrieves the StreamingV1Client
 func (c *Clientset) StreamingV1() streamingv1.StreamingV1Interface {
 	return &fakestreamingv1.FakeStreamingV1{Fake: &c.Fake}
+}
+
+// StreamingV2 retrieves the StreamingV2Client
+func (c *Clientset) StreamingV2() streamingv2.StreamingV2Interface {
+	return &fakestreamingv2.FakeStreamingV2{Fake: &c.Fake}
 }

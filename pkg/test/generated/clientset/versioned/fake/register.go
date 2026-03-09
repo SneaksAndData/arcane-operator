@@ -20,6 +20,7 @@ package fake
 
 import (
 	streamingv1 "github.com/SneaksAndData/arcane-operator/pkg/test/apis_test/streaming/v1"
+	streamingv2 "github.com/SneaksAndData/arcane-operator/pkg/test/apis_test/streaming/v2"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
@@ -32,6 +33,7 @@ var codecs = serializer.NewCodecFactory(scheme)
 
 var localSchemeBuilder = runtime.SchemeBuilder{
 	streamingv1.AddToScheme,
+	streamingv2.AddToScheme,
 }
 
 // AddToScheme adds all types of this clientset into the given scheme. This allows composition
