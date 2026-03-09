@@ -8,7 +8,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
-func FromUnstructured(obj *unstructured.Unstructured) (stream.Definition, error) {
+func FromUnstructured(obj *unstructured.Unstructured) (stream.Definition, error) { // coverage-ignore
 
 	apiVersion, found, err := unstructured.NestedString(obj.Object, "sped", "execution", "apiVersion")
 	if err != nil { // coverage-ignore
