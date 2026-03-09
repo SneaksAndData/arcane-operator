@@ -20,6 +20,8 @@ package v2
 
 // StreamingBackendApplyConfiguration represents a declarative configuration of the StreamingBackend type for use
 // with apply.
+//
+// StreamingBackend represents the backend configuration for streaming, including both real-time and batch processing options.
 type StreamingBackendApplyConfiguration struct {
 	// Realtime represents the backend configuration for real-time streaming.
 	Realtime *RealtimeBackendApplyConfiguration `json:"realtime,omitempty"`

@@ -24,6 +24,9 @@ import (
 
 // BatchBackendApplyConfiguration represents a declarative configuration of the BatchBackend type for use
 // with apply.
+//
+// BatchBackend represents the backend configuration for batch processing, including the cron schedule and a reference
+// to the job template.
 type BatchBackendApplyConfiguration struct {
 	// Schedule represents the cron schedule for batch processing.
 	Schedule *string `json:"schedule,omitempty"`

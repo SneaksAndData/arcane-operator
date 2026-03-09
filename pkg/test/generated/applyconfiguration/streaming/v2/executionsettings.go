@@ -24,6 +24,8 @@ import (
 
 // ExecutionSettingsApplyConfiguration represents a declarative configuration of the ExecutionSettings type for use
 // with apply.
+//
+// ExecutionSettings represents the execution settings for a stream, including suspension status and backend configuration.
 type ExecutionSettingsApplyConfiguration struct {
 	// APIVersion represents the API version of the execution settings.
 	APIVersion *string `json:"apiVersion,omitempty"`

@@ -24,6 +24,9 @@ import (
 
 // RealtimeBackendApplyConfiguration represents a declarative configuration of the RealtimeBackend type for use
 // with apply.
+//
+// RealtimeBackend represents the backend configuration for real-time streaming, including the change capture interval
+// and a reference to the job template.
 type RealtimeBackendApplyConfiguration struct {
 	// ChangeCaptureInterval represents the interval at which changes are captured for real-time processing.
 	ChangeCaptureInterval *string `json:"changeCaptureInterval,omitempty"`
