@@ -21,18 +21,21 @@ var (
 
 type UnstructuredWrapper struct {
 	StatusWrapper
+
 	Underlying      *unstructured.Unstructured
 	suspended       bool
 	streamingJobRef corev1.ObjectReference
 	backfillJobRef  corev1.ObjectReference
 }
 
-func NewUnstructuredWrapper() *UnstructuredWrapper {
-	w := &UnstructuredWrapper{
-		Underlying: &unstructured.Unstructured{},
+// NewUnstructuredWrapper creates a new UnstructuredWrapper from the given unstructured object.
+func NewUnstructuredWrapper(obj *unstructured.Unstructured) stream.Definition {
+	return &UnstructuredWrapper{
+		Underlying: obj,
+		StatusWrapper: StatusWrapper{
+			Underlying: obj,
+		},
 	}
-	w.StatusWrapper.Underlying = w.Underlying
-	return w
 }
 
 func (u *UnstructuredWrapper) Suspended() bool {

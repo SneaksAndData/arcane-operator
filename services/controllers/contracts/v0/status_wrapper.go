@@ -28,19 +28,19 @@ func (s *StatusWrapper) SetPhase(phase stream.Phase) error {
 	return setNestedPhase(s.Underlying, phase, "status", "phase")
 }
 
-func (u *StatusWrapper) RecomputeConfiguration(request *v1.BackfillRequest) error {
-	currentConfig, err := u.CurrentConfiguration(request)
+func (s *StatusWrapper) RecomputeConfiguration(request *v1.BackfillRequest) error {
+	currentConfig, err := s.CurrentConfiguration(request)
 	if err != nil { // coverage-ignore
 		return err
 	}
 
-	u.Underlying.Object["status"].(map[string]interface{})["configurationHash"] = currentConfig
-	u.configuration = currentConfig
+	s.Underlying.Object["status"].(map[string]interface{})["configurationHash"] = currentConfig
+	s.configuration = currentConfig
 	return nil
 }
 
-func (u *StatusWrapper) CurrentConfiguration(request *v1.BackfillRequest) (string, error) {
-	spec, found, err := unstructured.NestedFieldCopy(u.Underlying.Object, "spec")
+func (s *StatusWrapper) CurrentConfiguration(request *v1.BackfillRequest) (string, error) {
+	spec, found, err := unstructured.NestedFieldCopy(s.Underlying.Object, "spec")
 
 	if err != nil { // coverage-ignore
 		return "", err
@@ -74,11 +74,11 @@ func (u *StatusWrapper) CurrentConfiguration(request *v1.BackfillRequest) (strin
 	return fmt.Sprintf("%x:%x", selfConfiguration, requestConfiguration), nil
 }
 
-func (u *UnstructuredWrapper) LastAppliedConfiguration() string {
-	return u.configuration
+func (s *StatusWrapper) LastAppliedConfiguration() string {
+	return s.configuration
 }
 
-func (u *StatusWrapper) SetConditions(conditions []metav1.Condition) error {
+func (s *StatusWrapper) SetConditions(conditions []metav1.Condition) error { // coverage-ignore
 	// Convert conditions to []interface{} for unstructured
 	conditionsSlice := make([]interface{}, len(conditions))
 	for i, cond := range conditions {
@@ -89,11 +89,11 @@ func (u *StatusWrapper) SetConditions(conditions []metav1.Condition) error {
 		conditionsSlice[i] = condMap
 	}
 
-	return unstructured.SetNestedSlice(u.Underlying.Object, conditionsSlice, "status", "conditions")
+	return unstructured.SetNestedSlice(s.Underlying.Object, conditionsSlice, "status", "conditions")
 }
 
-func (u *StatusWrapper) ComputeConditions(bfr *v1.BackfillRequest) []metav1.Condition { // coverage-ignore
-	switch u.GetPhase() {
+func (s *StatusWrapper) ComputeConditions(bfr *v1.BackfillRequest) []metav1.Condition { // coverage-ignore
+	switch s.GetPhase() {
 	case stream.Pending:
 		return []metav1.Condition{
 			{
@@ -159,27 +159,27 @@ func (u *StatusWrapper) ComputeConditions(bfr *v1.BackfillRequest) []metav1.Cond
 	}
 }
 
-func (u *StatusWrapper) extractConfigurationHash() error {
-	currentConfiguration, found, err := getNestedString(u.Underlying, "status", "configurationHash")
+func (s *StatusWrapper) extractConfigurationHash() error {
+	currentConfiguration, found, err := getNestedString(s.Underlying, "status", "configurationHash")
 	if err != nil { // coverage-ignore
 		return err
 	}
 	if !found {
-		u.configuration = ""
+		s.configuration = ""
 	}
-	u.configuration = currentConfiguration
+	s.configuration = currentConfiguration
 	return nil
 }
 
-func (u *StatusWrapper) extractPhase() error {
-	phase, found, err := getNestedString(u.Underlying, "status", "phase")
+func (s *StatusWrapper) extractPhase() error {
+	phase, found, err := getNestedString(s.Underlying, "status", "phase")
 	if err != nil { // coverage-ignore
 		return err
 	}
 	if !found {
-		u.phase = stream.New
+		s.phase = stream.New
 	} else {
-		u.phase = stream.Phase(phase)
+		s.phase = stream.Phase(phase)
 	}
 	return nil
 }
