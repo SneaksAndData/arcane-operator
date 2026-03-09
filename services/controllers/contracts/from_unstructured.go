@@ -19,7 +19,7 @@ func FromUnstructured(obj *unstructured.Unstructured) (stream.Definition, error)
 
 	switch {
 	case !found || apiVersion == "":
-		v = &v0.UnstructuredWrapper{Underlying: obj}
+		v = v0.NewUnstructuredWrapper(obj)
 	default:
 		return nil, fmt.Errorf("unknown apiVersion: %s", apiVersion)
 	}

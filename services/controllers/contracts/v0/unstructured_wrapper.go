@@ -30,6 +30,16 @@ type UnstructuredWrapper struct {
 	backfillJobRef  corev1.ObjectReference
 }
 
+// NewUnstructuredWrapper creates a new UnstructuredWrapper from the given unstructured object.
+func NewUnstructuredWrapper(obj *unstructured.Unstructured) stream.Definition {
+	return &UnstructuredWrapper{
+		Underlying: obj,
+		StatusWrapper: StatusWrapper{
+			Underlying: obj,
+		},
+	}
+}
+
 func (u *UnstructuredWrapper) Suspended() bool {
 	return u.suspended
 }
