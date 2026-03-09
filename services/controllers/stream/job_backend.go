@@ -153,7 +153,7 @@ func (j *JobBackend) startNewJob(ctx context.Context, definition Definition, req
 		return fmt.Errorf("failed to compute stream configuration: %w", err)
 	}
 
-	definitionConfigurator, err := definition.ToConfiguratorProvider().JobConfigurator()
+	definitionConfigurator, err := definition.JobConfigurator()
 	if err != nil { // coverage-ignore
 		logger.V(0).Error(err, "failed to get definition configurator")
 		return err
