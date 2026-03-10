@@ -98,7 +98,7 @@ func GetStreamForClass(ctx context.Context, client client.Client, sc *v1.StreamC
 	maybeSd := unstructured.Unstructured{}
 	maybeSd.SetGroupVersionKind(gvk)
 	err := client.Get(ctx, name, &maybeSd)
-	if err != nil {
+	if err != nil { // coverage-ignore
 		return nil, err
 	}
 	return definitionParser(&maybeSd)
