@@ -65,7 +65,7 @@ func (e *ExecutionSettings) Suspended() bool {
 func (e *ExecutionSettings) SetSuspended(suspended bool) error {
 	e.spec.ExecutionSettings.Suspended = suspended
 	err := e.deserializeTo(e.Underlying)
-	if err != nil {
+	if err != nil { // coverage-ignore
 		return err
 	}
 	return nil
@@ -120,7 +120,7 @@ func (e *ExecutionSettings) Validate() error {
 	}
 
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(map[string]interface{}{"execution": execution}, &e.spec)
-	if err != nil {
+	if err != nil { // coverage-ignore
 		return err
 	}
 
@@ -146,7 +146,7 @@ func (e *ExecutionSettings) GetBackend() stream.Backend {
 
 func (e *ExecutionSettings) deserializeTo(unstructured *unstructured.Unstructured) error {
 	u, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&e.spec.ExecutionSettings)
-	if err != nil {
+	if err != nil { // coverage-ignore
 		return err
 	}
 
