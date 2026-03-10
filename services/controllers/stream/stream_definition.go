@@ -15,7 +15,7 @@ import (
 type Backend string
 
 const (
-	BatchJob Backend = "BatchJob"
+	BatchJob Backend = "BatchJobBackend"
 	CronJob  Backend = "CronJob"
 )
 

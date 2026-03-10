@@ -204,7 +204,7 @@ func Test_GetStreamingJobName(t *testing.T) {
 				Namespace: "default",
 			},
 			StreamingBackend: testv2.StreamingBackend{
-				Realtime: &testv2.RealtimeBackend{
+				BatchJobBackend: &testv2.BatchJobBackend{
 					JobTemplateRef: corev1.ObjectReference{
 						Name:      "jobTemplate1",
 						Namespace: "default",
@@ -348,7 +348,7 @@ func TestUnstructuredWrapper_GetBackend_BatchJob(t *testing.T) {
 				Namespace: "default",
 			},
 			StreamingBackend: testv2.StreamingBackend{
-				Realtime: &testv2.RealtimeBackend{
+				BatchJobBackend: &testv2.BatchJobBackend{
 					JobTemplateRef: corev1.ObjectReference{
 						Name:      "jobTemplate1",
 						Namespace: "default",
@@ -382,7 +382,7 @@ func TestUnstructuredWrapper_GetBackend_CronJob(t *testing.T) {
 				Namespace: "default",
 			},
 			StreamingBackend: testv2.StreamingBackend{
-				Batch: &testv2.BatchBackend{
+				CronJobBackend: &testv2.CronJobBackend{
 					JobTemplateRef: corev1.ObjectReference{
 						Name:      "jobTemplate1",
 						Namespace: "default",

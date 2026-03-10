@@ -34,11 +34,11 @@ type ExecutionSettings struct {
 			APIVersion             string                  `json:"apiVersion"`
 			BackfillJobTemplateRef *corev1.ObjectReference `json:"backfillJobTemplateRef,omitempty"`
 			StreamingBackend       struct {
-				Realtime *struct {
+				BatchJobBackend *struct {
 					ChangeCaptureInterval string                 `json:"changeCaptureInterval"`
 					JobTemplateRef        corev1.ObjectReference `json:"jobTemplateRef"`
 				} `json:"realtime,omitempty"`
-				Batch *struct {
+				CronJobBackend *struct {
 					Schedule       string                 `json:"schedule"`
 					JobTemplateRef corev1.ObjectReference `json:"jobTemplateRef"`
 				} `json:"batch,omitempty"`
@@ -95,16 +95,16 @@ func (e *ExecutionSettings) GetJobTemplate(request *v1.BackfillRequest) types.Na
 		}
 	}
 
-	if e.spec.ExecutionSettings.StreamingBackend.Realtime != nil {
+	if e.spec.ExecutionSettings.StreamingBackend.BatchJobBackend != nil {
 		return types.NamespacedName{
-			Name:      e.spec.ExecutionSettings.StreamingBackend.Realtime.JobTemplateRef.Name,
-			Namespace: e.spec.ExecutionSettings.StreamingBackend.Realtime.JobTemplateRef.Namespace,
+			Name:      e.spec.ExecutionSettings.StreamingBackend.BatchJobBackend.JobTemplateRef.Name,
+			Namespace: e.spec.ExecutionSettings.StreamingBackend.BatchJobBackend.JobTemplateRef.Namespace,
 		}
 	}
 
 	return types.NamespacedName{
-		Name:      e.spec.ExecutionSettings.StreamingBackend.Batch.JobTemplateRef.Name,
-		Namespace: e.spec.ExecutionSettings.StreamingBackend.Batch.JobTemplateRef.Namespace,
+		Name:      e.spec.ExecutionSettings.StreamingBackend.CronJobBackend.JobTemplateRef.Name,
+		Namespace: e.spec.ExecutionSettings.StreamingBackend.CronJobBackend.JobTemplateRef.Namespace,
 	}
 }
 
@@ -138,10 +138,10 @@ func (e *ExecutionSettings) Validate() error {
 }
 
 func (e *ExecutionSettings) GetBackend() stream.Backend {
-	if e.spec.ExecutionSettings.StreamingBackend.Realtime != nil {
-		return stream.BatchJob
+	if e.spec.ExecutionSettings.StreamingBackend.CronJobBackend != nil {
+		return stream.CronJob
 	}
-	return stream.CronJob
+	return stream.BatchJob
 }
 
 func (e *ExecutionSettings) deserializeTo(unstructured *unstructured.Unstructured) error {
