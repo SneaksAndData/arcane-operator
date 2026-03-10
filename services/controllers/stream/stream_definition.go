@@ -12,6 +12,13 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+type Backend string
+
+const (
+	BatchJob Backend = "BatchJob"
+	CronJob  Backend = "CronJob"
+)
+
 type Phase string
 
 const (
