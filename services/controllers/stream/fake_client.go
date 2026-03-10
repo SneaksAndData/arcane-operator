@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	v1 "github.com/SneaksAndData/arcane-operator/pkg/apis/streaming/v1"
-	testv1 "github.com/SneaksAndData/arcane-operator/pkg/test/apis_test/streaming/v1"
+	testv1 "github.com/SneaksAndData/arcane-operator/pkg/test/apis_test/streaming/v2"
 	"github.com/stretchr/testify/require"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -24,12 +24,15 @@ func SetupClient(objectName types.NamespacedName, definition func(definition *te
 	_ = v1.AddToScheme(scheme)
 
 	obj := &testv1.MockStreamDefinition{
-		TypeMeta:   metav1.TypeMeta{APIVersion: "streaming.sneaksanddata.com/v1", Kind: "MockStreamDefinition"},
+		TypeMeta:   metav1.TypeMeta{APIVersion: "streaming.sneaksanddata.com/v2", Kind: "MockStreamDefinition"},
 		ObjectMeta: metav1.ObjectMeta{Name: objectName.Name, Namespace: objectName.Namespace},
 		Spec: testv1.MockStreamDefinitionSpec{
 			Source:      "sourceA",
 			Destination: "destinationB",
-			Suspended:   true,
+			ExecutionSettings: testv1.ExecutionSettings{
+				APIVersion: "v1",
+				Suspended:  true,
+			},
 		},
 	}
 	if definition != nil {
@@ -61,7 +64,7 @@ func CombinedB(funcs ...func(definition *crfake.ClientBuilder)) func(definition 
 
 func WithSuspendedSpec(spec bool) func(definition *testv1.MockStreamDefinition) {
 	return func(definition *testv1.MockStreamDefinition) {
-		definition.Spec.Suspended = spec
+		definition.Spec.ExecutionSettings.Suspended = spec
 	}
 }
 
