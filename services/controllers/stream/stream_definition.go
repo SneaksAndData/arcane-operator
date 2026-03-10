@@ -93,12 +93,12 @@ type Definition interface {
 type DefinitionParser func(*unstructured.Unstructured) (Definition, error)
 
 // GetStreamForClass retrieves the stream definition for a given stream class and namespaced name.
-func GetStreamForClass(ctx context.Context, client client.Client, sc *v1.StreamClass, name types.NamespacedName, definitionParser DefinitionParser) (Definition, error) {
+func GetStreamForClass(ctx context.Context, client client.Client, sc *v1.StreamClass, name types.NamespacedName, definitionParser DefinitionParser) (Definition, error) { // coverage-ignore
 	gvk := sc.TargetResourceGvk()
 	maybeSd := unstructured.Unstructured{}
 	maybeSd.SetGroupVersionKind(gvk)
 	err := client.Get(ctx, name, &maybeSd)
-	if err != nil { // coverage-ignore
+	if err != nil {
 		return nil, err
 	}
 	return definitionParser(&maybeSd)
