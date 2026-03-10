@@ -542,29 +542,6 @@ func Test_UpdatePhase_Failed_to_Backfilling(t *testing.T) {
 	AssertBackfillRequestNotCompleted(t, k8sClient, objectName)
 }
 
-func Test_UpdatePhase_Scheduled_to_Pending(t *testing.T) {
-	// Arrange
-	name := types.NamespacedName{Name: "stream1", Namespace: "default"}
-	k8sClient := SetupClient(objectName,
-		Combined(WithNamedStreamDefinition(name), WithPhase(Failed), WithSuspendedSpec(false)),
-		WithBackfillRequest(objectName),
-	)
-
-	mockCtrl := gomock.NewController(t)
-	defer mockCtrl.Finish()
-	mockJob := batchv1.Job{ObjectMeta: metav1.ObjectMeta{Name: objectName.Name, Namespace: objectName.Namespace}}
-	reconciler := createReconciler(k8sClient, &mockJob, mockCtrl)
-
-	// Act
-	result, err := reconciler.Reconcile(t.Context(), reconcile.Request{NamespacedName: name})
-	require.NoError(t, err)
-	require.Equal(t, result, reconcile.Result{})
-
-	// Assert
-	AssertStreamDefinitionPhase(t, k8sClient, objectName, Backfilling)
-	AssertBackfillRequestNotCompleted(t, k8sClient, objectName)
-}
-
 func createReconciler(k8sClient client.Client, mockJob *batchv1.Job, mockCtrl *gomock.Controller) reconcile.Reconciler {
 	var jobBuilder *mocks.MockJobBuilder
 	if mockJob != nil {
