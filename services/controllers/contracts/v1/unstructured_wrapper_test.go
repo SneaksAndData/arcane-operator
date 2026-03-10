@@ -338,22 +338,73 @@ func TestUnstructuredWrapper_GetBackend_Default(t *testing.T) {
 	require.Equal(t, stream.BatchJob, backend)
 }
 
-//func TestUnstructuredWrapper_GetBackend_Default(t *testing.T) {
-//	fakeClient := setupFakeClient(nil)
-//	unstructuredObj, err := getUnstructured(t, fakeClient)
-//	require.NoError(t, err)
-//
-//	wrapper := NewExecutionSettings(&unstructuredObj)
-//	err = wrapper.Validate()
-//	require.NotNil(t, wrapper)
-//	require.NoError(t, err)
-//
-//	// Act
-//	backend := wrapper.GetBackend()
-//
-//	// Assert
-//	require.Equal(t, stream.BatchJob, backend)
-//}
+func TestUnstructuredWrapper_GetBackend_BatchJob(t *testing.T) {
+	fakeClient := setupFakeClient(func(sd *testv2.MockStreamDefinition) {
+		sd.Spec.ExecutionSettings = testv2.ExecutionSettings{
+			APIVersion: "v1",
+			Suspended:  false,
+			BackfillJobTemplateRef: corev1.ObjectReference{
+				Name:      "backfillJobTemplate1",
+				Namespace: "default",
+			},
+			StreamingBackend: testv2.StreamingBackend{
+				Realtime: &testv2.RealtimeBackend{
+					JobTemplateRef: corev1.ObjectReference{
+						Name:      "jobTemplate1",
+						Namespace: "default",
+					},
+				},
+			},
+		}
+	})
+	unstructuredObj, err := getUnstructured(t, fakeClient)
+	require.NoError(t, err)
+
+	wrapper := NewExecutionSettings(&unstructuredObj)
+	err = wrapper.Validate()
+	require.NotNil(t, wrapper)
+	require.NoError(t, err)
+
+	// Act
+	backend := wrapper.GetBackend()
+
+	// Assert
+	require.Equal(t, stream.BatchJob, backend)
+}
+
+func TestUnstructuredWrapper_GetBackend_CronJob(t *testing.T) {
+	fakeClient := setupFakeClient(func(sd *testv2.MockStreamDefinition) {
+		sd.Spec.ExecutionSettings = testv2.ExecutionSettings{
+			APIVersion: "v1",
+			Suspended:  false,
+			BackfillJobTemplateRef: corev1.ObjectReference{
+				Name:      "backfillJobTemplate1",
+				Namespace: "default",
+			},
+			StreamingBackend: testv2.StreamingBackend{
+				Batch: &testv2.BatchBackend{
+					JobTemplateRef: corev1.ObjectReference{
+						Name:      "jobTemplate1",
+						Namespace: "default",
+					},
+				},
+			},
+		}
+	})
+	unstructuredObj, err := getUnstructured(t, fakeClient)
+	require.NoError(t, err)
+
+	wrapper := NewExecutionSettings(&unstructuredObj)
+	err = wrapper.Validate()
+	require.NotNil(t, wrapper)
+	require.NoError(t, err)
+
+	// Act
+	backend := wrapper.GetBackend()
+
+	// Assert
+	require.Equal(t, stream.CronJob, backend)
+}
 
 func setupFakeClient(updateStreamDefinition func(sd *testv2.MockStreamDefinition)) client.WithWatch {
 	sd := testv2.MockStreamDefinition{
