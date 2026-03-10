@@ -241,3 +241,7 @@ func (m *MockDefinitionWrapper) Validate() error {
 
 	return nil
 }
+
+func (m *MockDefinitionWrapper) GetBackend() Backend {
+	return BatchJob
+}
