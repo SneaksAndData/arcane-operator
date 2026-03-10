@@ -137,6 +137,13 @@ func (e *ExecutionSettings) Validate() error {
 	return nil
 }
 
+func (e *ExecutionSettings) GetBackend() stream.Backend {
+	if e.spec.ExecutionSettings.StreamingBackend.Realtime != nil {
+		return stream.BatchJob
+	}
+	return stream.CronJob
+}
+
 func (e *ExecutionSettings) deserializeTo(unstructured *unstructured.Unstructured) error {
 	u, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&e.spec.ExecutionSettings)
 	if err != nil {

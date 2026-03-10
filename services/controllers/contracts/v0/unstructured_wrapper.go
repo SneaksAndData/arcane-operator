@@ -120,6 +120,10 @@ func (u *UnstructuredWrapper) Validate() error {
 	return nil
 }
 
+func (u *UnstructuredWrapper) GetBackend() stream.Backend {
+	return stream.BatchJob
+}
+
 func (u *UnstructuredWrapper) extractStreamingJobRef(from string, target *corev1.ObjectReference) error {
 	uRef, found, err := unstructured.NestedFieldCopy(u.Underlying.Object, "spec", from)
 	if err != nil { // coverage-ignore

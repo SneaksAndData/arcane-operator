@@ -82,6 +82,9 @@ type Definition interface {
 
 	// Validate validates the stream definition and returns an error if any required fields are missing or invalid.
 	Validate() error
+
+	// GetBackend returns the streaming backend type (e.g., BatchJob, CronJob) associated with this stream definition.
+	GetBackend() Backend
 }
 
 // DefinitionParser is a function type that takes an unstructured object and returns a validated Definition or an
