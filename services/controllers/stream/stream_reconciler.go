@@ -277,12 +277,45 @@ func (s *streamReconciler) moveFsm(ctx context.Context, definition Definition, j
 				"BackfillInProgress",
 				"Backfill for stream %s is still in progress", definition.NamespacedName().Name)
 		})
+
+	case phase == Backfilling && definition.GetBackend() != BatchJob:
+		return s.backendResourceManagers[definition.GetBackend()].Remove(ctx, definition, Pending, func() {
+			s.eventRecorder.Eventf(definition.ToUnstructured(),
+				"Normal",
+				"StreamScheduled",
+				"The stream %s has been scheduled", definition.NamespacedName().Name)
+		})
+
+	case phase == Running && definition.GetBackend() != BatchJob:
+		return s.backendResourceManagers[definition.GetBackend()].Remove(ctx, definition, Pending, func() {
+			s.eventRecorder.Eventf(definition.ToUnstructured(),
+				"Normal",
+				"StreamScheduled",
+				"The stream %s has been scheduled", definition.NamespacedName().Name)
+		})
+
+	case phase == Failed && definition.GetBackend() != BatchJob:
+		return s.backendResourceManagers[definition.GetBackend()].Remove(ctx, definition, Pending, func() {
+			s.eventRecorder.Eventf(definition.ToUnstructured(),
+				"Normal",
+				"StreamScheduled",
+				"The stream %s has been scheduled", definition.NamespacedName().Name)
+		})
+
 	case phase == Scheduled && definition.GetBackend() != CronJob:
-		return s.backendResourceManagers[definition.GetBackend()].Apply(ctx, definition, backfillRequest, Pending, s.streamClass, func() {
-			//s.eventRecorder.Eventf(definition.ToUnstructured(),
-			//	"Normal",
-			//	"StreamScheduled",
-			//	"The stream %s has been scheduled", definition.NamespacedName().Name)
+		return s.backendResourceManagers[definition.GetBackend()].Remove(ctx, definition, Pending, func() {
+			s.eventRecorder.Eventf(definition.ToUnstructured(),
+				"Normal",
+				"StreamScheduled",
+				"The stream %s has been scheduled", definition.NamespacedName().Name)
+		})
+
+	case phase == Scheduled && definition.GetBackend() == CronJob:
+		return s.backendResourceManagers[definition.GetBackend()].NoOp(ctx, definition, backfillRequest, Scheduled, func() {
+			s.eventRecorder.Eventf(definition.ToUnstructured(),
+				"Normal",
+				"StreamScheduled",
+				"The stream %s has been scheduled", definition.NamespacedName().Name)
 		})
 	}
 
