@@ -278,6 +278,23 @@ func Test_SetSuspended(t *testing.T) {
 	require.True(t, suspended)
 }
 
+func TestUnstructuredWrapper_GetBackend(t *testing.T) {
+	fakeClient := setupFakeClient(nil)
+	unstructuredObj, err := getUnstructured(t, fakeClient)
+	require.NoError(t, err)
+
+	wrapper := NewUnstructuredWrapper(&unstructuredObj)
+	err = wrapper.Validate()
+	require.NotNil(t, wrapper)
+	require.NoError(t, err)
+
+	// Act
+	backend := wrapper.GetBackend()
+
+	// Assert
+	require.Equal(t, stream.BatchJob, backend)
+}
+
 func setupFakeClient(updateStreamDefinition func(sd *testv1.MockStreamDefinition)) client.WithWatch {
 	sd := testv1.MockStreamDefinition{
 		TypeMeta:   metav1.TypeMeta{APIVersion: "streaming.sneaksanddata.com/v1", Kind: "MockStreamDefinition"},
