@@ -28,6 +28,7 @@ const (
 	Backfilling Phase = "Backfilling"
 	Suspended   Phase = "Suspended"
 	Failed      Phase = "Failed"
+	Scheduled   Phase = "Scheduled"
 )
 
 type Definition interface {
