@@ -112,7 +112,7 @@ func (j *Backend) Apply(ctx context.Context, definition stream.Definition, backf
 		return j.statusManager.UpdateStreamPhase(ctx, definition, backfillRequest, nextPhase, eventFunc)
 	}
 
-	equals, err := j.ResourceReader.CompareConfigurations(ctx, &v1job, definition, FromResource)
+	equals, err := j.CompareConfigurations(ctx, &v1job, definition, FromResource)
 	if err != nil { // coverage-ignore
 		return reconcile.Result{}, err
 	}

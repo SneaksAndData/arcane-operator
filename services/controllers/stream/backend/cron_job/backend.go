@@ -94,7 +94,7 @@ func (c *Backend) Apply(ctx context.Context, definition stream.Definition, backf
 	}
 
 	if !apierrors.IsNotFound(err) {
-		equals, err := c.ResourceReader.CompareConfigurations(ctx, object, definition, FromResource)
+		equals, err := c.CompareConfigurations(ctx, object, definition, FromResource)
 		if err != nil { // coverage-ignore
 			return reconcile.Result{}, err
 		}
@@ -110,7 +110,7 @@ func (c *Backend) Apply(ctx context.Context, definition stream.Definition, backf
 		}
 	}
 
-	job, err := c.BaseResourceManager.BuildJob(ctx, definition, backfillRequest, streamClass)
+	job, err := c.BuildJob(ctx, definition, backfillRequest, streamClass)
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to build job for cronjob backend: %w", err)
 	}

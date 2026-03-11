@@ -18,7 +18,6 @@ import (
 )
 
 type BaseResourceManager struct {
-	phaseManager  stream.StatusManager
 	client        client.Client
 	JobBuilder    stream.JobBuilder
 	EventRecorder record.EventRecorder
