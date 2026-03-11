@@ -34,6 +34,10 @@ func SetupClient(objectName types.NamespacedName, definition func(definition *te
 			ExecutionSettings: testv2.ExecutionSettings{
 				APIVersion: "v1",
 				Suspended:  true,
+				StreamingBackend: testv2.StreamingBackend{
+					BatchJobBackend: &testv2.BatchJobBackend{},
+					CronJobBackend:  nil,
+				},
 			},
 		},
 	}

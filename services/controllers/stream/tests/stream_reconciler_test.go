@@ -106,7 +106,7 @@ func Test_UpdatePhase_Pending_To_Running_recreate_job(t *testing.T) {
 
 func Test_UpdatePhase_Pending_To_Running_not_recreate_job(t *testing.T) {
 	// Arrange
-	definitionHash := "0xdeadbeef" // computed manually for the test definition
+	definitionHash := "5e1983484a43115237742b27e12abbd0" // computed manually for the test definition
 
 	k8sClient := SetupClient(objectName, Combined(WithPhase(stream.Pending), WithNamedStreamDefinition(objectName)), WithConsistentJob(objectName, definitionHash))
 
