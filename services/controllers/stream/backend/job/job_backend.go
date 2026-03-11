@@ -1,4 +1,4 @@
-package stream
+package job
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 
 	v1 "github.com/SneaksAndData/arcane-operator/pkg/apis/streaming/v1"
 	"github.com/SneaksAndData/arcane-operator/services/controllers"
+	"github.com/SneaksAndData/arcane-operator/services/controllers/stream"
 	"github.com/SneaksAndData/arcane-operator/services/job"
 	"github.com/SneaksAndData/arcane-operator/services/watchers"
 	batchv1 "k8s.io/api/batch/v1"
@@ -26,17 +27,17 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-var _ BackendResourceManager = (*JobBackend)(nil)
+var _ stream.BackendResourceManager = (*Backend)(nil)
 
-type JobBackend struct {
+type Backend struct {
 	client        client.Client
-	phaseManager  StatusManager
-	jobBuilder    JobBuilder
+	phaseManager  stream.StatusManager
+	jobBuilder    stream.JobBuilder
 	eventRecorder record.EventRecorder
 }
 
-func NewJobBackend(client client.Client, jobBuilder JobBuilder, eventRecorder record.EventRecorder, phaseManager StatusManager) *JobBackend {
-	return &JobBackend{
+func NewJobBackend(client client.Client, jobBuilder stream.JobBuilder, eventRecorder record.EventRecorder, phaseManager stream.StatusManager) *Backend {
+	return &Backend{
 		client:        client,
 		jobBuilder:    jobBuilder,
 		eventRecorder: eventRecorder,
@@ -44,18 +45,18 @@ func NewJobBackend(client client.Client, jobBuilder JobBuilder, eventRecorder re
 	}
 }
 
-func (j *JobBackend) SetupWithController(cache cache.Cache, scheme *runtime.Scheme, mapper meta.RESTMapper, controller controller.Controller, primaryGvk schema.GroupVersionKind) error {
+func (j *Backend) SetupWithController(cache cache.Cache, scheme *runtime.Scheme, mapper meta.RESTMapper, controller controller.Controller, primaryGvk schema.GroupVersionKind) error {
 	primaryResource := &unstructured.Unstructured{}
 	primaryResource.SetGroupVersionKind(primaryGvk)
 	return watchers.NewTypedSecondaryWatcherBuilder[*batchv1.Job]().
-		WithFilter(NewJobFilter()).
+		WithFilter(NewPredicate()).
 		WithCache(cache).
 		WithHandler(handler.TypedEnqueueRequestForOwner[*batchv1.Job](scheme, mapper, primaryResource, handler.OnlyControllerOwner())).
 		Build().
 		SetupWithController(controller, &batchv1.Job{})
 }
 
-func (j *JobBackend) Get(ctx context.Context, name types.NamespacedName) (*StreamingJob, error) {
+func (j *Backend) Get(ctx context.Context, name types.NamespacedName) (stream.BackendResource, error) {
 	logger := j.getLogger(ctx, name)
 	job := &batchv1.Job{}
 	err := j.client.Get(ctx, name, job)
@@ -65,19 +66,19 @@ func (j *JobBackend) Get(ctx context.Context, name types.NamespacedName) (*Strea
 		return nil, err
 	}
 
-	var streamingJob *StreamingJob
+	var streamingJob stream.BackendResource
 	if errors.IsNotFound(err) {
 		streamingJob = nil
 		logger.V(0).Info("streaming does not exist")
 	} else {
-		streamingJob = (*StreamingJob)(job)
+		streamingJob = FromResource(job)
 		logger.V(0).Info("streaming job found")
 	}
 
 	return streamingJob, nil
 }
 
-func (j *JobBackend) Apply(ctx context.Context, definition Definition, backfillRequest *v1.BackfillRequest, nextPhase Phase, streamClass *v1.StreamClass, eventFunc controllers.EventFunc) (reconcile.Result, error) {
+func (j *Backend) Apply(ctx context.Context, definition stream.Definition, backfillRequest *v1.BackfillRequest, nextPhase stream.Phase, streamClass *v1.StreamClass, eventFunc controllers.EventFunc) (reconcile.Result, error) {
 	logger := j.getLogger(ctx, definition.NamespacedName())
 	v1job := batchv1.Job{}
 	err := j.client.Get(ctx, definition.NamespacedName(), &v1job)
@@ -127,7 +128,7 @@ func (j *JobBackend) Apply(ctx context.Context, definition Definition, backfillR
 	return j.phaseManager.UpdateStreamPhase(ctx, definition, backfillRequest, nextPhase, eventFunc)
 }
 
-func (j *JobBackend) Remove(ctx context.Context, definition Definition, nextPhase Phase, eventFunc controllers.EventFunc) (reconcile.Result, error) {
+func (j *Backend) Remove(ctx context.Context, definition stream.Definition, nextPhase stream.Phase, eventFunc controllers.EventFunc) (reconcile.Result, error) {
 	job := &batchv1.Job{}
 	job.SetName(definition.NamespacedName().Name)
 	job.SetNamespace(definition.NamespacedName().Namespace)
@@ -140,11 +141,11 @@ func (j *JobBackend) Remove(ctx context.Context, definition Definition, nextPhas
 
 }
 
-func (j *JobBackend) NoOp(ctx context.Context, definition Definition, backfillRequest *v1.BackfillRequest, nextPhase Phase, eventFunc controllers.EventFunc) (reconcile.Result, error) {
+func (j *Backend) NoOp(ctx context.Context, definition stream.Definition, backfillRequest *v1.BackfillRequest, nextPhase stream.Phase, eventFunc controllers.EventFunc) (reconcile.Result, error) {
 	return j.phaseManager.UpdateStreamPhase(ctx, definition, backfillRequest, nextPhase, eventFunc)
 }
 
-func (j *JobBackend) startNewJob(ctx context.Context, definition Definition, request *v1.BackfillRequest, streamClass *v1.StreamClass) error {
+func (j *Backend) startNewJob(ctx context.Context, definition stream.Definition, request *v1.BackfillRequest, streamClass *v1.StreamClass) error {
 	templateReference := definition.GetJobTemplate(request)
 	logger := j.getLogger(ctx, templateReference)
 
@@ -159,7 +160,7 @@ func (j *JobBackend) startNewJob(ctx context.Context, definition Definition, req
 		return err
 	}
 
-	secretsConfigurator, err := NewStreamMetadataService(streamClass, definition).JobConfigurator()
+	secretsConfigurator, err := stream.NewStreamMetadataService(streamClass, definition).JobConfigurator()
 	if err != nil { // coverage-ignore
 		logger.V(0).Error(err, "failed to get metadata configurator")
 		return err
@@ -194,9 +195,9 @@ func (j *JobBackend) startNewJob(ctx context.Context, definition Definition, req
 	return nil
 }
 
-func (j *JobBackend) compareConfigurations(ctx context.Context, v1job batchv1.Job, definition Definition) (bool, error) {
+func (j *Backend) compareConfigurations(ctx context.Context, v1job batchv1.Job, definition stream.Definition) (bool, error) {
 	logger := j.getLogger(ctx, definition.NamespacedName())
-	jobConfiguration, err := StreamingJob(v1job).CurrentConfiguration()
+	jobConfiguration, err := FromResource(&v1job).CurrentConfiguration()
 	if err != nil {
 		logger.V(0).Error(err, "Failed to extract configuration from job")
 		return false, err
@@ -211,7 +212,7 @@ func (j *JobBackend) compareConfigurations(ctx context.Context, v1job batchv1.Jo
 	return jobConfiguration == definitionConfiguration, nil
 }
 
-func (j *JobBackend) getLogger(_ context.Context, request types.NamespacedName) klog.Logger {
+func (j *Backend) getLogger(_ context.Context, request types.NamespacedName) klog.Logger {
 	return klog.Background().
 		WithName("StreamReconciler").
 		WithValues("namespace", request.Namespace, "streamId", request.Name)
