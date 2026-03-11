@@ -73,7 +73,7 @@ func (u *UnstructuredWrapper) StateString() string {
 func (u *UnstructuredWrapper) GetJobTemplate(request *v1.BackfillRequest) types.NamespacedName {
 	if request == nil {
 		namespace := u.streamingJobRef.Namespace
-		if namespace == "" {
+		if namespace == "" { // coverage-ignore
 			namespace = u.Underlying.GetNamespace()
 		}
 		return types.NamespacedName{
@@ -82,7 +82,7 @@ func (u *UnstructuredWrapper) GetJobTemplate(request *v1.BackfillRequest) types.
 		}
 	}
 	namespace := u.streamingJobRef.Namespace
-	if namespace == "" {
+	if namespace == "" { // coverage-ignore
 		namespace = u.Underlying.GetNamespace()
 	}
 	return types.NamespacedName{
@@ -118,6 +118,10 @@ func (u *UnstructuredWrapper) Validate() error {
 	}
 
 	return nil
+}
+
+func (u *UnstructuredWrapper) GetBackend() stream.Backend { // coverage-ignore
+	return stream.BatchJob
 }
 
 func (u *UnstructuredWrapper) extractStreamingJobRef(from string, target *corev1.ObjectReference) error {

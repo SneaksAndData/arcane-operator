@@ -35,7 +35,7 @@ type streamReconciler struct {
 	streamClass                    *v1.StreamClass
 	eventRecorder                  record.EventRecorder
 	definitionParser               DefinitionParser
-	backendResourceManager         BackendResourceManager
+	backendResourceManagers        map[Backend]BackendResourceManager
 	backfillBackendResourceManager *BackfillBackendResourceManager
 }
 
@@ -47,9 +47,11 @@ func (s *streamReconciler) SetupUnmanaged(cache cache.Cache, scheme *runtime.Sch
 		return nil, fmt.Errorf("failed to start unmanaged stream controller: %w", err)
 	}
 
-	err = s.backendResourceManager.SetupWithController(cache, scheme, mapper, newController, s.gvk)
-	if err != nil {
-		return nil, fmt.Errorf("failed to start backend resource watcher: %w", err)
+	for backend, manager := range s.backendResourceManagers {
+		err = manager.SetupWithController(cache, scheme, mapper, newController, s.gvk)
+		if err != nil {
+			return nil, fmt.Errorf("failed to start backend resource watcher for backend %s: %w", backend, err)
+		}
 	}
 	resource := &unstructured.Unstructured{}
 	resource.SetGroupVersionKind(s.gvk)
@@ -69,7 +71,7 @@ func (s *streamReconciler) SetupUnmanaged(cache cache.Cache, scheme *runtime.Sch
 }
 
 // NewStreamReconciler creates a new StreamReconciler instance.
-func NewStreamReconciler(client client.Client, gvk schema.GroupVersionKind, jobBuilder JobBuilder, streamClass *v1.StreamClass, eventRecorder record.EventRecorder, definitionParser DefinitionParser, manager BackendResourceManager, backfillResourceManager *BackfillBackendResourceManager) controllers.UnmanagedReconciler {
+func NewStreamReconciler(client client.Client, gvk schema.GroupVersionKind, jobBuilder JobBuilder, streamClass *v1.StreamClass, eventRecorder record.EventRecorder, definitionParser DefinitionParser, managers map[Backend]BackendResourceManager, backfillResourceManager *BackfillBackendResourceManager) controllers.UnmanagedReconciler {
 	return &streamReconciler{
 		gvk:                            gvk,
 		jobBuilder:                     jobBuilder,
@@ -77,7 +79,7 @@ func NewStreamReconciler(client client.Client, gvk schema.GroupVersionKind, jobB
 		streamClass:                    streamClass,
 		eventRecorder:                  eventRecorder,
 		definitionParser:               definitionParser,
-		backendResourceManager:         manager,
+		backendResourceManagers:        managers,
 		backfillBackendResourceManager: backfillResourceManager,
 	}
 }
@@ -105,7 +107,7 @@ func (s *streamReconciler) Reconcile(ctx context.Context, request reconcile.Requ
 		return reconcile.Result{}, err
 	}
 
-	streamingJob, err := s.backendResourceManager.Get(ctx, request.NamespacedName)
+	streamingJob, err := s.backendResourceManagers[BatchJob].Get(ctx, request.NamespacedName)
 	if err != nil { // coverage-ignore
 		logger.V(0).Error(err, "unable to fetch streaming job for the Stream, cannot proceed")
 		return reconcile.Result{}, err
@@ -127,7 +129,7 @@ func (s *streamReconciler) moveFsm(ctx context.Context, definition Definition, j
 		})
 
 	case job != nil && job.IsFailed():
-		return s.backendResourceManager.Remove(ctx, definition, Failed, func() {
+		return s.backendResourceManagers[definition.GetBackend()].Remove(ctx, definition, Failed, func() {
 			s.eventRecorder.Eventf(definition.ToUnstructured(),
 				"Warning",
 				"StreamingJobFailed",
@@ -143,7 +145,7 @@ func (s *streamReconciler) moveFsm(ctx context.Context, definition Definition, j
 		})
 
 	case phase == Failed && definition.Suspended() && backfillRequest == nil:
-		return s.backendResourceManager.Remove(ctx, definition, Suspended, func() {
+		return s.backendResourceManagers[definition.GetBackend()].Remove(ctx, definition, Suspended, func() {
 			s.eventRecorder.Eventf(definition.ToUnstructured(),
 				"Normal",
 				"StreamSuspended",
@@ -151,7 +153,7 @@ func (s *streamReconciler) moveFsm(ctx context.Context, definition Definition, j
 		})
 
 	case phase == Failed && !definition.Suspended() && backfillRequest != nil:
-		return s.backendResourceManager.Apply(ctx, definition, backfillRequest, Backfilling, s.streamClass, func() {
+		return s.backendResourceManagers[definition.GetBackend()].Apply(ctx, definition, backfillRequest, Backfilling, s.streamClass, func() {
 			s.eventRecorder.Eventf(definition.ToUnstructured(),
 				"Normal",
 				"BackfillRequested",
@@ -159,7 +161,7 @@ func (s *streamReconciler) moveFsm(ctx context.Context, definition Definition, j
 		})
 
 	case phase == Failed:
-		return s.backendResourceManager.Remove(ctx, definition, Failed, func() {
+		return s.backendResourceManagers[definition.GetBackend()].Remove(ctx, definition, Failed, func() {
 			s.eventRecorder.Eventf(definition.ToUnstructured(),
 				"Warning",
 				"StreamingJobFailed",
@@ -167,7 +169,7 @@ func (s *streamReconciler) moveFsm(ctx context.Context, definition Definition, j
 		})
 
 	case phase == New && definition.Suspended():
-		return s.backendResourceManager.Remove(ctx, definition, Suspended, func() {
+		return s.backendResourceManagers[definition.GetBackend()].Remove(ctx, definition, Suspended, func() {
 			s.eventRecorder.Eventf(definition.ToUnstructured(),
 				"Normal",
 				"StreamSuspended",
@@ -183,13 +185,13 @@ func (s *streamReconciler) moveFsm(ctx context.Context, definition Definition, j
 		})
 
 	case phase == Pending && backfillRequest == nil:
-		return s.backendResourceManager.Apply(ctx, definition, nil, Running, s.streamClass, nil)
+		return s.backendResourceManagers[definition.GetBackend()].Apply(ctx, definition, nil, Running, s.streamClass, nil)
 
 	case phase == Pending && backfillRequest != nil:
-		return s.backendResourceManager.Apply(ctx, definition, backfillRequest, Backfilling, s.streamClass, nil)
+		return s.backendResourceManagers[definition.GetBackend()].Apply(ctx, definition, backfillRequest, Backfilling, s.streamClass, nil)
 
 	case phase == Running && definition.Suspended():
-		return s.backendResourceManager.Remove(ctx, definition, Suspended, func() {
+		return s.backendResourceManagers[definition.GetBackend()].Remove(ctx, definition, Suspended, func() {
 			s.eventRecorder.Eventf(definition.ToUnstructured(),
 				"Normal",
 				"StreamSuspended",
@@ -197,7 +199,7 @@ func (s *streamReconciler) moveFsm(ctx context.Context, definition Definition, j
 		})
 
 	case phase == Running && backfillRequest != nil:
-		return s.backendResourceManager.Remove(ctx, definition, Pending, func() {
+		return s.backendResourceManagers[definition.GetBackend()].Remove(ctx, definition, Pending, func() {
 			s.eventRecorder.Eventf(definition.ToUnstructured(),
 				"Normal",
 				"BackfillRequested",
@@ -205,7 +207,7 @@ func (s *streamReconciler) moveFsm(ctx context.Context, definition Definition, j
 		})
 
 	case phase == Running && backfillRequest == nil:
-		return s.backendResourceManager.Apply(ctx, definition, backfillRequest, Running, s.streamClass, func() {
+		return s.backendResourceManagers[definition.GetBackend()].Apply(ctx, definition, backfillRequest, Running, s.streamClass, func() {
 			s.eventRecorder.Eventf(definition.ToUnstructured(),
 				"Normal",
 				"StreamingContinued",
@@ -213,7 +215,7 @@ func (s *streamReconciler) moveFsm(ctx context.Context, definition Definition, j
 		})
 
 	case phase == Suspended && backfillRequest != nil:
-		return s.backendResourceManager.NoOp(ctx, definition, backfillRequest, Pending, func() {
+		return s.backendResourceManagers[definition.GetBackend()].NoOp(ctx, definition, backfillRequest, Pending, func() {
 			s.eventRecorder.Eventf(definition.ToUnstructured(),
 				"Normal",
 				"BackfillRequested",
@@ -221,7 +223,7 @@ func (s *streamReconciler) moveFsm(ctx context.Context, definition Definition, j
 		})
 
 	case phase == Suspended && backfillRequest == nil && definition.Suspended():
-		return s.backendResourceManager.Remove(ctx, definition, Suspended, func() {
+		return s.backendResourceManagers[definition.GetBackend()].Remove(ctx, definition, Suspended, func() {
 			s.eventRecorder.Eventf(definition.ToUnstructured(),
 				"Normal",
 				"StreamSuspended",
@@ -229,7 +231,7 @@ func (s *streamReconciler) moveFsm(ctx context.Context, definition Definition, j
 		})
 
 	case phase == Suspended && !definition.Suspended():
-		return s.backendResourceManager.NoOp(ctx, definition, backfillRequest, Pending, func() {
+		return s.backendResourceManagers[definition.GetBackend()].NoOp(ctx, definition, backfillRequest, Pending, func() {
 			s.eventRecorder.Eventf(definition.ToUnstructured(),
 				"Normal",
 				"StreamResumed",
@@ -253,7 +255,7 @@ func (s *streamReconciler) moveFsm(ctx context.Context, definition Definition, j
 		})
 
 	case phase == Backfilling && job == nil:
-		return s.backendResourceManager.Apply(ctx, definition, backfillRequest, Backfilling, s.streamClass, func() {
+		return s.backendResourceManagers[definition.GetBackend()].Apply(ctx, definition, backfillRequest, Backfilling, s.streamClass, func() {
 			s.eventRecorder.Eventf(definition.ToUnstructured(),
 				"Normal",
 				"BackfillStarted",
@@ -269,7 +271,7 @@ func (s *streamReconciler) moveFsm(ctx context.Context, definition Definition, j
 		})
 
 	case phase == Backfilling && !job.IsCompleted():
-		return s.backendResourceManager.NoOp(ctx, definition, backfillRequest, Backfilling, func() {
+		return s.backendResourceManagers[definition.GetBackend()].NoOp(ctx, definition, backfillRequest, Backfilling, func() {
 			s.eventRecorder.Eventf(definition.ToUnstructured(),
 				"Normal",
 				"BackfillInProgress",

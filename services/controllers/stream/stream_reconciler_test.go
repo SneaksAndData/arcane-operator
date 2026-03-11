@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	v1 "github.com/SneaksAndData/arcane-operator/pkg/apis/streaming/v1"
-	testv1 "github.com/SneaksAndData/arcane-operator/pkg/test/apis_test/streaming/v1"
-	v2 "github.com/SneaksAndData/arcane-operator/pkg/test/generated/applyconfiguration/streaming/v1"
+	testv2 "github.com/SneaksAndData/arcane-operator/pkg/test/apis_test/streaming/v2"
+	v2 "github.com/SneaksAndData/arcane-operator/pkg/test/generated/applyconfiguration/streaming/v2"
 	"github.com/SneaksAndData/arcane-operator/tests/mocks"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -561,14 +561,16 @@ func createReconciler(k8sClient client.Client, mockJob *batchv1.Job, mockCtrl *g
 		},
 	}
 	definitionParser := func(u *unstructured.Unstructured) (Definition, error) {
-		var mock testv1.MockStreamDefinition
+		var mock testv2.MockStreamDefinition
 		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &mock); err != nil {
 			return nil, err
 		}
 		return NewMockDefinitionWrapper(&mock)
 	}
 	statusManager := NewDefaultStatusManager(k8sClient, gvk, &sc, definitionParser)
-	backendResourceManager := NewJobBackend(k8sClient, jobBuilder, recorder, statusManager)
 	backfillBackendResourceManager := NewBackfillBackendResourceManager(&sc, k8sClient, statusManager)
-	return NewStreamReconciler(k8sClient, gvk, jobBuilder, &sc, recorder, definitionParser, backendResourceManager, backfillBackendResourceManager)
+	backendResourceManagers := map[Backend]BackendResourceManager{
+		BatchJob: NewJobBackend(k8sClient, jobBuilder, recorder, statusManager),
+	}
+	return NewStreamReconciler(k8sClient, gvk, jobBuilder, &sc, recorder, definitionParser, backendResourceManagers, backfillBackendResourceManager)
 }

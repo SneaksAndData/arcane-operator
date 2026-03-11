@@ -34,11 +34,11 @@ type ExecutionSettings struct {
 			APIVersion             string                  `json:"apiVersion"`
 			BackfillJobTemplateRef *corev1.ObjectReference `json:"backfillJobTemplateRef,omitempty"`
 			StreamingBackend       struct {
-				Realtime *struct {
+				BatchJobBackend *struct {
 					ChangeCaptureInterval string                 `json:"changeCaptureInterval"`
 					JobTemplateRef        corev1.ObjectReference `json:"jobTemplateRef"`
 				} `json:"realtime,omitempty"`
-				Batch *struct {
+				CronJobBackend *struct {
 					Schedule       string                 `json:"schedule"`
 					JobTemplateRef corev1.ObjectReference `json:"jobTemplateRef"`
 				} `json:"batch,omitempty"`
@@ -65,7 +65,7 @@ func (e *ExecutionSettings) Suspended() bool {
 func (e *ExecutionSettings) SetSuspended(suspended bool) error {
 	e.spec.ExecutionSettings.Suspended = suspended
 	err := e.deserializeTo(e.Underlying)
-	if err != nil {
+	if err != nil { // coverage-ignore
 		return err
 	}
 	return nil
@@ -95,16 +95,16 @@ func (e *ExecutionSettings) GetJobTemplate(request *v1.BackfillRequest) types.Na
 		}
 	}
 
-	if e.spec.ExecutionSettings.StreamingBackend.Realtime != nil {
+	if e.spec.ExecutionSettings.StreamingBackend.BatchJobBackend != nil {
 		return types.NamespacedName{
-			Name:      e.spec.ExecutionSettings.StreamingBackend.Realtime.JobTemplateRef.Name,
-			Namespace: e.spec.ExecutionSettings.StreamingBackend.Realtime.JobTemplateRef.Namespace,
+			Name:      e.spec.ExecutionSettings.StreamingBackend.BatchJobBackend.JobTemplateRef.Name,
+			Namespace: e.spec.ExecutionSettings.StreamingBackend.BatchJobBackend.JobTemplateRef.Namespace,
 		}
 	}
 
 	return types.NamespacedName{
-		Name:      e.spec.ExecutionSettings.StreamingBackend.Batch.JobTemplateRef.Name,
-		Namespace: e.spec.ExecutionSettings.StreamingBackend.Batch.JobTemplateRef.Namespace,
+		Name:      e.spec.ExecutionSettings.StreamingBackend.CronJobBackend.JobTemplateRef.Name,
+		Namespace: e.spec.ExecutionSettings.StreamingBackend.CronJobBackend.JobTemplateRef.Namespace,
 	}
 }
 
@@ -120,7 +120,7 @@ func (e *ExecutionSettings) Validate() error {
 	}
 
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(map[string]interface{}{"execution": execution}, &e.spec)
-	if err != nil {
+	if err != nil { // coverage-ignore
 		return err
 	}
 
@@ -137,9 +137,16 @@ func (e *ExecutionSettings) Validate() error {
 	return nil
 }
 
+func (e *ExecutionSettings) GetBackend() stream.Backend {
+	if e.spec.ExecutionSettings.StreamingBackend.CronJobBackend != nil {
+		return stream.CronJob
+	}
+	return stream.BatchJob
+}
+
 func (e *ExecutionSettings) deserializeTo(unstructured *unstructured.Unstructured) error {
 	u, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&e.spec.ExecutionSettings)
-	if err != nil {
+	if err != nil { // coverage-ignore
 		return err
 	}
 

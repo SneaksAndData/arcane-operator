@@ -7,9 +7,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// BatchBackend represents the backend configuration for batch processing, including the cron schedule and a reference
+// CronJobBackend represents the backend configuration for batch processing, including the cron schedule and a reference
 // to the job template.
-type BatchBackend struct {
+type CronJobBackend struct {
 
 	// Schedule represents the cron schedule for batch processing.
 	Schedule string `json:"schedule"`
@@ -18,9 +18,9 @@ type BatchBackend struct {
 	JobTemplateRef v1.ObjectReference `json:"jobTemplateRef"`
 }
 
-// RealtimeBackend represents the backend configuration for real-time streaming, including the change capture interval
+// BatchJobBackend represents the backend configuration for real-time streaming, including the change capture interval
 // and a reference to the job template.
-type RealtimeBackend struct {
+type BatchJobBackend struct {
 	// ChangeCaptureInterval represents the interval at which changes are captured for real-time processing.
 	ChangeCaptureInterval string `json:"changeCaptureInterval"`
 
@@ -30,11 +30,11 @@ type RealtimeBackend struct {
 
 // StreamingBackend represents the backend configuration for streaming, including both real-time and batch processing options.
 type StreamingBackend struct {
-	// Realtime represents the backend configuration for real-time streaming.
-	Realtime *RealtimeBackend `json:"realtime,omitempty"`
+	// BatchJobBackend represents the backend configuration for real-time streaming.
+	BatchJobBackend *BatchJobBackend `json:"realtime,omitempty"`
 
-	// Batch represents the backend configuration for batch processing.
-	Batch *BatchBackend `json:"batch,omitempty"`
+	// CronJobBackend represents the backend configuration for batch processing.
+	CronJobBackend *CronJobBackend `json:"batch,omitempty"`
 }
 
 // ExecutionSettings represents the execution settings for a stream, including suspension status and backend configuration.

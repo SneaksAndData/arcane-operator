@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	v1 "github.com/SneaksAndData/arcane-operator/pkg/apis/streaming/v1"
-	testv1 "github.com/SneaksAndData/arcane-operator/pkg/test/apis_test/streaming/v1"
+	testv2 "github.com/SneaksAndData/arcane-operator/pkg/test/apis_test/streaming/v2"
 	"github.com/SneaksAndData/arcane-operator/services/job"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -16,14 +16,14 @@ import (
 var _ Definition = (*MockDefinitionWrapper)(nil)
 
 type MockDefinitionWrapper struct {
-	underlying      *testv1.MockStreamDefinition
+	underlying      *testv2.MockStreamDefinition
 	configuration   string
 	streamingJobRef corev1.ObjectReference
 	backfillJobRef  corev1.ObjectReference
 }
 
 // NewMockDefinitionWrapper creates a new MockDefinitionWrapper and validates the underlying mock definition.
-func NewMockDefinitionWrapper(mock *testv1.MockStreamDefinition) (*MockDefinitionWrapper, error) {
+func NewMockDefinitionWrapper(mock *testv2.MockStreamDefinition) (*MockDefinitionWrapper, error) {
 	wrapper := &MockDefinitionWrapper{
 		underlying: mock,
 	}
@@ -38,7 +38,7 @@ func (m *MockDefinitionWrapper) GetPhase() Phase {
 }
 
 func (m *MockDefinitionWrapper) Suspended() bool {
-	return m.underlying.Spec.Suspended
+	return m.underlying.Spec.ExecutionSettings.Suspended
 }
 
 func (m *MockDefinitionWrapper) CurrentConfiguration(request *v1.BackfillRequest) (string, error) {
@@ -88,7 +88,7 @@ func (m *MockDefinitionWrapper) SetPhase(phase Phase) error {
 }
 
 func (m *MockDefinitionWrapper) SetSuspended(suspended bool) error {
-	m.underlying.Spec.Suspended = suspended
+	m.underlying.Spec.ExecutionSettings.Suspended = suspended
 	return nil
 }
 
@@ -235,9 +235,9 @@ func (m *MockDefinitionWrapper) Validate() error {
 	// Initialize configuration hash
 	m.configuration = m.underlying.Status.ConfigurationHash
 
-	// Extract job references
-	m.streamingJobRef = m.underlying.Spec.JobTemplateRef
-	m.backfillJobRef = m.underlying.Spec.BackfillJobTemplateRef
-
 	return nil
+}
+
+func (m *MockDefinitionWrapper) GetBackend() Backend {
+	return BatchJob
 }

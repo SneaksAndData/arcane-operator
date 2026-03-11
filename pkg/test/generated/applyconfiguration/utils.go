@@ -42,7 +42,7 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &streamingv1.MockStreamDefinitionStatusApplyConfiguration{}
 
 		// Group=streaming.sneaksanddata.com, Version=v2
-	case v2.SchemeGroupVersion.WithKind("BatchBackend"):
+	case v2.SchemeGroupVersion.WithKind("CronJobBackend"):
 		return &streamingv2.BatchBackendApplyConfiguration{}
 	case v2.SchemeGroupVersion.WithKind("ExecutionSettings"):
 		return &streamingv2.ExecutionSettingsApplyConfiguration{}
@@ -52,7 +52,7 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &streamingv2.MockStreamDefinitionSpecApplyConfiguration{}
 	case v2.SchemeGroupVersion.WithKind("MockStreamDefinitionStatus"):
 		return &streamingv2.MockStreamDefinitionStatusApplyConfiguration{}
-	case v2.SchemeGroupVersion.WithKind("RealtimeBackend"):
+	case v2.SchemeGroupVersion.WithKind("BatchJobBackend"):
 		return &streamingv2.RealtimeBackendApplyConfiguration{}
 	case v2.SchemeGroupVersion.WithKind("StreamingBackend"):
 		return &streamingv2.StreamingBackendApplyConfiguration{}

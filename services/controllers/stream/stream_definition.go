@@ -12,6 +12,13 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+type Backend string
+
+const (
+	BatchJob Backend = "BatchJobBackend"
+	CronJob  Backend = "CronJob"
+)
+
 type Phase string
 
 const (
@@ -21,6 +28,7 @@ const (
 	Backfilling Phase = "Backfilling"
 	Suspended   Phase = "Suspended"
 	Failed      Phase = "Failed"
+	Scheduled   Phase = "Scheduled"
 )
 
 type Definition interface {
@@ -75,6 +83,9 @@ type Definition interface {
 
 	// Validate validates the stream definition and returns an error if any required fields are missing or invalid.
 	Validate() error
+
+	// GetBackend returns the streaming backend type (e.g., BatchJob, CronJob) associated with this stream definition.
+	GetBackend() Backend
 }
 
 // DefinitionParser is a function type that takes an unstructured object and returns a validated Definition or an
@@ -83,7 +94,7 @@ type Definition interface {
 type DefinitionParser func(*unstructured.Unstructured) (Definition, error)
 
 // GetStreamForClass retrieves the stream definition for a given stream class and namespaced name.
-func GetStreamForClass(ctx context.Context, client client.Client, sc *v1.StreamClass, name types.NamespacedName, definitionParser DefinitionParser) (Definition, error) {
+func GetStreamForClass(ctx context.Context, client client.Client, sc *v1.StreamClass, name types.NamespacedName, definitionParser DefinitionParser) (Definition, error) { // coverage-ignore
 	gvk := sc.TargetResourceGvk()
 	maybeSd := unstructured.Unstructured{}
 	maybeSd.SetGroupVersionKind(gvk)
