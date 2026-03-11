@@ -1,4 +1,4 @@
-package stream
+package tests
 
 import (
 	"strings"
@@ -7,6 +7,8 @@ import (
 	v1 "github.com/SneaksAndData/arcane-operator/pkg/apis/streaming/v1"
 	testv2 "github.com/SneaksAndData/arcane-operator/pkg/test/apis_test/streaming/v2"
 	v2 "github.com/SneaksAndData/arcane-operator/pkg/test/generated/applyconfiguration/streaming/v2"
+	"github.com/SneaksAndData/arcane-operator/services/controllers/stream"
+	"github.com/SneaksAndData/arcane-operator/services/controllers/stream/backend/job"
 	"github.com/SneaksAndData/arcane-operator/tests/mocks"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -21,7 +23,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-var objectName types.NamespacedName = types.NamespacedName{Name: "stream1", Namespace: "default"}
+var objectName = types.NamespacedName{Name: "stream1", Namespace: "default"}
 
 func Test_UpdatePhase_New_To_Suspended(t *testing.T) {
 	// Arrange
@@ -34,7 +36,7 @@ func Test_UpdatePhase_New_To_Suspended(t *testing.T) {
 	require.Equal(t, result, reconcile.Result{})
 
 	// Assert
-	AssertStreamDefinitionPhase(t, k8sClient, objectName, Suspended)
+	AssertStreamDefinitionPhase(t, k8sClient, objectName, stream.Suspended)
 }
 
 func Test_UpdatePhase_New_To_Pending(t *testing.T) {
@@ -51,12 +53,12 @@ func Test_UpdatePhase_New_To_Pending(t *testing.T) {
 	require.Equal(t, result, reconcile.Result{})
 
 	// Assert
-	AssertStreamDefinitionPhase(t, k8sClient, objectName, Pending)
+	AssertStreamDefinitionPhase(t, k8sClient, objectName, stream.Pending)
 }
 
 func Test_UpdatePhase_Pending_To_Running_no_job(t *testing.T) {
 	// Arrange
-	k8sClient := SetupClient(objectName, WithPhase(Pending), nil)
+	k8sClient := SetupClient(objectName, WithPhase(stream.Pending), nil)
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 
@@ -70,13 +72,13 @@ func Test_UpdatePhase_Pending_To_Running_no_job(t *testing.T) {
 
 	// Assert
 	// Fetch the object and ensure its status Phase is Pending
-	AssertStreamDefinitionPhase(t, k8sClient, objectName, Running)
+	AssertStreamDefinitionPhase(t, k8sClient, objectName, stream.Running)
 	AssertJobExists(t, k8sClient, objectName)
 }
 
 func Test_UpdatePhase_Pending_To_Running_recreate_job(t *testing.T) {
 	// Arrange
-	k8sClient := SetupClient(objectName, Combined(WithPhase(Pending), WithNamedStreamDefinition(objectName)), WithOutdatedJob(objectName))
+	k8sClient := SetupClient(objectName, Combined(WithPhase(stream.Pending), WithNamedStreamDefinition(objectName)), WithOutdatedJob(objectName))
 
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
@@ -99,7 +101,7 @@ func Test_UpdatePhase_Pending_To_Running_recreate_job(t *testing.T) {
 	require.Equal(t, result, reconcile.Result{})
 
 	// Assert
-	AssertStreamDefinitionPhase(t, k8sClient, objectName, Running)
+	AssertStreamDefinitionPhase(t, k8sClient, objectName, stream.Running)
 	AssertJobExists(t, k8sClient, objectName)
 	AssertJobConfiguration(t, k8sClient, objectName, "new-hash")
 }
@@ -108,7 +110,7 @@ func Test_UpdatePhase_Pending_To_Running_not_recreate_job(t *testing.T) {
 	// Arrange
 	definitionHash := "0xdeadbeef" // computed manually for the test definition
 
-	k8sClient := SetupClient(objectName, Combined(WithPhase(Pending), WithNamedStreamDefinition(objectName)), WithConsistentJob(objectName, definitionHash))
+	k8sClient := SetupClient(objectName, Combined(WithPhase(stream.Pending), WithNamedStreamDefinition(objectName)), WithConsistentJob(objectName, definitionHash))
 
 	reconciler := createReconciler(k8sClient, nil, nil)
 
@@ -118,14 +120,14 @@ func Test_UpdatePhase_Pending_To_Running_not_recreate_job(t *testing.T) {
 	require.Equal(t, result, reconcile.Result{})
 
 	// Assert
-	AssertStreamDefinitionPhase(t, k8sClient, objectName, Running)
+	AssertStreamDefinitionPhase(t, k8sClient, objectName, stream.Running)
 	AssertJobExists(t, k8sClient, objectName)
 	AssertJobConfiguration(t, k8sClient, objectName, definitionHash)
 }
 
 func Test_UpdatePhase_Pending_To_Backfilling_no_job(t *testing.T) {
 	// Arrange
-	k8sClient := SetupClient(objectName, Combined(WithPhase(Pending), WithNamedStreamDefinition(objectName)), WithBackfillRequest(objectName))
+	k8sClient := SetupClient(objectName, Combined(WithPhase(stream.Pending), WithNamedStreamDefinition(objectName)), WithBackfillRequest(objectName))
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 
@@ -138,14 +140,14 @@ func Test_UpdatePhase_Pending_To_Backfilling_no_job(t *testing.T) {
 	require.Equal(t, result, reconcile.Result{})
 
 	// Assert
-	AssertStreamDefinitionPhase(t, k8sClient, objectName, Backfilling)
+	AssertStreamDefinitionPhase(t, k8sClient, objectName, stream.Backfilling)
 	AssertJobExists(t, k8sClient, objectName)
 }
 
 func Test_UpdatePhase_Pending_To_Backfilling_recreate_job(t *testing.T) {
 	// Arrange
 	k8sClient := SetupClient(objectName,
-		Combined(WithPhase(Pending), WithNamedStreamDefinition(objectName)),
+		Combined(WithPhase(stream.Pending), WithNamedStreamDefinition(objectName)),
 		CombinedB(WithBackfillRequest(objectName), WithOutdatedJob(objectName)),
 	)
 
@@ -169,14 +171,14 @@ func Test_UpdatePhase_Pending_To_Backfilling_recreate_job(t *testing.T) {
 	require.Equal(t, result, reconcile.Result{})
 
 	// Assert
-	AssertStreamDefinitionPhase(t, k8sClient, objectName, Backfilling)
+	AssertStreamDefinitionPhase(t, k8sClient, objectName, stream.Backfilling)
 	AssertJobExists(t, k8sClient, objectName)
 	AssertJobConfiguration(t, k8sClient, objectName, "new-hash")
 }
 
 func Test_UpdatePhase_Running_To_Suspended_no_job(t *testing.T) {
 	// Arrange
-	k8sClient := SetupClient(objectName, Combined(WithPhase(Running), WithSuspendedSpec(true)), nil)
+	k8sClient := SetupClient(objectName, Combined(WithPhase(stream.Running), WithSuspendedSpec(true)), nil)
 	reconciler := createReconciler(k8sClient, nil, nil)
 
 	// Act
@@ -185,13 +187,13 @@ func Test_UpdatePhase_Running_To_Suspended_no_job(t *testing.T) {
 	require.Equal(t, result, reconcile.Result{})
 
 	// Assert
-	AssertStreamDefinitionPhase(t, k8sClient, objectName, Suspended)
+	AssertStreamDefinitionPhase(t, k8sClient, objectName, stream.Suspended)
 }
 
 func Test_UpdatePhase_Running_To_Suspended_stop_job(t *testing.T) {
 	// Arrange
 	k8sClient := SetupClient(objectName,
-		Combined(WithNamedStreamDefinition(objectName), Combined(WithPhase(Running), WithSuspendedSpec(true))),
+		Combined(WithNamedStreamDefinition(objectName), Combined(WithPhase(stream.Running), WithSuspendedSpec(true))),
 		CombinedB(WithBackfillRequest(objectName), WithOutdatedJob(objectName)),
 	)
 	reconciler := createReconciler(k8sClient, nil, nil)
@@ -202,14 +204,14 @@ func Test_UpdatePhase_Running_To_Suspended_stop_job(t *testing.T) {
 	require.Equal(t, result, reconcile.Result{})
 
 	// Assert
-	AssertStreamDefinitionPhase(t, k8sClient, objectName, Suspended)
+	AssertStreamDefinitionPhase(t, k8sClient, objectName, stream.Suspended)
 	AssertJobNotExists(t, k8sClient, objectName)
 }
 
 func Test_UpdatePhase_Running_To_Suspended_to_Pending(t *testing.T) {
 	// Arrange
 	k8sClient := SetupClient(objectName,
-		Combined(WithNamedStreamDefinition(objectName), Combined(WithPhase(Suspended), WithSuspendedSpec(false))),
+		Combined(WithNamedStreamDefinition(objectName), Combined(WithPhase(stream.Suspended), WithSuspendedSpec(false))),
 		nil,
 	)
 	reconciler := createReconciler(k8sClient, nil, nil)
@@ -220,13 +222,13 @@ func Test_UpdatePhase_Running_To_Suspended_to_Pending(t *testing.T) {
 	require.Equal(t, result, reconcile.Result{})
 
 	// Assert
-	AssertStreamDefinitionPhase(t, k8sClient, objectName, Pending)
+	AssertStreamDefinitionPhase(t, k8sClient, objectName, stream.Pending)
 }
 
 func Test_UpdatePhase_Running_To_Suspended_to_Pending_With_BFR(t *testing.T) {
 	// Arrange
 	k8sClient := SetupClient(objectName,
-		Combined(WithNamedStreamDefinition(objectName), Combined(WithPhase(Suspended), WithSuspendedSpec(true))),
+		Combined(WithNamedStreamDefinition(objectName), Combined(WithPhase(stream.Suspended), WithSuspendedSpec(true))),
 		CombinedB(WithBackfillRequest(objectName)),
 	)
 	reconciler := createReconciler(k8sClient, nil, nil)
@@ -237,13 +239,13 @@ func Test_UpdatePhase_Running_To_Suspended_to_Pending_With_BFR(t *testing.T) {
 	require.Equal(t, result, reconcile.Result{})
 
 	// Assert
-	AssertStreamDefinitionPhase(t, k8sClient, objectName, Pending)
+	AssertStreamDefinitionPhase(t, k8sClient, objectName, stream.Pending)
 }
 
 func Test_UpdatePhase_Running_with_BackfillRequest_no_job(t *testing.T) {
 	// Arrange
 	k8sClient := SetupClient(objectName,
-		Combined(WithNamedStreamDefinition(objectName), WithPhase(Running), WithSuspendedSpec(false)),
+		Combined(WithNamedStreamDefinition(objectName), WithPhase(stream.Running), WithSuspendedSpec(false)),
 		CombinedB(WithBackfillRequest(objectName)),
 	)
 	reconciler := createReconciler(k8sClient, nil, nil)
@@ -254,13 +256,13 @@ func Test_UpdatePhase_Running_with_BackfillRequest_no_job(t *testing.T) {
 	require.Equal(t, result, reconcile.Result{})
 
 	// Assert
-	AssertStreamDefinitionPhase(t, k8sClient, objectName, Pending)
+	AssertStreamDefinitionPhase(t, k8sClient, objectName, stream.Pending)
 }
 
 func Test_UpdatePhase_Suspended_with_BackfillRequest(t *testing.T) {
 	// Arrange
 	k8sClient := SetupClient(objectName,
-		Combined(WithNamedStreamDefinition(objectName), WithPhase(Suspended), WithSuspendedSpec(false)),
+		Combined(WithNamedStreamDefinition(objectName), WithPhase(stream.Suspended), WithSuspendedSpec(false)),
 		CombinedB(WithBackfillRequest(objectName)),
 	)
 	reconciler := createReconciler(k8sClient, nil, nil)
@@ -271,13 +273,13 @@ func Test_UpdatePhase_Suspended_with_BackfillRequest(t *testing.T) {
 	require.Equal(t, result, reconcile.Result{})
 
 	// Assert
-	AssertStreamDefinitionPhase(t, k8sClient, objectName, Pending)
+	AssertStreamDefinitionPhase(t, k8sClient, objectName, stream.Pending)
 }
 
 func Test_UpdatePhase_Suspended_without_BackfillRequest_without_job(t *testing.T) {
 	// Arrange
 	k8sClient := SetupClient(objectName,
-		Combined(WithNamedStreamDefinition(objectName), WithPhase(Suspended)),
+		Combined(WithNamedStreamDefinition(objectName), WithPhase(stream.Suspended)),
 		nil,
 	)
 	reconciler := createReconciler(k8sClient, nil, nil)
@@ -288,14 +290,14 @@ func Test_UpdatePhase_Suspended_without_BackfillRequest_without_job(t *testing.T
 	require.Equal(t, result, reconcile.Result{})
 
 	// Assert
-	AssertStreamDefinitionPhase(t, k8sClient, objectName, Suspended)
+	AssertStreamDefinitionPhase(t, k8sClient, objectName, stream.Suspended)
 	AssertJobNotExists(t, k8sClient, objectName)
 }
 
 func Test_UpdatePhase_Suspended_without_BackfillRequest_with_job(t *testing.T) {
 	// Arrange
 	k8sClient := SetupClient(objectName,
-		Combined(WithNamedStreamDefinition(objectName), WithPhase(Suspended)),
+		Combined(WithNamedStreamDefinition(objectName), WithPhase(stream.Suspended)),
 		CombinedB(WithOutdatedJob(objectName)),
 	)
 	reconciler := createReconciler(k8sClient, nil, nil)
@@ -306,14 +308,14 @@ func Test_UpdatePhase_Suspended_without_BackfillRequest_with_job(t *testing.T) {
 	require.Equal(t, result, reconcile.Result{})
 
 	// Assert
-	AssertStreamDefinitionPhase(t, k8sClient, objectName, Suspended)
+	AssertStreamDefinitionPhase(t, k8sClient, objectName, stream.Suspended)
 	AssertJobNotExists(t, k8sClient, objectName)
 }
 
 func Test_UpdatePhase_Backfilling_To_Pending_with_job_running(t *testing.T) {
 	// Arrange
 	k8sClient := SetupClient(objectName,
-		Combined(WithNamedStreamDefinition(objectName), WithPhase(Backfilling), WithSuspendedSpec(false)),
+		Combined(WithNamedStreamDefinition(objectName), WithPhase(stream.Backfilling), WithSuspendedSpec(false)),
 		CombinedB(WithOutdatedJob(objectName), WithBackfillRequest(objectName)),
 	)
 	reconciler := createReconciler(k8sClient, nil, nil)
@@ -324,7 +326,7 @@ func Test_UpdatePhase_Backfilling_To_Pending_with_job_running(t *testing.T) {
 	require.Equal(t, result, reconcile.Result{})
 
 	// Assert
-	AssertStreamDefinitionPhase(t, k8sClient, objectName, Backfilling)
+	AssertStreamDefinitionPhase(t, k8sClient, objectName, stream.Backfilling)
 	AssertJobExists(t, k8sClient, objectName)
 	AssertBackfillRequestNotCompleted(t, k8sClient, objectName)
 }
@@ -332,7 +334,7 @@ func Test_UpdatePhase_Backfilling_To_Pending_with_job_running(t *testing.T) {
 func Test_UpdatePhase_Backfilling_To_Pending_with_job_completed(t *testing.T) {
 	// Arrange
 	k8sClient := SetupClient(objectName,
-		Combined(WithNamedStreamDefinition(objectName), WithPhase(Backfilling), WithSuspendedSpec(false)),
+		Combined(WithNamedStreamDefinition(objectName), WithPhase(stream.Backfilling), WithSuspendedSpec(false)),
 		CombinedB(WithBackfillRequest(objectName), WithCompletedJob(objectName)),
 	)
 	reconciler := createReconciler(k8sClient, nil, nil)
@@ -343,7 +345,7 @@ func Test_UpdatePhase_Backfilling_To_Pending_with_job_completed(t *testing.T) {
 	require.Equal(t, result, reconcile.Result{})
 
 	// Assert
-	AssertStreamDefinitionPhase(t, k8sClient, objectName, Pending)
+	AssertStreamDefinitionPhase(t, k8sClient, objectName, stream.Pending)
 	AssertJobNotExists(t, k8sClient, objectName)
 	AssertBackfillRequestCompleted(t, k8sClient, objectName)
 }
@@ -351,7 +353,7 @@ func Test_UpdatePhase_Backfilling_To_Pending_with_job_completed(t *testing.T) {
 func Test_UpdatePhase_Backfilling_To_Backfilling_with_no_job(t *testing.T) {
 	// Arrange
 	k8sClient := SetupClient(objectName,
-		Combined(WithNamedStreamDefinition(objectName), WithPhase(Backfilling), WithSuspendedSpec(false)),
+		Combined(WithNamedStreamDefinition(objectName), WithPhase(stream.Backfilling), WithSuspendedSpec(false)),
 		CombinedB(WithBackfillRequest(objectName)),
 	)
 
@@ -375,7 +377,7 @@ func Test_UpdatePhase_Backfilling_To_Backfilling_with_no_job(t *testing.T) {
 	require.Equal(t, result, reconcile.Result{})
 
 	// Assert
-	AssertStreamDefinitionPhase(t, k8sClient, objectName, Backfilling)
+	AssertStreamDefinitionPhase(t, k8sClient, objectName, stream.Backfilling)
 	AssertJobExists(t, k8sClient, objectName)
 	AssertBackfillRequestNotCompleted(t, k8sClient, objectName)
 }
@@ -383,7 +385,7 @@ func Test_UpdatePhase_Backfilling_To_Backfilling_with_no_job(t *testing.T) {
 func Test_UpdatePhase_Backfilling_To_Suspended(t *testing.T) {
 	// Arrange
 	k8sClient := SetupClient(objectName,
-		Combined(WithNamedStreamDefinition(objectName), WithPhase(Backfilling), WithSuspendedSpec(true)),
+		Combined(WithNamedStreamDefinition(objectName), WithPhase(stream.Backfilling), WithSuspendedSpec(true)),
 		CombinedB(WithBackfillRequest(objectName)),
 	)
 
@@ -407,7 +409,7 @@ func Test_UpdatePhase_Backfilling_To_Suspended(t *testing.T) {
 	require.Equal(t, result, reconcile.Result{})
 
 	// Assert
-	AssertStreamDefinitionPhase(t, k8sClient, objectName, Suspended)
+	AssertStreamDefinitionPhase(t, k8sClient, objectName, stream.Suspended)
 	AssertJobNotExists(t, k8sClient, objectName)
 	AssertBackfillRequestCompleted(t, k8sClient, objectName)
 }
@@ -415,7 +417,7 @@ func Test_UpdatePhase_Backfilling_To_Suspended(t *testing.T) {
 func Test_UpdatePhase_Backfilling_Job_Failed(t *testing.T) {
 	// Arrange
 	k8sClient := SetupClient(objectName,
-		Combined(WithNamedStreamDefinition(objectName), WithPhase(Backfilling), WithSuspendedSpec(false)),
+		Combined(WithNamedStreamDefinition(objectName), WithPhase(stream.Backfilling), WithSuspendedSpec(false)),
 		CombinedB(WithBackfillRequest(objectName), WithFailedJob(objectName)),
 	)
 	reconciler := createReconciler(k8sClient, nil, nil)
@@ -426,7 +428,7 @@ func Test_UpdatePhase_Backfilling_Job_Failed(t *testing.T) {
 	require.Equal(t, result, reconcile.Result{})
 
 	// Assert
-	AssertStreamDefinitionPhase(t, k8sClient, objectName, Failed)
+	AssertStreamDefinitionPhase(t, k8sClient, objectName, stream.Failed)
 	AssertJobNotExists(t, k8sClient, objectName)
 	AssertBackfillRequestCompleted(t, k8sClient, objectName)
 }
@@ -434,7 +436,7 @@ func Test_UpdatePhase_Backfilling_Job_Failed(t *testing.T) {
 func Test_UpdatePhase_Backfilling_To_Running(t *testing.T) {
 	// Arrange
 	k8sClient := SetupClient(objectName,
-		Combined(WithNamedStreamDefinition(objectName), WithPhase(Backfilling), WithSuspendedSpec(false)),
+		Combined(WithNamedStreamDefinition(objectName), WithPhase(stream.Backfilling), WithSuspendedSpec(false)),
 		WithOutdatedJob(objectName),
 	)
 
@@ -450,7 +452,7 @@ func Test_UpdatePhase_Backfilling_To_Running(t *testing.T) {
 	require.Equal(t, result, reconcile.Result{})
 
 	// Assert
-	AssertStreamDefinitionPhase(t, k8sClient, objectName, Pending)
+	AssertStreamDefinitionPhase(t, k8sClient, objectName, stream.Pending)
 	AssertJobNotExists(t, k8sClient, objectName)
 }
 
@@ -458,7 +460,7 @@ func Test_UpdatePhase_Failed_to_Failed(t *testing.T) {
 	// Arrange
 	name := types.NamespacedName{Name: "stream1", Namespace: "default"}
 	k8sClient := SetupClient(objectName,
-		Combined(WithNamedStreamDefinition(name), WithPhase(Failed)),
+		Combined(WithNamedStreamDefinition(name), WithPhase(stream.Failed)),
 		CombinedB(WithFailedJob(name)),
 	)
 	reconciler := createReconciler(k8sClient, nil, nil)
@@ -469,14 +471,14 @@ func Test_UpdatePhase_Failed_to_Failed(t *testing.T) {
 	require.Equal(t, result, reconcile.Result{})
 
 	// Assert
-	AssertStreamDefinitionPhase(t, k8sClient, objectName, Failed)
+	AssertStreamDefinitionPhase(t, k8sClient, objectName, stream.Failed)
 	AssertJobNotExists(t, k8sClient, objectName)
 }
 
 func Test_UpdatePhase_Failed_to_Failed_without_job(t *testing.T) {
 	// Arrange
 	name := types.NamespacedName{Name: "stream1", Namespace: "default"}
-	k8sClient := SetupClient(objectName, Combined(WithNamedStreamDefinition(name), WithPhase(Failed), WithSuspendedSpec(false)), nil)
+	k8sClient := SetupClient(objectName, Combined(WithNamedStreamDefinition(name), WithPhase(stream.Failed), WithSuspendedSpec(false)), nil)
 	reconciler := createReconciler(k8sClient, nil, nil)
 
 	// Act
@@ -485,13 +487,13 @@ func Test_UpdatePhase_Failed_to_Failed_without_job(t *testing.T) {
 	require.Equal(t, result, reconcile.Result{})
 
 	// Assert
-	AssertStreamDefinitionPhase(t, k8sClient, objectName, Failed)
+	AssertStreamDefinitionPhase(t, k8sClient, objectName, stream.Failed)
 }
 
 func Test_UpdatePhase_Failed_to_Suspended_without_job(t *testing.T) {
 	// Arrange
 	name := types.NamespacedName{Name: "stream1", Namespace: "default"}
-	k8sClient := SetupClient(objectName, Combined(WithNamedStreamDefinition(name), WithPhase(Failed)), nil)
+	k8sClient := SetupClient(objectName, Combined(WithNamedStreamDefinition(name), WithPhase(stream.Failed)), nil)
 	reconciler := createReconciler(k8sClient, nil, nil)
 
 	// Act
@@ -500,13 +502,13 @@ func Test_UpdatePhase_Failed_to_Suspended_without_job(t *testing.T) {
 	require.Equal(t, result, reconcile.Result{})
 
 	// Assert
-	AssertStreamDefinitionPhase(t, k8sClient, objectName, Suspended)
+	AssertStreamDefinitionPhase(t, k8sClient, objectName, stream.Suspended)
 }
 
 func Test_UpdatePhase_Failed_to_Suspended_with_BackfillRequest(t *testing.T) {
 	// Arrange
 	name := types.NamespacedName{Name: "stream1", Namespace: "default"}
-	k8sClient := SetupClient(objectName, Combined(WithNamedStreamDefinition(name), WithPhase(Failed)), WithBackfillRequest(objectName))
+	k8sClient := SetupClient(objectName, Combined(WithNamedStreamDefinition(name), WithPhase(stream.Failed)), WithBackfillRequest(objectName))
 	reconciler := createReconciler(k8sClient, nil, nil)
 
 	// Act
@@ -515,7 +517,7 @@ func Test_UpdatePhase_Failed_to_Suspended_with_BackfillRequest(t *testing.T) {
 	require.Equal(t, result, reconcile.Result{})
 
 	// Assert
-	AssertStreamDefinitionPhase(t, k8sClient, objectName, Suspended)
+	AssertStreamDefinitionPhase(t, k8sClient, objectName, stream.Suspended)
 	AssertBackfillRequestCompleted(t, k8sClient, objectName)
 }
 
@@ -523,7 +525,7 @@ func Test_UpdatePhase_Failed_to_Backfilling(t *testing.T) {
 	// Arrange
 	name := types.NamespacedName{Name: "stream1", Namespace: "default"}
 	k8sClient := SetupClient(objectName,
-		Combined(WithNamedStreamDefinition(name), WithPhase(Failed), WithSuspendedSpec(false)),
+		Combined(WithNamedStreamDefinition(name), WithPhase(stream.Failed), WithSuspendedSpec(false)),
 		WithBackfillRequest(objectName),
 	)
 
@@ -538,7 +540,7 @@ func Test_UpdatePhase_Failed_to_Backfilling(t *testing.T) {
 	require.Equal(t, result, reconcile.Result{})
 
 	// Assert
-	AssertStreamDefinitionPhase(t, k8sClient, objectName, Backfilling)
+	AssertStreamDefinitionPhase(t, k8sClient, objectName, stream.Backfilling)
 	AssertBackfillRequestNotCompleted(t, k8sClient, objectName)
 }
 
@@ -560,17 +562,17 @@ func createReconciler(k8sClient client.Client, mockJob *batchv1.Job, mockCtrl *g
 			PluralName:  "mockstreamdefinitions",
 		},
 	}
-	definitionParser := func(u *unstructured.Unstructured) (Definition, error) {
+	definitionParser := func(u *unstructured.Unstructured) (stream.Definition, error) {
 		var mock testv2.MockStreamDefinition
 		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &mock); err != nil {
 			return nil, err
 		}
-		return NewMockDefinitionWrapper(&mock)
+		return stream.NewMockDefinitionWrapper(&mock)
 	}
-	statusManager := NewDefaultStatusManager(k8sClient, gvk, &sc, definitionParser)
-	backfillBackendResourceManager := NewBackfillBackendResourceManager(&sc, k8sClient, statusManager)
-	backendResourceManagers := map[Backend]BackendResourceManager{
-		BatchJob: NewJobBackend(k8sClient, jobBuilder, recorder, statusManager),
+	statusManager := stream.NewDefaultStatusManager(k8sClient, gvk, &sc, definitionParser)
+	backfillBackendResourceManager := job.NewBackfillBackendResourceManager(&sc, k8sClient, statusManager)
+	backendResourceManagers := map[stream.Backend]stream.BackendResourceManager{
+		stream.BatchJob: job.NewJobBackend(k8sClient, jobBuilder, recorder, statusManager),
 	}
-	return NewStreamReconciler(k8sClient, gvk, jobBuilder, &sc, recorder, definitionParser, backendResourceManagers, backfillBackendResourceManager)
+	return stream.NewStreamReconciler(k8sClient, gvk, jobBuilder, &sc, recorder, definitionParser, backendResourceManagers, backfillBackendResourceManager)
 }
