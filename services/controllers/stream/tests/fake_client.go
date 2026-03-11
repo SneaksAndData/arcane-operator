@@ -1,10 +1,12 @@
-package stream
+package tests
 
 import (
 	"testing"
 
 	v1 "github.com/SneaksAndData/arcane-operator/pkg/apis/streaming/v1"
 	testv2 "github.com/SneaksAndData/arcane-operator/pkg/test/apis_test/streaming/v2"
+	"github.com/SneaksAndData/arcane-operator/services/controllers/stream"
+	"github.com/SneaksAndData/arcane-operator/services/controllers/stream/backend/job"
 	"github.com/stretchr/testify/require"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -68,7 +70,7 @@ func WithSuspendedSpec(spec bool) func(definition *testv2.MockStreamDefinition) 
 	}
 }
 
-func WithPhase(phase Phase) func(definition *testv2.MockStreamDefinition) {
+func WithPhase(phase stream.Phase) func(definition *testv2.MockStreamDefinition) {
 	return func(definition *testv2.MockStreamDefinition) {
 		definition.Status.Phase = string(phase)
 	}
@@ -192,7 +194,7 @@ func WithBackfillRequest(n types.NamespacedName) func(definition *crfake.ClientB
 	}
 }
 
-func AssertStreamDefinitionPhase(t *testing.T, k8sClient client.Client, name types.NamespacedName, phase Phase) {
+func AssertStreamDefinitionPhase(t *testing.T, k8sClient client.Client, name types.NamespacedName, phase stream.Phase) {
 	sd := &testv2.MockStreamDefinition{}
 	err := k8sClient.Get(t.Context(), name, sd)
 	require.NoError(t, err)
@@ -216,7 +218,7 @@ func AssertJobConfiguration(t *testing.T, k8sClient client.Client, name types.Na
 	err := k8sClient.Get(t.Context(), name, newJob)
 	require.NoError(t, err)
 
-	jobConfiguration, err := StreamingJob(*newJob).CurrentConfiguration()
+	jobConfiguration, err := job.FromResource(newJob).CurrentConfiguration()
 	require.NoError(t, err)
 	require.Equal(t, jobConfiguration, expectedConfiguration)
 }
