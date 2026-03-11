@@ -201,7 +201,10 @@ func AssertJobConfiguration(t *testing.T, k8sClient client.Client, name types.Na
 	err := k8sClient.Get(t.Context(), name, newJob)
 	require.NoError(t, err)
 
-	jobConfiguration, err := job.FromResource(newJob).CurrentConfiguration()
+	j, err := job.FromResource(newJob)
+	require.NoError(t, err)
+
+	jobConfiguration, err := j.CurrentConfiguration()
 	require.NoError(t, err)
 	require.Equal(t, jobConfiguration, expectedConfiguration)
 }
