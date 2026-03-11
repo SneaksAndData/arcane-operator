@@ -63,8 +63,12 @@ func (j *BackendResource) IsBackfill() bool { // coverage-ignore (trivial)
 	return strings.ToLower(val) == "true"
 }
 
-func FromResource(job *v1.Job) *BackendResource { // coverage-ignore (trivial)
-	return &BackendResource{
-		Job: job,
+func FromResource(job client.Object) (stream.BackendResource, error) { // coverage-ignore (trivial)
+	jobObj, isJob := job.(*v1.Job)
+
+	if !isJob {
+		return nil, fmt.Errorf("object is not a Job")
 	}
+
+	return &BackendResource{Job: jobObj}, nil
 }

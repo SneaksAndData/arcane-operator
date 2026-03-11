@@ -53,8 +53,14 @@ func (j *BackendResource) IsBackfill() bool { // coverage-ignore (trivial)
 	return strings.ToLower(val) == "true"
 }
 
-func FromResource(cj *v1.CronJob) *BackendResource { // coverage-ignore (trivial)
-	return &BackendResource{
-		CronJob: cj,
+func FromResource(cj client.Object) (stream.BackendResource, error) { // coverage-ignore (trivial)
+	cronJob, isCronJob := cj.(*v1.CronJob)
+
+	if !isCronJob {
+		return nil, fmt.Errorf("object is not a CronJob")
 	}
+
+	return &BackendResource{
+		CronJob: cronJob,
+	}, nil
 }
