@@ -179,7 +179,8 @@ func waitForJob(t *testing.T, watcher watch.Interface, name string, handleEvent 
 			}
 
 			t.Logf("Received resource event: Type=%s, Object=%T", event.Type, event.Object)
-			resource := job.FromResource(rawJob)
+			resource, err := job.FromResource(rawJob)
+			require.NoError(t, err)
 			handleEvent(resource)
 			if isCompleted(resource) {
 				t.Log("Job is isCompleted, stopping watcher")
