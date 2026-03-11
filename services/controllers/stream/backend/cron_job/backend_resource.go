@@ -1,4 +1,4 @@
-package job
+package cron_job
 
 import (
 	"fmt"
@@ -6,7 +6,7 @@ import (
 
 	"github.com/SneaksAndData/arcane-operator/services/controllers/stream"
 	"github.com/SneaksAndData/arcane-operator/services/job"
-	v1 "k8s.io/api/batch/v1"
+	"k8s.io/api/batch/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -14,45 +14,35 @@ import (
 var _ stream.BackendResource = (*BackendResource)(nil)
 
 type BackendResource struct {
-	*v1.Job
+	*v1.CronJob
 }
 
 func (j *BackendResource) Name() string { // coverage-ignore (trivial)
-	return j.Job.Name
+	return j.CronJob.Name
 }
 
 func (j *BackendResource) UID() types.UID { // coverage-ignore (trivial)
-	return j.Job.UID
+	return j.CronJob.UID
 }
 
 func (j *BackendResource) CurrentConfiguration() (string, error) { // coverage-ignore (trivial)
 	value, ok := j.Annotations[job.ConfigurationHashAnnotation]
 	if !ok {
-		return "", fmt.Errorf("job does not contain configuration hash")
+		return "", fmt.Errorf("cron job does not contain configuration hash")
 	}
 	return value, nil
 }
 
 func (j *BackendResource) IsCompleted() bool { // coverage-ignore (trivial)
-	for _, condition := range j.Status.Conditions {
-		if condition.Type == v1.JobComplete && condition.Status == "True" {
-			return true
-		}
-	}
 	return false
 }
 
 func (j *BackendResource) IsFailed() bool { // coverage-ignore (trivial)
-	for _, condition := range j.Status.Conditions {
-		if condition.Type == v1.JobFailed && condition.Status == "True" {
-			return true
-		}
-	}
 	return false
 }
 
 func (j *BackendResource) ToObject() client.Object { // coverage-ignore (trivial)
-	return j.Job
+	return j.CronJob
 }
 
 func (j *BackendResource) IsBackfill() bool { // coverage-ignore (trivial)
@@ -63,12 +53,14 @@ func (j *BackendResource) IsBackfill() bool { // coverage-ignore (trivial)
 	return strings.ToLower(val) == "true"
 }
 
-func FromResource(job client.Object) (stream.BackendResource, error) { // coverage-ignore (trivial)
-	jobObj, isJob := job.(*v1.Job)
+func FromResource(cj client.Object) (stream.BackendResource, error) { // coverage-ignore (trivial)
+	cronJob, isCronJob := cj.(*v1.CronJob)
 
-	if !isJob {
-		return nil, fmt.Errorf("object is not a Job")
+	if !isCronJob {
+		return nil, fmt.Errorf("object is not a CronJob")
 	}
 
-	return &BackendResource{Job: jobObj}, nil
+	return &BackendResource{
+		CronJob: cronJob,
+	}, nil
 }
