@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	v1 "github.com/SneaksAndData/arcane-operator/pkg/apis/streaming/v1"
-	testv2 "github.com/SneaksAndData/arcane-operator/pkg/test/apis_test/streaming/v2"
 	v2 "github.com/SneaksAndData/arcane-operator/pkg/test/generated/applyconfiguration/streaming/v2"
+	"github.com/SneaksAndData/arcane-operator/services/controllers/contracts"
 	"github.com/SneaksAndData/arcane-operator/services/controllers/stream"
 	"github.com/SneaksAndData/arcane-operator/services/controllers/stream/backend/job"
 	"github.com/SneaksAndData/arcane-operator/tests/mocks"
@@ -14,8 +14,6 @@ import (
 	"go.uber.org/mock/gomock"
 	batchv1 "k8s.io/api/batch/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
@@ -562,17 +560,10 @@ func createReconciler(k8sClient client.Client, mockJob *batchv1.Job, mockCtrl *g
 			PluralName:  "mockstreamdefinitions",
 		},
 	}
-	definitionParser := func(u *unstructured.Unstructured) (stream.Definition, error) {
-		var mock testv2.MockStreamDefinition
-		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &mock); err != nil {
-			return nil, err
-		}
-		return stream.NewMockDefinitionWrapper(&mock)
-	}
-	statusManager := stream.NewDefaultStatusManager(k8sClient, gvk, &sc, definitionParser)
+	statusManager := stream.NewDefaultStatusManager(k8sClient, gvk, &sc, contracts.FromUnstructured)
 	backfillBackendResourceManager := job.NewBackfillBackendResourceManager(&sc, k8sClient, statusManager)
 	backendResourceManagers := map[stream.Backend]stream.BackendResourceManager{
 		stream.BatchJob: job.NewJobBackend(k8sClient, jobBuilder, recorder, statusManager),
 	}
-	return stream.NewStreamReconciler(k8sClient, gvk, jobBuilder, &sc, recorder, definitionParser, backendResourceManagers, backfillBackendResourceManager)
+	return stream.NewStreamReconciler(k8sClient, gvk, jobBuilder, &sc, recorder, contracts.FromUnstructured, backendResourceManagers, backfillBackendResourceManager)
 }
