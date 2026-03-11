@@ -29,7 +29,7 @@ func Test_StreamMetadataService_JobConfigurator_NoSecretRefs(t *testing.T) {
 
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
-	mockProvider := mocks.NewMockSecretReferenceProvider(mockCtrl)
+	mockProvider := job_mock.NewMockSecretReferenceProvider(mockCtrl)
 	service := NewStreamMetadataService(streamClass, mockProvider)
 
 	// Act
@@ -79,7 +79,7 @@ func Test_StreamMetadataService_JobConfigurator_SingleSecretRef(t *testing.T) {
 
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
-	mockProvider := mocks.NewMockSecretReferenceProvider(mockCtrl)
+	mockProvider := job_mock.NewMockSecretReferenceProvider(mockCtrl)
 	mockProvider.EXPECT().
 		GetReferenceForSecret("secretRef").
 		Return(&corev1.LocalObjectReference{Name: "databaseCredentials"}, nil).
@@ -135,7 +135,7 @@ func Test_StreamMetadataService_JobConfigurator_NilSecretRefs(t *testing.T) {
 
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
-	mockProvider := mocks.NewMockSecretReferenceProvider(mockCtrl)
+	mockProvider := job_mock.NewMockSecretReferenceProvider(mockCtrl)
 	service := NewStreamMetadataService(streamClass, mockProvider)
 
 	// Act
@@ -185,7 +185,7 @@ func Test_StreamMetadataService_JobConfigurator_MultipleContainers(t *testing.T)
 
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
-	mockProvider := mocks.NewMockSecretReferenceProvider(mockCtrl)
+	mockProvider := job_mock.NewMockSecretReferenceProvider(mockCtrl)
 	mockProvider.EXPECT().
 		GetReferenceForSecret("secretRef").
 		Return(&corev1.LocalObjectReference{Name: "databaseCredentials"}, nil).
@@ -249,7 +249,7 @@ func Test_StreamMetadataService_JobConfigurator_PreservesExistingEnvFrom(t *test
 
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
-	mockProvider := mocks.NewMockSecretReferenceProvider(mockCtrl)
+	mockProvider := job_mock.NewMockSecretReferenceProvider(mockCtrl)
 	mockProvider.EXPECT().
 		GetReferenceForSecret("secretRef").
 		Return(&corev1.LocalObjectReference{Name: "my-secret"}, nil).

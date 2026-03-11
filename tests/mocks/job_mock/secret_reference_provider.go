@@ -7,7 +7,7 @@
 //
 
 // Package mocks is a generated GoMock package.
-package mocks
+package job_mock
 
 import (
 	reflect "reflect"
