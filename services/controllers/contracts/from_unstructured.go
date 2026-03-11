@@ -3,8 +3,8 @@ package contracts
 import (
 	"fmt"
 
-	v0 "github.com/SneaksAndData/arcane-operator/services/controllers/contracts/v0"
-	v1 "github.com/SneaksAndData/arcane-operator/services/controllers/contracts/v1"
+	"github.com/SneaksAndData/arcane-operator/services/controllers/contracts/v0"
+	"github.com/SneaksAndData/arcane-operator/services/controllers/contracts/v1"
 	"github.com/SneaksAndData/arcane-operator/services/controllers/stream"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
