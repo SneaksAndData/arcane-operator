@@ -17,6 +17,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/tools/record"
 	"k8s.io/klog/v2"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -33,6 +34,20 @@ type Backend struct {
 
 	client        client.Client
 	statusManager stream.StatusManager
+}
+
+func NewCronJobBackend(client client.Client, jobBuilder stream.JobBuilder, eventRecorder record.EventRecorder, phaseManager stream.StatusManager) *Backend {
+	return &Backend{
+		BaseResourceManager: backend.BaseResourceManager{
+			JobBuilder:    jobBuilder,
+			EventRecorder: eventRecorder,
+		},
+		ResourceReader: backend.ResourceReader{
+			Client: client,
+		},
+		client:        client,
+		statusManager: phaseManager,
+	}
 }
 
 func (c *Backend) SetupWithController(cache cache.Cache, scheme *runtime.Scheme, mapper meta.RESTMapper, controller controller.Controller, primaryGvk schema.GroupVersionKind) error {

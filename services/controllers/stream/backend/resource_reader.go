@@ -13,12 +13,12 @@ import (
 type ResourceConverter func(object client.Object) (stream.BackendResource, error)
 
 type ResourceReader struct {
-	client client.Client
+	Client client.Client
 }
 
 func (c *ResourceReader) Get(ctx context.Context, name client.ObjectKey, object client.Object, fromObject ResourceConverter) (stream.BackendResource, error) {
 	logger := c.getLogger(ctx, name)
-	err := c.client.Get(ctx, name, object)
+	err := c.Client.Get(ctx, name, object)
 
 	if client.IgnoreNotFound(err) != nil { // coverage-ignore
 		logger.V(0).Error(err, "unable to fetch Stream Cron Job")

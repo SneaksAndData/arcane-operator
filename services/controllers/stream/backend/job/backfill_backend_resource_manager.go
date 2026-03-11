@@ -64,16 +64,10 @@ func (b *BackfillBackendResourceManager) Get(ctx context.Context, name types.Nam
 		return nil, err
 	}
 
-	var streamingJob stream.BackendResource
 	if errors.IsNotFound(err) {
-		streamingJob = nil
 		logger.V(1).Info("streaming does not exist")
-	} else {
-		streamingJob = FromResource(job)
-		logger.V(1).Info("streaming job found")
 	}
-
-	return streamingJob, nil
+	return FromResource(job)
 }
 
 func (b *BackfillBackendResourceManager) Remove(ctx context.Context, definition stream.Definition, nextPhase stream.Phase, eventFunc controllers.EventFunc) (reconcile.Result, error) {

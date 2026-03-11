@@ -42,6 +42,9 @@ func NewJobBackend(client client.Client, jobBuilder stream.JobBuilder, eventReco
 			JobBuilder:    jobBuilder,
 			EventRecorder: eventRecorder,
 		},
+		ResourceReader: backend.ResourceReader{
+			Client: client,
+		},
 		client:        client,
 		eventRecorder: eventRecorder,
 		statusManager: phaseManager,
