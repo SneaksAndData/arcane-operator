@@ -304,6 +304,28 @@ func (s *streamReconciler) moveFsm(ctx context.Context, definition Definition, j
 				"The stream %s has been scheduled", definition.NamespacedName().Name)
 		})
 
+	case phase == Scheduled && backfillRequest != nil:
+		return s.backendResourceManagers[definition.GetBackend()].Remove(ctx, definition, Pending, func() {
+			s.eventRecorder.Eventf(definition.ToUnstructured(),
+				"Normal",
+				"BackfillRequested",
+				"A backfill requested for stream %s, stopping the streaming job to start backfilling", definition.NamespacedName().Name)
+		})
+
+	case phase == Scheduled && backfillRequest == nil:
+		transited, result, err := tryTransitionBackend(ctx, s, definition, backfillRequest)
+		if err != nil {
+			return result, err
+		}
+		if transited {
+			return result, nil
+		}
+		return s.backendResourceManagers[definition.GetBackend()].Apply(ctx, definition, backfillRequest, Scheduled, s.streamClass, func() {
+			s.eventRecorder.Eventf(definition.ToUnstructured(),
+				"Normal",
+				"StreamingScheduled",
+				"The stream %s is scheduled", definition.NamespacedName().Name)
+		})
 	}
 
 	return reconcile.Result{}, fmt.Errorf("failed to reconcile Stream FSM for %s/%s. Current state: %s",

@@ -155,7 +155,7 @@ func Test_UpdatePhase_Pending_To_Scheduled_no_job(t *testing.T) {
 	// Assert
 	// Fetch the object and ensure its status Phase is Pending
 	AssertStreamDefinitionPhase(t, k8sClient, objectName, stream.Scheduled)
-	AssertCronJob(t, k8sClient, objectName, func(t *testing.T, cj *batchv1.CronJob) {
+	AssertCronJobExists(t, k8sClient, objectName, func(t *testing.T, cj *batchv1.CronJob) {
 		require.Equal(t, "* * * * *", cj.Spec.Schedule)
 		require.Equal(t, batchv1.ForbidConcurrent, cj.Spec.ConcurrencyPolicy)
 	})
@@ -624,6 +624,94 @@ func Test_UpdatePhase_Failed_to_Backfilling(t *testing.T) {
 	// Assert
 	AssertStreamDefinitionPhase(t, k8sClient, objectName, stream.Backfilling)
 	AssertBackfillRequestNotCompleted(t, k8sClient, objectName)
+}
+
+func Test_UpdatePhase_Scheduled_to_Scheduled_no_cron_job(t *testing.T) {
+	// Arrange
+	k8sClient := SetupClient(objectName,
+		Combined(
+			WithNamedStreamDefinition(objectName),
+			WithPhase(stream.Scheduled),
+			WithSuspendedSpec(false),
+			WithSchedule("* * * * *"),
+		),
+		nil,
+	)
+
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	mockJob := batchv1.Job{ObjectMeta: metav1.ObjectMeta{Name: objectName.Name, Namespace: objectName.Namespace}}
+	reconciler := createReconciler(k8sClient, &mockJob, mockCtrl)
+
+	// Act
+	result, err := reconciler.Reconcile(t.Context(), reconcile.Request{NamespacedName: objectName})
+	require.NoError(t, err)
+	require.Equal(t, result, reconcile.Result{})
+
+	// Assert
+	AssertStreamDefinitionPhase(t, k8sClient, objectName, stream.Scheduled)
+	AssertCronJobExists(t, k8sClient, objectName, func(t *testing.T, cj *batchv1.CronJob) {
+		require.Equal(t, "* * * * *", cj.Spec.Schedule)
+		require.Equal(t, batchv1.ForbidConcurrent, cj.Spec.ConcurrencyPolicy)
+		// computed manually for the test definition
+		require.Equal(t, "f64da5796994069c5b50e98041dd9d2f", cj.Annotations["configuration-hash"])
+	})
+}
+
+func Test_UpdatePhase_Scheduled_to_Scheduled_recreate_cron_job(t *testing.T) {
+	// Arrange
+	k8sClient := SetupClient(objectName,
+		Combined(
+			WithNamedStreamDefinition(objectName),
+			WithPhase(stream.Scheduled),
+			WithSuspendedSpec(false),
+			WithSchedule("* * * * *"),
+		),
+		WithOutdatedCronJob(objectName),
+	)
+
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	mockJob := batchv1.Job{ObjectMeta: metav1.ObjectMeta{Name: objectName.Name, Namespace: objectName.Namespace}}
+	reconciler := createReconciler(k8sClient, &mockJob, mockCtrl)
+
+	// Act
+	result, err := reconciler.Reconcile(t.Context(), reconcile.Request{NamespacedName: objectName})
+	require.NoError(t, err)
+	require.Equal(t, result, reconcile.Result{})
+
+	// Assert
+	AssertStreamDefinitionPhase(t, k8sClient, objectName, stream.Scheduled)
+	AssertCronJobExists(t, k8sClient, objectName, func(t *testing.T, cj *batchv1.CronJob) {
+		require.Equal(t, "* * * * *", cj.Spec.Schedule)
+		require.Equal(t, batchv1.ForbidConcurrent, cj.Spec.ConcurrencyPolicy)
+		// computed manually for the test definition
+		require.Equal(t, "f64da5796994069c5b50e98041dd9d2f", cj.Annotations["configuration-hash"])
+	})
+}
+
+func Test_UpdatePhase_Scheduled_to_Scheduled_not_recreate_cron_job(t *testing.T) {
+	// Arrange
+	k8sClient := SetupClient(objectName,
+		Combined(
+			WithNamedStreamDefinition(objectName),
+			WithPhase(stream.Scheduled),
+			WithSuspendedSpec(false),
+			WithSchedule("* * * * *"),
+		),
+		WithConsistentCronJob(objectName, "f64da5796994069c5b50e98041dd9d2f"),
+	)
+
+	reconciler := createReconciler(k8sClient, nil, nil)
+
+	// Act
+	result, err := reconciler.Reconcile(t.Context(), reconcile.Request{NamespacedName: objectName})
+	require.NoError(t, err)
+	require.Equal(t, result, reconcile.Result{})
+
+	// Assert
+	AssertStreamDefinitionPhase(t, k8sClient, objectName, stream.Scheduled)
+	AssertCronJobExists(t, k8sClient, objectName, nil)
 }
 
 func createReconciler(k8sClient client.Client, mockJob *batchv1.Job, mockCtrl *gomock.Controller) reconcile.Reconciler {
