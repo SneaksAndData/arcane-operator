@@ -441,6 +441,43 @@ func Test_UpdatePhase_Backfilling_To_Backfilling_with_no_job(t *testing.T) {
 	AssertBackfillRequestNotCompleted(t, k8sClient, objectName)
 }
 
+func Test_UpdatePhase_Pending_To_Backfilling_with_schedule(t *testing.T) {
+	// Arrange
+	k8sClient := SetupClient(objectName,
+		Combined(
+			WithNamedStreamDefinition(objectName),
+			WithPhase(stream.Pending),
+			WithSuspendedSpec(false),
+			WithSchedule("* * * * *"),
+		),
+		CombinedB(WithBackfillRequest(objectName)),
+	)
+
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+
+	mockJob := batchv1.Job{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: objectName.Namespace,
+			Name:      objectName.Name,
+			Annotations: map[string]string{
+				"configuration-hash": "new-hash",
+			},
+		},
+	}
+	reconciler := createReconciler(k8sClient, &mockJob, mockCtrl)
+
+	// Act
+	result, err := reconciler.Reconcile(t.Context(), reconcile.Request{NamespacedName: objectName})
+	require.NoError(t, err)
+	require.Equal(t, result, reconcile.Result{})
+
+	// Assert
+	AssertStreamDefinitionPhase(t, k8sClient, objectName, stream.Backfilling)
+	AssertJobExists(t, k8sClient, objectName)
+	AssertBackfillRequestNotCompleted(t, k8sClient, objectName)
+}
+
 func Test_UpdatePhase_Backfilling_To_Pending_with_schedule(t *testing.T) {
 	// Arrange
 	k8sClient := SetupClient(objectName,
@@ -712,6 +749,61 @@ func Test_UpdatePhase_Scheduled_to_Scheduled_not_recreate_cron_job(t *testing.T)
 	// Assert
 	AssertStreamDefinitionPhase(t, k8sClient, objectName, stream.Scheduled)
 	AssertCronJobExists(t, k8sClient, objectName, nil)
+}
+
+func Test_UpdatePhase_Scheduled_to_Suspended(t *testing.T) {
+	// Arrange
+	k8sClient := SetupClient(objectName,
+		Combined(
+			WithNamedStreamDefinition(objectName),
+			WithPhase(stream.Scheduled),
+			WithSuspendedSpec(true),
+			WithSchedule("* * * * *"),
+		),
+		WithOutdatedCronJob(objectName),
+	)
+
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	mockJob := batchv1.Job{ObjectMeta: metav1.ObjectMeta{Name: objectName.Name, Namespace: objectName.Namespace}}
+	reconciler := createReconciler(k8sClient, &mockJob, mockCtrl)
+
+	// Act
+	result, err := reconciler.Reconcile(t.Context(), reconcile.Request{NamespacedName: objectName})
+	require.NoError(t, err)
+	require.Equal(t, result, reconcile.Result{})
+
+	// Assert
+	AssertStreamDefinitionPhase(t, k8sClient, objectName, stream.Suspended)
+	AssertCronJobNotExists(t, k8sClient, objectName)
+}
+
+func Test_UpdatePhase_Scheduled_to_Backfilling(t *testing.T) {
+	// Arrange
+	k8sClient := SetupClient(objectName,
+		Combined(
+			WithNamedStreamDefinition(objectName),
+			WithPhase(stream.Scheduled),
+			WithSuspendedSpec(false),
+			WithSchedule("* * * * *"),
+		),
+		WithBackfillRequest(objectName),
+	)
+
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	mockJob := batchv1.Job{ObjectMeta: metav1.ObjectMeta{Name: objectName.Name, Namespace: objectName.Namespace}}
+	reconciler := createReconciler(k8sClient, &mockJob, mockCtrl)
+
+	// Act
+	result, err := reconciler.Reconcile(t.Context(), reconcile.Request{NamespacedName: objectName})
+	require.NoError(t, err)
+	require.Equal(t, result, reconcile.Result{})
+
+	// Assert
+	AssertStreamDefinitionPhase(t, k8sClient, objectName, stream.Pending)
+	AssertCronJobNotExists(t, k8sClient, objectName)
+	AssertBackfillRequestNotCompleted(t, k8sClient, objectName)
 }
 
 func createReconciler(k8sClient client.Client, mockJob *batchv1.Job, mockCtrl *gomock.Controller) reconcile.Reconciler {

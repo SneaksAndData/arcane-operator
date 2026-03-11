@@ -192,7 +192,7 @@ func (s *streamReconciler) moveFsm(ctx context.Context, definition Definition, j
 		return s.backendResourceManagers[definition.GetBackend()].Apply(ctx, definition, nil, nextPhase, s.streamClass, nil)
 
 	case phase == Pending && backfillRequest != nil:
-		return s.backendResourceManagers[definition.GetBackend()].Apply(ctx, definition, backfillRequest, Backfilling, s.streamClass, nil)
+		return s.backendResourceManagers[BatchJob].Apply(ctx, definition, backfillRequest, Backfilling, s.streamClass, nil)
 
 	case phase == Running && definition.Suspended():
 		return s.backendResourceManagers[definition.GetBackend()].Remove(ctx, definition, Suspended, func() {
@@ -302,6 +302,14 @@ func (s *streamReconciler) moveFsm(ctx context.Context, definition Definition, j
 				"Normal",
 				"StreamScheduled",
 				"The stream %s has been scheduled", definition.NamespacedName().Name)
+		})
+
+	case phase == Scheduled && definition.Suspended():
+		return s.backendResourceManagers[definition.GetBackend()].Remove(ctx, definition, Suspended, func() {
+			s.eventRecorder.Eventf(definition.ToUnstructured(),
+				"Normal",
+				"StreamSuspended",
+				"The streaming job %s was suspended", definition.NamespacedName().Name)
 		})
 
 	case phase == Scheduled && backfillRequest != nil:

@@ -242,6 +242,12 @@ func AssertCronJobExists(t *testing.T, k8sClient client.Client, name types.Names
 	}
 }
 
+func AssertCronJobNotExists(t *testing.T, k8sClient client.Client, name types.NamespacedName) {
+	newJob := &batchv1.CronJob{}
+	err := k8sClient.Get(t.Context(), name, newJob)
+	require.True(t, errors.IsNotFound(err))
+}
+
 func AssertJobNotExists(t *testing.T, k8sClient client.Client, name types.NamespacedName) {
 	newJob := &batchv1.Job{}
 	err := k8sClient.Get(t.Context(), name, newJob)
