@@ -87,12 +87,6 @@ func WithNamedStreamDefinition(n types.NamespacedName) func(definition *testv2.M
 	}
 }
 
-func WithApiVersion(apiVersion string) func(definition *testv2.MockStreamDefinition) {
-	return func(definition *testv2.MockStreamDefinition) {
-		definition.Spec.ExecutionSettings.APIVersion = apiVersion
-	}
-}
-
 func WithSchedule(schedule string) func(definition *testv2.MockStreamDefinition) {
 	return func(definition *testv2.MockStreamDefinition) {
 		definition.Spec.ExecutionSettings.StreamingBackend = testv2.StreamingBackend{
