@@ -154,6 +154,7 @@ func Test_CreateFailedStream(t *testing.T) {
 				return
 			} else {
 				t.Logf("StreamDefinition %s/%s is in %s phase, waiting for Failed phase", streamDefinition.Namespace, streamDefinition.Name, streamDefinition.Status.Phase)
+				time.Sleep(1 * time.Second)
 			}
 		}
 	}
@@ -179,7 +180,8 @@ func waitForJob(t *testing.T, watcher watch.Interface, name string, handleEvent 
 			}
 
 			t.Logf("Received resource event: Type=%s, Object=%T", event.Type, event.Object)
-			resource := job.FromResource(rawJob)
+			resource, err := job.FromResource(rawJob)
+			require.NoError(t, err)
 			handleEvent(resource)
 			if isCompleted(resource) {
 				t.Log("Job is isCompleted, stopping watcher")

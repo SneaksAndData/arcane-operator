@@ -21,7 +21,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-var objectName types.NamespacedName = types.NamespacedName{Name: "stream1", Namespace: "default"}
+var objectName = types.NamespacedName{Name: "stream1", Namespace: "default"}
 
 func Test_UpdatePhase_New_To_Suspended(t *testing.T) {
 	// Arrange
