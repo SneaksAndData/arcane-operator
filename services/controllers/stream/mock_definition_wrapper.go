@@ -1,16 +1,19 @@
 package stream
 
 import (
+	"context"
 	"fmt"
 
 	v1 "github.com/SneaksAndData/arcane-operator/pkg/apis/streaming/v1"
 	testv2 "github.com/SneaksAndData/arcane-operator/pkg/test/apis_test/streaming/v2"
 	"github.com/SneaksAndData/arcane-operator/services/job"
+	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var _ Definition = (*MockDefinitionWrapper)(nil)
@@ -240,4 +243,31 @@ func (m *MockDefinitionWrapper) Validate() error {
 
 func (m *MockDefinitionWrapper) GetBackend() Backend {
 	return BatchJob
+}
+
+func (m *MockDefinitionWrapper) GetPreviousBackend(ctx context.Context, c client.Client) (*Backend, error) {
+	var backend Backend
+
+	var cronJob batchv1.CronJob
+	err := c.Get(ctx, m.NamespacedName(), &cronJob)
+	if err == nil {
+		backend = CronJob
+		return &backend, nil
+	}
+	if client.IgnoreNotFound(err) != nil {
+		return nil, err
+	}
+
+	var j batchv1.Job
+	err = c.Get(ctx, m.NamespacedName(), &j)
+	if err == nil {
+		backend = BatchJob
+		return &backend, nil
+	}
+	if client.IgnoreNotFound(err) != nil {
+		return nil, err
+	}
+
+	// If neither a CronJob nor a Job exists with the same name, we can assume that there was no previous backend.
+	return nil, nil
 }

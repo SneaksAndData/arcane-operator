@@ -1,6 +1,6 @@
 module github.com/SneaksAndData/arcane-operator
 
-go 1.25.0
+go 1.24.0
 
 require (
 	github.com/DataDog/datadog-api-client-go/v2 v2.50.0

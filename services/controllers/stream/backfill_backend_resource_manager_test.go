@@ -7,6 +7,7 @@ import (
 	v1 "github.com/SneaksAndData/arcane-operator/pkg/apis/streaming/v1"
 	testv2 "github.com/SneaksAndData/arcane-operator/pkg/test/apis_test/streaming/v2"
 	v2 "github.com/SneaksAndData/arcane-operator/pkg/test/generated/applyconfiguration/streaming/v2"
+	"github.com/SneaksAndData/arcane-operator/services/controllers/stream/tests"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -16,26 +17,26 @@ import (
 )
 
 func Test_Get(t *testing.T) {
-	k8sClient := SetupClient(objectName, nil, WithOutdatedJob(objectName))
+	k8sClient := SetupClient(tests.objectName, nil, WithOutdatedJob(tests.objectName))
 	backfillBackendResourceManager := setupBackfillBackendResourceManagerTest(k8sClient)
-	job, err := backfillBackendResourceManager.Get(t.Context(), objectName)
+	job, err := backfillBackendResourceManager.Get(t.Context(), tests.objectName)
 	require.NoError(t, err)
-	require.Equal(t, objectName.Name, job.Name)
+	require.Equal(t, tests.objectName.Name, job.Name)
 }
 
 func Test_Get_No_Job(t *testing.T) {
-	k8sClient := SetupClient(objectName, nil, nil)
+	k8sClient := SetupClient(tests.objectName, nil, nil)
 	backfillBackendResourceManager := setupBackfillBackendResourceManagerTest(k8sClient)
-	job, err := backfillBackendResourceManager.Get(t.Context(), objectName)
+	job, err := backfillBackendResourceManager.Get(t.Context(), tests.objectName)
 	require.NoError(t, err)
 	require.Nil(t, job)
 }
 
 func Test_Remove(t *testing.T) {
-	k8sClient := SetupClient(objectName, nil, WithCompletedJob(objectName))
+	k8sClient := SetupClient(tests.objectName, nil, WithCompletedJob(tests.objectName))
 	backfillBackendResourceManager := setupBackfillBackendResourceManagerTest(k8sClient)
 	m, err := NewMockDefinitionWrapper(&testv2.MockStreamDefinition{
-		ObjectMeta: metav1.ObjectMeta{Name: objectName.Name, Namespace: objectName.Namespace},
+		ObjectMeta: metav1.ObjectMeta{Name: tests.objectName.Name, Namespace: tests.objectName.Namespace},
 	})
 	require.NoError(t, err)
 	result, err := backfillBackendResourceManager.Remove(t.Context(), m, Pending, func() {
@@ -46,13 +47,13 @@ func Test_Remove(t *testing.T) {
 }
 
 func Test_Remove_WithBackfillRequest(t *testing.T) {
-	k8sClient := SetupClient(objectName,
-		WithNamedStreamDefinition(objectName),
-		CombinedB(WithCompletedJob(objectName), WithBackfillRequest(objectName)),
+	k8sClient := SetupClient(tests.objectName,
+		WithNamedStreamDefinition(tests.objectName),
+		CombinedB(WithCompletedJob(tests.objectName), WithBackfillRequest(tests.objectName)),
 	)
 	backfillBackendResourceManager := setupBackfillBackendResourceManagerTest(k8sClient)
 	m, err := NewMockDefinitionWrapper(&testv2.MockStreamDefinition{
-		ObjectMeta: metav1.ObjectMeta{Name: objectName.Name, Namespace: objectName.Namespace},
+		ObjectMeta: metav1.ObjectMeta{Name: tests.objectName.Name, Namespace: tests.objectName.Namespace},
 	})
 	require.NoError(t, err)
 	result, err := backfillBackendResourceManager.Remove(t.Context(), m, Pending, func() {
@@ -60,32 +61,32 @@ func Test_Remove_WithBackfillRequest(t *testing.T) {
 	})
 	require.NoError(t, err)
 	require.NotNil(t, result)
-	AssertBackfillRequestCompleted(t, k8sClient, objectName)
+	AssertBackfillRequestCompleted(t, k8sClient, tests.objectName)
 }
 
 func Test_Apply(t *testing.T) {
-	k8sClient := SetupClient(objectName, WithNamedStreamDefinition(objectName), nil)
+	k8sClient := SetupClient(tests.objectName, WithNamedStreamDefinition(tests.objectName), nil)
 	backfillBackendResourceManager := setupBackfillBackendResourceManagerTest(k8sClient)
 	m, err := NewMockDefinitionWrapper(&testv2.MockStreamDefinition{
-		ObjectMeta: metav1.ObjectMeta{Name: objectName.Name, Namespace: objectName.Namespace},
+		ObjectMeta: metav1.ObjectMeta{Name: tests.objectName.Name, Namespace: tests.objectName.Namespace},
 	})
 	require.NoError(t, err)
 	bfr := &v1.BackfillRequest{
-		ObjectMeta: metav1.ObjectMeta{Name: "backfill1", Namespace: objectName.Namespace},
+		ObjectMeta: metav1.ObjectMeta{Name: "backfill1", Namespace: tests.objectName.Namespace},
 	}
 	result, err := backfillBackendResourceManager.Apply(t.Context(), m, bfr, Pending, nil, func() {
 		/* do nothing */
 	})
 	require.NoError(t, err)
 	require.NotNil(t, result)
-	AssertBackfillRequestNotCompleted(t, k8sClient, objectName)
+	AssertBackfillRequestNotCompleted(t, k8sClient, tests.objectName)
 }
 
 func Test_GetBackfillRequest_Empty(t *testing.T) {
-	k8sClient := SetupClient(objectName, WithNamedStreamDefinition(objectName), nil)
+	k8sClient := SetupClient(tests.objectName, WithNamedStreamDefinition(tests.objectName), nil)
 	backfillBackendResourceManager := setupBackfillBackendResourceManagerTest(k8sClient)
 	m, err := NewMockDefinitionWrapper(&testv2.MockStreamDefinition{
-		ObjectMeta: metav1.ObjectMeta{Name: objectName.Name, Namespace: objectName.Namespace},
+		ObjectMeta: metav1.ObjectMeta{Name: tests.objectName.Name, Namespace: tests.objectName.Namespace},
 	})
 	require.NoError(t, err)
 

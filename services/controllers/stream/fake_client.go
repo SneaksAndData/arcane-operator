@@ -81,6 +81,23 @@ func WithNamedStreamDefinition(n types.NamespacedName) func(definition *testv2.M
 	}
 }
 
+func WithApiVersion(apiVersion string) func(definition *testv2.MockStreamDefinition) {
+	return func(definition *testv2.MockStreamDefinition) {
+		definition.Spec.ExecutionSettings.APIVersion = apiVersion
+	}
+}
+
+func WithSchedule(schedule string) func(definition *testv2.MockStreamDefinition) {
+	return func(definition *testv2.MockStreamDefinition) {
+		definition.Spec.ExecutionSettings.StreamingBackend = testv2.StreamingBackend{
+			BatchJobBackend: nil,
+			CronJobBackend: &testv2.CronJobBackend{
+				Schedule: schedule,
+			},
+		}
+	}
+}
+
 func WithOutdatedJob(n types.NamespacedName) func(definition *crfake.ClientBuilder) {
 	return func(client2 *crfake.ClientBuilder) {
 		client2.WithObjects(&batchv1.Job{

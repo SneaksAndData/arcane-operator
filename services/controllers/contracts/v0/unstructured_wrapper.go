@@ -1,6 +1,7 @@
 package v0
 
 import (
+	"context"
 	"fmt"
 
 	v1 "github.com/SneaksAndData/arcane-operator/pkg/apis/streaming/v1"
@@ -12,6 +13,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var (
@@ -120,8 +122,13 @@ func (u *UnstructuredWrapper) Validate() error {
 	return nil
 }
 
-func (u *UnstructuredWrapper) GetBackend() stream.Backend { // coverage-ignore
+func (u *UnstructuredWrapper) GetBackend() stream.Backend {
 	return stream.BatchJob
+}
+
+func (u *UnstructuredWrapper) GetPreviousBackend(_ context.Context, _ client.Client) (*stream.Backend, error) {
+	b := stream.BatchJob
+	return &b, nil
 }
 
 func (u *UnstructuredWrapper) extractStreamingJobRef(from string, target *corev1.ObjectReference) error {

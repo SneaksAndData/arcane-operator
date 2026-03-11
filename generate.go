@@ -6,3 +6,5 @@ package main
 //go:generate mockgen -destination=./tests/mocks/job_builder.go -package=mocks github.com/SneaksAndData/arcane-operator/services/controllers/stream JobBuilder
 //go:generate mockgen -destination=./tests/mocks/job_mock/secret_reference_provider.go -package=mocks github.com/SneaksAndData/arcane-operator/services/job SecretReferenceProvider
 //go:generate mockgen -destination=./tests/mocks/metrics_reporter.go -package=mocks github.com/SneaksAndData/arcane-operator/services/controllers/stream_class StreamClassMetricsReporter
+
+//go:generate mockgen -destination=./tests/mocks/stream/definition_mock.go -package=stream github.com/SneaksAndData/arcane-operator/services/controllers/stream Definition
