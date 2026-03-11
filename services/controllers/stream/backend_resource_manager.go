@@ -21,7 +21,7 @@ type BackendResourceManager interface {
 	SetupWithController(cache cache.Cache, scheme *runtime.Scheme, mapper meta.RESTMapper, controller controller.Controller, primaryGvk schema.GroupVersionKind) error
 
 	// Get retrieves the current state of the backend resource associated with the given stream definition.
-	Get(ctx context.Context, key client.ObjectKey) (*StreamingJob, error)
+	Get(ctx context.Context, key client.ObjectKey) (BackendResource, error)
 
 	// Remove deletes the backend resource associated with the given stream definition and updates the stream phase accordingly.
 	Remove(ctx context.Context, definition Definition, nextPhase Phase, eventFunc controllers.EventFunc) (reconcile.Result, error)

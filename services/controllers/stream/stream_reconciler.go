@@ -36,7 +36,7 @@ type streamReconciler struct {
 	eventRecorder                  record.EventRecorder
 	definitionParser               DefinitionParser
 	backendResourceManagers        map[Backend]BackendResourceManager
-	backfillBackendResourceManager *BackfillBackendResourceManager
+	backfillBackendResourceManager BackfillBackendResourceManager
 }
 
 func (s *streamReconciler) SetupUnmanaged(cache cache.Cache, scheme *runtime.Scheme, mapper meta.RESTMapper) (controller.Controller, error) { // coverage-ignore (setup is not tested in unit tests)
@@ -71,7 +71,7 @@ func (s *streamReconciler) SetupUnmanaged(cache cache.Cache, scheme *runtime.Sch
 }
 
 // NewStreamReconciler creates a new StreamReconciler instance.
-func NewStreamReconciler(client client.Client, gvk schema.GroupVersionKind, jobBuilder JobBuilder, streamClass *v1.StreamClass, eventRecorder record.EventRecorder, definitionParser DefinitionParser, managers map[Backend]BackendResourceManager, backfillResourceManager *BackfillBackendResourceManager) controllers.UnmanagedReconciler {
+func NewStreamReconciler(client client.Client, gvk schema.GroupVersionKind, jobBuilder JobBuilder, streamClass *v1.StreamClass, eventRecorder record.EventRecorder, definitionParser DefinitionParser, managers map[Backend]BackendResourceManager, backfillResourceManager BackfillBackendResourceManager) controllers.UnmanagedReconciler {
 	return &streamReconciler{
 		gvk:                            gvk,
 		jobBuilder:                     jobBuilder,
@@ -116,7 +116,7 @@ func (s *streamReconciler) Reconcile(ctx context.Context, request reconcile.Requ
 	return s.moveFsm(ctx, streamDefinition, streamingJob, backfillRequest)
 }
 
-func (s *streamReconciler) moveFsm(ctx context.Context, definition Definition, job *StreamingJob, backfillRequest *v1.BackfillRequest) (reconcile.Result, error) {
+func (s *streamReconciler) moveFsm(ctx context.Context, definition Definition, job BackendResource, backfillRequest *v1.BackfillRequest) (reconcile.Result, error) {
 	phase := definition.GetPhase()
 
 	switch {
@@ -125,7 +125,7 @@ func (s *streamReconciler) moveFsm(ctx context.Context, definition Definition, j
 			s.eventRecorder.Eventf(definition.ToUnstructured(),
 				"Warning",
 				"StreamingJobFailed",
-				"The backfill job %s has failed", job.Name)
+				"The backfill job %s has failed", job.Name())
 		})
 
 	case job != nil && job.IsFailed():
@@ -133,7 +133,7 @@ func (s *streamReconciler) moveFsm(ctx context.Context, definition Definition, j
 			s.eventRecorder.Eventf(definition.ToUnstructured(),
 				"Warning",
 				"StreamingJobFailed",
-				"The streaming job %s has failed", job.Name)
+				"The streaming job %s has failed", job.Name())
 		})
 
 	case phase == Failed && definition.Suspended() && backfillRequest != nil:
