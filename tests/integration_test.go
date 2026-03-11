@@ -154,6 +154,7 @@ func Test_CreateFailedStream(t *testing.T) {
 				return
 			} else {
 				t.Logf("StreamDefinition %s/%s is in %s phase, waiting for Failed phase", streamDefinition.Namespace, streamDefinition.Name, streamDefinition.Status.Phase)
+				time.Sleep(1 * time.Second)
 			}
 		}
 	}

@@ -30,10 +30,6 @@ func (j *Predicate) Update(e event.TypedUpdateEvent[*v1.Job]) bool { // coverage
 		return false
 	}
 
-	// If the job was already completed or failed, we don't want to trigger a reconcile.
-	if res.IsCompleted() || res.IsFailed() {
-		return false
-	}
 	return res.IsCompleted() || res.IsFailed()
 }
 
