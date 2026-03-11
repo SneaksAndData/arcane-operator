@@ -96,7 +96,7 @@ func Test_GetBackfillRequest_Empty(t *testing.T) {
 	require.Nil(t, result)
 }
 
-func setupBackfillBackendResourceManagerTest(k8sClient client.Client) *job.BackfillBackendResourceManager {
+func setupBackfillBackendResourceManagerTest(k8sClient client.Client) *job.BackfillBackend {
 	mock := v2.MockStreamDefinition("name", "namespace")
 	sc := v1.StreamClass{
 		ObjectMeta: metav1.ObjectMeta{Name: "stream-class"},
