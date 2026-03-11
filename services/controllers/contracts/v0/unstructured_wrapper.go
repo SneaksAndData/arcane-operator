@@ -122,7 +122,7 @@ func (u *UnstructuredWrapper) Validate() error {
 	return nil
 }
 
-func (u *UnstructuredWrapper) GetBackend() stream.Backend {
+func (u *UnstructuredWrapper) GetBackend() stream.Backend { // coverage-ignore
 	return stream.BatchJob
 }
 

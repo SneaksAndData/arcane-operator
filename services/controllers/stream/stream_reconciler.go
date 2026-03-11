@@ -207,17 +207,6 @@ func (s *streamReconciler) moveFsm(ctx context.Context, definition Definition, j
 		})
 
 	case phase == Running && backfillRequest == nil:
-		backend, err := definition.GetPreviousBackend(ctx, s.client)
-		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("failed to get previous backend for stream %s/%s: %w",
-				definition.NamespacedName().Namespace,
-				definition.NamespacedName().Name,
-				err,
-			)
-		}
-		if backend != nil && *backend != definition.GetBackend() {
-			return s.transitBackend(ctx, definition, backfillRequest)
-		}
 		return s.backendResourceManagers[definition.GetBackend()].Apply(ctx, definition, backfillRequest, Running, s.streamClass, func() {
 			s.eventRecorder.Eventf(definition.ToUnstructured(),
 				"Normal",
@@ -314,6 +303,18 @@ func (s *streamReconciler) moveFsm(ctx context.Context, definition Definition, j
 }
 
 func (s *streamReconciler) transitBackend(ctx context.Context, definition Definition, backfillRequest *v1.BackfillRequest) (reconcile.Result, error) {
+	backend, err := definition.GetPreviousBackend(ctx, s.client)
+	if err != nil {
+		return reconcile.Result{}, fmt.Errorf("failed to get previous backend for stream %s/%s: %w",
+			definition.NamespacedName().Namespace,
+			definition.NamespacedName().Name,
+			err,
+		)
+	}
+	if backend == nil || *backend == definition.GetBackend() {
+		return reconcile.Result{}, nil
+	}
+
 	var eventFunc controllers.EventFunc
 	switch definition.GetBackend() {
 	case BatchJob:
