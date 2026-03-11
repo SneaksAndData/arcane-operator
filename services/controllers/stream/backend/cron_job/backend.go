@@ -39,6 +39,7 @@ type Backend struct {
 func NewCronJobBackend(client client.Client, jobBuilder stream.JobBuilder, eventRecorder record.EventRecorder, phaseManager stream.StatusManager) *Backend {
 	return &Backend{
 		BaseResourceManager: backend.BaseResourceManager{
+			Client:        client,
 			JobBuilder:    jobBuilder,
 			EventRecorder: eventRecorder,
 		},
@@ -66,7 +67,7 @@ func (c *Backend) Get(ctx context.Context, name client.ObjectKey) (stream.Backen
 	return c.ResourceReader.Get(ctx, name, cj, FromResource)
 }
 
-func (j *Backend) Remove(ctx context.Context, definition stream.Definition, nextPhase stream.Phase, eventFunc controllers.EventFunc) (reconcile.Result, error) {
+func (c *Backend) Remove(ctx context.Context, definition stream.Definition, nextPhase stream.Phase, eventFunc controllers.EventFunc) (reconcile.Result, error) {
 	object := &batchv1.CronJob{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      definition.NamespacedName().Name,

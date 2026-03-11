@@ -39,6 +39,7 @@ type Backend struct {
 func NewJobBackend(client client.Client, jobBuilder stream.JobBuilder, eventRecorder record.EventRecorder, phaseManager stream.StatusManager) *Backend {
 	return &Backend{
 		BaseResourceManager: backend.BaseResourceManager{
+			Client:        client,
 			JobBuilder:    jobBuilder,
 			EventRecorder: eventRecorder,
 		},
@@ -74,6 +75,7 @@ func (j *Backend) Get(ctx context.Context, name types.NamespacedName) (stream.Ba
 
 	if errors.IsNotFound(err) {
 		logger.V(0).Info("streaming does not exist")
+		return nil, nil
 	}
 	return FromResource(obj)
 }

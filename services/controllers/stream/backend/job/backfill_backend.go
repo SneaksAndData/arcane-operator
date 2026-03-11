@@ -22,23 +22,23 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-var _ stream.BackfillBackendResourceManager = (*BackfillBackendResourceManager)(nil)
+var _ stream.BackfillBackendResourceManager = (*BackfillBackend)(nil)
 
-type BackfillBackendResourceManager struct {
+type BackfillBackend struct {
 	streamClass   *v1.StreamClass
 	client        client.Client
 	statusManager stream.StatusManager
 }
 
-func NewBackfillBackendResourceManager(class *v1.StreamClass, client client.Client, manager stream.StatusManager) *BackfillBackendResourceManager {
-	return &BackfillBackendResourceManager{
+func NewBackfillBackendResourceManager(class *v1.StreamClass, client client.Client, manager stream.StatusManager) *BackfillBackend {
+	return &BackfillBackend{
 		streamClass:   class,
 		client:        client,
 		statusManager: manager,
 	}
 }
 
-func (b *BackfillBackendResourceManager) SetupWithController(cache cache.Cache, _ *runtime.Scheme, _ meta.RESTMapper, controller controller.Controller, _ schema.GroupVersionKind) error { // coverage-ignore (no need to test the wiring of the controller)
+func (b *BackfillBackend) SetupWithController(cache cache.Cache, _ *runtime.Scheme, _ meta.RESTMapper, controller controller.Controller, _ schema.GroupVersionKind) error { // coverage-ignore (no need to test the wiring of the controller)
 	return watchers.NewTypedSecondaryWatcherBuilder[*v1.BackfillRequest]().
 		WithFilter(stream.NewBackfillRequestFilter(b.streamClass.Name)).
 		WithCache(cache).
@@ -54,10 +54,10 @@ func (b *BackfillBackendResourceManager) SetupWithController(cache cache.Cache, 
 		SetupWithController(controller, &v1.BackfillRequest{})
 }
 
-func (b *BackfillBackendResourceManager) Get(ctx context.Context, name types.NamespacedName) (stream.BackendResource, error) { // coverage-ignore
+func (b *BackfillBackend) Get(ctx context.Context, name types.NamespacedName) (stream.BackendResource, error) { // coverage-ignore
 	logger := b.getLogger(ctx, name)
-	job := &batchv1.Job{}
-	err := b.client.Get(ctx, name, job)
+	obj := &batchv1.Job{}
+	err := b.client.Get(ctx, name, obj)
 
 	if client.IgnoreNotFound(err) != nil { // coverage-ignore
 		logger.V(0).Error(err, "unable to fetch Stream Job")
@@ -65,12 +65,13 @@ func (b *BackfillBackendResourceManager) Get(ctx context.Context, name types.Nam
 	}
 
 	if errors.IsNotFound(err) {
-		logger.V(1).Info("streaming does not exist")
+		logger.V(0).Info("streaming does not exist")
+		return nil, nil
 	}
-	return FromResource(job)
+	return FromResource(obj)
 }
 
-func (b *BackfillBackendResourceManager) Remove(ctx context.Context, definition stream.Definition, nextPhase stream.Phase, eventFunc controllers.EventFunc) (reconcile.Result, error) {
+func (b *BackfillBackend) Remove(ctx context.Context, definition stream.Definition, nextPhase stream.Phase, eventFunc controllers.EventFunc) (reconcile.Result, error) {
 	job, err := b.Get(ctx, definition.NamespacedName())
 	if err != nil { // coverage-ignore
 		return reconcile.Result{}, fmt.Errorf("failed to get backend resource: %w", err)
@@ -102,7 +103,7 @@ func (b *BackfillBackendResourceManager) Remove(ctx context.Context, definition 
 	return b.statusManager.UpdateStreamPhase(ctx, definition, nil, nextPhase, eventFunc)
 }
 
-func (b *BackfillBackendResourceManager) Apply(ctx context.Context, definition stream.Definition, backfillRequest *v1.BackfillRequest, nextPhase stream.Phase, _ *v1.StreamClass, eventFunc controllers.EventFunc) (reconcile.Result, error) {
+func (b *BackfillBackend) Apply(ctx context.Context, definition stream.Definition, backfillRequest *v1.BackfillRequest, nextPhase stream.Phase, _ *v1.StreamClass, eventFunc controllers.EventFunc) (reconcile.Result, error) {
 	logger := b.getLogger(ctx, definition.NamespacedName())
 	logger.V(2).Info("starting backfill by creating a backfill request")
 
@@ -115,10 +116,10 @@ func (b *BackfillBackendResourceManager) Apply(ctx context.Context, definition s
 	return b.statusManager.UpdateStreamPhase(ctx, definition, backfillRequest, nextPhase, eventFunc)
 }
 
-func (b *BackfillBackendResourceManager) NoOp(ctx context.Context, definition stream.Definition, backfillRequest *v1.BackfillRequest, nextPhase stream.Phase, eventFunc controllers.EventFunc) (reconcile.Result, error) { // coverage-ignore
+func (b *BackfillBackend) NoOp(ctx context.Context, definition stream.Definition, backfillRequest *v1.BackfillRequest, nextPhase stream.Phase, eventFunc controllers.EventFunc) (reconcile.Result, error) { // coverage-ignore
 	return b.statusManager.UpdateStreamPhase(ctx, definition, backfillRequest, nextPhase, eventFunc)
 }
-func (b *BackfillBackendResourceManager) GetBackfillRequest(ctx context.Context, definition stream.Definition) (*v1.BackfillRequest, error) { // coverage-ignore
+func (b *BackfillBackend) GetBackfillRequest(ctx context.Context, definition stream.Definition) (*v1.BackfillRequest, error) { // coverage-ignore
 	backfillRequestList := &v1.BackfillRequestList{}
 	err := b.client.List(ctx, backfillRequestList, client.InNamespace(definition.NamespacedName().Namespace))
 	if client.IgnoreNotFound(err) != nil { // coverage-ignore
@@ -134,7 +135,7 @@ func (b *BackfillBackendResourceManager) GetBackfillRequest(ctx context.Context,
 	return nil, nil
 }
 
-func (b *BackfillBackendResourceManager) getLogger(_ context.Context, request types.NamespacedName) klog.Logger { // coverage-ignore
+func (b *BackfillBackend) getLogger(_ context.Context, request types.NamespacedName) klog.Logger { // coverage-ignore
 	return klog.Background().
 		WithName("StreamReconciler").
 		WithValues("namespace", request.Namespace, "streamId", request.Name, "streamKind", b.streamClass.Spec.KindRef)

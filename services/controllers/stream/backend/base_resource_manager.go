@@ -18,13 +18,13 @@ import (
 )
 
 type BaseResourceManager struct {
-	client        client.Client
+	Client        client.Client
 	JobBuilder    stream.JobBuilder
 	EventRecorder record.EventRecorder
 }
 
 func (j *BaseResourceManager) Remove(ctx context.Context, object client.Object, updatePhase func() (reconcile.Result, error)) (reconcile.Result, error) {
-	err := j.client.Delete(ctx, object, client.PropagationPolicy(metav1.DeletePropagationForeground))
+	err := j.Client.Delete(ctx, object, client.PropagationPolicy(metav1.DeletePropagationForeground))
 	if client.IgnoreNotFound(err) != nil { // coverage-ignore
 		return reconcile.Result{}, err
 	}
