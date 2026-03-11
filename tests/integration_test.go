@@ -15,6 +15,7 @@ import (
 	"github.com/SneaksAndData/arcane-operator/services"
 	"github.com/SneaksAndData/arcane-operator/services/controllers/contracts"
 	"github.com/SneaksAndData/arcane-operator/services/controllers/stream"
+	"github.com/SneaksAndData/arcane-operator/services/controllers/stream/backend/job"
 	"github.com/SneaksAndData/arcane-operator/services/controllers/stream_class"
 	"github.com/SneaksAndData/arcane-operator/services/job/job_builder"
 	"github.com/SneaksAndData/arcane-operator/telemetry"
@@ -64,7 +65,7 @@ func Test_CreateStream(t *testing.T) {
 	waitForJob(t, watcher, name,
 
 		func(job stream.BackendResource) {
-			jobs[job.UID] = job.IsBackfill()
+			jobs[job.UID()] = job.IsBackfill()
 		},
 
 		func(job stream.BackendResource) bool {
@@ -113,7 +114,7 @@ func Test_CreateFailedStream(t *testing.T) {
 	waitForJob(t, watcher, name,
 
 		func(job stream.BackendResource) {
-			jobs[job.UID] = job.IsFailed()
+			jobs[job.UID()] = job.IsFailed()
 		},
 
 		func(job stream.BackendResource) bool {
@@ -173,14 +174,14 @@ func waitForJob(t *testing.T, watcher watch.Interface, name string, handleEvent 
 			}
 
 			if rawJob.Name != name {
-				t.Logf("unexpected job name: %s, skipping", rawJob.Name)
+				t.Logf("unexpected resource name: %s, skipping", rawJob.Name)
 				continue
 			}
 
-			t.Logf("Received job event: Type=%s, Object=%T", event.Type, event.Object)
-			job := stream.NewStreamingJobFromV1Job(rawJob)
-			handleEvent(job)
-			if isCompleted(job) {
+			t.Logf("Received resource event: Type=%s, Object=%T", event.Type, event.Object)
+			resource := job.FromResource(rawJob)
+			handleEvent(resource)
+			if isCompleted(resource) {
 				t.Log("Job is isCompleted, stopping watcher")
 				return
 			}

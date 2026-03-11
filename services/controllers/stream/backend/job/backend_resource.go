@@ -7,6 +7,7 @@ import (
 	"github.com/SneaksAndData/arcane-operator/services/controllers/stream"
 	"github.com/SneaksAndData/arcane-operator/services/job"
 	v1 "k8s.io/api/batch/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -18,6 +19,10 @@ type BackendResource struct {
 
 func (j *BackendResource) Name() string { // coverage-ignore (trivial)
 	return j.Job.Name
+}
+
+func (j *BackendResource) UID() types.UID { // coverage-ignore (trivial)
+	return j.Job.UID
 }
 
 func (j *BackendResource) CurrentConfiguration() (string, error) { // coverage-ignore (trivial)
