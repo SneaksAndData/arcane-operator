@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	v1 "github.com/SneaksAndData/arcane-operator/pkg/apis/streaming/v1"
-	mocks "github.com/SneaksAndData/arcane-operator/tests/mocks/job_mock"
+	"github.com/SneaksAndData/arcane-operator/tests/mocks/job_mock"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 	batchv1 "k8s.io/api/batch/v1"
