@@ -63,11 +63,11 @@ func Test_CreateStream(t *testing.T) {
 	// Watch for job events in the main thread
 	waitForJob(t, watcher, name,
 
-		func(job stream.StreamingJob) {
+		func(job stream.BackendResource) {
 			jobs[job.UID] = job.IsBackfill()
 		},
 
-		func(job stream.StreamingJob) bool {
+		func(job stream.BackendResource) bool {
 			if job.IsCompleted() && !job.IsBackfill() {
 				t.Log("Job is completed, stopping watcher")
 				return true
@@ -112,11 +112,11 @@ func Test_CreateFailedStream(t *testing.T) {
 	// Watch for job events in the main thread
 	waitForJob(t, watcher, name,
 
-		func(job stream.StreamingJob) {
+		func(job stream.BackendResource) {
 			jobs[job.UID] = job.IsFailed()
 		},
 
-		func(job stream.StreamingJob) bool {
+		func(job stream.BackendResource) bool {
 			if job.IsFailed() {
 				t.Log("Job is expectedly failed, stopping watcher")
 				return true
@@ -158,7 +158,7 @@ func Test_CreateFailedStream(t *testing.T) {
 	}
 }
 
-func waitForJob(t *testing.T, watcher watch.Interface, name string, handleEvent func(job stream.StreamingJob), isCompleted func(job stream.StreamingJob) bool) {
+func waitForJob(t *testing.T, watcher watch.Interface, name string, handleEvent func(job stream.BackendResource), isCompleted func(job stream.BackendResource) bool) {
 	for {
 		select {
 		case event, ok := <-watcher.ResultChan():

@@ -5,6 +5,7 @@ import (
 
 	v1 "github.com/SneaksAndData/arcane-operator/pkg/apis/streaming/v1"
 	"github.com/SneaksAndData/arcane-operator/services/controllers/stream"
+	"github.com/SneaksAndData/arcane-operator/services/controllers/stream/backend/job"
 	"github.com/SneaksAndData/arcane-operator/services/controllers/stream_class"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/tools/record"
@@ -25,9 +26,9 @@ type streamControllerFactory struct {
 
 func (s streamControllerFactory) CreateStreamController(_ context.Context, gvk schema.GroupVersionKind, streamClass *v1.StreamClass) (controller.Controller, error) { // coverage-ignore (trivial)
 	statusManager := stream.NewDefaultStatusManager(s.client, gvk, streamClass, s.definitionParser)
-	backfillBackend := stream.NewBackfillBackendResourceManager(streamClass, s.client, statusManager)
+	backfillBackend := job.NewBackfillBackendResourceManager(streamClass, s.client, statusManager)
 	backends := map[stream.Backend]stream.BackendResourceManager{
-		stream.BatchJob: stream.NewJobBackend(s.client, s.jobBuilder, s.eventRecorder, statusManager),
+		stream.BatchJob: job.NewJobBackend(s.client, s.jobBuilder, s.eventRecorder, statusManager),
 	}
 	streamReconciler := stream.NewStreamReconciler(s.client, gvk, s.jobBuilder, streamClass, s.eventRecorder, s.definitionParser, backends, backfillBackend)
 	unmanaged, err := streamReconciler.SetupUnmanaged(s.manager.GetCache(), s.manager.GetScheme(), s.manager.GetRESTMapper())

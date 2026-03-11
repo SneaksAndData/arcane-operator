@@ -1,53 +1,14 @@
 package stream
 
 import (
-	"fmt"
-	"github.com/SneaksAndData/arcane-operator/services/job"
-	v1 "k8s.io/api/batch/v1"
-	"strings"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type StreamingJob v1.Job
-
-func (j StreamingJob) CurrentConfiguration() (string, error) { // coverage-ignore (trivial)
-	value, ok := j.Annotations[job.ConfigurationHashAnnotation]
-	if !ok {
-		return "", fmt.Errorf("job does not contain configuration hash")
-	}
-	return value, nil
-}
-
-func (j StreamingJob) IsCompleted() bool { // coverage-ignore (trivial)
-	for _, condition := range j.Status.Conditions {
-		if condition.Type == v1.JobComplete && condition.Status == "True" {
-			return true
-		}
-	}
-	return false
-}
-
-func (j StreamingJob) IsFailed() bool { // coverage-ignore (trivial)
-	for _, condition := range j.Status.Conditions {
-		if condition.Type == v1.JobFailed && condition.Status == "True" {
-			return true
-		}
-	}
-	return false
-}
-
-func (j StreamingJob) ToV1Job() *v1.Job { // coverage-ignore (trivial)
-	v := v1.Job(j)
-	return &v
-}
-
-func (j StreamingJob) IsBackfill() bool { // coverage-ignore (trivial)
-	val, ok := j.Labels[job.BackfillLabel]
-	if !ok {
-		return false
-	}
-	return strings.ToLower(val) == "true"
-}
-
-func NewStreamingJobFromV1Job(job *v1.Job) StreamingJob { // coverage-ignore (trivial)
-	return StreamingJob(*job)
+type BackendResource interface {
+	Name() string
+	CurrentConfiguration() (string, error)
+	IsCompleted() bool
+	IsFailed() bool
+	ToObject() client.Object
+	IsBackfill() bool
 }
