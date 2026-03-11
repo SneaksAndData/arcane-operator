@@ -75,8 +75,8 @@ func (c *Backend) Remove(ctx context.Context, definition stream.Definition, next
 		},
 	}
 
-	return j.BaseResourceManager.Remove(ctx, object, func() (reconcile.Result, error) {
-		return j.statusManager.UpdateStreamPhase(ctx, definition, nil, nextPhase, eventFunc)
+	return c.BaseResourceManager.Remove(ctx, object, func() (reconcile.Result, error) {
+		return c.statusManager.UpdateStreamPhase(ctx, definition, nil, nextPhase, eventFunc)
 	})
 }
 
