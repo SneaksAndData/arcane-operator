@@ -116,9 +116,16 @@ func (c *Backend) Apply(ctx context.Context, definition stream.Definition, backf
 		return reconcile.Result{}, fmt.Errorf("failed to build job for cronjob backend: %w", err)
 	}
 
+	schedule, err := definition.GetSchedule()
+	if err != nil {
+		return reconcile.Result{}, fmt.Errorf("failed to get schedule from stream definition: %w", err)
+	}
+
 	object.Spec.JobTemplate = batchv1.JobTemplateSpec{
 		Spec: job.Spec,
 	}
+	object.Spec.ConcurrencyPolicy = batchv1.ForbidConcurrent
+	object.Spec.Schedule = schedule
 
 	err = c.client.Create(ctx, object)
 	if err != nil {

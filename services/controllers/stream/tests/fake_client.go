@@ -205,6 +205,13 @@ func AssertJobExists(t *testing.T, k8sClient client.Client, name types.Namespace
 	require.NoError(t, err)
 }
 
+func AssertCronJob(t *testing.T, k8sClient client.Client, name types.NamespacedName, assert func(*testing.T, *batchv1.CronJob)) {
+	cj := &batchv1.CronJob{}
+	err := k8sClient.Get(t.Context(), name, cj)
+	require.NoError(t, err)
+	assert(t, cj)
+}
+
 func AssertJobNotExists(t *testing.T, k8sClient client.Client, name types.NamespacedName) {
 	newJob := &batchv1.Job{}
 	err := k8sClient.Get(t.Context(), name, newJob)

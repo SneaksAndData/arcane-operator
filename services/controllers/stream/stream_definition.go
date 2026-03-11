@@ -90,6 +90,10 @@ type Definition interface {
 	// GetPreviousBackend returns the streaming backend type (e.g., BatchJob, CronJob) associated previously
 	// with the stream definition, which can be used to determine if the backend has changed during an update.
 	GetPreviousBackend(ctx context.Context, client client.Client) (*Backend, error)
+
+	// GetSchedule returns the schedule string for a CronJob backend, if applicable. For non-CronJob backends,
+	// it can return an empty string or an error indicating that the schedule is not applicable.
+	GetSchedule() (string, error)
 }
 
 // DefinitionParser is a function type that takes an unstructured object and returns a validated Definition or an

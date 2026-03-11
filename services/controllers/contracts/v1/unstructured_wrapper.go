@@ -174,6 +174,13 @@ func (e *ExecutionSettings) GetPreviousBackend(ctx context.Context, c client.Cli
 	return nil, nil
 }
 
+func (e *ExecutionSettings) GetSchedule() (string, error) {
+	if e.GetBackend() == stream.BatchJob {
+		return "", fmt.Errorf("schedule is not applicable for BatchJob backend")
+	}
+	return e.spec.ExecutionSettings.StreamingBackend.CronJobBackend.Schedule, nil
+}
+
 func (e *ExecutionSettings) deserializeTo(unstructured *unstructured.Unstructured) error {
 	u, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&e.spec.ExecutionSettings)
 	if err != nil { // coverage-ignore

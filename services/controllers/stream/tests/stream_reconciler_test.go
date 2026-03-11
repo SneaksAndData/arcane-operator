@@ -8,6 +8,7 @@ import (
 	v2 "github.com/SneaksAndData/arcane-operator/pkg/test/generated/applyconfiguration/streaming/v2"
 	"github.com/SneaksAndData/arcane-operator/services/controllers/contracts"
 	"github.com/SneaksAndData/arcane-operator/services/controllers/stream"
+	"github.com/SneaksAndData/arcane-operator/services/controllers/stream/backend/cron_job"
 	"github.com/SneaksAndData/arcane-operator/services/controllers/stream/backend/job"
 	"github.com/SneaksAndData/arcane-operator/tests/mocks"
 	"github.com/stretchr/testify/require"
@@ -135,6 +136,29 @@ func Test_UpdatePhase_Pending_To_Running_not_recreate_job(t *testing.T) {
 	AssertStreamDefinitionPhase(t, k8sClient, objectName, stream.Running)
 	AssertJobExists(t, k8sClient, objectName)
 	AssertJobConfiguration(t, k8sClient, objectName, definitionHash)
+}
+
+func Test_UpdatePhase_Pending_To_Scheduled_no_job(t *testing.T) {
+	// Arrange
+	k8sClient := SetupClient(objectName, Combined(WithPhase(stream.Pending), WithSchedule("* * * * *")), nil)
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+
+	mockJob := batchv1.Job{ObjectMeta: metav1.ObjectMeta{Name: objectName.Name, Namespace: objectName.Namespace}}
+	reconciler := createReconciler(k8sClient, &mockJob, mockCtrl)
+
+	// Act
+	result, err := reconciler.Reconcile(t.Context(), reconcile.Request{NamespacedName: objectName})
+	require.NoError(t, err)
+	require.Equal(t, result, reconcile.Result{})
+
+	// Assert
+	// Fetch the object and ensure its status Phase is Pending
+	AssertStreamDefinitionPhase(t, k8sClient, objectName, stream.Scheduled)
+	AssertCronJob(t, k8sClient, objectName, func(t *testing.T, cj *batchv1.CronJob) {
+		require.Equal(t, "* * * * *", cj.Spec.Schedule)
+		require.Equal(t, batchv1.ForbidConcurrent, cj.Spec.ConcurrencyPolicy)
+	})
 }
 
 func Test_UpdatePhase_Pending_To_Backfilling_no_job(t *testing.T) {
@@ -624,7 +648,7 @@ func createReconciler(k8sClient client.Client, mockJob *batchv1.Job, mockCtrl *g
 	backfillBackendResourceManager := job.NewBackfillBackendResourceManager(&sc, k8sClient, statusManager)
 	backendResourceManagers := map[stream.Backend]stream.BackendResourceManager{
 		stream.BatchJob: job.NewJobBackend(k8sClient, jobBuilder, recorder, statusManager),
-		stream.CronJob:  job.NewJobBackend(k8sClient, jobBuilder, recorder, statusManager),
+		stream.CronJob:  cron_job.NewCronJobBackend(k8sClient, jobBuilder, recorder, statusManager),
 	}
 	return stream.NewStreamReconciler(k8sClient, gvk, jobBuilder, &sc, recorder, contracts.FromUnstructured, backendResourceManagers, backfillBackendResourceManager)
 }

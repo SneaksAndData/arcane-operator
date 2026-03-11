@@ -185,7 +185,11 @@ func (s *streamReconciler) moveFsm(ctx context.Context, definition Definition, j
 		})
 
 	case phase == Pending && backfillRequest == nil:
-		return s.backendResourceManagers[definition.GetBackend()].Apply(ctx, definition, nil, Running, s.streamClass, nil)
+		nextPhase := Running
+		if definition.GetBackend() == CronJob {
+			nextPhase = Scheduled
+		}
+		return s.backendResourceManagers[definition.GetBackend()].Apply(ctx, definition, nil, nextPhase, s.streamClass, nil)
 
 	case phase == Pending && backfillRequest != nil:
 		return s.backendResourceManagers[definition.GetBackend()].Apply(ctx, definition, backfillRequest, Backfilling, s.streamClass, nil)

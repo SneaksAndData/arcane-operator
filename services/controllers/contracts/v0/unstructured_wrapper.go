@@ -131,6 +131,10 @@ func (u *UnstructuredWrapper) GetPreviousBackend(_ context.Context, _ client.Cli
 	return &b, nil
 }
 
+func (u *UnstructuredWrapper) GetSchedule() (string, error) {
+	return "", fmt.Errorf("schedule is not applicable for BatchJob backend")
+}
+
 func (u *UnstructuredWrapper) extractStreamingJobRef(from string, target *corev1.ObjectReference) error {
 	uRef, found, err := unstructured.NestedFieldCopy(u.Underlying.Object, "spec", from)
 	if err != nil { // coverage-ignore
