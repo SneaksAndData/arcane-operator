@@ -14,8 +14,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+var objectName = types.NamespacedName{Name: "stream1", Namespace: "default"}
 
 func Test_Get(t *testing.T) {
 	k8sClient := SetupClient(objectName, nil, WithOutdatedJob(objectName))
