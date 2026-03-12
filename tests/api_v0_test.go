@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/SneaksAndData/arcane-operator/services/controllers/stream"
-	"github.com/SneaksAndData/arcane-operator/services/controllers/stream/backend/job"
 	mockv1 "github.com/SneaksAndData/arcane-stream-mock/pkg/apis/streaming/v1"
 	"github.com/stretchr/testify/require"
 	batchv1 "k8s.io/api/batch/v1"
@@ -13,7 +12,6 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/watch"
 )
 
 // Test_CreateStream verifies that creating a TestStreamDefinition results in the creation of both backfill and regular streaming jobs.
@@ -130,40 +128,6 @@ func Test_CreateFailedStream(t *testing.T) {
 
 			t.Logf("StreamDefinition %s/%s is in %s phase, waiting for Failed phase", streamDefinition.Namespace, streamDefinition.Name, streamDefinition.Status.Phase)
 			time.Sleep(1 * time.Second)
-		}
-	}
-}
-
-func waitForJob(t *testing.T, watcher watch.Interface, name string, handleEvent func(job stream.BackendResource), isCompleted func(job stream.BackendResource) bool) {
-	for {
-		select {
-		case event, ok := <-watcher.ResultChan():
-			if !ok {
-				t.Error("watcher channel closed")
-				return
-			}
-			rawJob, ok := event.Object.(*batchv1.Job)
-			if !ok {
-				t.Fatalf("expected Job object, got %T", event.Object)
-				return
-			}
-
-			if rawJob.Name != name {
-				t.Logf("unexpected resource name: %s, skipping", rawJob.Name)
-				continue
-			}
-
-			t.Logf("Received resource event: Type=%s, Object=%T", event.Type, event.Object)
-			resource, err := job.FromResource(rawJob)
-			require.NoError(t, err)
-			handleEvent(resource)
-			if isCompleted(resource) {
-				t.Log("Job is isCompleted, stopping watcher")
-				return
-			}
-		case <-t.Context().Done():
-			t.Fatal("Job watcher stopped with timeout or cancellation")
-			return
 		}
 	}
 }

@@ -14,15 +14,20 @@ import (
 	"github.com/SneaksAndData/arcane-operator/pkg/apis/streaming/v1"
 	"github.com/SneaksAndData/arcane-operator/services"
 	"github.com/SneaksAndData/arcane-operator/services/controllers/contracts"
+	"github.com/SneaksAndData/arcane-operator/services/controllers/stream"
+	"github.com/SneaksAndData/arcane-operator/services/controllers/stream/backend/job"
 	"github.com/SneaksAndData/arcane-operator/services/controllers/stream_class"
 	"github.com/SneaksAndData/arcane-operator/services/job/job_builder"
 	"github.com/SneaksAndData/arcane-operator/telemetry"
 	mockv1 "github.com/SneaksAndData/arcane-stream-mock/pkg/apis/streaming/v1"
 	streaming "github.com/SneaksAndData/arcane-stream-mock/pkg/generated/clientset/versioned"
+	"github.com/stretchr/testify/require"
 	"golang.org/x/sync/errgroup"
+	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	apiruntime "k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	typedcorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
@@ -169,4 +174,38 @@ func createManager(ctx context.Context, g *errgroup.Group) (manager.Manager, err
 	})
 
 	return mgr, nil
+}
+
+func waitForJob(t *testing.T, watcher watch.Interface, name string, handleEvent func(job stream.BackendResource), isCompleted func(job stream.BackendResource) bool) {
+	for {
+		select {
+		case event, ok := <-watcher.ResultChan():
+			if !ok {
+				t.Error("watcher channel closed")
+				return
+			}
+			rawJob, ok := event.Object.(*batchv1.Job)
+			if !ok {
+				t.Fatalf("expected Job object, got %T", event.Object)
+				return
+			}
+
+			if rawJob.Name != name {
+				t.Logf("unexpected resource name: %s, skipping", rawJob.Name)
+				continue
+			}
+
+			t.Logf("Received resource event: Type=%s, Object=%T", event.Type, event.Object)
+			resource, err := job.FromResource(rawJob)
+			require.NoError(t, err)
+			handleEvent(resource)
+			if isCompleted(resource) {
+				t.Log("Job is isCompleted, stopping watcher")
+				return
+			}
+		case <-t.Context().Done():
+			t.Fatal("Job watcher stopped with timeout or cancellation")
+			return
+		}
+	}
 }
