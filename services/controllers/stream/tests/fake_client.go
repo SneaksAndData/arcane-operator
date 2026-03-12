@@ -34,6 +34,10 @@ func SetupClient(objectName types.NamespacedName, definition func(definition *te
 			ExecutionSettings: testv2.ExecutionSettings{
 				APIVersion: "v1",
 				Suspended:  true,
+				StreamingBackend: testv2.StreamingBackend{
+					BatchJobBackend: &testv2.BatchJobBackend{},
+					CronJobBackend:  nil,
+				},
 			},
 		},
 	}
@@ -83,9 +87,34 @@ func WithNamedStreamDefinition(n types.NamespacedName) func(definition *testv2.M
 	}
 }
 
+func WithSchedule(schedule string) func(definition *testv2.MockStreamDefinition) {
+	return func(definition *testv2.MockStreamDefinition) {
+		definition.Spec.ExecutionSettings.StreamingBackend = testv2.StreamingBackend{
+			BatchJobBackend: nil,
+			CronJobBackend: &testv2.CronJobBackend{
+				Schedule: schedule,
+			},
+		}
+	}
+}
+
 func WithOutdatedJob(n types.NamespacedName) func(definition *crfake.ClientBuilder) {
 	return func(client2 *crfake.ClientBuilder) {
 		client2.WithObjects(&batchv1.Job{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: n.Namespace,
+				Name:      n.Name,
+				Annotations: map[string]string{
+					"configuration-hash": "old-hash",
+				},
+			},
+		})
+	}
+}
+
+func WithOutdatedCronJob(n types.NamespacedName) func(definition *crfake.ClientBuilder) {
+	return func(client2 *crfake.ClientBuilder) {
+		client2.WithObjects(&batchv1.CronJob{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: n.Namespace,
 				Name:      n.Name,
@@ -165,6 +194,20 @@ func WithConsistentJob(n types.NamespacedName, hash string) func(definition *crf
 	}
 }
 
+func WithConsistentCronJob(n types.NamespacedName, hash string) func(definition *crfake.ClientBuilder) {
+	return func(client2 *crfake.ClientBuilder) {
+		client2.WithObjects(&batchv1.CronJob{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: n.Namespace,
+				Name:      n.Name,
+				Annotations: map[string]string{
+					"configuration-hash": hash,
+				},
+			},
+		})
+	}
+}
+
 func WithBackfillRequest(n types.NamespacedName) func(definition *crfake.ClientBuilder) {
 	return func(client2 *crfake.ClientBuilder) {
 		client2.WithObjects(&v1.BackfillRequest{
@@ -188,6 +231,21 @@ func AssertJobExists(t *testing.T, k8sClient client.Client, name types.Namespace
 	newJob := &batchv1.Job{}
 	err := k8sClient.Get(t.Context(), name, newJob)
 	require.NoError(t, err)
+}
+
+func AssertCronJobExists(t *testing.T, k8sClient client.Client, name types.NamespacedName, additionalAssert func(*testing.T, *batchv1.CronJob)) {
+	cj := &batchv1.CronJob{}
+	err := k8sClient.Get(t.Context(), name, cj)
+	require.NoError(t, err)
+	if additionalAssert != nil {
+		additionalAssert(t, cj)
+	}
+}
+
+func AssertCronJobNotExists(t *testing.T, k8sClient client.Client, name types.NamespacedName) {
+	newJob := &batchv1.CronJob{}
+	err := k8sClient.Get(t.Context(), name, newJob)
+	require.True(t, errors.IsNotFound(err))
 }
 
 func AssertJobNotExists(t *testing.T, k8sClient client.Client, name types.NamespacedName) {

@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
@@ -9,10 +10,12 @@ import (
 	"github.com/SneaksAndData/arcane-operator/services/controllers/contracts/status_v0"
 	"github.com/SneaksAndData/arcane-operator/services/controllers/stream"
 	"github.com/SneaksAndData/arcane-operator/services/job"
+	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var (
@@ -142,6 +145,40 @@ func (e *ExecutionSettings) GetBackend() stream.Backend {
 		return stream.CronJob
 	}
 	return stream.BatchJob
+}
+
+func (e *ExecutionSettings) GetPreviousBackend(ctx context.Context, c client.Client) (*stream.Backend, error) {
+	var backend stream.Backend
+
+	var cronJob batchv1.CronJob
+	err := c.Get(ctx, e.NamespacedName(), &cronJob)
+	if err == nil {
+		backend = stream.CronJob
+		return &backend, nil
+	}
+	if client.IgnoreNotFound(err) != nil {
+		return nil, err
+	}
+
+	var j batchv1.Job
+	err = c.Get(ctx, e.NamespacedName(), &j)
+	if err == nil {
+		backend = stream.BatchJob
+		return &backend, nil
+	}
+	if client.IgnoreNotFound(err) != nil {
+		return nil, err
+	}
+
+	// If neither a CronJob nor a Job exists with the same name, we can assume that there was no previous backend.
+	return nil, nil
+}
+
+func (e *ExecutionSettings) GetSchedule() (string, error) {
+	if e.GetBackend() == stream.BatchJob {
+		return "", fmt.Errorf("schedule is not applicable for BatchJob backend")
+	}
+	return e.spec.ExecutionSettings.StreamingBackend.CronJobBackend.Schedule, nil
 }
 
 func (e *ExecutionSettings) deserializeTo(unstructured *unstructured.Unstructured) error {

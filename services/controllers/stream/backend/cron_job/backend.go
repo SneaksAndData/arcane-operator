@@ -8,6 +8,7 @@ import (
 	"github.com/SneaksAndData/arcane-operator/services/controllers"
 	"github.com/SneaksAndData/arcane-operator/services/controllers/stream"
 	"github.com/SneaksAndData/arcane-operator/services/controllers/stream/backend"
+	"github.com/SneaksAndData/arcane-operator/services/job"
 	"github.com/SneaksAndData/arcane-operator/services/watchers"
 	batchv1 "k8s.io/api/batch/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -111,14 +112,32 @@ func (c *Backend) Apply(ctx context.Context, definition stream.Definition, backf
 		}
 	}
 
-	job, err := c.BuildJob(ctx, definition, backfillRequest, streamClass)
+	j, err := c.BuildJob(ctx, definition, backfillRequest, streamClass)
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to build job for cronjob backend: %w", err)
 	}
 
-	object.Spec.JobTemplate = batchv1.JobTemplateSpec{
-		Spec: job.Spec,
+	schedule, err := definition.GetSchedule()
+	if err != nil {
+		return reconcile.Result{}, fmt.Errorf("failed to get schedule from stream definition: %w", err)
 	}
+
+	configuration, err := definition.CurrentConfiguration(backfillRequest)
+	if err != nil {
+		return reconcile.Result{}, fmt.Errorf("failed to compute stream configuration hash: %w", err)
+	}
+
+	if object.Annotations == nil {
+		object.Annotations = make(map[string]string)
+	}
+
+	object.Spec.JobTemplate = batchv1.JobTemplateSpec{
+		Spec: j.Spec,
+	}
+	object.Spec.ConcurrencyPolicy = batchv1.ForbidConcurrent
+	object.Spec.Schedule = schedule
+	object.ResourceVersion = ""
+	object.Annotations[job.ConfigurationHashAnnotation] = configuration
 
 	err = c.client.Create(ctx, object)
 	if err != nil {
