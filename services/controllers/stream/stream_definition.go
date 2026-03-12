@@ -2,7 +2,7 @@ package stream
 
 import (
 	"context"
-	"fmt"
+
 	v1 "github.com/SneaksAndData/arcane-operator/pkg/apis/streaming/v1"
 	"github.com/SneaksAndData/arcane-operator/services/job"
 	corev1 "k8s.io/api/core/v1"
@@ -10,6 +10,13 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+)
+
+type Backend string
+
+const (
+	BatchJob Backend = "BatchJobBackend"
+	CronJob  Backend = "CronJob"
 )
 
 type Phase string
@@ -21,9 +28,12 @@ const (
 	Backfilling Phase = "Backfilling"
 	Suspended   Phase = "Suspended"
 	Failed      Phase = "Failed"
+	Scheduled   Phase = "Scheduled"
 )
 
 type Definition interface {
+	job.ConfiguratorProvider
+
 	// GetPhase returns the current phase of the stream definition.
 	GetPhase() Phase
 
@@ -59,9 +69,6 @@ type Definition interface {
 	// ToOwnerReference converts the stream definition to an owner reference.
 	ToOwnerReference() metav1.OwnerReference
 
-	// ToConfiguratorProvider converts the stream definition to a JobConfiguratorProvider.
-	ToConfiguratorProvider() job.ConfiguratorProvider
-
 	// GetJobTemplate returns the job template reference based on the stream definition and backfill request.
 	GetJobTemplate(request *v1.BackfillRequest) types.NamespacedName
 
@@ -73,22 +80,21 @@ type Definition interface {
 
 	// GetReferenceForSecret returns a LocalObjectReference for the given secret name.
 	GetReferenceForSecret(name string) (*corev1.LocalObjectReference, error)
+
+	// Validate validates the stream definition and returns an error if any required fields are missing or invalid.
+	Validate() error
+
+	// GetBackend returns the streaming backend type (e.g., BatchJob, CronJob) associated with this stream definition.
+	GetBackend() Backend
 }
 
-func FromUnstructured(obj *unstructured.Unstructured) (Definition, error) {
-	v := unstructuredWrapper{
-		underlying: obj,
-	}
-
-	err := v.Validate()
-	if err != nil { // coverage-ignore
-		return nil, fmt.Errorf("failed to parse Stream definition: %w", err)
-	}
-	return &v, nil
-}
+// DefinitionParser is a function type that takes an unstructured object and returns a validated Definition or an
+// error if the parsing fails. This allows for flexible parsing logic that can be customized based on the specific
+// structure of the unstructured object.
+type DefinitionParser func(*unstructured.Unstructured) (Definition, error)
 
 // GetStreamForClass retrieves the stream definition for a given stream class and namespaced name.
-func GetStreamForClass(ctx context.Context, client client.Client, sc *v1.StreamClass, name types.NamespacedName) (Definition, error) {
+func GetStreamForClass(ctx context.Context, client client.Client, sc *v1.StreamClass, name types.NamespacedName, definitionParser DefinitionParser) (Definition, error) { // coverage-ignore
 	gvk := sc.TargetResourceGvk()
 	maybeSd := unstructured.Unstructured{}
 	maybeSd.SetGroupVersionKind(gvk)
@@ -96,5 +102,5 @@ func GetStreamForClass(ctx context.Context, client client.Client, sc *v1.StreamC
 	if err != nil {
 		return nil, err
 	}
-	return FromUnstructured(&maybeSd)
+	return definitionParser(&maybeSd)
 }

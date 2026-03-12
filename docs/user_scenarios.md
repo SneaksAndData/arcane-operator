@@ -21,8 +21,6 @@ This will stop the streaming job and prevent it from processing any new data.
 To start backfill for an existing stream, you need to create a backfill request custom resource (CR) that references the stream.
 The backfill request will be picked up by the operator, which will create a Kubernetes job to run the backfill process.
 
-If the stream **is suspended**, you need to create backfill request first and then unsuspend the stream.
-
 Example backfill request:
 ```yaml
 apiVersion: streaming.sneaksanddata.com/v1
@@ -50,6 +48,11 @@ gracefully and exits with code 0 or the exit code that returned by the plugin ex
 [added to the job's podFailurePolicy](https://kubernetes.io/docs/tasks/job/pod-failure-policy/).
 
 ## I want to update a stream definition while backfill is in progress. What should I expect?
-Currently, if you apply any changes to a stream definition YAML, while there is an **active** backfill request, Operator will **restart** the backfill to apply your changes.
+Currently, if you apply any changes to a stream definition YAML, while there is an **active** backfill request,
+Operator will **restart** the backfill to apply your changes.
 
 This behaviour will be improved once [lock-on](https://github.com/SneaksAndData/arcane-operator/issues/235) is implemented.
+
+## What happens if I delete a backfill request while the backfill job is running?
+If you delete a backfill request while the backfill job is running, the operator will stop the backfill job 
+and restart it in the streaming mode.

@@ -21,7 +21,9 @@ package v1
 // MockStreamDefinitionStatusApplyConfiguration represents a declarative configuration of the MockStreamDefinitionStatus type for use
 // with apply.
 type MockStreamDefinitionStatusApplyConfiguration struct {
-	Phase             *string `json:"phase,omitempty"`
+	// Phase represents the current phase of the stream.
+	Phase *string `json:"phase,omitempty"`
+	// ConfigurationHash represents the hash of the current configuration.
 	ConfigurationHash *string `json:"configurationHash,omitempty"`
 }
 

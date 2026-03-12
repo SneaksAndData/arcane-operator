@@ -91,6 +91,7 @@ func (in *MockStreamDefinitionSpec) DeepCopyInto(out *MockStreamDefinitionSpec) 
 	*out = *in
 	out.JobTemplateRef = in.JobTemplateRef
 	out.BackfillJobTemplateRef = in.BackfillJobTemplateRef
+	out.SecretRef = in.SecretRef
 	return
 }
 

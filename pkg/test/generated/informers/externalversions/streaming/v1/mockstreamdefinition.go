@@ -57,7 +57,7 @@ func NewMockStreamDefinitionInformer(client versioned.Interface, namespace strin
 // one. This reduces memory footprint and number of connections to the server.
 func NewFilteredMockStreamDefinitionInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) cache.SharedIndexInformer {
 	return cache.NewSharedIndexInformer(
-		&cache.ListWatch{
+		cache.ToListWatcherWithWatchListSemantics(&cache.ListWatch{
 			ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
@@ -82,7 +82,7 @@ func NewFilteredMockStreamDefinitionInformer(client versioned.Interface, namespa
 				}
 				return client.StreamingV1().MockStreamDefinitions(namespace).Watch(ctx, options)
 			},
-		},
+		}, client),
 		&apisteststreamingv1.MockStreamDefinition{},
 		resyncPeriod,
 		indexers,

@@ -1,4 +1,4 @@
-package stream
+package watchers
 
 import (
 	"sigs.k8s.io/controller-runtime/pkg/cache"

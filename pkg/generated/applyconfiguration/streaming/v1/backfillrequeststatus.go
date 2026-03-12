@@ -25,8 +25,12 @@ import (
 
 // BackfillRequestStatusApplyConfiguration represents a declarative configuration of the BackfillRequestStatus type for use
 // with apply.
+//
+// BackfillRequestStatus defines the observed state of a backfill request
 type BackfillRequestStatusApplyConfiguration struct {
-	Phase      *streamingv1.Phase                   `json:"phase,omitempty"`
+	// Phase represents the current phase of the backfill request
+	Phase *streamingv1.Phase `json:"phase,omitempty"`
+	// Conditions represent the latest available observations
 	Conditions []metav1.ConditionApplyConfiguration `json:"conditions,omitempty"`
 }
 

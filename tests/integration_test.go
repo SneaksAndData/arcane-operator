@@ -5,8 +5,17 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"os"
+	"os/exec"
+	"strings"
+	"testing"
+	"time"
+
 	"github.com/SneaksAndData/arcane-operator/pkg/apis/streaming/v1"
+	"github.com/SneaksAndData/arcane-operator/services"
+	"github.com/SneaksAndData/arcane-operator/services/controllers/contracts"
 	"github.com/SneaksAndData/arcane-operator/services/controllers/stream"
+	"github.com/SneaksAndData/arcane-operator/services/controllers/stream/backend/job"
 	"github.com/SneaksAndData/arcane-operator/services/controllers/stream_class"
 	"github.com/SneaksAndData/arcane-operator/services/job/job_builder"
 	"github.com/SneaksAndData/arcane-operator/telemetry"
@@ -29,13 +38,8 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/klog/v2"
-	"os"
-	"os/exec"
 	controllerruntime "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-	"strings"
-	"testing"
-	"time"
 )
 
 // Test_CreateStream verifies that creating a TestStreamDefinition results in the creation of both backfill and regular streaming jobs.
@@ -60,11 +64,11 @@ func Test_CreateStream(t *testing.T) {
 	// Watch for job events in the main thread
 	waitForJob(t, watcher, name,
 
-		func(job stream.StreamingJob) {
-			jobs[job.UID] = job.IsBackfill()
+		func(job stream.BackendResource) {
+			jobs[job.UID()] = job.IsBackfill()
 		},
 
-		func(job stream.StreamingJob) bool {
+		func(job stream.BackendResource) bool {
 			if job.IsCompleted() && !job.IsBackfill() {
 				t.Log("Job is completed, stopping watcher")
 				return true
@@ -109,11 +113,11 @@ func Test_CreateFailedStream(t *testing.T) {
 	// Watch for job events in the main thread
 	waitForJob(t, watcher, name,
 
-		func(job stream.StreamingJob) {
-			jobs[job.UID] = job.IsFailed()
+		func(job stream.BackendResource) {
+			jobs[job.UID()] = job.IsFailed()
 		},
 
-		func(job stream.StreamingJob) bool {
+		func(job stream.BackendResource) bool {
 			if job.IsFailed() {
 				t.Log("Job is expectedly failed, stopping watcher")
 				return true
@@ -150,12 +154,13 @@ func Test_CreateFailedStream(t *testing.T) {
 				return
 			} else {
 				t.Logf("StreamDefinition %s/%s is in %s phase, waiting for Failed phase", streamDefinition.Namespace, streamDefinition.Name, streamDefinition.Status.Phase)
+				time.Sleep(1 * time.Second)
 			}
 		}
 	}
 }
 
-func waitForJob(t *testing.T, watcher watch.Interface, name string, handleEvent func(job stream.StreamingJob), isCompleted func(job stream.StreamingJob) bool) {
+func waitForJob(t *testing.T, watcher watch.Interface, name string, handleEvent func(job stream.BackendResource), isCompleted func(job stream.BackendResource) bool) {
 	for {
 		select {
 		case event, ok := <-watcher.ResultChan():
@@ -170,14 +175,15 @@ func waitForJob(t *testing.T, watcher watch.Interface, name string, handleEvent 
 			}
 
 			if rawJob.Name != name {
-				t.Logf("unexpected job name: %s, skipping", rawJob.Name)
+				t.Logf("unexpected resource name: %s, skipping", rawJob.Name)
 				continue
 			}
 
-			t.Logf("Received job event: Type=%s, Object=%T", event.Type, event.Object)
-			job := stream.NewStreamingJobFromV1Job(rawJob)
-			handleEvent(job)
-			if isCompleted(job) {
+			t.Logf("Received resource event: Type=%s, Object=%T", event.Type, event.Object)
+			resource, err := job.FromResource(rawJob)
+			require.NoError(t, err)
+			handleEvent(resource)
+			if isCompleted(resource) {
 				t.Log("Job is isCompleted, stopping watcher")
 				return
 			}
@@ -247,7 +253,7 @@ func createManager(ctx context.Context, g *errgroup.Group) (manager.Manager, err
 	eventBroadcaster.StartLogging(klog.Infof)
 	eventBroadcaster.StartRecordingToSink(&typedcorev1.EventSinkImpl{Interface: clientSet.CoreV1().Events("")})
 	eventRecorder := eventBroadcaster.NewRecorder(scheme, corev1.EventSource{Component: "Arcane-Operator-Test"})
-	controllerFactory := stream.NewStreamControllerFactory(mgr.GetClient(), jobBuilder, mgr, eventRecorder)
+	controllerFactory := services.NewStreamControllerFactory(mgr.GetClient(), jobBuilder, mgr, eventRecorder, contracts.FromUnstructured)
 
 	reporter := telemetry.NewPeriodicMetricsReporter(telemetry.GetClient(ctx), &telemetry.PeriodicMetricsReporterConfig{
 		ReportInterval: 1 * time.Minute,

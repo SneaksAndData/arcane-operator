@@ -26,6 +26,8 @@ import (
 
 // MockStreamDefinitionApplyConfiguration represents a declarative configuration of the MockStreamDefinition type for use
 // with apply.
+//
+// MockStreamDefinition is a mock implementation of the StreamDefinition for testing purposes.
 type MockStreamDefinitionApplyConfiguration struct {
 	metav1.TypeMetaApplyConfiguration    `json:",inline"`
 	*metav1.ObjectMetaApplyConfiguration `json:"metadata,omitempty"`
@@ -43,6 +45,7 @@ func MockStreamDefinition(name, namespace string) *MockStreamDefinitionApplyConf
 	b.WithAPIVersion("streaming.sneaksanddata.com/v1")
 	return b
 }
+
 func (b MockStreamDefinitionApplyConfiguration) IsApplyConfiguration() {}
 
 // WithKind sets the Kind field in the declarative configuration to the given value

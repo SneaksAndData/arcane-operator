@@ -20,10 +20,15 @@ package v1
 
 // BackfillRequestSpecApplyConfiguration represents a declarative configuration of the BackfillRequestSpec type for use
 // with apply.
+//
+// BackfillRequestSpec defines the desired state of a backfill request
 type BackfillRequestSpecApplyConfiguration struct {
+	// StreamClass is the name of the stream class to backfill
 	StreamClass *string `json:"streamClass,omitempty"`
-	StreamId    *string `json:"streamId,omitempty"`
-	Completed   *bool   `json:"completed,omitempty"`
+	// StreamId is the ID of the stream to backfill
+	StreamId *string `json:"streamId,omitempty"`
+	// Completed indicates whether the backfill request has been completed
+	Completed *bool `json:"completed,omitempty"`
 }
 
 // BackfillRequestSpecApplyConfiguration constructs a declarative configuration of the BackfillRequestSpec type for use with

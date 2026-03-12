@@ -24,12 +24,21 @@ import (
 
 // MockStreamDefinitionSpecApplyConfiguration represents a declarative configuration of the MockStreamDefinitionSpec type for use
 // with apply.
+//
+// MockStreamDefinitionSpec is a mock implementation of the StreamDefinitionSpec for testing purposes.
 type MockStreamDefinitionSpecApplyConfiguration struct {
-	Source                 *string                 `json:"source,omitempty"`
-	Destination            *string                 `json:"destination,omitempty"`
-	Suspended              *bool                   `json:"suspended,omitempty"`
-	JobTemplateRef         *corev1.ObjectReference `json:"jobTemplateRef,omitempty"`
+	// Source represents the source of the stream.
+	Source *string `json:"source,omitempty"`
+	// Destination represents the destination of the stream.
+	Destination *string `json:"destination,omitempty"`
+	// Suspended indicates whether the stream is suspended.
+	Suspended *bool `json:"suspended,omitempty"`
+	// JobTemplateRef represents a reference to the job template.
+	JobTemplateRef *corev1.ObjectReference `json:"jobTemplateRef,omitempty"`
+	// BackfillJobTemplateRef represents a reference to the job template.
 	BackfillJobTemplateRef *corev1.ObjectReference `json:"backfillJobTemplateRef,omitempty"`
+	// SecretRef
+	SecretRef *corev1.LocalObjectReference `json:"secretRef,omitempty"`
 }
 
 // MockStreamDefinitionSpecApplyConfiguration constructs a declarative configuration of the MockStreamDefinitionSpec type for use with
@@ -75,5 +84,13 @@ func (b *MockStreamDefinitionSpecApplyConfiguration) WithJobTemplateRef(value co
 // If called multiple times, the BackfillJobTemplateRef field is set to the value of the last call.
 func (b *MockStreamDefinitionSpecApplyConfiguration) WithBackfillJobTemplateRef(value corev1.ObjectReference) *MockStreamDefinitionSpecApplyConfiguration {
 	b.BackfillJobTemplateRef = &value
+	return b
+}
+
+// WithSecretRef sets the SecretRef field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the SecretRef field is set to the value of the last call.
+func (b *MockStreamDefinitionSpecApplyConfiguration) WithSecretRef(value corev1.LocalObjectReference) *MockStreamDefinitionSpecApplyConfiguration {
+	b.SecretRef = &value
 	return b
 }
