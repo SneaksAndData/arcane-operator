@@ -1,9 +1,10 @@
-package stream
+package tests
 
 import (
 	"testing"
 
 	v1 "github.com/SneaksAndData/arcane-operator/pkg/apis/streaming/v1"
+	"github.com/SneaksAndData/arcane-operator/services/controllers/stream"
 	"github.com/SneaksAndData/arcane-operator/tests/mocks/job_mock"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -30,7 +31,7 @@ func Test_StreamMetadataService_JobConfigurator_NoSecretRefs(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 	mockProvider := job_mock.NewMockSecretReferenceProvider(mockCtrl)
-	service := NewStreamMetadataService(streamClass, mockProvider)
+	service := stream.NewStreamMetadataService(streamClass, mockProvider)
 
 	// Act
 	configurator, err := service.JobConfigurator()
@@ -84,7 +85,7 @@ func Test_StreamMetadataService_JobConfigurator_SingleSecretRef(t *testing.T) {
 		GetReferenceForSecret("secretRef").
 		Return(&corev1.LocalObjectReference{Name: "databaseCredentials"}, nil).
 		Times(1)
-	service := NewStreamMetadataService(streamClass, mockProvider)
+	service := stream.NewStreamMetadataService(streamClass, mockProvider)
 
 	// Act
 	configurator, err := service.JobConfigurator()
@@ -136,7 +137,7 @@ func Test_StreamMetadataService_JobConfigurator_NilSecretRefs(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 	mockProvider := job_mock.NewMockSecretReferenceProvider(mockCtrl)
-	service := NewStreamMetadataService(streamClass, mockProvider)
+	service := stream.NewStreamMetadataService(streamClass, mockProvider)
 
 	// Act
 	configurator, err := service.JobConfigurator()
@@ -190,7 +191,7 @@ func Test_StreamMetadataService_JobConfigurator_MultipleContainers(t *testing.T)
 		GetReferenceForSecret("secretRef").
 		Return(&corev1.LocalObjectReference{Name: "databaseCredentials"}, nil).
 		Times(1)
-	service := NewStreamMetadataService(streamClass, mockProvider)
+	service := stream.NewStreamMetadataService(streamClass, mockProvider)
 
 	// Act
 	configurator, err := service.JobConfigurator()
@@ -254,7 +255,7 @@ func Test_StreamMetadataService_JobConfigurator_PreservesExistingEnvFrom(t *test
 		GetReferenceForSecret("secretRef").
 		Return(&corev1.LocalObjectReference{Name: "my-secret"}, nil).
 		Times(1)
-	service := NewStreamMetadataService(streamClass, mockProvider)
+	service := stream.NewStreamMetadataService(streamClass, mockProvider)
 
 	// Act
 	configurator, err := service.JobConfigurator()
