@@ -36,20 +36,20 @@ func (c *ResourceReader) Get(ctx context.Context, name client.ObjectKey, object 
 func (j *ResourceReader) CompareConfigurations(ctx context.Context, object client.Object, definition stream.Definition, fromObject ResourceConverter) (bool, error) {
 	logger := j.getLogger(ctx, definition.NamespacedName())
 	resource, err := j.Get(ctx, definition.NamespacedName(), object, fromObject)
-	if err != nil {
+	if err != nil { // coverage-ignore
 		logger.V(0).Error(err, "Failed to get resource for stream")
 		return false, err
 	}
 
 	configuration, err := resource.CurrentConfiguration()
-	if err != nil {
+	if err != nil { // coverage-ignore
 		logger.V(0).Error(err, "Failed to extract configuration from job")
 		return false, err
 	}
 
 	// This is a new stream, so we start backfill even if the backfill request is not present.
 	definitionConfiguration, err := definition.CurrentConfiguration(nil)
-	if err != nil {
+	if err != nil { // coverage-ignore
 		logger.V(0).Error(err, "Failed to extract configuration from stream definition")
 		return false, err
 	}

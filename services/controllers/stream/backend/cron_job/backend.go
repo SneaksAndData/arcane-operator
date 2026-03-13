@@ -138,6 +138,9 @@ func (c *Backend) Apply(ctx context.Context, definition stream.Definition, backf
 	object.Spec.Schedule = schedule
 	object.ResourceVersion = ""
 	object.Annotations[job.ConfigurationHashAnnotation] = configuration
+	object.OwnerReferences = []metav1.OwnerReference{
+		definition.ToOwnerReference(),
+	}
 
 	err = c.client.Create(ctx, object)
 	if err != nil {
