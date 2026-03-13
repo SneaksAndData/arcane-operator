@@ -8,8 +8,10 @@ github.com/Masterminds/semver/v3 v3.4.0 h1:Zog+i5UMtVoCU8oKka5P7i9q9HgrJeGzI9SA1
 github.com/Masterminds/semver/v3 v3.4.0/go.mod h1:4V+yj/TJE1HU9XfppCwVMZq3I84lprf4nC11bSS5beM=
 github.com/Microsoft/go-winio v0.5.0 h1:Elr9Wn+sGKPlkaBvwu4mTrxtmOp3F3yV9qhaHbXGjwU=
 github.com/Microsoft/go-winio v0.5.0/go.mod h1:JPGBdM1cNvN/6ISo+n8V5iA4v8pBzdOpzfwIujj1a84=
-github.com/SneaksAndData/arcane-stream-mock v1.0.8-0.20260312121959-1693e292428a h1:MWQlr4/DKdrDKcryW9vnK8b/HE8cg+ATXKrpXbtau1U=
-github.com/SneaksAndData/arcane-stream-mock v1.0.8-0.20260312121959-1693e292428a/go.mod h1:DY88pXVSBoGY1VmgipmIemT27DtUiJWh+BYys8DMGC0=
+github.com/SneaksAndData/arcane-stream-mock v1.0.8-0.20260312134052-20d64cecdbfc h1:RBV1BkjpE0Njfy7PVfbfJhBoPAGkABYfFmdTyt9y13k=
+github.com/SneaksAndData/arcane-stream-mock v1.0.8-0.20260312134052-20d64cecdbfc/go.mod h1:cuRPj0LTePT5zdhqVCqs8Yd24DwHmDFo3igIbj3Wt2Q=
+github.com/SneaksAndData/arcane-stream-mock v1.0.8-0.20260312140647-a27505af37ac h1:S+DeZcbkFSBxS6GQtCyFXsGCriCQrl52XEDrpnqP00k=
+github.com/SneaksAndData/arcane-stream-mock v1.0.8-0.20260312140647-a27505af37ac/go.mod h1:cuRPj0LTePT5zdhqVCqs8Yd24DwHmDFo3igIbj3Wt2Q=
 github.com/beorn7/perks v1.0.1 h1:VlbKKnNfV8bJzeqoa4cOKqO6bYr3WgKZxO8Z16+hsOM=
 github.com/beorn7/perks v1.0.1/go.mod h1:G2ZrVWU2WbWT9wwq4/hrbKbnv/1ERSJQ0ibhJ6rlkpw=
 github.com/cespare/xxhash/v2 v2.3.0 h1:UL815xU9SqsFlibzuggzjXhog7bL6oX9BbNZnL2UFvs=
@@ -240,8 +242,8 @@ k8s.io/apiextensions-apiserver v0.34.1 h1:NNPBva8FNAPt1iSVwIE0FsdrVriRXMsaWFMqJb
 k8s.io/apiextensions-apiserver v0.34.1/go.mod h1:hP9Rld3zF5Ay2Of3BeEpLAToP+l4s5UlxiHfqRaRcMc=
 k8s.io/apimachinery v0.35.2 h1:NqsM/mmZA7sHW02JZ9RTtk3wInRgbVxL8MPfzSANAK8=
 k8s.io/apimachinery v0.35.2/go.mod h1:jQCgFZFR1F4Ik7hvr2g84RTJSZegBc8yHgFWKn//hns=
-k8s.io/client-go v0.35.0 h1:IAW0ifFbfQQwQmga0UdoH0yvdqrbwMdq9vIFEhRpxBE=
-k8s.io/client-go v0.35.0/go.mod h1:q2E5AAyqcbeLGPdoRB+Nxe3KYTfPce1Dnu1myQdqz9o=
+k8s.io/client-go v0.35.2 h1:YUfPefdGJA4aljDdayAXkc98DnPkIetMl4PrKX97W9o=
+k8s.io/client-go v0.35.2/go.mod h1:4QqEwh4oQpeK8AaefZ0jwTFJw/9kIjdQi0jpKeYvz7g=
 k8s.io/code-generator v0.35.0 h1:TvrtfKYZTm9oDF2z+veFKSCcgZE3Igv0svY+ehCmjHQ=
 k8s.io/code-generator v0.35.0/go.mod h1:iS1gvVf3c/T71N5DOGYO+Gt3PdJ6B9LYSvIyQ4FHzgc=
 k8s.io/gengo/v2 v2.0.0-20250922181213-ec3ebc5fd46b h1:gMplByicHV/TJBizHd9aVEsTYoJBnnUAT5MHlTkbjhQ=

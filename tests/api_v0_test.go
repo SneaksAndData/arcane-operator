@@ -18,14 +18,6 @@ import (
 // It watches for Job events in the Kubernetes cluster and checks that at least one backfill job and one regular job are created and completed.
 func Test_CreateStream(t *testing.T) {
 	// Arrange
-	jobClient := clientSet.BatchV1().Jobs("")
-	require.NotNil(t, jobClient)
-
-	watcher, err := jobClient.Watch(t.Context(), metav1.ListOptions{})
-	t.Cleanup(func() {
-		watcher.Stop()
-	})
-	require.NoError(t, err)
 
 	// Act
 	name := createTestStreamDefinition(t, false)
@@ -34,7 +26,7 @@ func Test_CreateStream(t *testing.T) {
 	jobs := make(map[types.UID]bool)
 
 	// Watch for job events in the main thread
-	waitForJob(t, watcher, name,
+	waitForBackendResource(t, name,
 
 		func(job stream.BackendResource) {
 			jobs[job.UID()] = job.IsBackfill()
@@ -67,14 +59,6 @@ func Test_CreateStream(t *testing.T) {
 // It watches for Job events in the Kubernetes cluster and checks that at least one backfill job and one regular job are created and completed.
 func Test_CreateFailedStream(t *testing.T) {
 	// Arrange
-	jobClient := clientSet.BatchV1().Jobs("")
-	require.NotNil(t, jobClient)
-
-	watcher, err := jobClient.Watch(t.Context(), metav1.ListOptions{})
-	t.Cleanup(func() {
-		watcher.Stop()
-	})
-	require.NoError(t, err)
 
 	// Act
 	name := createTestStreamDefinition(t, true)
@@ -83,7 +67,7 @@ func Test_CreateFailedStream(t *testing.T) {
 	jobs := make(map[types.UID]bool)
 
 	// Watch for job events in the main thread
-	waitForJob(t, watcher, name,
+	waitForBackendResource(t, name,
 
 		func(job stream.BackendResource) {
 			jobs[job.UID()] = job.IsFailed()

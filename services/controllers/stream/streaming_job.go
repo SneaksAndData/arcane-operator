@@ -6,6 +6,7 @@ import (
 )
 
 type BackendResource interface {
+	Kind() string
 	Name() string
 	UID() types.UID
 	CurrentConfiguration() (string, error)

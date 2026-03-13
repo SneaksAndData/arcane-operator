@@ -15,19 +15,21 @@ import (
 	"github.com/SneaksAndData/arcane-operator/services"
 	"github.com/SneaksAndData/arcane-operator/services/controllers/contracts"
 	"github.com/SneaksAndData/arcane-operator/services/controllers/stream"
+	"github.com/SneaksAndData/arcane-operator/services/controllers/stream/backend/cron_job"
 	"github.com/SneaksAndData/arcane-operator/services/controllers/stream/backend/job"
 	"github.com/SneaksAndData/arcane-operator/services/controllers/stream_class"
 	"github.com/SneaksAndData/arcane-operator/services/job/job_builder"
 	"github.com/SneaksAndData/arcane-operator/telemetry"
 	mockv1 "github.com/SneaksAndData/arcane-stream-mock/pkg/apis/streaming/v1"
+	mockv2 "github.com/SneaksAndData/arcane-stream-mock/pkg/apis/streaming/v2"
 	streaming "github.com/SneaksAndData/arcane-stream-mock/pkg/generated/clientset/versioned"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/sync/errgroup"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	apiruntime "k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	typedcorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
@@ -109,6 +111,7 @@ func setupScheme() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 	utilruntime.Must(v1.AddToScheme(scheme))
 	utilruntime.Must(mockv1.AddToScheme(scheme))
+	utilruntime.Must(mockv2.AddToScheme(scheme))
 }
 
 func readKubeconfig() (*rest.Config, error) {
@@ -176,36 +179,89 @@ func createManager(ctx context.Context, g *errgroup.Group) (manager.Manager, err
 	return mgr, nil
 }
 
-func waitForJob(t *testing.T, watcher watch.Interface, name string, handleEvent func(job stream.BackendResource), isCompleted func(job stream.BackendResource) bool) {
+func waitForBackendResource(t *testing.T, name string, handleEvent func(job stream.BackendResource), isCompleted func(job stream.BackendResource) bool) {
+	jobClient := clientSet.BatchV1().Jobs("")
+	require.NotNil(t, jobClient)
+
+	jobWatcher, err := jobClient.Watch(t.Context(), metav1.ListOptions{})
+	t.Cleanup(func() {
+		jobWatcher.Stop()
+	})
+	require.NoError(t, err)
+
+	cronJobClient := clientSet.BatchV1().CronJobs("")
+	require.NotNil(t, cronJobClient)
+
+	cronJobWatcher, err := cronJobClient.Watch(t.Context(), metav1.ListOptions{})
+	t.Cleanup(func() {
+		cronJobWatcher.Stop()
+	})
+	require.NoError(t, err)
+
 	for {
 		select {
-		case event, ok := <-watcher.ResultChan():
+		case event, ok := <-merge(t.Context(), jobWatcher.ResultChan(), cronJobWatcher.ResultChan()):
 			if !ok {
-				t.Error("watcher channel closed")
-				return
-			}
-			rawJob, ok := event.Object.(*batchv1.Job)
-			if !ok {
-				t.Fatalf("expected Job object, got %T", event.Object)
+				t.Error("jobWatcher channel closed")
 				return
 			}
 
-			if rawJob.Name != name {
-				t.Logf("unexpected resource name: %s, skipping", rawJob.Name)
+			var resource stream.BackendResource
+			switch obj := event.Object.(type) {
+			case *batchv1.Job:
+				t.Logf("Got a Job: %s", obj.Name)
+				resource, err = job.FromResource(obj)
+				require.NoError(t, err)
+			case *batchv1.CronJob:
+				t.Logf("Got a CronJob: %s", obj.Name)
+				resource, err = cron_job.FromResource(obj)
+				require.NoError(t, err)
+			default:
+				t.Fatal("Job jobWatcher stopped with timeout or cancellation")
+			}
+
+			if resource.Name() != name {
+				t.Logf("unexpected resource name: %s, skipping", resource.Name())
 				continue
 			}
 
-			t.Logf("Received resource event: Type=%s, Object=%T", event.Type, event.Object)
-			resource, err := job.FromResource(rawJob)
-			require.NoError(t, err)
 			handleEvent(resource)
 			if isCompleted(resource) {
-				t.Log("Job is isCompleted, stopping watcher")
+				t.Log("Job is isCompleted, stopping jobWatcher")
 				return
 			}
 		case <-t.Context().Done():
-			t.Fatal("Job watcher stopped with timeout or cancellation")
+			t.Fatal("Job jobWatcher stopped with timeout or cancellation")
 			return
 		}
 	}
+}
+
+func merge[T any](ctx context.Context, ch1, ch2 <-chan T) <-chan T {
+	out := make(chan T)
+	go func() {
+		defer close(out)
+		for {
+			select {
+			case v, ok := <-ch1:
+				if !ok {
+					ch1 = nil
+				} else {
+					out <- v
+				}
+			case v, ok := <-ch2:
+				if !ok {
+					ch2 = nil
+				} else {
+					out <- v
+				}
+			case <-ctx.Done():
+				return
+			}
+			if ch1 == nil && ch2 == nil {
+				return
+			}
+		}
+	}()
+	return out
 }

@@ -17,6 +17,10 @@ type BackendResource struct {
 	*v1.CronJob
 }
 
+func (j *BackendResource) Kind() string { // coverage-ignore (trivial)
+	return j.CronJob.Kind
+}
+
 func (j *BackendResource) Name() string { // coverage-ignore (trivial)
 	return j.CronJob.Name
 }
