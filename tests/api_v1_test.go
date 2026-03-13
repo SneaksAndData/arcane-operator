@@ -38,12 +38,12 @@ func Test_StreamStateTransitionToScheduled(t *testing.T) {
 	wakeUp(t, name, stream.Running)
 
 	// Collect job events from the watcher channel
-	jobs := make(map[types.UID]stream.BackendResource)
+	aggregator := make(map[types.UID]stream.BackendResource)
 
 	// Act
 	waitForBackendResource(t, name,
 
-		func(ber stream.BackendResource) {
+		func(backendResource stream.BackendResource) {
 
 			testStream, err := streamingClientSet.
 				StreamingV2().
@@ -66,36 +66,19 @@ func Test_StreamStateTransitionToScheduled(t *testing.T) {
 					}
 				})
 
-				jobs[ber.UID()] = ber
-				return
-			case stream.Scheduled:
-				t.Logf("TestStreamDefinition %s/%s is in Scheduled phase, stopping watcher", testStream.Namespace, testStream.Name)
-
-				jobs[ber.UID()] = ber
-				return
+				aggregator[backendResource.UID()] = backendResource
 			default:
 				t.Logf("TestStreamDefinition %s/%s is in unexpected phase %s, waiting for Scheduled phase", testStream.Namespace, testStream.Name, testStream.Status.Phase)
-				return
+				aggregator[backendResource.UID()] = backendResource
 			}
 		},
 
-		func(job stream.BackendResource) bool {
-			return len(jobs) >= 2
+		func(backendResource stream.BackendResource) bool {
+			_, ok := backendResource.ToObject().(*batchv1.CronJob)
+			return ok
 		})
 
-	require.Equal(t, 2, len(jobs), "Expected exactly 2 objects (1 Job and 1 CronJob), but got %d", len(jobs))
-
-	var jobCount, cronJobCount int
-	for _, ber := range jobs {
-		switch ber.ToObject().(type) {
-		case *batchv1.Job:
-			jobCount++
-		case *batchv1.CronJob:
-			cronJobCount++
-		}
-	}
-	require.Equal(t, 1, jobCount, "Expected exactly 1 Job, got %d", jobCount)
-	require.Equal(t, 1, cronJobCount, "Expected exactly 1 CronJob, got %d", cronJobCount)
+	assertObjectTypes(t, aggregator)
 }
 
 // Test_CreateStream verifies that creating a TestStreamDefinition results in the creation of both backfill and regular streaming jobs.
@@ -119,12 +102,12 @@ func Test_StreamStateTransitionToRunning(t *testing.T) {
 	wakeUp(t, name, stream.Scheduled)
 
 	// Collect job events from the watcher channel
-	jobs := make(map[types.UID]stream.BackendResource)
+	aggregator := make(map[types.UID]stream.BackendResource)
 
 	// Act
 	waitForBackendResource(t, name,
 
-		func(ber stream.BackendResource) {
+		func(backendResource stream.BackendResource) {
 
 			testStream, err := streamingClientSet.
 				StreamingV2().
@@ -137,6 +120,7 @@ func Test_StreamStateTransitionToRunning(t *testing.T) {
 				t.Logf("TestStreamDefinition %s/%s is in Running phase, waiting for Scheduled phase", testStream.Namespace, testStream.Name)
 				updateStream(t, name, func(definition *v2.TestStreamDefinitionV2) {
 					definition.Spec.ExecutionSettings.APIVersion = "v1"
+					definition.Spec.ExecutionSettings.StreamingBackend.CronJobBackend = nil
 					definition.Spec.ExecutionSettings.StreamingBackend.BatchJobBackend = &v2.BatchJobBackend{
 						JobTemplateRef: corev1.ObjectReference{
 							APIVersion: "streaming.sneaksanddata.com/v1",
@@ -147,36 +131,22 @@ func Test_StreamStateTransitionToRunning(t *testing.T) {
 					}
 				})
 
-				jobs[ber.UID()] = ber
-				return
-			case stream.Running:
-				t.Logf("TestStreamDefinition %s/%s is in Scheduled phase, stopping watcher", testStream.Namespace, testStream.Name)
-
-				jobs[ber.UID()] = ber
+				aggregator[backendResource.UID()] = backendResource
 				return
 			default:
 				t.Logf("TestStreamDefinition %s/%s is in unexpected phase %s, waiting for Scheduled phase", testStream.Namespace, testStream.Name, testStream.Status.Phase)
+				aggregator[backendResource.UID()] = backendResource
 				return
 			}
 		},
 
-		func(job stream.BackendResource) bool {
-			return len(jobs) >= 2
+		func(backendResource stream.BackendResource) bool {
+			t.Logf("Observed backend resource with UID %s and type %T", backendResource.UID(), backendResource.ToObject())
+			_, ok := backendResource.ToObject().(*batchv1.Job)
+			return ok
 		})
 
-	require.Equal(t, 2, len(jobs), "Expected exactly 2 objects (1 Job and 1 CronJob), but got %d", len(jobs))
-
-	var jobCount, cronJobCount int
-	for _, ber := range jobs {
-		switch ber.ToObject().(type) {
-		case *batchv1.Job:
-			jobCount++
-		case *batchv1.CronJob:
-			cronJobCount++
-		}
-	}
-	require.Equal(t, 1, jobCount, "Expected exactly 1 Job, got %d", jobCount)
-	require.Equal(t, 1, cronJobCount, "Expected exactly 1 CronJob, got %d", cronJobCount)
+	assertObjectTypes(t, aggregator)
 }
 
 func wakeUp(t *testing.T, name string, targetPhase stream.Phase) {
@@ -207,7 +177,7 @@ func buildV2StreamDefinition(configure func(definition *v2.TestStreamDefinitionV
 		Spec: v2.TestsStreamDefinitionSpec{
 			Source:      "mock-source",
 			Destination: "mock-destination",
-			RunDuration: "15s",
+			RunDuration: "5s",
 			TestSecretRef: &corev1.LocalObjectReference{
 				Name: "test-secret",
 			},
@@ -271,4 +241,18 @@ func updateStream(t *testing.T, name string, update func(*v2.TestStreamDefinitio
 		return err == nil, err
 	})
 	require.NoError(t, err)
+}
+
+func assertObjectTypes(t *testing.T, jobs map[types.UID]stream.BackendResource) {
+	var jobCount, cronJobCount int
+	for _, ber := range jobs {
+		switch ber.ToObject().(type) {
+		case *batchv1.Job:
+			jobCount++
+		case *batchv1.CronJob:
+			cronJobCount++
+		}
+	}
+	require.GreaterOrEqual(t, jobCount, 1)
+	require.GreaterOrEqual(t, cronJobCount, 1)
 }

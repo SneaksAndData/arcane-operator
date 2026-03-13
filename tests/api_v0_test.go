@@ -144,7 +144,7 @@ func createTestStreamDefinition(t *testing.T, shouldFail bool) string {
 				Name:       "arcane-stream-mock",
 				Namespace:  "default",
 			},
-			RunDuration: "15s",
+			RunDuration: "5s",
 			TestSecretRef: &corev1.LocalObjectReference{
 				Name: "test-secret",
 			},
