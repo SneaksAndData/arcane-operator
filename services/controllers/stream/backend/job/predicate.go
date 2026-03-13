@@ -37,7 +37,7 @@ func NewPredicate() predicate.TypedPredicate[*v1.Job] { // coverage-ignore (triv
 	return &Predicate{}
 }
 
-func (j *Predicate) getLogger(request types.NamespacedName) klog.Logger {
+func (j *Predicate) getLogger(request types.NamespacedName) klog.Logger { // coverage-ignore (trivial)
 	return klog.Background().
 		WithName("job.Backend").
 		WithValues("namespace", request.Namespace, "streamId", request.Name)
