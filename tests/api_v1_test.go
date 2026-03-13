@@ -8,6 +8,7 @@ import (
 	"github.com/SneaksAndData/arcane-operator/services/controllers/stream"
 	"github.com/SneaksAndData/arcane-stream-mock/pkg/apis/streaming/v2"
 	"github.com/stretchr/testify/require"
+	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -82,20 +83,19 @@ func Test_StreamStateTransitionToScheduled(t *testing.T) {
 			return len(jobs) >= 2
 		})
 
-	require.GreaterOrEqual(t, len(jobs), 2, "Should have received at least 2 objects (1 job and 1 CronJob), but got %d", len(jobs))
+	require.Equal(t, 2, len(jobs), "Expected exactly 2 objects (1 Job and 1 CronJob), but got %d", len(jobs))
 
 	var jobCount, cronJobCount int
 	for _, ber := range jobs {
-		switch ber.Kind() {
-		case "Job":
+		switch ber.ToObject().(type) {
+		case *batchv1.Job:
 			jobCount++
-		case "CronJob":
+		case *batchv1.CronJob:
 			cronJobCount++
 		}
 	}
-	require.GreaterOrEqual(t, 1, jobCount, "Expected 1 Job, got %d", jobCount)
-	require.GreaterOrEqual(t, 1, cronJobCount, "Expected 1 CronJob, got %d", cronJobCount)
-
+	require.Equal(t, 1, jobCount, "Expected exactly 1 Job, got %d", jobCount)
+	require.Equal(t, 1, cronJobCount, "Expected exactly 1 CronJob, got %d", cronJobCount)
 }
 
 // Test_CreateStream verifies that creating a TestStreamDefinition results in the creation of both backfill and regular streaming jobs.
@@ -164,20 +164,19 @@ func Test_StreamStateTransitionToRunning(t *testing.T) {
 			return len(jobs) >= 2
 		})
 
-	require.GreaterOrEqual(t, len(jobs), 2, "Should have received at least 2 objects (1 job and 1 CronJob), but got %d", len(jobs))
+	require.Equal(t, 2, len(jobs), "Expected exactly 2 objects (1 Job and 1 CronJob), but got %d", len(jobs))
 
 	var jobCount, cronJobCount int
 	for _, ber := range jobs {
-		switch ber.Kind() {
-		case "Job":
+		switch ber.ToObject().(type) {
+		case *batchv1.Job:
 			jobCount++
-		case "CronJob":
+		case *batchv1.CronJob:
 			cronJobCount++
 		}
 	}
-	require.GreaterOrEqual(t, 1, jobCount, "Expected 1 Job, got %d", jobCount)
-	require.GreaterOrEqual(t, 1, cronJobCount, "Expected 1 CronJob, got %d", cronJobCount)
-
+	require.Equal(t, 1, jobCount, "Expected exactly 1 Job, got %d", jobCount)
+	require.Equal(t, 1, cronJobCount, "Expected exactly 1 CronJob, got %d", cronJobCount)
 }
 
 func wakeUp(t *testing.T, name string, targetPhase stream.Phase) {
