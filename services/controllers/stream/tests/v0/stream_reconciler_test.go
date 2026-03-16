@@ -594,7 +594,7 @@ func createReconciler(k8sClient client.Client, mockJob *batchv1.Job, mockCtrl *g
 		},
 	}
 	statusManager := stream.NewDefaultStatusManager(k8sClient, gvk, &sc, contracts.FromUnstructured)
-	backfillBackendResourceManager := job.NewBackfillBackendResourceManager(&sc, k8sClient, statusManager)
+	backfillBackendResourceManager := job.NewBackfillBackendResourceManager(&sc, k8sClient, statusManager, recorder)
 	backendResourceManagers := map[stream.Backend]stream.BackendResourceManager{
 		stream.BatchJob: job.NewJobBackend(k8sClient, jobBuilder, recorder, statusManager),
 		stream.CronJob:  cron_job.NewCronJobBackend(k8sClient, jobBuilder, recorder, statusManager),

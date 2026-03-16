@@ -25,7 +25,7 @@ type BaseResourceManager struct {
 
 func (j *BaseResourceManager) Remove(ctx context.Context, object client.Object, updatePhase func() (reconcile.Result, error)) (reconcile.Result, error) {
 	err := j.Client.Delete(ctx, object, client.PropagationPolicy(metav1.DeletePropagationForeground))
-	if client.IgnoreNotFound(err) != nil { // coverage-ignore
+	if client.IgnoreNotFound(err) != nil {
 		return reconcile.Result{}, err
 	}
 

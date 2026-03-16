@@ -372,25 +372,6 @@ func Test_UpdatePhase_Suspended_without_BackfillRequest_with_job(t *testing.T) {
 	tests.AssertJobNotExists(t, k8sClient, objectName)
 }
 
-func Test_UpdatePhase_Backfilling_To_Pending_with_job_running(t *testing.T) {
-	// Arrange
-	k8sClient := tests.SetupClient(objectName,
-		tests.Combined(tests.WithNamedStreamDefinition(objectName), tests.WithPhase(stream.Backfilling), tests.WithSuspendedSpec(false)),
-		tests.CombinedB(tests.WithOutdatedJob(objectName), tests.WithBackfillRequest(objectName)),
-	)
-	reconciler := createReconciler(k8sClient, nil, nil)
-
-	// Act
-	result, err := reconciler.Reconcile(t.Context(), reconcile.Request{NamespacedName: objectName})
-	require.NoError(t, err)
-	require.Equal(t, result, reconcile.Result{})
-
-	// Assert
-	tests.AssertStreamDefinitionPhase(t, k8sClient, objectName, stream.Backfilling)
-	tests.AssertJobExists(t, k8sClient, objectName)
-	tests.AssertBackfillRequestNotCompleted(t, k8sClient, objectName)
-}
-
 func Test_UpdatePhase_Backfilling_To_Pending_with_job_completed(t *testing.T) {
 	// Arrange
 	k8sClient := tests.SetupClient(objectName,
@@ -408,6 +389,49 @@ func Test_UpdatePhase_Backfilling_To_Pending_with_job_completed(t *testing.T) {
 	tests.AssertStreamDefinitionPhase(t, k8sClient, objectName, stream.Pending)
 	tests.AssertJobNotExists(t, k8sClient, objectName)
 	tests.AssertBackfillRequestCompleted(t, k8sClient, objectName)
+}
+
+func Test_UpdatePhase_Backfilling_To_Pending_with_deleted_bfr(t *testing.T) {
+	// Arrange
+	k8sClient := tests.SetupClient(objectName,
+		tests.Combined(
+			tests.WithNamedStreamDefinition(objectName),
+			tests.WithPhase(stream.Backfilling),
+			tests.WithSuspendedSpec(false),
+		),
+		tests.CombinedB(tests.WithOutdatedJob(objectName)),
+	)
+	reconciler := createReconciler(k8sClient, nil, nil)
+
+	tests.AssertJobExists(t, k8sClient, objectName)
+
+	// Act
+	result, err := reconciler.Reconcile(t.Context(), reconcile.Request{NamespacedName: objectName})
+	require.NoError(t, err)
+	require.Equal(t, result, reconcile.Result{})
+
+	// Assert
+	tests.AssertStreamDefinitionPhase(t, k8sClient, objectName, stream.Pending)
+	tests.AssertJobNotExists(t, k8sClient, objectName)
+}
+
+func Test_UpdatePhase_Backfilling_To_Backfilling_with_job_running(t *testing.T) {
+	// Arrange
+	k8sClient := tests.SetupClient(objectName,
+		tests.Combined(tests.WithNamedStreamDefinition(objectName), tests.WithPhase(stream.Backfilling), tests.WithSuspendedSpec(false)),
+		tests.CombinedB(tests.WithOutdatedJob(objectName), tests.WithBackfillRequest(objectName)),
+	)
+	reconciler := createReconciler(k8sClient, nil, nil)
+
+	// Act
+	result, err := reconciler.Reconcile(t.Context(), reconcile.Request{NamespacedName: objectName})
+	require.NoError(t, err)
+	require.Equal(t, result, reconcile.Result{})
+
+	// Assert
+	tests.AssertStreamDefinitionPhase(t, k8sClient, objectName, stream.Backfilling)
+	tests.AssertJobExists(t, k8sClient, objectName)
+	tests.AssertBackfillRequestNotCompleted(t, k8sClient, objectName)
 }
 
 func Test_UpdatePhase_Backfilling_To_Backfilling_with_no_job(t *testing.T) {
@@ -826,7 +850,7 @@ func createReconciler(k8sClient client.Client, mockJob *batchv1.Job, mockCtrl *g
 		},
 	}
 	statusManager := stream.NewDefaultStatusManager(k8sClient, gvk, &sc, contracts.FromUnstructured)
-	backfillBackendResourceManager := job.NewBackfillBackendResourceManager(&sc, k8sClient, statusManager)
+	backfillBackendResourceManager := job.NewBackfillBackendResourceManager(&sc, k8sClient, statusManager, recorder)
 	backendResourceManagers := map[stream.Backend]stream.BackendResourceManager{
 		stream.BatchJob: job.NewJobBackend(k8sClient, jobBuilder, recorder, statusManager),
 		stream.CronJob:  cron_job.NewCronJobBackend(k8sClient, jobBuilder, recorder, statusManager),

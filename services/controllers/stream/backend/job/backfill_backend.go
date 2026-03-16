@@ -7,13 +7,16 @@ import (
 	v1 "github.com/SneaksAndData/arcane-operator/pkg/apis/streaming/v1"
 	"github.com/SneaksAndData/arcane-operator/services/controllers"
 	"github.com/SneaksAndData/arcane-operator/services/controllers/stream"
+	"github.com/SneaksAndData/arcane-operator/services/controllers/stream/backend"
 	"github.com/SneaksAndData/arcane-operator/services/watchers"
 	batchv1 "k8s.io/api/batch/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/tools/record"
 	"k8s.io/klog/v2"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -25,13 +28,20 @@ import (
 var _ stream.BackfillBackendResourceManager = (*BackfillBackend)(nil)
 
 type BackfillBackend struct {
+	backend.BaseResourceManager
+
 	streamClass   *v1.StreamClass
 	client        client.Client
 	statusManager stream.StatusManager
 }
 
-func NewBackfillBackendResourceManager(class *v1.StreamClass, client client.Client, manager stream.StatusManager) *BackfillBackend {
+func NewBackfillBackendResourceManager(class *v1.StreamClass, client client.Client, manager stream.StatusManager, eventRecorder record.EventRecorder) *BackfillBackend {
 	return &BackfillBackend{
+		BaseResourceManager: backend.BaseResourceManager{
+			Client:        client,
+			JobBuilder:    nil,
+			EventRecorder: eventRecorder,
+		},
 		streamClass:   class,
 		client:        client,
 		statusManager: manager,
@@ -72,15 +82,16 @@ func (b *BackfillBackend) Get(ctx context.Context, name types.NamespacedName) (s
 }
 
 func (b *BackfillBackend) Remove(ctx context.Context, definition stream.Definition, nextPhase stream.Phase, eventFunc controllers.EventFunc) (reconcile.Result, error) {
-	job, err := b.Get(ctx, definition.NamespacedName())
-	if err != nil { // coverage-ignore
-		return reconcile.Result{}, fmt.Errorf("failed to get backend resource: %w", err)
+	object := &batchv1.Job{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      definition.NamespacedName().Name,
+			Namespace: definition.NamespacedName().Namespace,
+		},
 	}
-	if job != nil {
-		err := b.client.Delete(ctx, job.ToObject())
-		if client.IgnoreNotFound(err) != nil { // coverage-ignore
-			return reconcile.Result{}, err
-		}
+
+	_, err := b.BaseResourceManager.Remove(ctx, object, nil)
+	if err != nil { // coverage-ignore
+		return reconcile.Result{}, fmt.Errorf("failed to remove job: %w", err)
 	}
 
 	request, err := b.GetBackfillRequest(ctx, definition)
