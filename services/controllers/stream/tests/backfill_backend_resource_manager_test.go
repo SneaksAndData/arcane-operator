@@ -15,6 +15,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -128,5 +129,6 @@ func setupBackfillBackendResourceManagerTest(k8sClient client.Client) *job.Backf
 	}
 	gvk := schema.GroupVersionKind{Group: "streaming.sneaksanddata.com", Version: "v1", Kind: "MockStreamDefinition"}
 	statusManager := stream.NewDefaultStatusManager(k8sClient, gvk, &sc, contracts.FromUnstructured)
-	return job.NewBackfillBackendResourceManager(&sc, k8sClient, statusManager)
+	recorder := record.NewFakeRecorder(10)
+	return job.NewBackfillBackendResourceManager(&sc, k8sClient, statusManager, recorder)
 }
