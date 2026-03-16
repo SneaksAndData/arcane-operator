@@ -40,7 +40,7 @@ func NewBackfillBackendResourceManager(class *v1.StreamClass, client client.Clie
 
 func (b *BackfillBackend) SetupWithController(cache cache.Cache, _ *runtime.Scheme, _ meta.RESTMapper, controller controller.Controller, _ schema.GroupVersionKind) error { // coverage-ignore (no need to test the wiring of the controller)
 	return watchers.NewTypedSecondaryWatcherBuilder[*v1.BackfillRequest]().
-		WithFilter(stream.NewBackfillRequestFilter(b.streamClass.Name)).
+		WithFilter(NewBackfillRequestFilter(b.streamClass.Name)).
 		WithCache(cache).
 		WithHandler(handler.TypedEnqueueRequestsFromMapFunc(func(ctx context.Context, obj *v1.BackfillRequest) []reconcile.Request {
 			return []reconcile.Request{{
