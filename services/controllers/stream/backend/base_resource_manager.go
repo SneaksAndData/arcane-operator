@@ -10,7 +10,6 @@ import (
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/klog/v2"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -36,8 +35,9 @@ func (j *BaseResourceManager) Remove(ctx context.Context, object client.Object, 
 }
 
 func (j *BaseResourceManager) BuildJob(ctx context.Context, definition stream.Definition, request *v1.BackfillRequest, streamClass *v1.StreamClass) (*batchv1.Job, error) {
+	logger := klog.FromContext(ctx)
+
 	templateReference := definition.GetJobTemplate(request)
-	logger := j.getLogger(ctx, templateReference)
 
 	streamConfiguration, err := definition.CurrentConfiguration(request)
 	if err != nil { // coverage-ignore
@@ -46,7 +46,7 @@ func (j *BaseResourceManager) BuildJob(ctx context.Context, definition stream.De
 
 	definitionConfigurator, err := definition.JobConfigurator()
 	if err != nil { // coverage-ignore
-		logger.V(0).Error(err, "failed to get definition configurator")
+		logger.V(0).Error(err, "failed to get job configurator from stream definition")
 		return nil, err
 	}
 
@@ -78,10 +78,4 @@ func (j *BaseResourceManager) BuildJob(ctx context.Context, definition stream.De
 		return nil, err
 	}
 	return newJob, nil
-}
-
-func (c *BaseResourceManager) getLogger(ctx context.Context, request types.NamespacedName) klog.Logger {
-	return klog.FromContext(ctx).
-		WithName("ResourceReader").
-		WithValues("namespace", request.Namespace, "streamId", request.Name)
 }

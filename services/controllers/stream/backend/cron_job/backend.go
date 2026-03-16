@@ -82,7 +82,7 @@ func (c *Backend) Remove(ctx context.Context, definition stream.Definition, next
 }
 
 func (c *Backend) Apply(ctx context.Context, definition stream.Definition, backfillRequest *v1.BackfillRequest, nextPhase stream.Phase, streamClass *v1.StreamClass, eventFunc controllers.EventFunc) (reconcile.Result, error) {
-	logger := c.getLogger(ctx, definition.NamespacedName())
+	logger := klog.FromContext(ctx)
 	object := &batchv1.CronJob{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      definition.NamespacedName().Name,
@@ -152,10 +152,4 @@ func (c *Backend) Apply(ctx context.Context, definition stream.Definition, backf
 
 func (c *Backend) NoOp(ctx context.Context, definition stream.Definition, backfillRequest *v1.BackfillRequest, nextPhase stream.Phase, eventFunc controllers.EventFunc) (reconcile.Result, error) {
 	return c.statusManager.UpdateStreamPhase(ctx, definition, backfillRequest, nextPhase, eventFunc)
-}
-
-func (c *Backend) getLogger(_ context.Context, request types.NamespacedName) klog.Logger {
-	return klog.Background().
-		WithName("cron_job.Backend").
-		WithValues("namespace", request.Namespace, "streamId", request.Name)
 }
