@@ -88,7 +88,8 @@ func (s *streamReconciler) Reconcile(ctx context.Context, request reconcile.Requ
 
 	logger := klog.FromContext(ctx).
 		WithValues("stream", request.NamespacedName).
-		WithValues("namespace", request.Namespace, "streamId", request.Name, "streamKind", s.gvk.Kind)
+		WithValues("namespace", request.Namespace).
+		WithValues("streamId", request.Name, "streamKind", s.streamClass.Spec.KindRef)
 
 	ctx = klog.NewContext(ctx, logger)
 	logger.V(0).Info("Reconciling the stream resource")
