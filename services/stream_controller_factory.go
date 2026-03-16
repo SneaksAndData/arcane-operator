@@ -27,7 +27,7 @@ type streamControllerFactory struct {
 
 func (s streamControllerFactory) CreateStreamController(_ context.Context, gvk schema.GroupVersionKind, streamClass *v1.StreamClass) (controller.Controller, error) { // coverage-ignore (trivial)
 	statusManager := stream.NewDefaultStatusManager(s.client, gvk, streamClass, s.definitionParser)
-	backfillBackend := job.NewBackfillBackendResourceManager(streamClass, s.client, statusManager)
+	backfillBackend := job.NewBackfillBackendResourceManager(streamClass, s.client, statusManager, s.eventRecorder)
 	backends := map[stream.Backend]stream.BackendResourceManager{
 		stream.BatchJob: job.NewJobBackend(s.client, s.jobBuilder, s.eventRecorder, statusManager),
 		stream.CronJob:  cron_job.NewCronJobBackend(s.client, s.jobBuilder, s.eventRecorder, statusManager),
