@@ -90,6 +90,9 @@ func (b *BackfillBackend) Remove(ctx context.Context, definition stream.Definiti
 	}
 
 	_, err := b.BaseResourceManager.Remove(ctx, object, nil)
+	if err != nil { // coverage-ignore
+		return reconcile.Result{}, fmt.Errorf("failed to remove job: %w", err)
+	}
 
 	request, err := b.GetBackfillRequest(ctx, definition)
 	if err != nil { // coverage-ignore
