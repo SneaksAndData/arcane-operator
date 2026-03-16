@@ -12,7 +12,6 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/klog/v2"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
@@ -86,8 +85,13 @@ func NewStreamReconciler(client client.Client, gvk schema.GroupVersionKind, jobB
 
 // Reconcile implements the reconciliation loop for Stream resources.
 func (s *streamReconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	logger := s.getLogger(ctx, request.NamespacedName)
-	logger.V(0).Info("Reconciling the Stream resource")
+
+	logger := klog.FromContext(ctx).
+		WithValues("stream", request.NamespacedName).
+		WithValues("namespace", request.Namespace, "streamId", request.Name, "streamKind", s.gvk.Kind)
+
+	ctx = klog.NewContext(ctx, logger)
+	logger.V(0).Info("Reconciling the stream resource")
 
 	streamDefinition, err := GetStreamForClass(ctx, s.client, s.streamClass, request.NamespacedName, s.definitionParser)
 
@@ -97,23 +101,23 @@ func (s *streamReconciler) Reconcile(ctx context.Context, request reconcile.Requ
 	}
 
 	if client.IgnoreNotFound(err) != nil { // coverage-ignore
-		logger.V(0).Error(err, "unable to fetch Stream resource")
+		logger.V(0).Error(err, "Unable to fetch stream resource")
 		return reconcile.Result{}, err
 	}
 
 	backfillRequest, err := s.backfillBackendResourceManager.GetBackfillRequest(ctx, streamDefinition)
 	if client.IgnoreNotFound(err) != nil { // coverage-ignore
-		logger.V(0).Error(err, "unable to fetch BackfillRequest for the Stream, cannot proceed")
+		logger.V(0).Error(err, "unable to fetch BackfillRequest for the stream")
 		return reconcile.Result{}, err
 	}
 
-	streamingJob, err := s.backendResourceManagers[BatchJob].Get(ctx, request.NamespacedName)
+	backendResource, err := s.backendResourceManagers[BatchJob].Get(ctx, request.NamespacedName)
 	if err != nil { // coverage-ignore
-		logger.V(0).Error(err, "unable to fetch streaming job for the Stream, cannot proceed")
+		logger.V(0).Error(err, "Unable to fetch backend resource for the stream")
 		return reconcile.Result{}, err
 	}
 
-	return s.moveFsm(ctx, streamDefinition, streamingJob, backfillRequest)
+	return s.moveFsm(ctx, streamDefinition, backendResource, backfillRequest)
 }
 
 func (s *streamReconciler) moveFsm(ctx context.Context, definition Definition, job BackendResource, backfillRequest *v1.BackfillRequest) (reconcile.Result, error) {
@@ -422,10 +426,4 @@ func (s *streamReconciler) newBackfillRequest(definition Definition) *v1.Backfil
 			StreamClass: s.streamClass.Name,
 		},
 	}
-}
-
-func (s *streamReconciler) getLogger(_ context.Context, request types.NamespacedName) klog.Logger {
-	return klog.Background().
-		WithName("StreamReconciler").
-		WithValues("namespace", request.Namespace, "streamId", request.Name, "streamKind", s.gvk.Kind)
 }
