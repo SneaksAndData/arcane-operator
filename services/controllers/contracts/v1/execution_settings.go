@@ -31,7 +31,7 @@ type ExecutionSettings struct {
 	*common.OwnerReferenceProvider
 	Underlying *unstructured.Unstructured
 
-	spec struct {
+	settings struct {
 		ExecutionSettings struct {
 			Suspended              bool                    `json:"suspended"`
 			APIVersion             string                  `json:"apiVersion"`
@@ -62,11 +62,11 @@ func NewExecutionSettings(u *unstructured.Unstructured) *ExecutionSettings {
 }
 
 func (e *ExecutionSettings) Suspended() bool {
-	return e.spec.ExecutionSettings.Suspended
+	return e.settings.ExecutionSettings.Suspended
 }
 
 func (e *ExecutionSettings) SetSuspended(suspended bool) error {
-	e.spec.ExecutionSettings.Suspended = suspended
+	e.settings.ExecutionSettings.Suspended = suspended
 	err := e.deserializeTo(e.Underlying)
 	if err != nil { // coverage-ignore
 		return err
@@ -93,28 +93,28 @@ func (e *ExecutionSettings) StateString() string {
 func (e *ExecutionSettings) GetJobTemplate(request *v1.BackfillRequest) types.NamespacedName {
 	if request != nil {
 		return types.NamespacedName{
-			Name:      e.spec.ExecutionSettings.BackfillJobTemplateRef.Name,
-			Namespace: e.spec.ExecutionSettings.BackfillJobTemplateRef.Namespace,
+			Name:      e.settings.ExecutionSettings.BackfillJobTemplateRef.Name,
+			Namespace: e.settings.ExecutionSettings.BackfillJobTemplateRef.Namespace,
 		}
 	}
 
-	if e.spec.ExecutionSettings.StreamingBackend.BatchJobBackend != nil {
+	if e.settings.ExecutionSettings.StreamingBackend.BatchJobBackend != nil {
 		return types.NamespacedName{
-			Name:      e.spec.ExecutionSettings.StreamingBackend.BatchJobBackend.JobTemplateRef.Name,
-			Namespace: e.spec.ExecutionSettings.StreamingBackend.BatchJobBackend.JobTemplateRef.Namespace,
+			Name:      e.settings.ExecutionSettings.StreamingBackend.BatchJobBackend.JobTemplateRef.Name,
+			Namespace: e.settings.ExecutionSettings.StreamingBackend.BatchJobBackend.JobTemplateRef.Namespace,
 		}
 	}
 
 	return types.NamespacedName{
-		Name:      e.spec.ExecutionSettings.StreamingBackend.CronJobBackend.JobTemplateRef.Name,
-		Namespace: e.spec.ExecutionSettings.StreamingBackend.CronJobBackend.JobTemplateRef.Namespace,
+		Name:      e.settings.ExecutionSettings.StreamingBackend.CronJobBackend.JobTemplateRef.Name,
+		Namespace: e.settings.ExecutionSettings.StreamingBackend.CronJobBackend.JobTemplateRef.Namespace,
 	}
 }
 
 func (e *ExecutionSettings) Validate() error {
-	spec, ok := e.Underlying.Object["spec"].(map[string]interface{})
+	spec, ok := e.Underlying.Object["settings"].(map[string]interface{})
 	if !ok {
-		return errors.New("failed to convert spec to map[string]interface{}")
+		return errors.New("failed to convert settings to map[string]interface{}")
 	}
 
 	execution, ok := spec["execution"].(map[string]interface{})
@@ -122,7 +122,7 @@ func (e *ExecutionSettings) Validate() error {
 		return errors.New("failed to convert execution to map[string]interface{}")
 	}
 
-	err := runtime.DefaultUnstructuredConverter.FromUnstructured(map[string]interface{}{"execution": execution}, &e.spec)
+	err := runtime.DefaultUnstructuredConverter.FromUnstructured(map[string]interface{}{"execution": execution}, &e.settings)
 	if err != nil { // coverage-ignore
 		return err
 	}
@@ -141,7 +141,7 @@ func (e *ExecutionSettings) Validate() error {
 }
 
 func (e *ExecutionSettings) GetBackend() stream.Backend {
-	if e.spec.ExecutionSettings.StreamingBackend.CronJobBackend != nil {
+	if e.settings.ExecutionSettings.StreamingBackend.CronJobBackend != nil {
 		return stream.CronJob
 	}
 	return stream.BatchJob
@@ -178,18 +178,18 @@ func (e *ExecutionSettings) GetSchedule() (string, error) {
 	if e.GetBackend() == stream.BatchJob {
 		return "", fmt.Errorf("schedule is not applicable for BatchJob backend")
 	}
-	return e.spec.ExecutionSettings.StreamingBackend.CronJobBackend.Schedule, nil
+	return e.settings.ExecutionSettings.StreamingBackend.CronJobBackend.Schedule, nil
 }
 
 func (e *ExecutionSettings) deserializeTo(unstructured *unstructured.Unstructured) error {
-	u, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&e.spec.ExecutionSettings)
+	u, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&e.settings.ExecutionSettings)
 	if err != nil { // coverage-ignore
 		return err
 	}
 
-	spec, ok := unstructured.Object["spec"].(map[string]interface{})
+	spec, ok := unstructured.Object["settings"].(map[string]interface{})
 	if !ok {
-		return errors.New("failed to convert spec to map[string]interface{}")
+		return errors.New("failed to convert settings to map[string]interface{}")
 	}
 	spec["execution"] = u
 	return nil

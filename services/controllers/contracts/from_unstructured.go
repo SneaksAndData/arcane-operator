@@ -9,7 +9,9 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
-func FromUnstructured(obj *unstructured.Unstructured) (stream.Definition, error) { // coverage-ignore
+// FromUnstructured converts an unstructured Kubernetes object into a stream.Definition, which is a structured
+// representation of the stream definition.
+func FromUnstructured(obj *unstructured.Unstructured) (stream.Definition, error) {
 
 	apiVersion, found, err := unstructured.NestedString(obj.Object, "spec", "execution", "apiVersion")
 	if err != nil { // coverage-ignore

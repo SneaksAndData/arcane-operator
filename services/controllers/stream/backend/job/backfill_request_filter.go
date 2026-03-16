@@ -1,4 +1,4 @@
-package stream
+package job
 
 import (
 	v1 "github.com/SneaksAndData/arcane-operator/pkg/apis/streaming/v1"
