@@ -31,7 +31,7 @@ type BatchJobBackend struct {
 // StreamingBackend represents the backend configuration for streaming, including both real-time and batch processing options.
 type StreamingBackend struct {
 	// BatchJobBackend represents the backend configuration for real-time streaming.
-	BatchJobBackend *BatchJobBackend `json:"realtime,omitempty"`
+	BatchJobBackend *BatchJobBackend `json:"changeCapture,omitempty"`
 
 	// CronJobBackend represents the backend configuration for batch processing.
 	CronJobBackend *CronJobBackend `json:"batch,omitempty"`
