@@ -34,7 +34,7 @@ type CronJobBackendSettings struct {
 }
 
 type StreamingBackendSettings struct {
-	BatchJobBackend *BatchJobBackendSettings `json:"realtime,omitempty"`
+	BatchJobBackend *BatchJobBackendSettings `json:"changeCapture,omitempty"`
 	CronJobBackend  *CronJobBackendSettings  `json:"batch,omitempty"`
 }
 

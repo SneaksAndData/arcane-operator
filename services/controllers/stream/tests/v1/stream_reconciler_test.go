@@ -122,9 +122,12 @@ func Test_UpdatePhase_Pending_To_Running_recreate_job(t *testing.T) {
 
 func Test_UpdatePhase_Pending_To_Running_not_recreate_job(t *testing.T) {
 	// Arrange
-	definitionHash := "5e1983484a43115237742b27e12abbd0" // computed manually for the test definition
+	definitionHash := "5b8a494ad8bc3cfe46452357c08f125e" // computed manually for the test definition
 
-	k8sClient := tests.SetupClient(objectName, tests.Combined(tests.WithPhase(stream.Pending), tests.WithNamedStreamDefinition(objectName)), tests.WithConsistentJob(objectName, definitionHash))
+	k8sClient := tests.SetupClient(objectName,
+		tests.Combined(tests.WithPhase(stream.Pending), tests.WithNamedStreamDefinition(objectName)),
+		tests.WithConsistentJob(objectName, definitionHash),
+	)
 
 	reconciler := createReconciler(k8sClient, nil, nil)
 
