@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"flag"
-	"os"
 
 	"github.com/SneaksAndData/arcane-operator/config"
 	"github.com/SneaksAndData/arcane-operator/pkg/apis/streaming/v1"
@@ -15,6 +14,7 @@ import (
 	"github.com/SneaksAndData/arcane-operator/services/health"
 	"github.com/SneaksAndData/arcane-operator/services/job/job_builder"
 	"github.com/SneaksAndData/arcane-operator/services/providers"
+	"github.com/SneaksAndData/arcane-operator/services/providers/hooks"
 	"github.com/SneaksAndData/arcane-operator/telemetry"
 	apiruntime "k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -31,12 +31,12 @@ var (
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 	utilruntime.Must(v1.AddToScheme(scheme))
-	// +kubebuilder:scaffold:scheme
 }
 
 func main() {
 	var kubeconfigCmd string
 	flag.StringVar(&kubeconfigCmd, "kubeconfig-cmd", "/opt/homebrew/bin/kind get kubeconfig", "Command to execute that outputs kubeconfig YAML content")
+	klog.InitFlags(nil)
 	flag.Parse()
 
 	ctx := signals.SetupSignalHandler()
@@ -46,19 +46,8 @@ func main() {
 		panic(err)
 	}
 
-	ctx = telemetry.WithStatsd(ctx, "arcane.operator")
-	tags := map[string]string{
-		"environment":  os.Getenv("APPLICATION_ENVIRONMENT"),
-		"application":  "Arcane.Operator",
-		"cluster-name": appConfig.Telemetry.ClusterName,
-	}
-	appLogger, err := telemetry.ConfigureLogger(ctx, tags, "info")
-
-	klog.SetSlogLogger(appLogger)
-	klog.InitFlags(nil)
+	err = hooks.SetupLogging(ctx, appConfig)
 	logger := klog.FromContext(ctx)
-	controllerruntime.SetLogger(logger)
-
 	if err != nil {
 		logger.V(0).Error(err, "one of the logging handlers cannot be configured")
 	}
@@ -112,6 +101,7 @@ func main() {
 		logger.V(0).Info("App stopped due to context cancellation")
 		return
 	}
+
 	if err != nil {
 		setupLog.V(0).Error(err, "problem running manager")
 		panic(err)

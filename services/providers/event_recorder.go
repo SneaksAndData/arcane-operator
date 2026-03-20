@@ -10,7 +10,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
-func NewEventRecorder(mgr manager.Manager) (record.EventRecorder, error) {
+func NewEventRecorder(mgr manager.Manager) (record.EventRecorder, error) { // coverage-ignore (should be tested in integration tests)
 	clientSet, err := kubernetes.NewForConfig(mgr.GetConfig())
 	if err != nil {
 		return nil, err

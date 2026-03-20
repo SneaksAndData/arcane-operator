@@ -11,7 +11,7 @@ import (
 	controllerruntime "sigs.k8s.io/controller-runtime"
 )
 
-func Kubeconfig(kubeconfigCmd string) (*rest.Config, error) {
+func Kubeconfig(kubeconfigCmd string) (*rest.Config, error) { // coverage-ignore (should be tested in integration tests)
 	kubeconfig, err := controllerruntime.GetConfig()
 	if err == nil {
 		return kubeconfig, nil
