@@ -66,7 +66,7 @@ func ConfigureLogger(ctx context.Context, loggerConfig *DatadogLoggerConfigurati
 		return slog.New(slog.DiscardHandler), nil
 	}
 
-	// in case DD logger cannot be configured, use text handler and return error, so we can warn the user they are not getting DD logs recorded
+	// in case DD logger cannot be configured (loggerConfig == nil), use a text handler and still return a nil error; DD logs will not be recorded
 	if loggerConfig == nil {
 		return slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slogLevel})), nil
 	}
