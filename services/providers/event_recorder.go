@@ -10,7 +10,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
-func NewEventRecorder(mgr manager.Manager) (record.EventRecorder, error) { // coverage-ignore (should be tested in integration tests)
+func NewEventRecorder(mgr manager.Manager, scheme *apiruntime.Scheme) (record.EventRecorder, error) { // coverage-ignore (should be tested in integration tests)
 	clientSet, err := kubernetes.NewForConfig(mgr.GetConfig())
 	if err != nil {
 		return nil, err
@@ -19,6 +19,6 @@ func NewEventRecorder(mgr manager.Manager) (record.EventRecorder, error) { // co
 	eventBroadcaster := record.NewBroadcaster()
 	eventBroadcaster.StartLogging(klog.Infof)
 	eventBroadcaster.StartRecordingToSink(&typedcorev1.EventSinkImpl{Interface: clientSet.CoreV1().Events("")})
-	eventRecorder := eventBroadcaster.NewRecorder(apiruntime.NewScheme(), corev1.EventSource{Component: "arcane-operator"})
+	eventRecorder := eventBroadcaster.NewRecorder(scheme, corev1.EventSource{Component: "arcane-operator"})
 	return eventRecorder, nil
 }

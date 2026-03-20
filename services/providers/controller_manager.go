@@ -8,11 +8,11 @@ import (
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 )
 
-func ControllerManager(kubeconfig *rest.Config, appConfig *config.AppConfig) (controllerruntime.Manager, error) { // coverage-ignore (should be tested in integration tests)
+func ControllerManager(kubeconfig *rest.Config, appConfig *config.AppConfig, scheme *apiruntime.Scheme) (controllerruntime.Manager, error) { // coverage-ignore (should be tested in integration tests)
 	return controllerruntime.NewManager(kubeconfig, controllerruntime.Options{
 		Metrics: metricsserver.Options{
 			BindAddress: appConfig.Telemetry.MetricsBindAddress,
 		},
-		Scheme: apiruntime.NewScheme(),
+		Scheme: scheme,
 	})
 }

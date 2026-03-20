@@ -70,13 +70,13 @@ func main() {
 		panic(err)
 	}
 
-	mgr, err := providers.ControllerManager(kubeconfig, appConfig)
+	mgr, err := providers.ControllerManager(kubeconfig, appConfig, scheme)
 	if err != nil {
 		setupLog.V(0).Error(err, "unable to start manager")
 		panic(err)
 	}
 
-	eventRecorder, err := providers.NewEventRecorder(mgr)
+	eventRecorder, err := providers.NewEventRecorder(mgr, scheme)
 	if err != nil {
 		setupLog.V(0).Error(err, "unable to create event recorder")
 		panic(err)
