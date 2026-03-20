@@ -7,6 +7,7 @@ require (
 	github.com/DataDog/datadog-go/v5 v5.8.1
 	github.com/SneaksAndData/arcane-stream-mock v1.0.9
 	github.com/go-logr/logr v1.4.3
+	github.com/go-logr/stdr v1.2.2
 	github.com/google/uuid v1.6.0
 	github.com/samber/slog-datadog/v2 v2.10.2
 	github.com/samber/slog-multi v1.6.0
