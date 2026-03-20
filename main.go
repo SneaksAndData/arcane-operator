@@ -34,7 +34,6 @@ func init() {
 	// +kubebuilder:scaffold:scheme
 }
 
-// nolint:go cyclo
 func main() {
 	var kubeconfigCmd string
 	flag.StringVar(&kubeconfigCmd, "kubeconfig-cmd", "/opt/homebrew/bin/kind get kubeconfig", "Command to execute that outputs kubeconfig YAML content")
