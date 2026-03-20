@@ -1,12 +1,12 @@
 package config
 
 import (
-	"context"
 	"fmt"
-	"github.com/spf13/viper"
-	"k8s.io/klog/v2"
 	"os"
 	"strings"
+
+	"github.com/go-logr/logr"
+	"github.com/spf13/viper"
 )
 
 const (
@@ -23,8 +23,7 @@ func configExists(configPath string) (bool, error) { // coverage-ignore (this sh
 	}
 }
 
-func LoadConfig[T any](ctx context.Context) (*T, error) { // coverage-ignore (this should be covered in integration tests)
-	logger := klog.FromContext(ctx)
+func LoadConfig[T any](logger logr.Logger) (*T, error) { // coverage-ignore (this should be covered in integration tests)
 	customViper := viper.NewWithOptions(viper.KeyDelimiter("__"))
 	customViper.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
 

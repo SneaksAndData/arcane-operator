@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"flag"
+	"log"
+	"os"
 
 	"github.com/SneaksAndData/arcane-operator/config"
 	"github.com/SneaksAndData/arcane-operator/pkg/apis/streaming/v1"
@@ -16,16 +18,16 @@ import (
 	"github.com/SneaksAndData/arcane-operator/services/providers"
 	"github.com/SneaksAndData/arcane-operator/services/providers/hooks"
 	"github.com/SneaksAndData/arcane-operator/telemetry"
+	"github.com/go-logr/stdr"
 	apiruntime "k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/klog/v2"
-	controllerruntime "sigs.k8s.io/controller-runtime"
 )
 
 var (
-	scheme   = apiruntime.NewScheme()
-	setupLog = controllerruntime.Log.WithName("setup")
+	scheme          = apiruntime.NewScheme()
+	bootstrapLogger = stdr.New(log.New(os.Stdout, "", log.LstdFlags))
 )
 
 func init() {
@@ -41,12 +43,18 @@ func main() {
 
 	ctx := signals.SetupSignalHandler()
 
-	loggerConfig, _ := telemetry.NewDatadogLoggerConfiguration()
+	loggerConfig, err := telemetry.NewDatadogLoggerConfiguration()
+	if err != nil {
+		bootstrapLogger.
+			V(0).
+			Error(err, "unable to create Datadog logger configuration, logging will be configured without Datadog integration")
+	}
+
 	if loggerConfig != nil {
 		ctx = providers.WithDatadogContext(ctx, loggerConfig.ApiKey, loggerConfig.Endpoint)
 	}
 
-	appConfig, err := config.LoadConfig[config.AppConfig](ctx)
+	appConfig, err := config.LoadConfig[config.AppConfig](bootstrapLogger)
 	if err != nil {
 		panic(err)
 	}
@@ -61,7 +69,7 @@ func main() {
 	go func() {
 		err := probesService.ListenAndServe(ctx)
 		if err != nil && !errors.Is(err, context.Canceled) {
-			setupLog.V(0).Error(err, "unable to start health probes server")
+			bootstrapLogger.V(0).Error(err, "unable to start health probes server")
 			panic(err)
 		}
 	}()
@@ -71,19 +79,19 @@ func main() {
 
 	kubeconfig, err := providers.Kubeconfig(kubeconfigCmd)
 	if err != nil {
-		setupLog.V(0).Error(err, "unable to get kubeconfig")
+		bootstrapLogger.V(0).Error(err, "unable to get kubeconfig")
 		panic(err)
 	}
 
 	mgr, err := providers.ControllerManager(kubeconfig, appConfig, scheme)
 	if err != nil {
-		setupLog.V(0).Error(err, "unable to start manager")
+		bootstrapLogger.V(0).Error(err, "unable to start manager")
 		panic(err)
 	}
 
 	eventRecorder, err := providers.NewEventRecorder(mgr, scheme)
 	if err != nil {
-		setupLog.V(0).Error(err, "unable to create event recorder")
+		bootstrapLogger.V(0).Error(err, "unable to create event recorder")
 		panic(err)
 	}
 
@@ -97,7 +105,7 @@ func main() {
 	err = stream_class.NewStreamClassReconciler(mgr.GetClient(), controllerFactory, reporter, eventRecorder).SetupWithManager(mgr)
 
 	if err != nil {
-		setupLog.V(0).Error(err, "unable to create controller", "controller", "StreamClass")
+		bootstrapLogger.V(0).Error(err, "unable to create controller", "controller", "StreamClass")
 		panic(err)
 	}
 
@@ -108,7 +116,7 @@ func main() {
 	}
 
 	if err != nil {
-		setupLog.V(0).Error(err, "problem running manager")
+		bootstrapLogger.V(0).Error(err, "problem running manager")
 		panic(err)
 	}
 }
