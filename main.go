@@ -51,8 +51,9 @@ func main() {
 	}
 
 	if loggerConfig != nil {
-		ctx = providers.WithDatadogContext(ctx, loggerConfig.ApiKey, loggerConfig.Endpoint)
+		ctx = hooks.WithDatadogContext(ctx, loggerConfig.ApiKey, loggerConfig.Endpoint)
 	}
+	ctx = hooks.WithStatsd(ctx, "arcane.operator")
 
 	appConfig, err := config.LoadConfig[config.AppConfig](bootstrapLogger)
 	if err != nil {

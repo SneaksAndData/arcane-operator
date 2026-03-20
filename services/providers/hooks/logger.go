@@ -12,7 +12,6 @@ import (
 
 func ConfigureLogging(ctx context.Context, appConfig *config.AppConfig, configuration *telemetry.DatadogLoggerConfiguration) error { // coverage-ignore (should be tested with integration tests)
 
-	ctx = telemetry.WithStatsd(ctx, "arcane.operator")
 	tags := map[string]string{
 		"environment":  os.Getenv("APPLICATION_ENVIRONMENT"),
 		"application":  "Arcane.Operator",
