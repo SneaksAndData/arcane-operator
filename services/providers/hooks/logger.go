@@ -10,7 +10,7 @@ import (
 	controllerruntime "sigs.k8s.io/controller-runtime"
 )
 
-func SetupLogging(ctx context.Context, appConfig *config.AppConfig) error {
+func ConfigureLogging(ctx context.Context, appConfig *config.AppConfig, configuration *telemetry.DatadogLoggerConfiguration) error {
 
 	ctx = telemetry.WithStatsd(ctx, "arcane.operator")
 	tags := map[string]string{
@@ -18,7 +18,7 @@ func SetupLogging(ctx context.Context, appConfig *config.AppConfig) error {
 		"application":  "Arcane.Operator",
 		"cluster-name": appConfig.Telemetry.ClusterName,
 	}
-	appLogger, err := telemetry.ConfigureLogger(ctx, tags, "info")
+	appLogger, err := telemetry.ConfigureLogger(ctx, configuration, tags, "info")
 	if err != nil {
 		return err
 	}

@@ -3,12 +3,13 @@ package telemetry
 import (
 	"context"
 	"errors"
-	"github.com/DataDog/datadog-api-client-go/v2/api/datadog"
-	slogdatadog "github.com/samber/slog-datadog/v2"
-	slogmulti "github.com/samber/slog-multi"
 	"log/slog"
 	"os"
 	"time"
+
+	"github.com/DataDog/datadog-api-client-go/v2/api/datadog"
+	slogdatadog "github.com/samber/slog-datadog/v2"
+	slogmulti "github.com/samber/slog-multi"
 )
 
 // LoggingDisabled holds a value to use when logging should be globally disabled, without removing the log handler
@@ -37,22 +38,11 @@ func NewDatadogLoggerConfiguration() (*DatadogLoggerConfiguration, error) { // c
 	return nil, errors.New("datadog API Key, Endpoint or Hostname and Service Name is not set")
 }
 
-func newDatadogClient(endpoint string, apiKey string, rootCtx context.Context) (*datadog.APIClient, context.Context) { // coverage-ignore
-	ctx := datadog.NewDefaultContext(rootCtx)
-	ctx = context.WithValue(
-		ctx,
-		datadog.ContextAPIKeys,
-		map[string]datadog.APIKey{"apiKeyAuth": {Key: apiKey}},
-	)
-	ctx = context.WithValue(
-		ctx,
-		datadog.ContextServerVariables,
-		map[string]string{"site": endpoint},
-	)
+func newDatadogClient() *datadog.APIClient { // coverage-ignore
 	configuration := datadog.NewConfiguration()
 	apiClient := datadog.NewAPIClient(configuration)
 
-	return apiClient, ctx
+	return apiClient
 }
 
 func parseSLogLevel(levelText string) slog.Level { // coverage-ignore
@@ -69,19 +59,18 @@ func parseSLogLevel(levelText string) slog.Level { // coverage-ignore
 	return level
 }
 
-func ConfigureLogger(ctx context.Context, globalTags map[string]string, logLevel string) (*slog.Logger, error) { // coverage-ignore
+func ConfigureLogger(ctx context.Context, loggerConfig *DatadogLoggerConfiguration, globalTags map[string]string, logLevel string) (*slog.Logger, error) { // coverage-ignore
 	slogLevel := parseSLogLevel(logLevel)
 
 	if slogLevel == LevelLoggingDisabled {
 		return slog.New(slog.DiscardHandler), nil
 	}
 
-	loggerConfig, err := NewDatadogLoggerConfiguration()
 	// in case DD logger cannot be configured, use text handler and return error, so we can warn the user they are not getting DD logs recorded
-	if err != nil {
-		return slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slogLevel})), err
+	if loggerConfig == nil {
+		return slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slogLevel})), nil
 	}
-	apiClient, ctx := newDatadogClient(loggerConfig.Endpoint, loggerConfig.ApiKey, ctx)
+	apiClient := newDatadogClient()
 	options := slogdatadog.Option{
 		Level:      slogLevel,
 		Client:     apiClient,
@@ -90,9 +79,15 @@ func ConfigureLogger(ctx context.Context, globalTags map[string]string, logLevel
 		Hostname:   loggerConfig.Hostname,
 		Service:    loggerConfig.ServiceName,
 		GlobalTags: globalTags}
-	return slog.New(
-		slogmulti.Fanout(options.NewDatadogHandler(), // first send to Datadog handler
-			slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slogLevel}), // then to second handler: stdout
-		),
-	), nil
+
+	fanoutHandler := slogmulti.Fanout(
+
+		// first send to Datadog handler
+		options.NewDatadogHandler(),
+
+		// then to second handler: stdout
+		slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slogLevel}),
+	)
+
+	return slog.New(fanoutHandler), nil
 }

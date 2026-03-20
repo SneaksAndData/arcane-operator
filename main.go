@@ -41,12 +41,17 @@ func main() {
 
 	ctx := signals.SetupSignalHandler()
 
+	loggerConfig, _ := telemetry.NewDatadogLoggerConfiguration()
+	if loggerConfig != nil {
+		ctx = providers.WithDatadogContext(ctx, loggerConfig.ApiKey, loggerConfig.Endpoint)
+	}
+
 	appConfig, err := config.LoadConfig[config.AppConfig](ctx)
 	if err != nil {
 		panic(err)
 	}
 
-	err = hooks.SetupLogging(ctx, appConfig)
+	err = hooks.ConfigureLogging(ctx, appConfig, loggerConfig)
 	logger := klog.FromContext(ctx)
 	if err != nil {
 		logger.V(0).Error(err, "one of the logging handlers cannot be configured")
