@@ -22,7 +22,7 @@ jobs:
         with:
           go-version: '1.25.*'
 
-      - uses: extractions/setup-just@v3
+      - uses: extractions/setup-just@v4
 
       - name: Check Format
         run: gofmt -d ./
