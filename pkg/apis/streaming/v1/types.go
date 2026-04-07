@@ -128,6 +128,7 @@ type BackfillRequestStatus struct {
 // +kubebuilder:printcolumn:name="StreamId",type=string,JSONPath=`.spec.streamId`
 // +kubebuilder:printcolumn:name="Completed",type=string,JSONPath=`.spec.completed`
 // +kubebuilder:selectablefield:JSONPath=.spec.completed
+// +kubebuilder:selectablefield:JSONPath=.spec.streamId
 type BackfillRequest struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
