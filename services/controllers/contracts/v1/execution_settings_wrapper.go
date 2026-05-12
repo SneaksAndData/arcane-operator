@@ -40,7 +40,7 @@ type StreamingBackendSettings struct {
 
 type ExecutionSettings struct {
 	Suspended              bool                     `json:"suspended"`
-	APIVersion             string                   `json:"apiVersion"`
+	LayoutVersion          string                   `json:"layoutVersion"`
 	BackfillJobTemplateRef *corev1.ObjectReference  `json:"backfillJobTemplateRef,omitempty"`
 	StreamingBackend       StreamingBackendSettings `json:"streamingBackend"`
 }

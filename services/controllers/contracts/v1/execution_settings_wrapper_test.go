@@ -197,7 +197,7 @@ func Test_GetStreamingJobName(t *testing.T) {
 	// Arrange
 	fakeClient := setupFakeClient(func(sd *testv2.MockStreamDefinition) {
 		sd.Spec.ExecutionSettings = testv2.ExecutionSettings{
-			APIVersion: "v1",
+			LayoutVersion: "v1",
 			Suspended:  false,
 			BackfillJobTemplateRef: corev1.ObjectReference{
 				Name:      "backfillJobTemplate1",
@@ -341,7 +341,7 @@ func TestUnstructuredWrapper_GetBackend_Default(t *testing.T) {
 func TestUnstructuredWrapper_GetBackend_BatchJob(t *testing.T) {
 	fakeClient := setupFakeClient(func(sd *testv2.MockStreamDefinition) {
 		sd.Spec.ExecutionSettings = testv2.ExecutionSettings{
-			APIVersion: "v1",
+			LayoutVersion: "v1",
 			Suspended:  false,
 			BackfillJobTemplateRef: corev1.ObjectReference{
 				Name:      "backfillJobTemplate1",
@@ -375,7 +375,7 @@ func TestUnstructuredWrapper_GetBackend_BatchJob(t *testing.T) {
 func TestUnstructuredWrapper_GetBackend_CronJob(t *testing.T) {
 	fakeClient := setupFakeClient(func(sd *testv2.MockStreamDefinition) {
 		sd.Spec.ExecutionSettings = testv2.ExecutionSettings{
-			APIVersion: "v1",
+			LayoutVersion: "v1",
 			Suspended:  false,
 			BackfillJobTemplateRef: corev1.ObjectReference{
 				Name:      "backfillJobTemplate1",

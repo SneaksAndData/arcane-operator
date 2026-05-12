@@ -39,8 +39,8 @@ type StreamingBackend struct {
 
 // ExecutionSettings represents the execution settings for a stream, including suspension status and backend configuration.
 type ExecutionSettings struct {
-	// APIVersion represents the API version of the execution settings.
-	APIVersion string `json:"apiVersion"`
+	// LayoutVersion represents the layout version of the execution settings.
+	LayoutVersion string `json:"layoutVersion"`
 
 	// Suspended indicates whether the stream is suspended.
 	Suspended bool `json:"suspended"`
