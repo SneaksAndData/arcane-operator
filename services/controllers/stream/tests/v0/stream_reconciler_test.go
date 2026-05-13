@@ -31,7 +31,7 @@ var objectName types.NamespacedName = types.NamespacedName{Name: "stream1", Name
 
 func Test_UpdatePhase_New_To_Suspended(t *testing.T) {
 	// Arrange
-	k8sClient := setupClient(nil, nil)
+	k8sClient := setupClient(nil, nil, nil)
 	reconciler := createReconciler(k8sClient, nil, nil)
 
 	// Act
@@ -45,7 +45,7 @@ func Test_UpdatePhase_New_To_Suspended(t *testing.T) {
 
 func Test_UpdatePhase_New_To_Pending(t *testing.T) {
 	// Arrange
-	k8sClient := setupClient(withSuspendedSpec(false), nil)
+	k8sClient := setupClient(withSuspendedSpec(false), nil, nil)
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 
@@ -62,7 +62,7 @@ func Test_UpdatePhase_New_To_Pending(t *testing.T) {
 
 func Test_UpdatePhase_Pending_To_Running_no_job(t *testing.T) {
 	// Arrange
-	k8sClient := setupClient(withPhase(stream.Pending), nil)
+	k8sClient := setupClient(withPhase(stream.Pending), nil, nil)
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 
@@ -82,7 +82,7 @@ func Test_UpdatePhase_Pending_To_Running_no_job(t *testing.T) {
 
 func Test_UpdatePhase_Pending_To_Running_recreate_job(t *testing.T) {
 	// Arrange
-	k8sClient := setupClient(combined(withPhase(stream.Pending), withNamedStreamDefinition(objectName)), withOutdatedJob(objectName))
+	k8sClient := setupClient(combined(withPhase(stream.Pending), withNamedStreamDefinition(objectName)), withOutdatedJob(objectName), nil)
 
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
@@ -114,7 +114,10 @@ func Test_UpdatePhase_Pending_To_Running_not_recreate_job(t *testing.T) {
 	// Arrange
 	definitionHash := "96dfc267c661ed2c5b9a7c32371a92b6" // computed manually for the test definition
 
-	k8sClient := setupClient(combined(withPhase(stream.Pending), withNamedStreamDefinition(objectName)), withConsistentJob(objectName, definitionHash))
+	k8sClient := setupClient(
+		combined(withPhase(stream.Pending), withNamedStreamDefinition(objectName)),
+		withConsistentJob(objectName, definitionHash),
+		nil)
 
 	reconciler := createReconciler(k8sClient, nil, nil)
 
@@ -131,7 +134,7 @@ func Test_UpdatePhase_Pending_To_Running_not_recreate_job(t *testing.T) {
 
 func Test_UpdatePhase_Pending_To_Backfilling_no_job(t *testing.T) {
 	// Arrange
-	k8sClient := setupClient(combined(withPhase(stream.Pending), withNamedStreamDefinition(objectName)), withBackfillRequest(objectName))
+	k8sClient := setupClient(combined(withPhase(stream.Pending), withNamedStreamDefinition(objectName)), withBackfillRequest(objectName), nil)
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 
@@ -153,6 +156,7 @@ func Test_UpdatePhase_Pending_To_Backfilling_recreate_job(t *testing.T) {
 	k8sClient := setupClient(
 		combined(withPhase(stream.Pending), withNamedStreamDefinition(objectName)),
 		combinedB(withBackfillRequest(objectName), withOutdatedJob(objectName)),
+		nil,
 	)
 
 	mockJob := batchv1.Job{
@@ -182,7 +186,7 @@ func Test_UpdatePhase_Pending_To_Backfilling_recreate_job(t *testing.T) {
 
 func Test_UpdatePhase_Running_To_Suspended_no_job(t *testing.T) {
 	// Arrange
-	k8sClient := setupClient(combined(withPhase(stream.Running), withSuspendedSpec(true)), nil)
+	k8sClient := setupClient(combined(withPhase(stream.Running), withSuspendedSpec(true)), nil, nil)
 	reconciler := createReconciler(k8sClient, nil, nil)
 
 	// Act
@@ -199,6 +203,7 @@ func Test_UpdatePhase_Running_To_Suspended_stop_job(t *testing.T) {
 	k8sClient := setupClient(
 		combined(withNamedStreamDefinition(objectName), combined(withPhase(stream.Running), withSuspendedSpec(true))),
 		combinedB(withBackfillRequest(objectName), withOutdatedJob(objectName)),
+		nil,
 	)
 	reconciler := createReconciler(k8sClient, nil, nil)
 
@@ -217,6 +222,7 @@ func Test_UpdatePhase_Running_To_Suspended_to_Pending(t *testing.T) {
 	k8sClient := setupClient(
 		combined(withNamedStreamDefinition(objectName), combined(withPhase(stream.Suspended), withSuspendedSpec(false))),
 		nil,
+		nil,
 	)
 	reconciler := createReconciler(k8sClient, nil, nil)
 
@@ -233,7 +239,8 @@ func Test_UpdatePhase_Running_To_Suspended_to_Pending_With_BFR(t *testing.T) {
 	// Arrange
 	k8sClient := setupClient(
 		combined(withNamedStreamDefinition(objectName), combined(withPhase(stream.Suspended), withSuspendedSpec(true))),
-		combinedB(withBackfillRequest(objectName)),
+		combinedB(withBackfillRequest(objectName), nil),
+		nil,
 	)
 	reconciler := createReconciler(k8sClient, nil, nil)
 
@@ -250,7 +257,8 @@ func Test_UpdatePhase_Running_with_BackfillRequest_no_job(t *testing.T) {
 	// Arrange
 	k8sClient := setupClient(
 		combined(withNamedStreamDefinition(objectName), withPhase(stream.Running), withSuspendedSpec(false)),
-		combinedB(withBackfillRequest(objectName)),
+		combinedB(withBackfillRequest(objectName), nil),
+		nil,
 	)
 	reconciler := createReconciler(k8sClient, nil, nil)
 
@@ -267,7 +275,8 @@ func Test_UpdatePhase_Suspended_with_BackfillRequest(t *testing.T) {
 	// Arrange
 	k8sClient := setupClient(
 		combined(withNamedStreamDefinition(objectName), withPhase(stream.Suspended), withSuspendedSpec(false)),
-		combinedB(withBackfillRequest(objectName)),
+		combinedB(withBackfillRequest(objectName), nil),
+		nil,
 	)
 	reconciler := createReconciler(k8sClient, nil, nil)
 
@@ -284,6 +293,7 @@ func Test_UpdatePhase_Suspended_without_BackfillRequest_without_job(t *testing.T
 	// Arrange
 	k8sClient := setupClient(
 		combined(withNamedStreamDefinition(objectName), withPhase(stream.Suspended)),
+		nil,
 		nil,
 	)
 	reconciler := createReconciler(k8sClient, nil, nil)
@@ -303,6 +313,7 @@ func Test_UpdatePhase_Suspended_without_BackfillRequest_with_job(t *testing.T) {
 	k8sClient := setupClient(
 		combined(withNamedStreamDefinition(objectName), withPhase(stream.Suspended)),
 		combinedB(withOutdatedJob(objectName)),
+		nil,
 	)
 	reconciler := createReconciler(k8sClient, nil, nil)
 
@@ -320,7 +331,8 @@ func Test_UpdatePhase_Backfilling_To_Pending_with_job_running(t *testing.T) {
 	// Arrange
 	k8sClient := setupClient(
 		combined(withNamedStreamDefinition(objectName), withPhase(stream.Backfilling), withSuspendedSpec(false)),
-		combinedB(withOutdatedJob(objectName), withBackfillRequest(objectName)),
+		combinedB(withOutdatedJob(objectName), withBackfillRequest(objectName), nil),
+		nil,
 	)
 	reconciler := createReconciler(k8sClient, nil, nil)
 
@@ -340,6 +352,7 @@ func Test_UpdatePhase_Backfilling_To_Pending_with_job_completed(t *testing.T) {
 	k8sClient := setupClient(
 		combined(withNamedStreamDefinition(objectName), withPhase(stream.Backfilling), withSuspendedSpec(false)),
 		combinedB(withBackfillRequest(objectName), withCompletedJob(objectName)),
+		nil,
 	)
 	reconciler := createReconciler(k8sClient, nil, nil)
 
@@ -358,7 +371,8 @@ func Test_UpdatePhase_Backfilling_To_Backfilling_with_no_job(t *testing.T) {
 	// Arrange
 	k8sClient := setupClient(
 		combined(withNamedStreamDefinition(objectName), withPhase(stream.Backfilling), withSuspendedSpec(false)),
-		combinedB(withBackfillRequest(objectName)),
+		combinedB(withBackfillRequest(objectName), nil),
+		nil,
 	)
 
 	mockCtrl := gomock.NewController(t)
@@ -390,7 +404,8 @@ func Test_UpdatePhase_Backfilling_To_Suspended(t *testing.T) {
 	// Arrange
 	k8sClient := setupClient(
 		combined(withNamedStreamDefinition(objectName), withPhase(stream.Backfilling), withSuspendedSpec(true)),
-		combinedB(withBackfillRequest(objectName)),
+		combinedB(withBackfillRequest(objectName), nil),
+		nil,
 	)
 
 	mockCtrl := gomock.NewController(t)
@@ -423,6 +438,7 @@ func Test_UpdatePhase_Backfilling_Job_Failed(t *testing.T) {
 	k8sClient := setupClient(
 		combined(withNamedStreamDefinition(objectName), withPhase(stream.Backfilling), withSuspendedSpec(false)),
 		combinedB(withBackfillRequest(objectName), withFailedJob(objectName)),
+		nil,
 	)
 	reconciler := createReconciler(k8sClient, nil, nil)
 
@@ -442,6 +458,7 @@ func Test_UpdatePhase_Backfilling_To_Running(t *testing.T) {
 	k8sClient := setupClient(
 		combined(withNamedStreamDefinition(objectName), withPhase(stream.Backfilling), withSuspendedSpec(false)),
 		withOutdatedJob(objectName),
+		nil,
 	)
 
 	mockCtrl := gomock.NewController(t)
@@ -466,6 +483,7 @@ func Test_UpdatePhase_Failed_to_Failed(t *testing.T) {
 	k8sClient := setupClient(
 		combined(withNamedStreamDefinition(name), withPhase(stream.Failed)),
 		combinedB(withFailedJob(name)),
+		nil,
 	)
 	reconciler := createReconciler(k8sClient, nil, nil)
 
@@ -482,7 +500,7 @@ func Test_UpdatePhase_Failed_to_Failed(t *testing.T) {
 func Test_UpdatePhase_Failed_to_Failed_without_job(t *testing.T) {
 	// Arrange
 	name := types.NamespacedName{Name: "stream1", Namespace: "default"}
-	k8sClient := setupClient(combined(withNamedStreamDefinition(name), withPhase(stream.Failed), withSuspendedSpec(false)), nil)
+	k8sClient := setupClient(combined(withNamedStreamDefinition(name), withPhase(stream.Failed), withSuspendedSpec(false)), nil, nil)
 	reconciler := createReconciler(k8sClient, nil, nil)
 
 	// Act
@@ -497,7 +515,7 @@ func Test_UpdatePhase_Failed_to_Failed_without_job(t *testing.T) {
 func Test_UpdatePhase_Failed_to_Suspended_without_job(t *testing.T) {
 	// Arrange
 	name := types.NamespacedName{Name: "stream1", Namespace: "default"}
-	k8sClient := setupClient(combined(withNamedStreamDefinition(name), withPhase(stream.Failed)), nil)
+	k8sClient := setupClient(combined(withNamedStreamDefinition(name), withPhase(stream.Failed)), nil, nil)
 	reconciler := createReconciler(k8sClient, nil, nil)
 
 	// Act
@@ -512,7 +530,7 @@ func Test_UpdatePhase_Failed_to_Suspended_without_job(t *testing.T) {
 func Test_UpdatePhase_Failed_to_Suspended_with_BackfillRequest(t *testing.T) {
 	// Arrange
 	name := types.NamespacedName{Name: "stream1", Namespace: "default"}
-	k8sClient := setupClient(combined(withNamedStreamDefinition(name), withPhase(stream.Failed)), withBackfillRequest(objectName))
+	k8sClient := setupClient(combined(withNamedStreamDefinition(name), withPhase(stream.Failed)), withBackfillRequest(objectName), nil)
 	reconciler := createReconciler(k8sClient, nil, nil)
 
 	// Act
@@ -531,6 +549,7 @@ func Test_UpdatePhase_Failed_to_Backfilling(t *testing.T) {
 	k8sClient := setupClient(
 		combined(withNamedStreamDefinition(name), withPhase(stream.Failed), withSuspendedSpec(false)),
 		withBackfillRequest(objectName),
+		nil,
 	)
 
 	mockCtrl := gomock.NewController(t)
@@ -548,7 +567,7 @@ func Test_UpdatePhase_Failed_to_Backfilling(t *testing.T) {
 	assertBackfillRequestNotCompleted(t, k8sClient)
 }
 
-func setupClient(definition func(definition *testv1.MockStreamDefinition), addResources func(client2 *crfake.ClientBuilder)) client.Client {
+func setupClient(definition func(definition *testv1.MockStreamDefinition), addResources func(client2 *crfake.ClientBuilder), onObjectBuilt func(client2 *testv1.MockStreamDefinition)) client.Client {
 	scheme := runtime.NewScheme()
 	_ = testv1.AddToScheme(scheme)
 	_ = corev1.AddToScheme(scheme)
@@ -566,6 +585,10 @@ func setupClient(definition func(definition *testv1.MockStreamDefinition), addRe
 	}
 	if definition != nil {
 		definition(obj)
+	}
+
+	if onObjectBuilt != nil {
+		onObjectBuilt(obj)
 	}
 
 	clientBuilder := crfake.NewClientBuilder().WithScheme(scheme).WithObjects(obj).WithStatusSubresource(&testv1.MockStreamDefinition{}).WithStatusSubresource(&v1.BackfillRequest{})
