@@ -18,6 +18,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
@@ -119,6 +120,15 @@ func Test_UpdatePhase_Pending_To_Running_not_recreate_job(t *testing.T) {
 		withConsistentJob(objectName, definitionHash),
 		nil)
 
+	object := getUnstructured(t, k8sClient, objectName)
+
+	w, err := contracts.FromUnstructured(object)
+	require.NoError(t, err)
+
+	currentConfiguration, err := w.CurrentConfiguration(nil)
+	require.NoError(t, err)
+
+	definitionHash = currentConfiguration
 	reconciler := createReconciler(k8sClient, nil, nil)
 
 	// Act
@@ -800,4 +810,16 @@ func assertBackfillRequestCompleted(t *testing.T, k8sClient client.Client) {
 	err := k8sClient.Get(t.Context(), types.NamespacedName{Name: "backfill1", Namespace: objectName.Namespace}, backfillRequest)
 	require.NoError(t, err)
 	require.True(t, backfillRequest.Spec.Completed)
+}
+
+func getUnstructured(t *testing.T, k8sClient client.Client, name types.NamespacedName) *unstructured.Unstructured {
+	u := &unstructured.Unstructured{}
+	u.SetGroupVersionKind(schema.GroupVersionKind{
+		Group:   "streaming.sneaksanddata.com",
+		Version: "v1",
+		Kind:    "MockStreamDefinition",
+	})
+	err := k8sClient.Get(t.Context(), name, u)
+	require.NoError(t, err)
+	return u
 }
