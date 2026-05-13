@@ -31,8 +31,8 @@ func NewMockStreamDefinitionBuilder(objectName types.NamespacedName) *MockStream
 				Source:      "sourceA",
 				Destination: "destinationB",
 				ExecutionSettings: testv2.ExecutionSettings{
-					LayoutVersion: "v1",
-					Suspended:     true,
+					APIVersion: "v1",
+					Suspended:  true,
 					StreamingBackend: testv2.StreamingBackend{
 						BatchJobBackend: &testv2.BatchJobBackend{},
 						CronJobBackend:  nil,

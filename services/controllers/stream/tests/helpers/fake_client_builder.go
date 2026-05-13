@@ -10,13 +10,13 @@ import (
 	crfake "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
-// SetupClientFromBuilder constructs a fake controller-runtime client seeded with
+// SetupClientFromBuilders constructs a fake controller-runtime client seeded with
 // the *testv2.MockStreamDefinition produced by the provided builder.
 //
 // Unlike SetupClient, the stream definition is supplied directly through the
 // builder, avoiding the need for functional-option mutators on the definition.
 // Additional resources can be registered through a FakeClientResourcesBuilder.
-func SetupClientFromBuilder(builder *MockStreamDefinitionBuilder, resources *FakeClientResourcesBuilder) client.Client {
+func SetupClientFromBuilders(builder *MockStreamDefinitionBuilder, resources *FakeClientResourcesBuilder) client.Client {
 	scheme := runtime.NewScheme()
 	_ = testv2.AddToScheme(scheme)
 	_ = corev1.AddToScheme(scheme)

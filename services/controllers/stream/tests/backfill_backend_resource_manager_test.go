@@ -10,6 +10,7 @@ import (
 	v0 "github.com/SneaksAndData/arcane-operator/services/controllers/contracts/v0"
 	"github.com/SneaksAndData/arcane-operator/services/controllers/stream"
 	"github.com/SneaksAndData/arcane-operator/services/controllers/stream/backend/job"
+	"github.com/SneaksAndData/arcane-operator/services/controllers/stream/tests/helpers"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -22,7 +23,10 @@ import (
 var objectName = types.NamespacedName{Name: "stream1", Namespace: "default"}
 
 func Test_Get(t *testing.T) {
-	k8sClient := SetupClient(objectName, nil, WithOutdatedJob(objectName))
+	k8sClient := helpers.SetupClientFromBuilders(
+		helpers.NewMockStreamDefinitionBuilder(objectName),
+		helpers.NewFakeClientResourcesBuilder().WithOutdatedJob(objectName),
+	)
 	backfillBackendResourceManager := setupBackfillBackendResourceManagerTest(k8sClient)
 	j, err := backfillBackendResourceManager.Get(t.Context(), objectName)
 	require.NoError(t, err)
@@ -30,7 +34,7 @@ func Test_Get(t *testing.T) {
 }
 
 func Test_Get_No_Job(t *testing.T) {
-	k8sClient := SetupClient(objectName, nil, nil)
+	k8sClient := helpers.SetupClientFromBuilders(helpers.NewMockStreamDefinitionBuilder(objectName), nil)
 	backfillBackendResourceManager := setupBackfillBackendResourceManagerTest(k8sClient)
 	j, err := backfillBackendResourceManager.Get(t.Context(), objectName)
 	require.NoError(t, err)
@@ -38,7 +42,10 @@ func Test_Get_No_Job(t *testing.T) {
 }
 
 func Test_Remove(t *testing.T) {
-	k8sClient := SetupClient(objectName, nil, WithCompletedJob(objectName))
+	k8sClient := helpers.SetupClientFromBuilders(
+		helpers.NewMockStreamDefinitionBuilder(objectName),
+		helpers.NewFakeClientResourcesBuilder().WithCompletedJob(objectName),
+	)
 	backfillBackendResourceManager := setupBackfillBackendResourceManagerTest(k8sClient)
 	m := v0.NewUnstructuredWrapper(&unstructured.Unstructured{
 		Object: map[string]interface{}{
@@ -56,9 +63,9 @@ func Test_Remove(t *testing.T) {
 }
 
 func Test_Remove_WithBackfillRequest(t *testing.T) {
-	k8sClient := SetupClient(objectName,
-		WithNamedStreamDefinition(objectName),
-		CombinedB(WithCompletedJob(objectName), WithBackfillRequest(objectName)),
+	k8sClient := helpers.SetupClientFromBuilders(
+		helpers.NewMockStreamDefinitionBuilder(objectName),
+		helpers.NewFakeClientResourcesBuilder().WithCompletedJob(objectName).WithBackfillRequest(objectName),
 	)
 	backfillBackendResourceManager := setupBackfillBackendResourceManagerTest(k8sClient)
 	m := v0.NewUnstructuredWrapper(&unstructured.Unstructured{
@@ -74,11 +81,11 @@ func Test_Remove_WithBackfillRequest(t *testing.T) {
 	})
 	require.NoError(t, err)
 	require.NotNil(t, result)
-	AssertBackfillRequestCompleted(t, k8sClient, objectName)
+	helpers.AssertBackfillRequestCompleted(t, k8sClient, objectName)
 }
 
 func Test_Apply(t *testing.T) {
-	k8sClient := SetupClient(objectName, WithNamedStreamDefinition(objectName), nil)
+	k8sClient := helpers.SetupClientFromBuilders(helpers.NewMockStreamDefinitionBuilder(objectName), nil)
 	backfillBackendResourceManager := setupBackfillBackendResourceManagerTest(k8sClient)
 	m := v0.NewUnstructuredWrapper(&unstructured.Unstructured{
 		Object: map[string]interface{}{
@@ -96,11 +103,11 @@ func Test_Apply(t *testing.T) {
 	})
 	require.NoError(t, err)
 	require.NotNil(t, result)
-	AssertBackfillRequestNotCompleted(t, k8sClient, objectName)
+	helpers.AssertBackfillRequestNotCompleted(t, k8sClient, objectName)
 }
 
 func Test_GetBackfillRequest_Empty(t *testing.T) {
-	k8sClient := SetupClient(objectName, WithNamedStreamDefinition(objectName), nil)
+	k8sClient := helpers.SetupClientFromBuilders(helpers.NewMockStreamDefinitionBuilder(objectName), nil)
 	backfillBackendResourceManager := setupBackfillBackendResourceManagerTest(k8sClient)
 	m := v0.NewUnstructuredWrapper(&unstructured.Unstructured{
 		Object: map[string]interface{}{

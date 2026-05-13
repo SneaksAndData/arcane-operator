@@ -15,7 +15,7 @@ import (
 // secondary Kubernetes resources (Jobs, CronJobs, BackfillRequests, ...) that
 // should be seeded into a controller-runtime fake client. The builder produces
 // a single mutator function suitable for the addResources parameter of
-// SetupClient / SetupClientFromBuilder.
+// SetupClient / SetupClientFromBuilders.
 type FakeClientResourcesBuilder struct {
 	mutators  []func(*crfake.ClientBuilder)
 	built     func(*crfake.ClientBuilder)
