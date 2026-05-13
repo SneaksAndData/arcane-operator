@@ -1,11 +1,11 @@
 module github.com/SneaksAndData/arcane-operator
 
-go 1.25.0
+go 1.26.0
 
 require (
 	github.com/DataDog/datadog-api-client-go/v2 v2.50.0
 	github.com/DataDog/datadog-go/v5 v5.8.1
-	github.com/SneaksAndData/arcane-stream-mock v1.0.9
+	github.com/SneaksAndData/arcane-stream-mock v1.0.10-0.20260513124229-717384d68f45
 	github.com/go-logr/logr v1.4.3
 	github.com/go-logr/stdr v1.2.2
 	github.com/google/uuid v1.6.0

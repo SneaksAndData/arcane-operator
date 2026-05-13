@@ -11,6 +11,7 @@ import (
 	"github.com/SneaksAndData/arcane-operator/services/controllers/stream/backend/cron_job"
 	"github.com/SneaksAndData/arcane-operator/services/controllers/stream/backend/job"
 	"github.com/SneaksAndData/arcane-operator/services/controllers/stream/tests"
+	helpers2 "github.com/SneaksAndData/arcane-operator/services/controllers/stream/tests/helpers"
 	"github.com/SneaksAndData/arcane-operator/tests/mocks"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -122,12 +123,18 @@ func Test_UpdatePhase_Pending_To_Running_recreate_job(t *testing.T) {
 
 func Test_UpdatePhase_Pending_To_Running_not_recreate_job(t *testing.T) {
 	// Arrange
-	definitionHash := "5b8a494ad8bc3cfe46452357c08f125e" // computed manually for the test definition
+	streamDefinitionBuilder := helpers2.NewMockStreamDefinitionBuilder(objectName).
+		WithPhase(stream.Pending).
+		WithName(objectName)
+	definition := streamDefinitionBuilder.Build()
 
-	k8sClient := tests.SetupClient(objectName,
-		tests.Combined(tests.WithPhase(stream.Pending), tests.WithNamedStreamDefinition(objectName)),
-		tests.WithConsistentJob(objectName, definitionHash),
-	)
+	k8sClient := helpers2.SetupClientFromBuilder(streamDefinitionBuilder)
+
+	definitionHash, err := contracts.FromUnstructured(definition)
+
+	resources := helpers2.NewFakeClientResourcesBuilder().WithConsistentJob(objectName, definitionHash)
+
+	k8sClient = helpers2.SetupClientFromBuilder(streamDefinitionBuilder, tests.WithConsistentJob(objectName, definitionHash))
 
 	reconciler := createReconciler(k8sClient, nil, nil)
 
