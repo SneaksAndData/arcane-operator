@@ -23,7 +23,7 @@ func Test_StreamStateTransitionToScheduled(t *testing.T) {
 
 	name := configureV2StreamDefinition(t, func(definition *v2.TestStreamDefinitionV2) {
 		definition.Spec.ExecutionSettings.Suspended = true
-		definition.Spec.ExecutionSettings.APIVersion = "v1"
+		definition.Spec.ExecutionSettings.LayoutVersion = "v1"
 		definition.Spec.ExecutionSettings.StreamingBackend.BatchJobBackend = &v2.BatchJobBackend{
 			JobTemplateRef: corev1.ObjectReference{
 				APIVersion: "streaming.sneaksanddata.com/v1",
@@ -119,7 +119,7 @@ func Test_StreamStateTransitionToRunning(t *testing.T) {
 			case stream.Scheduled:
 				t.Logf("TestStreamDefinition %s/%s is in Running phase, waiting for Scheduled phase", testStream.Namespace, testStream.Name)
 				updateStream(t, name, func(definition *v2.TestStreamDefinitionV2) {
-					definition.Spec.ExecutionSettings.APIVersion = "v1"
+					definition.Spec.ExecutionSettings.LayoutVersion = "v1"
 					definition.Spec.ExecutionSettings.StreamingBackend.CronJobBackend = nil
 					definition.Spec.ExecutionSettings.StreamingBackend.BatchJobBackend = &v2.BatchJobBackend{
 						JobTemplateRef: corev1.ObjectReference{
@@ -182,7 +182,7 @@ func buildV2StreamDefinition(configure func(definition *v2.TestStreamDefinitionV
 				Name: "test-secret",
 			},
 			ExecutionSettings: v2.ExecutionSettings{
-				APIVersion: "v1",
+				LayoutVersion: "v1",
 				BackfillJobTemplateRef: corev1.ObjectReference{
 					Kind:      "StreamingJobTemplate",
 					Name:      "arcane-stream-mock",
