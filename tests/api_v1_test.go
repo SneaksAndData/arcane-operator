@@ -182,7 +182,7 @@ func buildV2StreamDefinition(configure func(definition *v2.TestStreamDefinitionV
 				Name: "test-secret",
 			},
 			ExecutionSettings: v2.ExecutionSettings{
-				LayoutVersion: "v1",
+				APIVersion: "v1",
 				BackfillJobTemplateRef: corev1.ObjectReference{
 					Kind:      "StreamingJobTemplate",
 					Name:      "arcane-stream-mock",
