@@ -9,15 +9,23 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+var GroupVersionKindV2 = schema.GroupVersionKind{
+	Group:   "streaming.sneaksanddata.com",
+	Version: "v2",
+	Kind:    "MockStreamDefinition",
+}
+
+var GroupVersionKindV1 = schema.GroupVersionKind{
+	Group:   "streaming.sneaksanddata.com",
+	Version: "v1",
+	Kind:    "MockStreamDefinition",
+}
+
 // GetStreamDefinitionUnstructured reads the MockStreamDefinition identified by
 // name from the provided client and returns it as an *unstructured.Unstructured.
-func GetStreamDefinitionUnstructured(ctx context.Context, k8sClient client.Client, name types.NamespacedName) (*unstructured.Unstructured, error) {
+func GetStreamDefinitionUnstructured(ctx context.Context, k8sClient client.Client, name types.NamespacedName, gvk schema.GroupVersionKind) (*unstructured.Unstructured, error) {
 	u := &unstructured.Unstructured{}
-	u.SetGroupVersionKind(schema.GroupVersionKind{
-		Group:   "streaming.sneaksanddata.com",
-		Version: "v2",
-		Kind:    "MockStreamDefinition",
-	})
+	u.SetGroupVersionKind(gvk)
 	if err := k8sClient.Get(ctx, name, u); err != nil {
 		return nil, err
 	}

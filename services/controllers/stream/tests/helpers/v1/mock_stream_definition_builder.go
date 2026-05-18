@@ -1,51 +1,44 @@
-package helpers
+package v1
 
 import (
 	"sync"
 
-	testv2 "github.com/SneaksAndData/arcane-operator/pkg/test/apis_test/streaming/v2"
+	testv1 "github.com/SneaksAndData/arcane-operator/pkg/test/apis_test/streaming/v1"
 	"github.com/SneaksAndData/arcane-operator/services/controllers/stream"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
 
 // MockStreamDefinitionBuilder provides a fluent builder for constructing
-// *testv2.MockStreamDefinition objects in tests.
+// *testv1.MockStreamDefinition objects in tests.
 type MockStreamDefinitionBuilder struct {
-	definition *testv2.MockStreamDefinition
-	built      *testv2.MockStreamDefinition
+	definition *testv1.MockStreamDefinition
+	built      *testv1.MockStreamDefinition
 	buildOnce  sync.Once
 }
 
 // NewMockStreamDefinitionBuilder creates a new builder pre-populated with
-// the same defaults used by SetupClient.
+// defaults used by the v1 test setup.
 func NewMockStreamDefinitionBuilder(objectName types.NamespacedName) *MockStreamDefinitionBuilder {
 	return &MockStreamDefinitionBuilder{
-		definition: &testv2.MockStreamDefinition{
+		definition: &testv1.MockStreamDefinition{
 			TypeMeta: metav1.TypeMeta{
-				APIVersion: "streaming.sneaksanddata.com/v2",
+				APIVersion: "streaming.sneaksanddata.com/v1",
 				Kind:       "MockStreamDefinition",
 			},
 			ObjectMeta: metav1.ObjectMeta{Name: objectName.Name, Namespace: objectName.Namespace},
-			Spec: testv2.MockStreamDefinitionSpec{
+			Spec: testv1.MockStreamDefinitionSpec{
 				Source:      "sourceA",
 				Destination: "destinationB",
-				ExecutionSettings: testv2.ExecutionSettings{
-					APIVersion: "v1",
-					Suspended:  true,
-					StreamingBackend: testv2.StreamingBackend{
-						BatchJobBackend: &testv2.BatchJobBackend{},
-						CronJobBackend:  nil,
-					},
-				},
+				Suspended:   true,
 			},
 		},
 	}
 }
 
-// WithSuspendedSpec sets the Suspended flag on the execution settings.
+// WithSuspendedSpec sets the Suspended flag on the spec.
 func (b *MockStreamDefinitionBuilder) WithSuspendedSpec(spec bool) *MockStreamDefinitionBuilder {
-	b.definition.Spec.ExecutionSettings.Suspended = spec
+	b.definition.Spec.Suspended = spec
 	return b
 }
 
@@ -62,32 +55,18 @@ func (b *MockStreamDefinitionBuilder) WithName(n types.NamespacedName) *MockStre
 	return b
 }
 
-// WithSchedule configures the stream definition with a cron job backend using
-// the provided schedule, clearing the batch job backend.
-func (b *MockStreamDefinitionBuilder) WithSchedule(schedule string) *MockStreamDefinitionBuilder {
-	b.definition.Spec.ExecutionSettings.StreamingBackend = testv2.StreamingBackend{
-		BatchJobBackend: nil,
-		CronJobBackend: &testv2.CronJobBackend{
-			Schedule: schedule,
-		},
-	}
-	return b
-}
-
 // Apply runs an arbitrary mutation function on the underlying definition.
-// This allows composing the builder with the existing functional-option style
-// helpers in this package.
-func (b *MockStreamDefinitionBuilder) Apply(fn func(definition *testv2.MockStreamDefinition)) *MockStreamDefinitionBuilder {
+func (b *MockStreamDefinitionBuilder) Apply(fn func(definition *testv1.MockStreamDefinition)) *MockStreamDefinitionBuilder {
 	if fn != nil {
 		fn(b.definition)
 	}
 	return b
 }
 
-// Build returns the constructed *testv2.MockStreamDefinition. The result is
+// Build returns the constructed *testv1.MockStreamDefinition. The result is
 // computed on the first call and the same pointer is returned on subsequent
 // calls.
-func (b *MockStreamDefinitionBuilder) Build() *testv2.MockStreamDefinition {
+func (b *MockStreamDefinitionBuilder) Build() *testv1.MockStreamDefinition {
 	b.buildOnce.Do(func() {
 		b.built = b.definition
 	})

@@ -11,6 +11,7 @@ import (
 	"github.com/SneaksAndData/arcane-operator/services/controllers/stream/backend/cron_job"
 	"github.com/SneaksAndData/arcane-operator/services/controllers/stream/backend/job"
 	"github.com/SneaksAndData/arcane-operator/services/controllers/stream/tests/helpers"
+	v3 "github.com/SneaksAndData/arcane-operator/services/controllers/stream/tests/helpers/v2"
 	"github.com/SneaksAndData/arcane-operator/tests/mocks"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -27,7 +28,7 @@ var objectName = types.NamespacedName{Name: "stream1", Namespace: "default"}
 
 func Test_UpdatePhase_New_To_Suspended(t *testing.T) {
 	// Arrange
-	k8sClient := helpers.SetupClientFromBuilders(helpers.NewMockStreamDefinitionBuilder(objectName), nil)
+	k8sClient := helpers.SetupClientFromBuilders(nil, v3.NewMockStreamDefinitionBuilder(objectName), nil)
 	reconciler := createReconciler(k8sClient, nil, nil)
 
 	// Act
@@ -41,8 +42,8 @@ func Test_UpdatePhase_New_To_Suspended(t *testing.T) {
 
 func Test_UpdatePhase_New_To_Pending(t *testing.T) {
 	// Arrange
-	builder := helpers.NewMockStreamDefinitionBuilder(objectName).WithSuspendedSpec(false)
-	k8sClient := helpers.SetupClientFromBuilders(builder, nil)
+	builder := v3.NewMockStreamDefinitionBuilder(objectName).WithSuspendedSpec(false)
+	k8sClient := helpers.SetupClientFromBuilders(nil, builder, nil)
 
 	reconciler := createReconciler(k8sClient, nil, nil)
 
@@ -58,8 +59,8 @@ func Test_UpdatePhase_New_To_Pending(t *testing.T) {
 
 func Test_UpdatePhase_New_To_Pending_with_schedule(t *testing.T) {
 	// Arrange
-	builder := helpers.NewMockStreamDefinitionBuilder(objectName).WithSuspendedSpec(false).WithSchedule("* * * * *")
-	k8sClient := helpers.SetupClientFromBuilders(builder, nil)
+	builder := v3.NewMockStreamDefinitionBuilder(objectName).WithSuspendedSpec(false).WithSchedule("* * * * *")
+	k8sClient := helpers.SetupClientFromBuilders(nil, builder, nil)
 
 	reconciler := createReconciler(k8sClient, nil, nil)
 
@@ -75,8 +76,8 @@ func Test_UpdatePhase_New_To_Pending_with_schedule(t *testing.T) {
 
 func Test_UpdatePhase_Pending_To_Running_no_job(t *testing.T) {
 	// Arrange
-	builder := helpers.NewMockStreamDefinitionBuilder(objectName).WithSuspendedSpec(false).WithPhase(stream.Pending)
-	k8sClient := helpers.SetupClientFromBuilders(builder, nil)
+	builder := v3.NewMockStreamDefinitionBuilder(objectName).WithSuspendedSpec(false).WithPhase(stream.Pending)
+	k8sClient := helpers.SetupClientFromBuilders(nil, builder, nil)
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 
@@ -96,8 +97,8 @@ func Test_UpdatePhase_Pending_To_Running_no_job(t *testing.T) {
 
 func Test_UpdatePhase_Pending_To_Running_recreate_job(t *testing.T) {
 	// Arrange
-	builder := helpers.NewMockStreamDefinitionBuilder(objectName).WithSuspendedSpec(false).WithPhase(stream.Pending)
-	k8sClient := helpers.SetupClientFromBuilders(builder, helpers.NewFakeClientResourcesBuilder().WithOutdatedJob(objectName))
+	builder := v3.NewMockStreamDefinitionBuilder(objectName).WithSuspendedSpec(false).WithPhase(stream.Pending)
+	k8sClient := helpers.SetupClientFromBuilders(nil, builder, helpers.NewFakeClientResourcesBuilder().WithOutdatedJob(objectName))
 
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
@@ -128,12 +129,12 @@ func Test_UpdatePhase_Pending_To_Running_recreate_job(t *testing.T) {
 func Test_UpdatePhase_Pending_To_Running_not_recreate_job(t *testing.T) {
 	// Arrange
 	// Generate hash for current configuration
-	streamDefinitionBuilder := helpers.NewMockStreamDefinitionBuilder(objectName).
+	streamDefinitionBuilder := v3.NewMockStreamDefinitionBuilder(objectName).
 		WithPhase(stream.Pending).
 		WithName(objectName)
-	k8sClient := helpers.SetupClientFromBuilders(streamDefinitionBuilder, nil)
+	k8sClient := helpers.SetupClientFromBuilders(nil, streamDefinitionBuilder, nil)
 
-	u, err := helpers.GetStreamDefinitionUnstructured(t.Context(), k8sClient, objectName)
+	u, err := helpers.GetStreamDefinitionUnstructured(t.Context(), k8sClient, objectName, helpers.GroupVersionKindV2)
 	require.NoError(t, err)
 
 	def, err := contracts.FromUnstructured(u)
@@ -144,7 +145,7 @@ func Test_UpdatePhase_Pending_To_Running_not_recreate_job(t *testing.T) {
 
 	// Create the fake client and resources
 	resources := helpers.NewFakeClientResourcesBuilder().WithConsistentJob(objectName, definitionHash)
-	k8sClient = helpers.SetupClientFromBuilders(streamDefinitionBuilder, resources)
+	k8sClient = helpers.SetupClientFromBuilders(nil, streamDefinitionBuilder, resources)
 	reconciler := createReconciler(k8sClient, nil, nil)
 
 	// Act
@@ -160,8 +161,8 @@ func Test_UpdatePhase_Pending_To_Running_not_recreate_job(t *testing.T) {
 
 func Test_UpdatePhase_Pending_To_Scheduled_no_job(t *testing.T) {
 	// Arrange
-	builder := helpers.NewMockStreamDefinitionBuilder(objectName).WithPhase(stream.Pending).WithSchedule("* * * * *")
-	k8sClient := helpers.SetupClientFromBuilders(builder, nil)
+	builder := v3.NewMockStreamDefinitionBuilder(objectName).WithPhase(stream.Pending).WithSchedule("* * * * *")
+	k8sClient := helpers.SetupClientFromBuilders(nil, builder, nil)
 
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
@@ -185,8 +186,8 @@ func Test_UpdatePhase_Pending_To_Scheduled_no_job(t *testing.T) {
 
 func Test_UpdatePhase_Pending_To_Backfilling_no_job(t *testing.T) {
 	// Arrange
-	builder := helpers.NewMockStreamDefinitionBuilder(objectName).WithPhase(stream.Pending)
-	k8sClient := helpers.SetupClientFromBuilders(builder, helpers.NewFakeClientResourcesBuilder().WithBackfillRequest(objectName))
+	builder := v3.NewMockStreamDefinitionBuilder(objectName).WithPhase(stream.Pending)
+	k8sClient := helpers.SetupClientFromBuilders(nil, builder, helpers.NewFakeClientResourcesBuilder().WithBackfillRequest(objectName))
 
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
@@ -206,8 +207,8 @@ func Test_UpdatePhase_Pending_To_Backfilling_no_job(t *testing.T) {
 
 func Test_UpdatePhase_Pending_To_Backfilling_recreate_job(t *testing.T) {
 	// Arrange
-	builder := helpers.NewMockStreamDefinitionBuilder(objectName).WithPhase(stream.Pending)
-	k8sClient := helpers.SetupClientFromBuilders(builder, helpers.NewFakeClientResourcesBuilder().WithBackfillRequest(objectName).WithOutdatedJob(objectName))
+	builder := v3.NewMockStreamDefinitionBuilder(objectName).WithPhase(stream.Pending)
+	k8sClient := helpers.SetupClientFromBuilders(nil, builder, helpers.NewFakeClientResourcesBuilder().WithBackfillRequest(objectName).WithOutdatedJob(objectName))
 
 	mockJob := batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
@@ -236,8 +237,8 @@ func Test_UpdatePhase_Pending_To_Backfilling_recreate_job(t *testing.T) {
 
 func Test_UpdatePhase_Running_To_Suspended_no_job(t *testing.T) {
 	// Arrange
-	builder := helpers.NewMockStreamDefinitionBuilder(objectName).WithPhase(stream.Running).WithSuspendedSpec(true)
-	k8sClient := helpers.SetupClientFromBuilders(builder, nil)
+	builder := v3.NewMockStreamDefinitionBuilder(objectName).WithPhase(stream.Running).WithSuspendedSpec(true)
+	k8sClient := helpers.SetupClientFromBuilders(nil, builder, nil)
 
 	reconciler := createReconciler(k8sClient, nil, nil)
 
@@ -252,8 +253,8 @@ func Test_UpdatePhase_Running_To_Suspended_no_job(t *testing.T) {
 
 func Test_UpdatePhase_Running_To_Suspended_stop_job(t *testing.T) {
 	// Arrange
-	builder := helpers.NewMockStreamDefinitionBuilder(objectName).WithPhase(stream.Running).WithSuspendedSpec(true)
-	k8sClient := helpers.SetupClientFromBuilders(builder, helpers.NewFakeClientResourcesBuilder().WithBackfillRequest(objectName).WithOutdatedJob(objectName))
+	builder := v3.NewMockStreamDefinitionBuilder(objectName).WithPhase(stream.Running).WithSuspendedSpec(true)
+	k8sClient := helpers.SetupClientFromBuilders(nil, builder, helpers.NewFakeClientResourcesBuilder().WithBackfillRequest(objectName).WithOutdatedJob(objectName))
 
 	reconciler := createReconciler(k8sClient, nil, nil)
 
@@ -269,8 +270,8 @@ func Test_UpdatePhase_Running_To_Suspended_stop_job(t *testing.T) {
 
 func Test_UpdatePhase_Running_To_Suspended_to_Pending(t *testing.T) {
 	// Arrange
-	builder := helpers.NewMockStreamDefinitionBuilder(objectName).WithPhase(stream.Suspended).WithSuspendedSpec(false)
-	k8sClient := helpers.SetupClientFromBuilders(builder, nil)
+	builder := v3.NewMockStreamDefinitionBuilder(objectName).WithPhase(stream.Suspended).WithSuspendedSpec(false)
+	k8sClient := helpers.SetupClientFromBuilders(nil, builder, nil)
 
 	reconciler := createReconciler(k8sClient, nil, nil)
 
@@ -285,8 +286,8 @@ func Test_UpdatePhase_Running_To_Suspended_to_Pending(t *testing.T) {
 
 func Test_UpdatePhase_Running_To_Suspended_to_Pending_With_BFR(t *testing.T) {
 	// Arrange
-	builder := helpers.NewMockStreamDefinitionBuilder(objectName).WithPhase(stream.Suspended).WithSuspendedSpec(true)
-	k8sClient := helpers.SetupClientFromBuilders(builder, helpers.NewFakeClientResourcesBuilder().WithBackfillRequest(objectName))
+	builder := v3.NewMockStreamDefinitionBuilder(objectName).WithPhase(stream.Suspended).WithSuspendedSpec(true)
+	k8sClient := helpers.SetupClientFromBuilders(nil, builder, helpers.NewFakeClientResourcesBuilder().WithBackfillRequest(objectName))
 
 	reconciler := createReconciler(k8sClient, nil, nil)
 
@@ -301,8 +302,8 @@ func Test_UpdatePhase_Running_To_Suspended_to_Pending_With_BFR(t *testing.T) {
 
 func Test_UpdatePhase_Running_To_Pending_with_schedule(t *testing.T) {
 	// Arrange
-	builder := helpers.NewMockStreamDefinitionBuilder(objectName).WithPhase(stream.Running).WithSuspendedSpec(false).WithSchedule("* * * * *")
-	k8sClient := helpers.SetupClientFromBuilders(builder, helpers.NewFakeClientResourcesBuilder().WithOutdatedJob(objectName))
+	builder := v3.NewMockStreamDefinitionBuilder(objectName).WithPhase(stream.Running).WithSuspendedSpec(false).WithSchedule("* * * * *")
+	k8sClient := helpers.SetupClientFromBuilders(nil, builder, helpers.NewFakeClientResourcesBuilder().WithOutdatedJob(objectName))
 
 	reconciler := createReconciler(k8sClient, nil, nil)
 
@@ -318,8 +319,8 @@ func Test_UpdatePhase_Running_To_Pending_with_schedule(t *testing.T) {
 
 func Test_UpdatePhase_Running_with_BackfillRequest_no_job(t *testing.T) {
 	// Arrange
-	builder := helpers.NewMockStreamDefinitionBuilder(objectName).WithPhase(stream.Running).WithSuspendedSpec(false)
-	k8sClient := helpers.SetupClientFromBuilders(builder, helpers.NewFakeClientResourcesBuilder().WithBackfillRequest(objectName))
+	builder := v3.NewMockStreamDefinitionBuilder(objectName).WithPhase(stream.Running).WithSuspendedSpec(false)
+	k8sClient := helpers.SetupClientFromBuilders(nil, builder, helpers.NewFakeClientResourcesBuilder().WithBackfillRequest(objectName))
 
 	reconciler := createReconciler(k8sClient, nil, nil)
 
@@ -334,8 +335,8 @@ func Test_UpdatePhase_Running_with_BackfillRequest_no_job(t *testing.T) {
 
 func Test_UpdatePhase_Suspended_with_BackfillRequest(t *testing.T) {
 	// Arrange
-	builder := helpers.NewMockStreamDefinitionBuilder(objectName).WithPhase(stream.Suspended).WithSuspendedSpec(false)
-	k8sClient := helpers.SetupClientFromBuilders(builder, helpers.NewFakeClientResourcesBuilder().WithBackfillRequest(objectName))
+	builder := v3.NewMockStreamDefinitionBuilder(objectName).WithPhase(stream.Suspended).WithSuspendedSpec(false)
+	k8sClient := helpers.SetupClientFromBuilders(nil, builder, helpers.NewFakeClientResourcesBuilder().WithBackfillRequest(objectName))
 
 	reconciler := createReconciler(k8sClient, nil, nil)
 
@@ -350,8 +351,8 @@ func Test_UpdatePhase_Suspended_with_BackfillRequest(t *testing.T) {
 
 func Test_UpdatePhase_Suspended_without_BackfillRequest_without_job(t *testing.T) {
 	// Arrange
-	builder := helpers.NewMockStreamDefinitionBuilder(objectName).WithPhase(stream.Suspended)
-	k8sClient := helpers.SetupClientFromBuilders(builder, nil)
+	builder := v3.NewMockStreamDefinitionBuilder(objectName).WithPhase(stream.Suspended)
+	k8sClient := helpers.SetupClientFromBuilders(nil, builder, nil)
 
 	reconciler := createReconciler(k8sClient, nil, nil)
 
@@ -367,8 +368,8 @@ func Test_UpdatePhase_Suspended_without_BackfillRequest_without_job(t *testing.T
 
 func Test_UpdatePhase_Suspended_without_BackfillRequest_with_job(t *testing.T) {
 	// Arrange
-	builder := helpers.NewMockStreamDefinitionBuilder(objectName).WithPhase(stream.Suspended)
-	k8sClient := helpers.SetupClientFromBuilders(builder, helpers.NewFakeClientResourcesBuilder().WithOutdatedJob(objectName))
+	builder := v3.NewMockStreamDefinitionBuilder(objectName).WithPhase(stream.Suspended)
+	k8sClient := helpers.SetupClientFromBuilders(nil, builder, helpers.NewFakeClientResourcesBuilder().WithOutdatedJob(objectName))
 
 	reconciler := createReconciler(k8sClient, nil, nil)
 
@@ -384,8 +385,8 @@ func Test_UpdatePhase_Suspended_without_BackfillRequest_with_job(t *testing.T) {
 
 func Test_UpdatePhase_Backfilling_To_Pending_with_job_completed(t *testing.T) {
 	// Arrange
-	builder := helpers.NewMockStreamDefinitionBuilder(objectName).WithPhase(stream.Backfilling).WithSuspendedSpec(false)
-	k8sClient := helpers.SetupClientFromBuilders(builder, helpers.NewFakeClientResourcesBuilder().WithBackfillRequest(objectName).WithCompletedJob(objectName))
+	builder := v3.NewMockStreamDefinitionBuilder(objectName).WithPhase(stream.Backfilling).WithSuspendedSpec(false)
+	k8sClient := helpers.SetupClientFromBuilders(nil, builder, helpers.NewFakeClientResourcesBuilder().WithBackfillRequest(objectName).WithCompletedJob(objectName))
 
 	reconciler := createReconciler(k8sClient, nil, nil)
 
@@ -402,8 +403,8 @@ func Test_UpdatePhase_Backfilling_To_Pending_with_job_completed(t *testing.T) {
 
 func Test_UpdatePhase_Backfilling_To_Pending_with_deleted_bfr(t *testing.T) {
 	// Arrange
-	builder := helpers.NewMockStreamDefinitionBuilder(objectName).WithPhase(stream.Backfilling).WithSuspendedSpec(false)
-	k8sClient := helpers.SetupClientFromBuilders(builder, helpers.NewFakeClientResourcesBuilder().WithOutdatedJob(objectName))
+	builder := v3.NewMockStreamDefinitionBuilder(objectName).WithPhase(stream.Backfilling).WithSuspendedSpec(false)
+	k8sClient := helpers.SetupClientFromBuilders(nil, builder, helpers.NewFakeClientResourcesBuilder().WithOutdatedJob(objectName))
 
 	reconciler := createReconciler(k8sClient, nil, nil)
 
@@ -421,8 +422,8 @@ func Test_UpdatePhase_Backfilling_To_Pending_with_deleted_bfr(t *testing.T) {
 
 func Test_UpdatePhase_Backfilling_To_Backfilling_with_job_running(t *testing.T) {
 	// Arrange
-	builder := helpers.NewMockStreamDefinitionBuilder(objectName).WithPhase(stream.Backfilling).WithSuspendedSpec(false)
-	k8sClient := helpers.SetupClientFromBuilders(builder, helpers.NewFakeClientResourcesBuilder().WithOutdatedJob(objectName).WithBackfillRequest(objectName))
+	builder := v3.NewMockStreamDefinitionBuilder(objectName).WithPhase(stream.Backfilling).WithSuspendedSpec(false)
+	k8sClient := helpers.SetupClientFromBuilders(nil, builder, helpers.NewFakeClientResourcesBuilder().WithOutdatedJob(objectName).WithBackfillRequest(objectName))
 
 	reconciler := createReconciler(k8sClient, nil, nil)
 
@@ -439,8 +440,8 @@ func Test_UpdatePhase_Backfilling_To_Backfilling_with_job_running(t *testing.T) 
 
 func Test_UpdatePhase_Backfilling_To_Backfilling_with_no_job(t *testing.T) {
 	// Arrange
-	builder := helpers.NewMockStreamDefinitionBuilder(objectName).WithPhase(stream.Backfilling).WithSuspendedSpec(false)
-	k8sClient := helpers.SetupClientFromBuilders(builder, helpers.NewFakeClientResourcesBuilder().WithBackfillRequest(objectName))
+	builder := v3.NewMockStreamDefinitionBuilder(objectName).WithPhase(stream.Backfilling).WithSuspendedSpec(false)
+	k8sClient := helpers.SetupClientFromBuilders(nil, builder, helpers.NewFakeClientResourcesBuilder().WithBackfillRequest(objectName))
 
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
@@ -469,8 +470,8 @@ func Test_UpdatePhase_Backfilling_To_Backfilling_with_no_job(t *testing.T) {
 
 func Test_UpdatePhase_Pending_To_Backfilling_with_schedule(t *testing.T) {
 	// Arrange
-	builder := helpers.NewMockStreamDefinitionBuilder(objectName).WithPhase(stream.Pending).WithSuspendedSpec(false).WithSchedule("* * * * *")
-	k8sClient := helpers.SetupClientFromBuilders(builder, helpers.NewFakeClientResourcesBuilder().WithBackfillRequest(objectName))
+	builder := v3.NewMockStreamDefinitionBuilder(objectName).WithPhase(stream.Pending).WithSuspendedSpec(false).WithSchedule("* * * * *")
+	k8sClient := helpers.SetupClientFromBuilders(nil, builder, helpers.NewFakeClientResourcesBuilder().WithBackfillRequest(objectName))
 
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
@@ -499,8 +500,8 @@ func Test_UpdatePhase_Pending_To_Backfilling_with_schedule(t *testing.T) {
 
 func Test_UpdatePhase_Backfilling_To_Pending_with_schedule(t *testing.T) {
 	// Arrange
-	builder := helpers.NewMockStreamDefinitionBuilder(objectName).WithPhase(stream.Backfilling).WithSuspendedSpec(false).WithSchedule("* * * * *")
-	k8sClient := helpers.SetupClientFromBuilders(builder, helpers.NewFakeClientResourcesBuilder().WithOutdatedJob(objectName))
+	builder := v3.NewMockStreamDefinitionBuilder(objectName).WithPhase(stream.Backfilling).WithSuspendedSpec(false).WithSchedule("* * * * *")
+	k8sClient := helpers.SetupClientFromBuilders(nil, builder, helpers.NewFakeClientResourcesBuilder().WithOutdatedJob(objectName))
 
 	reconciler := createReconciler(k8sClient, nil, nil)
 
@@ -516,8 +517,8 @@ func Test_UpdatePhase_Backfilling_To_Pending_with_schedule(t *testing.T) {
 
 func Test_UpdatePhase_Backfilling_To_Suspended(t *testing.T) {
 	// Arrange
-	builder := helpers.NewMockStreamDefinitionBuilder(objectName).WithPhase(stream.Backfilling).WithSuspendedSpec(true)
-	k8sClient := helpers.SetupClientFromBuilders(builder, helpers.NewFakeClientResourcesBuilder().WithBackfillRequest(objectName))
+	builder := v3.NewMockStreamDefinitionBuilder(objectName).WithPhase(stream.Backfilling).WithSuspendedSpec(true)
+	k8sClient := helpers.SetupClientFromBuilders(nil, builder, helpers.NewFakeClientResourcesBuilder().WithBackfillRequest(objectName))
 
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
@@ -546,8 +547,8 @@ func Test_UpdatePhase_Backfilling_To_Suspended(t *testing.T) {
 
 func Test_UpdatePhase_Backfilling_Job_Failed(t *testing.T) {
 	// Arrange
-	builder := helpers.NewMockStreamDefinitionBuilder(objectName).WithPhase(stream.Backfilling).WithSuspendedSpec(false)
-	k8sClient := helpers.SetupClientFromBuilders(builder, helpers.NewFakeClientResourcesBuilder().WithBackfillRequest(objectName).WithFailedJob(objectName))
+	builder := v3.NewMockStreamDefinitionBuilder(objectName).WithPhase(stream.Backfilling).WithSuspendedSpec(false)
+	k8sClient := helpers.SetupClientFromBuilders(nil, builder, helpers.NewFakeClientResourcesBuilder().WithBackfillRequest(objectName).WithFailedJob(objectName))
 	reconciler := createReconciler(k8sClient, nil, nil)
 
 	// Act
@@ -563,8 +564,8 @@ func Test_UpdatePhase_Backfilling_Job_Failed(t *testing.T) {
 
 func Test_UpdatePhase_Backfilling_To_Running(t *testing.T) {
 	// Arrange
-	builder := helpers.NewMockStreamDefinitionBuilder(objectName).WithPhase(stream.Backfilling).WithSuspendedSpec(false)
-	k8sClient := helpers.SetupClientFromBuilders(builder, helpers.NewFakeClientResourcesBuilder().WithOutdatedJob(objectName))
+	builder := v3.NewMockStreamDefinitionBuilder(objectName).WithPhase(stream.Backfilling).WithSuspendedSpec(false)
+	k8sClient := helpers.SetupClientFromBuilders(nil, builder, helpers.NewFakeClientResourcesBuilder().WithOutdatedJob(objectName))
 
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
@@ -584,8 +585,8 @@ func Test_UpdatePhase_Backfilling_To_Running(t *testing.T) {
 
 func Test_UpdatePhase_Failed_to_Failed(t *testing.T) {
 	// Arrange
-	builder := helpers.NewMockStreamDefinitionBuilder(objectName).WithPhase(stream.Failed)
-	k8sClient := helpers.SetupClientFromBuilders(builder, helpers.NewFakeClientResourcesBuilder().WithFailedJob(objectName))
+	builder := v3.NewMockStreamDefinitionBuilder(objectName).WithPhase(stream.Failed)
+	k8sClient := helpers.SetupClientFromBuilders(nil, builder, helpers.NewFakeClientResourcesBuilder().WithFailedJob(objectName))
 
 	reconciler := createReconciler(k8sClient, nil, nil)
 
@@ -601,8 +602,8 @@ func Test_UpdatePhase_Failed_to_Failed(t *testing.T) {
 
 func Test_UpdatePhase_Failed_to_Failed_without_job(t *testing.T) {
 	// Arrange
-	builder := helpers.NewMockStreamDefinitionBuilder(objectName).WithPhase(stream.Failed).WithSuspendedSpec(false)
-	k8sClient := helpers.SetupClientFromBuilders(builder, nil)
+	builder := v3.NewMockStreamDefinitionBuilder(objectName).WithPhase(stream.Failed).WithSuspendedSpec(false)
+	k8sClient := helpers.SetupClientFromBuilders(nil, builder, nil)
 
 	reconciler := createReconciler(k8sClient, nil, nil)
 
@@ -617,8 +618,8 @@ func Test_UpdatePhase_Failed_to_Failed_without_job(t *testing.T) {
 
 func Test_UpdatePhase_Failed_to_Suspended_without_job(t *testing.T) {
 	// Arrange
-	builder := helpers.NewMockStreamDefinitionBuilder(objectName).WithPhase(stream.Failed).WithSuspendedSpec(true)
-	k8sClient := helpers.SetupClientFromBuilders(builder, nil)
+	builder := v3.NewMockStreamDefinitionBuilder(objectName).WithPhase(stream.Failed).WithSuspendedSpec(true)
+	k8sClient := helpers.SetupClientFromBuilders(nil, builder, nil)
 
 	reconciler := createReconciler(k8sClient, nil, nil)
 
@@ -633,8 +634,8 @@ func Test_UpdatePhase_Failed_to_Suspended_without_job(t *testing.T) {
 
 func Test_UpdatePhase_Failed_to_Suspended_with_BackfillRequest(t *testing.T) {
 	// Arrange
-	builder := helpers.NewMockStreamDefinitionBuilder(objectName).WithPhase(stream.Failed).WithSuspendedSpec(true)
-	k8sClient := helpers.SetupClientFromBuilders(builder, helpers.NewFakeClientResourcesBuilder().WithBackfillRequest(objectName))
+	builder := v3.NewMockStreamDefinitionBuilder(objectName).WithPhase(stream.Failed).WithSuspendedSpec(true)
+	k8sClient := helpers.SetupClientFromBuilders(nil, builder, helpers.NewFakeClientResourcesBuilder().WithBackfillRequest(objectName))
 
 	reconciler := createReconciler(k8sClient, nil, nil)
 
@@ -650,8 +651,8 @@ func Test_UpdatePhase_Failed_to_Suspended_with_BackfillRequest(t *testing.T) {
 
 func Test_UpdatePhase_Failed_to_Backfilling(t *testing.T) {
 	// Arrange
-	builder := helpers.NewMockStreamDefinitionBuilder(objectName).WithPhase(stream.Failed).WithSuspendedSpec(false)
-	k8sClient := helpers.SetupClientFromBuilders(builder, helpers.NewFakeClientResourcesBuilder().WithBackfillRequest(objectName))
+	builder := v3.NewMockStreamDefinitionBuilder(objectName).WithPhase(stream.Failed).WithSuspendedSpec(false)
+	k8sClient := helpers.SetupClientFromBuilders(nil, builder, helpers.NewFakeClientResourcesBuilder().WithBackfillRequest(objectName))
 
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
@@ -670,8 +671,8 @@ func Test_UpdatePhase_Failed_to_Backfilling(t *testing.T) {
 
 func Test_UpdatePhase_Scheduled_to_Scheduled_no_cron_job(t *testing.T) {
 	// Arrange
-	builder := helpers.NewMockStreamDefinitionBuilder(objectName).WithPhase(stream.Scheduled).WithSuspendedSpec(false).WithSchedule("* * * * *")
-	k8sClient := helpers.SetupClientFromBuilders(builder, nil)
+	builder := v3.NewMockStreamDefinitionBuilder(objectName).WithPhase(stream.Scheduled).WithSuspendedSpec(false).WithSchedule("* * * * *")
+	k8sClient := helpers.SetupClientFromBuilders(nil, builder, nil)
 
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
@@ -695,8 +696,8 @@ func Test_UpdatePhase_Scheduled_to_Scheduled_no_cron_job(t *testing.T) {
 
 func Test_UpdatePhase_Scheduled_to_Scheduled_recreate_cron_job(t *testing.T) {
 	// Arrange
-	builder := helpers.NewMockStreamDefinitionBuilder(objectName).WithPhase(stream.Scheduled).WithSuspendedSpec(false).WithSchedule("* * * * *")
-	k8sClient := helpers.SetupClientFromBuilders(builder, helpers.NewFakeClientResourcesBuilder().WithOutdatedCronJob(objectName))
+	builder := v3.NewMockStreamDefinitionBuilder(objectName).WithPhase(stream.Scheduled).WithSuspendedSpec(false).WithSchedule("* * * * *")
+	k8sClient := helpers.SetupClientFromBuilders(nil, builder, helpers.NewFakeClientResourcesBuilder().WithOutdatedCronJob(objectName))
 
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
@@ -720,8 +721,8 @@ func Test_UpdatePhase_Scheduled_to_Scheduled_recreate_cron_job(t *testing.T) {
 
 func Test_UpdatePhase_Scheduled_to_Scheduled_not_recreate_cron_job(t *testing.T) {
 	// Arrange
-	builder := helpers.NewMockStreamDefinitionBuilder(objectName).WithPhase(stream.Scheduled).WithSuspendedSpec(false).WithSchedule("* * * * *")
-	k8sClient := helpers.SetupClientFromBuilders(builder, helpers.NewFakeClientResourcesBuilder().WithConsistentCronJob(objectName, "f64da5796994069c5b50e98041dd9d2f"))
+	builder := v3.NewMockStreamDefinitionBuilder(objectName).WithPhase(stream.Scheduled).WithSuspendedSpec(false).WithSchedule("* * * * *")
+	k8sClient := helpers.SetupClientFromBuilders(nil, builder, helpers.NewFakeClientResourcesBuilder().WithConsistentCronJob(objectName, "f64da5796994069c5b50e98041dd9d2f"))
 
 	reconciler := createReconciler(k8sClient, nil, nil)
 
@@ -737,8 +738,8 @@ func Test_UpdatePhase_Scheduled_to_Scheduled_not_recreate_cron_job(t *testing.T)
 
 func Test_UpdatePhase_Scheduled_to_Suspended(t *testing.T) {
 	// Arrange
-	builder := helpers.NewMockStreamDefinitionBuilder(objectName).WithPhase(stream.Scheduled).WithSuspendedSpec(true).WithSchedule("* * * * *")
-	k8sClient := helpers.SetupClientFromBuilders(builder, helpers.NewFakeClientResourcesBuilder().WithOutdatedCronJob(objectName))
+	builder := v3.NewMockStreamDefinitionBuilder(objectName).WithPhase(stream.Scheduled).WithSuspendedSpec(true).WithSchedule("* * * * *")
+	k8sClient := helpers.SetupClientFromBuilders(nil, builder, helpers.NewFakeClientResourcesBuilder().WithOutdatedCronJob(objectName))
 
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
@@ -757,8 +758,8 @@ func Test_UpdatePhase_Scheduled_to_Suspended(t *testing.T) {
 
 func Test_UpdatePhase_Scheduled_to_Backfilling(t *testing.T) {
 	// Arrange
-	builder := helpers.NewMockStreamDefinitionBuilder(objectName).WithPhase(stream.Scheduled).WithSuspendedSpec(false).WithSchedule("* * * * *")
-	k8sClient := helpers.SetupClientFromBuilders(builder, helpers.NewFakeClientResourcesBuilder().WithBackfillRequest(objectName))
+	builder := v3.NewMockStreamDefinitionBuilder(objectName).WithPhase(stream.Scheduled).WithSuspendedSpec(false).WithSchedule("* * * * *")
+	k8sClient := helpers.SetupClientFromBuilders(nil, builder, helpers.NewFakeClientResourcesBuilder().WithBackfillRequest(objectName))
 
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
