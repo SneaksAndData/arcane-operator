@@ -721,16 +721,27 @@ func Test_UpdatePhase_Scheduled_to_Scheduled_recreate_cron_job(t *testing.T) {
 
 func Test_UpdatePhase_Scheduled_to_Scheduled_not_recreate_cron_job(t *testing.T) {
 	// Arrange
+
 	builder := v3.NewMockStreamDefinitionBuilder(objectName).
 		WithPhase(stream.Scheduled).
 		WithSuspendedSpec(false).
 		WithSchedule("* * * * *")
+
+	k8sClient := helpers.SetupClientFromBuilders(nil, builder, nil)
+	u, err := helpers.GetStreamDefinitionUnstructured(t.Context(), k8sClient, objectName, helpers.GroupVersionKindV2)
+	require.NoError(t, err)
+
+	def, err := contracts.FromUnstructured(u)
+	require.NoError(t, err)
+
+	definitionHash, err := def.CurrentConfiguration(nil)
+	require.NoError(t, err)
+
 	resourceBuilder := helpers.
 		NewFakeClientResourcesBuilder().
-		WithConsistentCronJob(objectName, "f64da5796994069c5b50e98041dd9d2f")
+		WithConsistentCronJob(objectName, definitionHash)
 
-	k8sClient := helpers.SetupClientFromBuilders(nil, builder, resourceBuilder)
-
+	k8sClient = helpers.SetupClientFromBuilders(nil, builder, resourceBuilder)
 	reconciler := createReconciler(k8sClient, nil, nil)
 
 	// Act
