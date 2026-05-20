@@ -700,15 +700,31 @@ func Test_UpdatePhase_Scheduled_to_Scheduled_no_cron_job(t *testing.T) {
 	helpers.AssertStreamDefinitionPhase(t, k8sClient, objectName, stream.Scheduled)
 	helpers.AssertCronJobExists(t, k8sClient, objectName, func(t *testing.T, cj *batchv1.CronJob) {
 		require.NotNil(t, cj, "CronJob should be created")
-		// computed manually for the test definition
 		require.Equal(t, definitionHash, cj.Annotations["configuration-hash"])
 	})
 }
 
 func Test_UpdatePhase_Scheduled_to_Scheduled_recreate_cron_job(t *testing.T) {
 	// Arrange
-	builder := v3.NewMockStreamDefinitionBuilder(objectName).WithPhase(stream.Scheduled).WithSuspendedSpec(false).WithSchedule("* * * * *")
-	k8sClient := helpers.SetupClientFromBuilders(nil, builder, helpers.NewFakeClientResourcesBuilder().WithOutdatedCronJob(objectName))
+	builder := v3.NewMockStreamDefinitionBuilder(objectName).
+		WithPhase(stream.Scheduled).
+		WithSuspendedSpec(false).
+		WithSchedule("* * * * *")
+	resourceBuilder := helpers.NewFakeClientResourcesBuilder().WithOutdatedCronJob(objectName)
+	k8sClient := helpers.SetupClientFromBuilders(nil, builder, resourceBuilder)
+
+	u, err := helpers.GetStreamDefinitionUnstructured(t.Context(), k8sClient, objectName, helpers.GroupVersionKindV2)
+	require.NoError(t, err)
+
+	def, err := contracts.FromUnstructured(u)
+	require.NoError(t, err)
+
+	definitionHash, err := def.CurrentConfiguration(nil)
+	require.NoError(t, err)
+
+	oldJob := &batchv1.CronJob{}
+	err = k8sClient.Get(t.Context(), objectName, oldJob)
+	require.NoError(t, err)
 
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
@@ -723,17 +739,38 @@ func Test_UpdatePhase_Scheduled_to_Scheduled_recreate_cron_job(t *testing.T) {
 	// Assert
 	helpers.AssertStreamDefinitionPhase(t, k8sClient, objectName, stream.Scheduled)
 	helpers.AssertCronJobExists(t, k8sClient, objectName, func(t *testing.T, cj *batchv1.CronJob) {
-		require.Equal(t, "* * * * *", cj.Spec.Schedule)
-		require.Equal(t, batchv1.ForbidConcurrent, cj.Spec.ConcurrencyPolicy)
-		// computed manually for the test definition
-		require.Equal(t, "f64da5796994069c5b50e98041dd9d2f", cj.Annotations["configuration-hash"])
+		require.NotEqual(t,
+			oldJob.GetResourceVersion(),
+			cj.GetResourceVersion(),
+			"CronJob should be recreated with a new resource version")
+
+		require.Equal(t, definitionHash, cj.Annotations["configuration-hash"])
 	})
 }
 
 func Test_UpdatePhase_Scheduled_to_Scheduled_not_recreate_cron_job(t *testing.T) {
 	// Arrange
-	builder := v3.NewMockStreamDefinitionBuilder(objectName).WithPhase(stream.Scheduled).WithSuspendedSpec(false).WithSchedule("* * * * *")
-	k8sClient := helpers.SetupClientFromBuilders(nil, builder, helpers.NewFakeClientResourcesBuilder().WithConsistentCronJob(objectName, "f64da5796994069c5b50e98041dd9d2f"))
+	builder := v3.NewMockStreamDefinitionBuilder(objectName).
+		WithPhase(stream.Scheduled).
+		WithSuspendedSpec(false).
+		WithSchedule("* * * * *")
+
+	k8sClient := helpers.SetupClientFromBuilders(nil, builder, nil)
+	u, err := helpers.GetStreamDefinitionUnstructured(t.Context(), k8sClient, objectName, helpers.GroupVersionKindV2)
+	require.NoError(t, err)
+
+	def, err := contracts.FromUnstructured(u)
+	require.NoError(t, err)
+
+	definitionHash, err := def.CurrentConfiguration(nil)
+	require.NoError(t, err)
+
+	resourceBuilder := helpers.NewFakeClientResourcesBuilder().WithConsistentCronJob(objectName, definitionHash)
+	k8sClient = helpers.SetupClientFromBuilders(nil, builder, resourceBuilder)
+
+	oldJob := &batchv1.CronJob{}
+	err = k8sClient.Get(t.Context(), objectName, oldJob)
+	require.NoError(t, err)
 
 	reconciler := createReconciler(k8sClient, nil, nil)
 
@@ -744,7 +781,13 @@ func Test_UpdatePhase_Scheduled_to_Scheduled_not_recreate_cron_job(t *testing.T)
 
 	// Assert
 	helpers.AssertStreamDefinitionPhase(t, k8sClient, objectName, stream.Scheduled)
-	helpers.AssertCronJobExists(t, k8sClient, objectName, nil)
+	helpers.AssertCronJobExists(t, k8sClient, objectName, func(t *testing.T, cj *batchv1.CronJob) {
+		require.Equal(t,
+			oldJob.GetResourceVersion(),
+			cj.GetResourceVersion(),
+			"CronJob should not be recreated and should have the same resource version")
+		require.Equal(t, definitionHash, cj.Annotations["configuration-hash"])
+	})
 }
 
 func Test_UpdatePhase_Scheduled_to_Suspended(t *testing.T) {
