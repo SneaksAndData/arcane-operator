@@ -706,11 +706,7 @@ func Test_UpdatePhase_Scheduled_to_Scheduled_no_cron_job(t *testing.T) {
 	// Assert
 	helpers.AssertStreamDefinitionPhase(t, k8sClient, objectName, stream.Scheduled)
 	helpers.AssertCronJobExists(t, k8sClient, objectName, func(t *testing.T, cj *batchv1.CronJob) {
-		require.Equal(t,
-			cj.ObjectMeta.GetResourceVersion(),
-			cronJob.ObjectMeta.GetResourceVersion(),
-			"CronJob should not be recreated")
-
+		require.Equal(t, cj.GetResourceVersion(), cronJob.GetResourceVersion(), "CronJob should not be recreated")
 		require.Equal(t, definitionHash, cj.Annotations["configuration-hash"])
 	})
 }
