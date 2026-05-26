@@ -149,6 +149,55 @@ func Test_StreamStateTransitionToRunning(t *testing.T) {
 	assertObjectTypes(t, aggregator)
 }
 
+// Test_DynamicBackfillId verifies that the backfill job contains the correct backfill ID in its environment variables.
+func Test_DynamicBackfillId(t *testing.T) {
+	// Arrange
+	var foundBackfillId bool
+
+	// Act
+	name := configureV2StreamDefinition(t, func(definition *v2.TestStreamDefinitionV2) {
+		definition.Spec.ExecutionSettings.Suspended = true
+		definition.Spec.ExecutionSettings.StreamingBackend.CronJobBackend = &v2.CronJobBackend{
+			Schedule: "*/1 * * * *",
+			JobTemplateRef: corev1.ObjectReference{
+				Kind:      "StreamingJobTemplate",
+				Name:      "arcane-stream-mock",
+				Namespace: "default",
+			},
+		}
+	})
+
+	waitForStatus(t, name, stream.Suspended)
+	wakeUp(t, name, stream.Scheduled)
+
+	// Watch for job events in the main thread
+	waitForBackendResource(t, name,
+
+		func(job stream.BackendResource) {
+			_, ok := job.ToObject().(*batchv1.CronJob)
+			require.True(t, ok, "Expected a Job resource for a job")
+			envVars := job.ToObject().(*batchv1.CronJob).Spec.JobTemplate.Spec.Template.Spec.Containers[0].Env
+			var backfillId string
+			for _, envVar := range envVars {
+				if envVar.Name == "STREAMCONTEXT__BACKFILL_ID" {
+					backfillId = envVar.ValueFrom.FieldRef.FieldPath
+					// The value should be set from the job's metadata.labels['job-name']
+					require.Equal(t, "metadata.labels['job-name']", backfillId,
+						"Expected STREAMCONTEXT__BACKFILL_ID to be sourced from job labels")
+					foundBackfillId = true
+					break
+				}
+			}
+		},
+
+		func(backendResource stream.BackendResource) bool {
+			_, ok := backendResource.ToObject().(*batchv1.CronJob)
+			return ok
+		})
+
+	require.True(t, foundBackfillId, "Expected to find a backfill job with STREAMCONTEXT__BACKFILL_ID environment variable")
+}
+
 func wakeUp(t *testing.T, name string, targetPhase stream.Phase) {
 	testStream, err := streamingClientSet.
 		StreamingV2().
