@@ -27,8 +27,8 @@ import (
 //
 // ExecutionSettings represents the execution settings for a stream, including suspension status and backend configuration.
 type ExecutionSettingsApplyConfiguration struct {
-	// APIVersion represents the API version of the execution settings.
-	APIVersion *string `json:"apiVersion,omitempty"`
+	// LayoutVersion represents the layout version of the execution settings.
+	LayoutVersion *string `json:"layoutVersion,omitempty"`
 	// Suspended indicates whether the stream is suspended.
 	Suspended *bool `json:"suspended,omitempty"`
 	// BackfillJobTemplateRef represents a reference to the job template.
@@ -43,11 +43,11 @@ func ExecutionSettings() *ExecutionSettingsApplyConfiguration {
 	return &ExecutionSettingsApplyConfiguration{}
 }
 
-// WithAPIVersion sets the APIVersion field in the declarative configuration to the given value
+// WithLayoutVersion sets the LayoutVersion field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the APIVersion field is set to the value of the last call.
-func (b *ExecutionSettingsApplyConfiguration) WithAPIVersion(value string) *ExecutionSettingsApplyConfiguration {
-	b.APIVersion = &value
+// If called multiple times, the LayoutVersion field is set to the value of the last call.
+func (b *ExecutionSettingsApplyConfiguration) WithLayoutVersion(value string) *ExecutionSettingsApplyConfiguration {
+	b.LayoutVersion = &value
 	return b
 }
 

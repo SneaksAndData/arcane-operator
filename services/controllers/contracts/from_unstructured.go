@@ -13,20 +13,20 @@ import (
 // representation of the stream definition.
 func FromUnstructured(obj *unstructured.Unstructured) (stream.Definition, error) {
 
-	apiVersion, found, err := unstructured.NestedString(obj.Object, "spec", "execution", "apiVersion")
+	layoutVersion, found, err := unstructured.NestedString(obj.Object, "spec", "execution", "layoutVersion")
 	if err != nil { // coverage-ignore
-		return nil, fmt.Errorf("error accessing apiVersion field: %w", err)
+		return nil, fmt.Errorf("error accessing layoutVersion field: %w", err)
 	}
 
 	var v stream.Definition
 
 	switch {
-	case !found || apiVersion == "":
+	case !found || layoutVersion == "":
 		v = v0.NewUnstructuredWrapper(obj)
-	case apiVersion == "v1":
+	case layoutVersion == "v1":
 		v = v1.NewExecutionSettings(obj)
 	default:
-		return nil, fmt.Errorf("unknown apiVersion: %s", apiVersion)
+		return nil, fmt.Errorf("unknown layoutVersion: %s", layoutVersion)
 	}
 
 	err = v.Validate()

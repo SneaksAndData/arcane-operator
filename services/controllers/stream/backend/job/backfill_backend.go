@@ -130,6 +130,7 @@ func (b *BackfillBackend) Apply(ctx context.Context, definition stream.Definitio
 func (b *BackfillBackend) NoOp(ctx context.Context, definition stream.Definition, backfillRequest *v1.BackfillRequest, nextPhase stream.Phase, eventFunc controllers.EventFunc) (reconcile.Result, error) { // coverage-ignore
 	return b.statusManager.UpdateStreamPhase(ctx, definition, backfillRequest, nextPhase, eventFunc)
 }
+
 func (b *BackfillBackend) GetBackfillRequest(ctx context.Context, definition stream.Definition) (*v1.BackfillRequest, error) { // coverage-ignore
 	backfillRequestList := &v1.BackfillRequestList{}
 	err := b.client.List(ctx, backfillRequestList, client.InNamespace(definition.NamespacedName().Namespace))
