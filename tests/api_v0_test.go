@@ -116,6 +116,49 @@ func Test_CreateFailedStream(t *testing.T) {
 	}
 }
 
+// Test_StaticBackfillId verifies that the backfill job contains the correct backfill ID in its environment variables.
+func Test_StaticBackfillId(t *testing.T) {
+	// Arrange
+	var foundBackfillId bool
+
+	// Act
+	name := createTestStreamDefinition(t, false)
+
+	// Watch for job events in the main thread
+	waitForBackendResource(t, name,
+
+		func(job stream.BackendResource) {
+			_, ok := job.ToObject().(*batchv1.Job)
+			require.True(t, ok, "Expected a Job resource for a job")
+			envVars := job.ToObject().(*batchv1.Job).Spec.Template.Spec.Containers[0].Env
+			var backfillId string
+			for _, envVar := range envVars {
+				if envVar.Name == "STREAMCONTEXT__BACKFILL_ID" {
+					backfillId = envVar.Value
+					break
+				}
+			}
+
+			if job.IsBackfill() {
+				foundBackfillId = true
+				require.NotEmpty(t, backfillId, "Expected STREAMCONTEXT__BACKFILL_ID environment variable to be set in backfill job")
+				t.Logf("Backfill job has STREAMCONTEXT__BACKFILL_ID: %s", backfillId)
+			} else {
+				require.Empty(t, backfillId, "Expected STREAMCONTEXT__BACKFILL_ID environment variable to be empty in regular job")
+			}
+		},
+
+		func(job stream.BackendResource) bool {
+			if job.IsCompleted() && !job.IsBackfill() {
+				t.Log("Regular job is completed, stopping watcher")
+				return true
+			}
+			return false
+		})
+
+	require.True(t, foundBackfillId, "Expected to find a backfill job with STREAMCONTEXT__BACKFILL_ID environment variable")
+}
+
 func createTestStreamDefinition(t *testing.T, shouldFail bool) string {
 	// Create a TestStreamDefinition with dummy data
 	testStream := mockv1.TestStreamDefinition{

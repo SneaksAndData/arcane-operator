@@ -63,7 +63,7 @@ func (in *BackfillRequest) JobConfigurator() (job.Configurator, error) {
 	configurator := job.NewConfiguratorChainBuilder().
 		WithConfigurator(job.NewEnvironmentConfigurator(in.Spec, "OVERRIDE")).
 		WithConfigurator(job.NewBackfillConfigurator(true)).
-		WithConfigurator(job.NewBackfillIdConfigurator(in.Name)).
+		WithConfigurator(job.NewBackfillStaticIdConfigurator(in.Name)).
 		Build()
 	return configurator, nil
 }

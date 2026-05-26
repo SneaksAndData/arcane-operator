@@ -5,15 +5,15 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-var _ Configurator = &backfillIdConfigurator{}
+var _ Configurator = &backfillStaticIdConfigurator{}
 
-// backfillIdConfigurator sets the backfill status in the job's environment variables and labels.
+// backfillStaticIdConfigurator sets the backfill status in the job's environment variables and labels.
 // It adds STREAMCONTEXT__BACKFILL_ID environment variable
-type backfillIdConfigurator struct {
+type backfillStaticIdConfigurator struct {
 	value string
 }
 
-func (f backfillIdConfigurator) ConfigureJob(job *batchv1.Job) error {
+func (f backfillStaticIdConfigurator) ConfigureJob(job *batchv1.Job) error {
 	found := false
 
 	for k := range job.Spec.Template.Spec.Containers {
@@ -38,8 +38,8 @@ func (f backfillIdConfigurator) ConfigureJob(job *batchv1.Job) error {
 	return nil
 }
 
-func NewBackfillIdConfigurator(value string) Configurator {
-	return &backfillIdConfigurator{
+func NewBackfillStaticIdConfigurator(value string) Configurator {
+	return &backfillStaticIdConfigurator{
 		value: value,
 	}
 }
