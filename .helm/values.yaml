@@ -32,13 +32,6 @@ serviceAccount:
   # If not set and create is true, a name is generated using the fullname template
   name: ""
 
-# CRD configuration
-customResourceDefinitions:
-  
-  # Set to true to create CRDs for this operator
-  # Otherwise, the operator will expect the CRDs to be pre-installed
-  create: true
-  
 ### Role Based Access Control configuration
 rbac:
   
@@ -125,22 +118,21 @@ additionalAnnotations: {}
 #  app.my-company.com/application: arcane
 
 # Extra environment variables to set in the deployment
-extraEnv: {}
+extraEnv: []
 # Example:
 #
 #  - name: ASPNETCORE_ENVIRONMENT
 #    value: production
 
 # Extra environment variables referencing a ConfigMap or Secret
-extraEnvFrom: {}
+extraEnvFrom: []
 # Example:
 #
-#  envFrom:
-#    - configMapRef:
-#        name: custom-api-access-token
+#  - configMapRef:
+#      name: custom-api-access-token
 
 # Extra volumes to add to the deployment
-extraVolumes: {}
+extraVolumes: []
 # Example:
 # 
 #  - name: data-volume
@@ -148,7 +140,7 @@ extraVolumes: {}
 #      sizeLimit: 500Mi
 
 # Extra volumes to add to the deployment
-extraVolumeMounts: {}
+extraVolumeMounts: []
 # Example:
 #
 #  - mountPath: /data
@@ -165,8 +157,8 @@ resources: {}
 #    cpu: 1
 #    memory: 1Gi
 
-# Node labels for pod assignment
-tolerations: { }
+# Tolerations for pod assignment
+tolerations: []
 
 # Node labels for pod assignment
 affinity: { }
