@@ -19,8 +19,9 @@ import (
 // Test_CreateStream verifies that creating a TestStreamDefinition results in the creation of both backfill and regular streaming jobs.
 // It watches for Job events in the Kubernetes cluster and checks that at least one backfill job and one regular job are created and completed.
 func Test_StreamStateTransitionToScheduled(t *testing.T) {
-	// Arrange
+	t.Parallel()
 
+	// Arrange
 	name := configureV2StreamDefinition(t, func(definition *v2.TestStreamDefinitionV2) {
 		definition.Spec.ExecutionSettings.Suspended = true
 		definition.Spec.ExecutionSettings.LayoutVersion = "v1"
@@ -84,8 +85,9 @@ func Test_StreamStateTransitionToScheduled(t *testing.T) {
 // Test_CreateStream verifies that creating a TestStreamDefinition results in the creation of both backfill and regular streaming jobs.
 // It watches for Job events in the Kubernetes cluster and checks that at least one backfill job and one regular job are created and completed.
 func Test_StreamStateTransitionToRunning(t *testing.T) {
-	// Arrange
+	t.Parallel()
 
+	// Arrange
 	name := configureV2StreamDefinition(t, func(definition *v2.TestStreamDefinitionV2) {
 		definition.Spec.ExecutionSettings.Suspended = true
 		definition.Spec.ExecutionSettings.StreamingBackend.CronJobBackend = &v2.CronJobBackend{
@@ -151,6 +153,8 @@ func Test_StreamStateTransitionToRunning(t *testing.T) {
 
 // Test_DynamicBackfillId verifies that the backfill job contains the correct backfill ID in its environment variables.
 func Test_DynamicBackfillId(t *testing.T) {
+	t.Parallel()
+
 	// Arrange
 	var foundBackfillId bool
 
