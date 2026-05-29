@@ -5,6 +5,8 @@ kind: ClusterRoleBinding
 metadata:
   name: {{ template "app.serviceAccountName" . }}-job-template-viewer
   labels:
+    rbac.authorization.k8s.io/aggregate-to-edit: "true"
+    rbac.authorization.k8s.io/aggregate-to-view: "true"
     {{- include "app.labels" $ | nindent 4 }}
     {{- with .Values.rbac.clusterRoleBindings.additionalLabels }}
       {{- toYaml . | nindent 4 }}
