@@ -2,9 +2,10 @@ package v1
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/SneaksAndData/arcane-operator/services/job"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"strings"
 )
 
 // StateString returns a string representation of the current state
@@ -62,6 +63,7 @@ func (in *BackfillRequest) JobConfigurator() (job.Configurator, error) {
 	configurator := job.NewConfiguratorChainBuilder().
 		WithConfigurator(job.NewEnvironmentConfigurator(in.Spec, "OVERRIDE")).
 		WithConfigurator(job.NewBackfillConfigurator(true)).
+		WithConfigurator(job.NewBackfillStaticIdConfigurator(in.Name)).
 		Build()
 	return configurator, nil
 }
