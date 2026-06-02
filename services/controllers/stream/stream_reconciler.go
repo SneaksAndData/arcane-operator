@@ -173,6 +173,14 @@ func (s *streamReconciler) moveFsm(ctx context.Context, definition Definition, j
 				"The stream %s has failed", definition.NamespacedName().Name)
 		})
 
+	case phase == New && definition.GetBackend() == NoBackend:
+		return s.backendResourceManagers[definition.GetBackend()].NoOp(ctx, definition, nil, New, func() {
+			s.eventRecorder.Eventf(definition.ToUnstructured(),
+				"Warning",
+				"NoValidBackend",
+				"No valid streaming backend configured for %s", definition.NamespacedName().Name)
+		})
+
 	case phase == New && definition.Suspended():
 		return s.backendResourceManagers[definition.GetBackend()].Remove(ctx, definition, Suspended, func() {
 			s.eventRecorder.Eventf(definition.ToUnstructured(),

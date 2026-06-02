@@ -6,6 +6,7 @@ import (
 	v1 "github.com/SneaksAndData/arcane-operator/pkg/apis/streaming/v1"
 	"github.com/SneaksAndData/arcane-operator/services/controllers/stream"
 	"github.com/SneaksAndData/arcane-operator/services/controllers/stream/backend/cron_job"
+	"github.com/SneaksAndData/arcane-operator/services/controllers/stream/backend/empty"
 	"github.com/SneaksAndData/arcane-operator/services/controllers/stream/backend/job"
 	"github.com/SneaksAndData/arcane-operator/services/controllers/stream_class"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -29,8 +30,9 @@ func (s streamControllerFactory) CreateStreamController(_ context.Context, gvk s
 	statusManager := stream.NewDefaultStatusManager(s.client, gvk, streamClass, s.definitionParser)
 	backfillBackend := job.NewBackfillBackendResourceManager(streamClass, s.client, statusManager, s.eventRecorder)
 	backends := map[stream.Backend]stream.BackendResourceManager{
-		stream.BatchJob: job.NewJobBackend(s.client, s.jobBuilder, s.eventRecorder, statusManager),
-		stream.CronJob:  cron_job.NewCronJobBackend(s.client, s.jobBuilder, s.eventRecorder, statusManager),
+		stream.BatchJob:  job.NewJobBackend(s.client, s.jobBuilder, s.eventRecorder, statusManager),
+		stream.CronJob:   cron_job.NewCronJobBackend(s.client, s.jobBuilder, s.eventRecorder, statusManager),
+		stream.NoBackend: empty.NewEmptyBackend(s.eventRecorder),
 	}
 	streamReconciler := stream.NewStreamReconciler(s.client, gvk, s.jobBuilder, streamClass, s.eventRecorder, s.definitionParser, backends, backfillBackend)
 	unmanaged, err := streamReconciler.SetupUnmanaged(s.manager.GetCache(), s.manager.GetScheme(), s.manager.GetRESTMapper())

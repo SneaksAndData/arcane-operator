@@ -74,6 +74,14 @@ func (b *MockStreamDefinitionBuilder) WithSchedule(schedule string) *MockStreamD
 	return b
 }
 
+// WithNoBackend configures the stream definition with an empty backend,
+// clearing both the batch job and cron job backends.
+func (b *MockStreamDefinitionBuilder) WithNoBackend() *MockStreamDefinitionBuilder {
+	b.definition.Spec.ExecutionSettings.StreamingBackend.BatchJobBackend = nil
+	b.definition.Spec.ExecutionSettings.StreamingBackend.CronJobBackend = nil
+	return b
+}
+
 // Apply runs an arbitrary mutation function on the underlying definition.
 // This allows composing the builder with the existing functional-option style
 // helpers in this package.

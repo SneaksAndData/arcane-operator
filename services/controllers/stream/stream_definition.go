@@ -15,8 +15,9 @@ import (
 type Backend string
 
 const (
-	BatchJob Backend = "BatchJobBackend"
-	CronJob  Backend = "CronJob"
+	BatchJob  Backend = "BatchJobBackend"
+	CronJob   Backend = "CronJob"
+	NoBackend Backend = ""
 )
 
 type Phase string
