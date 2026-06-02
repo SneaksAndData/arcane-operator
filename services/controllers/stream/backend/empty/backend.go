@@ -11,7 +11,6 @@ import (
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
-	"k8s.io/klog/v2"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -50,10 +49,4 @@ func (j *Backend) Remove(_ context.Context, _ stream.Definition, _ stream.Phase,
 func (j *Backend) NoOp(_ context.Context, _ stream.Definition, _ *v1.BackfillRequest, _ stream.Phase, eventFunc controllers.EventFunc) (reconcile.Result, error) {
 	eventFunc()
 	return reconcile.Result{}, nil
-}
-
-func (j *Backend) getLogger(_ context.Context, request types.NamespacedName) klog.Logger {
-	return klog.Background().
-		WithName("no_backend.Backend").
-		WithValues("namespace", request.Namespace, "streamId", request.Name)
 }
