@@ -14,6 +14,8 @@ github.com/SneaksAndData/arcane-stream-mock v1.0.10 h1:pRsjxQ5b4LyuwnHtbfEDeaZ7+
 github.com/SneaksAndData/arcane-stream-mock v1.0.10/go.mod h1:JHLRM3Rrq3E5RmhuZ2UDhf0AO1wTY/QkAdG+6KrCACk=
 github.com/SneaksAndData/arcane-stream-mock v1.0.11 h1:nsdjrpAYmucK8PqKSJdP/ojMazAZQU1uJSobDtTp7rY=
 github.com/SneaksAndData/arcane-stream-mock v1.0.11/go.mod h1:JHLRM3Rrq3E5RmhuZ2UDhf0AO1wTY/QkAdG+6KrCACk=
+github.com/SneaksAndData/arcane-stream-mock v1.0.12 h1:Lk3ThhUblG5kpTPYJvlaqsCnS++9eJE+KApevc8ouR0=
+github.com/SneaksAndData/arcane-stream-mock v1.0.12/go.mod h1:JHLRM3Rrq3E5RmhuZ2UDhf0AO1wTY/QkAdG+6KrCACk=
 github.com/beorn7/perks v1.0.1 h1:VlbKKnNfV8bJzeqoa4cOKqO6bYr3WgKZxO8Z16+hsOM=
 github.com/beorn7/perks v1.0.1/go.mod h1:G2ZrVWU2WbWT9wwq4/hrbKbnv/1ERSJQ0ibhJ6rlkpw=
 github.com/cespare/xxhash/v2 v2.3.0 h1:UL815xU9SqsFlibzuggzjXhog7bL6oX9BbNZnL2UFvs=
