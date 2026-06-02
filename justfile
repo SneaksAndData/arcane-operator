@@ -12,6 +12,7 @@ stop:
     kind delete cluster
 
 build-deps:
+    helm dependency update ./integration_tests/helm/setup
     helm dependency build ./integration_tests/helm/setup
 
 integration-tests:
@@ -27,7 +28,7 @@ mock-stream-plugin:
         --namespace default \
         --set jobTemplateSettings.podFailurePolicySettings.retryOnExitCodes="{120,121}" \
         --set jobTemplateSettings.backoffLimit=1 \
-        --version v1.0.11
+        --version v1.0.12
 
 manifests:
     kubectl apply -f integration_tests/manifests/*.yaml
