@@ -18,6 +18,7 @@ import (
 // It watches for Job events in the Kubernetes cluster and checks that at least one backfill job and one regular job are created and completed.
 func Test_CreateStream(t *testing.T) {
 	// Arrange
+	t.Parallel()
 
 	// Act
 	name := createTestStreamDefinition(t, false)
@@ -59,6 +60,7 @@ func Test_CreateStream(t *testing.T) {
 // It watches for Job events in the Kubernetes cluster and checks that at least one backfill job and one regular job are created and completed.
 func Test_CreateFailedStream(t *testing.T) {
 	// Arrange
+	t.Parallel()
 
 	// Act
 	name := createTestStreamDefinition(t, true)
@@ -120,6 +122,7 @@ func Test_CreateFailedStream(t *testing.T) {
 func Test_StaticBackfillId(t *testing.T) {
 	// Arrange
 	var foundBackfillId bool
+	t.Parallel()
 
 	// Act
 	name := createTestStreamDefinition(t, false)
