@@ -142,10 +142,11 @@ func Test_StaticBackfillId(t *testing.T) {
 				}
 			}
 
-			require.Contains(t,
-				[]string{"true", "false"},
-				backfillValue,
-				"Expected STREAMCONTEXT__BACKFILL to be 'true' or 'false'")
+			if job.IsBackfill() {
+				require.Equal(t, "true", backfillValue, "Backfill job should have STREAMCONTEXT__BACKFILL environment variable set to 'true'")
+			} else {
+				require.Equal(t, "false", backfillValue, "Streaming job should have STREAMCONTEXT__BACKFILL environment variable set to 'false'")
+			}
 
 			if job.IsBackfill() {
 				foundBackfillId = true
