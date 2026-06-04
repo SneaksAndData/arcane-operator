@@ -18,6 +18,7 @@ import (
 // It watches for Job events in the Kubernetes cluster and checks that at least one backfill job and one regular job are created and completed.
 func Test_CreateStream(t *testing.T) {
 	// Arrange
+	t.Parallel()
 
 	// Act
 	name := createTestStreamDefinition(t, false)
@@ -59,6 +60,7 @@ func Test_CreateStream(t *testing.T) {
 // It watches for Job events in the Kubernetes cluster and checks that at least one backfill job and one regular job are created and completed.
 func Test_CreateFailedStream(t *testing.T) {
 	// Arrange
+	t.Parallel()
 
 	// Act
 	name := createTestStreamDefinition(t, true)
@@ -120,6 +122,7 @@ func Test_CreateFailedStream(t *testing.T) {
 func Test_StaticBackfillId(t *testing.T) {
 	// Arrange
 	var foundBackfillId bool
+	t.Parallel()
 
 	// Act
 	name := createTestStreamDefinition(t, false)
@@ -132,11 +135,20 @@ func Test_StaticBackfillId(t *testing.T) {
 			require.True(t, ok, "Expected a Job resource for a job")
 			envVars := job.ToObject().(*batchv1.Job).Spec.Template.Spec.Containers[0].Env
 			var backfillId string
+			var backfillValue string
 			for _, envVar := range envVars {
 				if envVar.Name == "STREAMCONTEXT__BACKFILL_ID" {
 					backfillId = envVar.Value
-					break
 				}
+				if envVar.Name == "STREAMCONTEXT__BACKFILL" {
+					backfillValue = envVar.Value
+				}
+			}
+
+			if job.IsBackfill() {
+				require.Equal(t, "true", backfillValue, "Backfill job should have STREAMCONTEXT__BACKFILL environment variable set to 'true'")
+			} else {
+				require.Equal(t, "false", backfillValue, "Streaming job should have STREAMCONTEXT__BACKFILL environment variable set to 'false'")
 			}
 
 			if job.IsBackfill() {
