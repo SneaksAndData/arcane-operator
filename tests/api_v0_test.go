@@ -132,12 +132,20 @@ func Test_StaticBackfillId(t *testing.T) {
 			require.True(t, ok, "Expected a Job resource for a job")
 			envVars := job.ToObject().(*batchv1.Job).Spec.Template.Spec.Containers[0].Env
 			var backfillId string
+			var backfillValue string
 			for _, envVar := range envVars {
 				if envVar.Name == "STREAMCONTEXT__BACKFILL_ID" {
 					backfillId = envVar.Value
-					break
+				}
+				if envVar.Name == "STREAMCONTEXT__BACKFILL" {
+					backfillValue = envVar.Value
 				}
 			}
+
+			require.Contains(t,
+				[]string{"true", "false"},
+				backfillValue,
+				"Expected STREAMCONTEXT__BACKFILL to be 'true' or 'false'")
 
 			if job.IsBackfill() {
 				foundBackfillId = true
