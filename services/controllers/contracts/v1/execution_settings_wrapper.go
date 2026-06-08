@@ -151,7 +151,11 @@ func (e *ExecutionSettingsWrapper) GetBackend() stream.Backend {
 	if e.underlyingSpec.ExecutionSettings.StreamingBackend.CronJobBackend != nil {
 		return stream.CronJob
 	}
-	return stream.BatchJob
+	if e.underlyingSpec.ExecutionSettings.StreamingBackend.BatchJobBackend != nil {
+		return stream.BatchJob
+	}
+
+	return stream.NoBackend
 }
 
 func (e *ExecutionSettingsWrapper) GetPreviousBackend(ctx context.Context, c client.Client) (*stream.Backend, error) {

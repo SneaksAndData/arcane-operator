@@ -335,7 +335,7 @@ func TestUnstructuredWrapper_GetBackend_Default(t *testing.T) {
 	backend := wrapper.GetBackend()
 
 	// Assert
-	require.Equal(t, stream.BatchJob, backend)
+	require.Equal(t, stream.NoBackend, backend)
 }
 
 func TestUnstructuredWrapper_GetBackend_BatchJob(t *testing.T) {

@@ -2,6 +2,7 @@ package helpers
 
 import (
 	"testing"
+	"time"
 
 	v1 "github.com/SneaksAndData/arcane-operator/pkg/apis/streaming/v1"
 	testv2 "github.com/SneaksAndData/arcane-operator/pkg/test/apis_test/streaming/v2"
@@ -11,6 +12,7 @@ import (
 	batchv1 "k8s.io/api/batch/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -73,4 +75,35 @@ func AssertBackfillRequestCompleted(t *testing.T, k8sClient client.Client, objec
 	err := k8sClient.Get(t.Context(), types.NamespacedName{Name: "backfill1", Namespace: objectName.Namespace}, backfillRequest)
 	require.NoError(t, err)
 	require.True(t, backfillRequest.Spec.Completed)
+}
+
+// AssertEventRecorded drains all events currently buffered in the FakeRecorder
+// and runs the provided assertion against each one. Each event has the format
+// "<type> <reason> <message>" as produced by record.FakeRecorder.
+// If additionalAssert is nil, only asserts that at least one event was recorded.
+func AssertEventRecorded(t *testing.T, recorder *record.FakeRecorder, _ types.NamespacedName, additionalAssert func(*testing.T, string)) {
+	t.Helper()
+	events := drainEvents(recorder)
+	require.NotEmpty(t, events, "expected at least one event to be recorded")
+	if additionalAssert == nil {
+		return
+	}
+	for _, ev := range events {
+		additionalAssert(t, ev)
+	}
+}
+
+func drainEvents(recorder *record.FakeRecorder) []string {
+	var out []string
+	for {
+		select {
+		case ev, ok := <-recorder.Events:
+			if !ok {
+				return out
+			}
+			out = append(out, ev)
+		case <-time.After(10 * time.Millisecond):
+			return out
+		}
+	}
 }
