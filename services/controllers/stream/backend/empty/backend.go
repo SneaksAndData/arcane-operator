@@ -28,25 +28,25 @@ func NewEmptyBackend(eventRecorder record.EventRecorder) *Backend {
 	}
 }
 
-func (j *Backend) SetupWithController(_ cache.Cache, _ *runtime.Scheme, _ meta.RESTMapper, _ controller.Controller, _ schema.GroupVersionKind) error {
+func (j *Backend) SetupWithController(_ cache.Cache, _ *runtime.Scheme, _ meta.RESTMapper, _ controller.Controller, _ schema.GroupVersionKind) error { // coverage-ignore (trivial)
 	return nil
 }
 
-func (j *Backend) Get(_ context.Context, _ types.NamespacedName) (stream.BackendResource, error) {
+func (j *Backend) Get(_ context.Context, _ types.NamespacedName) (stream.BackendResource, error) { // coverage-ignore (trivial)
 	return FromResource(nil)
 }
 
-func (j *Backend) Apply(_ context.Context, _ stream.Definition, _ *v1.BackfillRequest, _ stream.Phase, _ *v1.StreamClass, eventFunc controllers.EventFunc) (reconcile.Result, error) {
+func (j *Backend) Apply(_ context.Context, _ stream.Definition, _ *v1.BackfillRequest, _ stream.Phase, _ *v1.StreamClass, eventFunc controllers.EventFunc) (reconcile.Result, error) { // coverage-ignore (trivial)
 	eventFunc()
 	return reconcile.Result{}, nil
 }
 
-func (j *Backend) Remove(_ context.Context, _ stream.Definition, _ stream.Phase, eventFunc controllers.EventFunc) (reconcile.Result, error) {
+func (j *Backend) Remove(_ context.Context, _ stream.Definition, _ stream.Phase, eventFunc controllers.EventFunc) (reconcile.Result, error) { // coverage-ignore (trivial)
 	eventFunc()
 	return reconcile.Result{}, nil
 }
 
-func (j *Backend) NoOp(_ context.Context, _ stream.Definition, _ *v1.BackfillRequest, _ stream.Phase, eventFunc controllers.EventFunc) (reconcile.Result, error) {
+func (j *Backend) NoOp(_ context.Context, _ stream.Definition, _ *v1.BackfillRequest, _ stream.Phase, eventFunc controllers.EventFunc) (reconcile.Result, error) { // coverage-ignore (trivial)
 	eventFunc()
 	return reconcile.Result{}, nil
 }
