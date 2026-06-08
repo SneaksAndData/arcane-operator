@@ -189,7 +189,6 @@ func Test_DynamicBackfillId(t *testing.T) {
 					require.Equal(t, "metadata.labels['job-name']", backfillId,
 						"Expected STREAMCONTEXT__BACKFILL_ID to be sourced from job labels")
 					foundBackfillId = true
-					break
 				}
 			}
 		},

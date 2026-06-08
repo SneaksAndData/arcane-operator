@@ -58,7 +58,9 @@ var _ job.ConfiguratorProvider = (*BackfillRequest)(nil)
 // JobConfigurator returns a JobConfigurator for the BackfillRequest
 func (in *BackfillRequest) JobConfigurator() (job.Configurator, error) {
 	if in == nil {
-		return nil, nil
+		return job.NewConfiguratorChainBuilder().
+			WithConfigurator(job.NewBackfillConfigurator(false)).
+			Build(), nil
 	}
 	configurator := job.NewConfiguratorChainBuilder().
 		WithConfigurator(job.NewEnvironmentConfigurator(in.Spec, "OVERRIDE")).
