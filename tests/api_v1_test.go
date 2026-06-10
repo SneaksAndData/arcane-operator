@@ -183,6 +183,9 @@ func Test_DynamicBackfillId(t *testing.T) {
 			envVars := job.ToObject().(*batchv1.CronJob).Spec.JobTemplate.Spec.Template.Spec.Containers[0].Env
 			var backfillId string
 			for _, envVar := range envVars {
+				if envVar.Name == "STREAMCONTEXT__BACKFILL" {
+					require.Equal(t, "true", envVar.Value)
+				}
 				if envVar.Name == "STREAMCONTEXT__BACKFILL_ID" {
 					backfillId = envVar.ValueFrom.FieldRef.FieldPath
 					// The value should be set from the job's metadata.labels['job-name']

@@ -77,6 +77,12 @@ func AssertBackfillRequestCompleted(t *testing.T, k8sClient client.Client, objec
 	require.True(t, backfillRequest.Spec.Completed)
 }
 
+func AssertBackfillRequests(t *testing.T, k8sClient client.Client, verify func(request *v1.BackfillRequestList, err error)) {
+	backfillRequestList := &v1.BackfillRequestList{}
+	err := k8sClient.List(t.Context(), backfillRequestList)
+	verify(backfillRequestList, err)
+}
+
 // AssertEventRecorded drains all events currently buffered in the FakeRecorder
 // and runs the provided assertion against each one. Each event has the format
 // "<type> <reason> <message>" as produced by record.FakeRecorder.

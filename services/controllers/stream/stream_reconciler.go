@@ -120,6 +120,11 @@ func (s *streamReconciler) Reconcile(ctx context.Context, request reconcile.Requ
 
 	result, err := s.moveFsm(ctx, streamDefinition, backendResource, backfillRequest)
 	if err != nil {
+		s.eventRecorder.Eventf(
+			streamDefinition.ToUnstructured(),
+			"Warning",
+			"StreamSuspended",
+			"Failed to reconcile the stream: %v", err)
 		logger.V(0).Error(err, "Failed to move FSM for the stream")
 	}
 	return result, err
@@ -201,13 +206,15 @@ func (s *streamReconciler) moveFsm(ctx context.Context, definition Definition, j
 
 	case phase == New && !definition.Suspended():
 		logger.V(0).Info("Transition to Pending")
-		return s.backfillBackendResourceManager.Apply(ctx, definition, s.newBackfillRequest(definition), Pending, s.streamClass, func() {
-			s.eventRecorder.Eventf(definition.ToUnstructured(),
-				"Normal",
-				"StreamCreated",
-				"Backfill was requested for the new stream definition: %s", definition.NamespacedName().Name)
-		})
-
+		if definition.GetBackend() == BatchJob {
+			return s.backfillBackendResourceManager.Apply(ctx, definition, s.newBackfillRequest(definition), Pending, s.streamClass, func() {
+				s.eventRecorder.Eventf(definition.ToUnstructured(),
+					"Normal",
+					"StreamCreated",
+					"Backfill was requested for the new stream definition: %s", definition.NamespacedName().Name)
+			})
+		}
+		return s.backendResourceManagers[definition.GetBackend()].NoOp(ctx, definition, nil, Pending, func() {})
 	case phase == Pending && backfillRequest == nil:
 		nextPhase := Running
 		logger.V(0).Info("Switching to the new backend", "backend", definition.GetBackend())

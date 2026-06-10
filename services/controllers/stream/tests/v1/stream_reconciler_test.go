@@ -71,6 +71,9 @@ func Test_UpdatePhase_New_To_Pending_with_schedule(t *testing.T) {
 	require.Equal(t, result, reconcile.Result{})
 
 	// Assert
+	helpers.AssertBackfillRequests(t, k8sClient, func(bfrList *v1.BackfillRequestList, err error) {
+		require.Equal(t, 0, len(bfrList.Items))
+	})
 	helpers.AssertStreamDefinitionPhase(t, k8sClient, objectName, stream.Pending)
 	helpers.AssertJobNotExists(t, k8sClient, objectName)
 }
@@ -183,7 +186,10 @@ func Test_UpdatePhase_Pending_To_Running_not_recreate_job(t *testing.T) {
 
 func Test_UpdatePhase_Pending_To_Scheduled_no_job(t *testing.T) {
 	// Arrange
-	builder := v3.NewMockStreamDefinitionBuilder(objectName).WithPhase(stream.Pending).WithSchedule("* * * * *")
+	builder := v3.NewMockStreamDefinitionBuilder(objectName).
+		WithPhase(stream.Pending).
+		WithSchedule("* * * * *").
+		WithSuspendedSpec(false)
 	k8sClient := helpers.SetupClientFromBuilders(nil, builder, nil)
 
 	mockCtrl := gomock.NewController(t)
