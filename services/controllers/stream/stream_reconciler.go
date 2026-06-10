@@ -118,7 +118,11 @@ func (s *streamReconciler) Reconcile(ctx context.Context, request reconcile.Requ
 		return reconcile.Result{}, err
 	}
 
-	return s.moveFsm(ctx, streamDefinition, backendResource, backfillRequest)
+	result, err := s.moveFsm(ctx, streamDefinition, backendResource, backfillRequest)
+	if err != nil {
+		logger.V(0).Error(err, "Failed to move FSM for the stream")
+	}
+	return result, err
 }
 
 func (s *streamReconciler) moveFsm(ctx context.Context, definition Definition, job BackendResource, backfillRequest *v1.BackfillRequest) (reconcile.Result, error) {
