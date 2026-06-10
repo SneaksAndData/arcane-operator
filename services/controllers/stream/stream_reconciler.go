@@ -113,7 +113,7 @@ func (s *streamReconciler) Reconcile(ctx context.Context, request reconcile.Requ
 	}
 
 	backendResource, err := s.backendResourceManagers[BatchJob].Get(ctx, request.NamespacedName)
-	if err != nil { // coverage-ignore
+	if client.IgnoreNotFound(err) != nil { // coverage-ignore
 		logger.V(0).Error(err, "Unable to fetch backend resource for the stream")
 		return reconcile.Result{}, err
 	}
