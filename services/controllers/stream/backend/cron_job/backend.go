@@ -90,8 +90,10 @@ func (c *Backend) Apply(ctx context.Context, definition stream.Definition, backf
 		},
 	}
 
+	logger.V(0).Info("Creating the cron job for the stream definition")
 	err := c.client.Get(ctx, types.NamespacedName{Name: object.Name, Namespace: object.Namespace}, object)
 	if client.IgnoreNotFound(err) != nil {
+		logger.V(0).Error(err, "failed to fetch cronjob")
 		return reconcile.Result{}, fmt.Errorf("failed to fetch cronjob: %w", err)
 	}
 
@@ -102,7 +104,7 @@ func (c *Backend) Apply(ctx context.Context, definition stream.Definition, backf
 		}
 
 		if equals {
-			logger.V(1).Info("The job already exists with matching configuration, skipping creation")
+			logger.V(0).Info("The job already exists with matching configuration, skipping creation")
 			return c.statusManager.UpdateStreamPhase(ctx, definition, &v1.BackfillRequest{}, nextPhase, eventFunc)
 		}
 
@@ -112,18 +114,23 @@ func (c *Backend) Apply(ctx context.Context, definition stream.Definition, backf
 		}
 	}
 
-	j, err := c.BuildJob(ctx, definition, backfillRequest, streamClass)
+	// Temporary add fake backfill request to the job builder since we need to create a CronJob with
+	// STREAMCONTEXT__BACKFILL == "true". Should be removed in the next PRs.
+	j, err := c.BuildJob(ctx, definition, &v1.BackfillRequest{}, streamClass)
 	if err != nil {
+		logger.V(0).Error(err, "failed to build job for cronjob backend")
 		return reconcile.Result{}, fmt.Errorf("failed to build job for cronjob backend: %w", err)
 	}
 
 	schedule, err := definition.GetSchedule()
 	if err != nil {
+		logger.V(0).Error(err, "failed to get schedule from stream definition")
 		return reconcile.Result{}, fmt.Errorf("failed to get schedule from stream definition: %w", err)
 	}
 
 	configuration, err := definition.CurrentConfiguration(backfillRequest)
 	if err != nil {
+		logger.V(0).Error(err, "failed to compute stream configuration hash")
 		return reconcile.Result{}, fmt.Errorf("failed to compute stream configuration hash: %w", err)
 	}
 
@@ -144,6 +151,7 @@ func (c *Backend) Apply(ctx context.Context, definition stream.Definition, backf
 
 	err = c.client.Create(ctx, object)
 	if err != nil {
+		logger.V(0).Error(err, "failed to create cron job")
 		return reconcile.Result{}, fmt.Errorf("failed to create cron job: %w", err)
 	}
 
