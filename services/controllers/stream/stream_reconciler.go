@@ -122,6 +122,10 @@ func (s *streamReconciler) Reconcile(ctx context.Context, request reconcile.Requ
 }
 
 func (s *streamReconciler) moveFsm(ctx context.Context, definition Definition, job BackendResource, backfillRequest *v1.BackfillRequest) (reconcile.Result, error) {
+	logger := klog.FromContext(ctx).
+		WithValues("namespace", definition.NamespacedName().Namespace).
+		WithValues("streamId", definition.NamespacedName().Name, "streamKind", s.streamClass.Spec.KindRef)
+
 	phase := definition.GetPhase()
 
 	switch {
@@ -199,6 +203,7 @@ func (s *streamReconciler) moveFsm(ctx context.Context, definition Definition, j
 
 	case phase == Pending && backfillRequest == nil:
 		nextPhase := Running
+		logger.V(0).Info("Switching to the new backend", "backend", definition.GetBackend())
 		if definition.GetBackend() == CronJob {
 			nextPhase = Scheduled
 		}
@@ -310,6 +315,7 @@ func (s *streamReconciler) moveFsm(ctx context.Context, definition Definition, j
 		})
 
 	case phase == Running && definition.GetBackend() != BatchJob:
+		logger.V(0).Info("Switching backend for the stream without backfill")
 		return s.backendResourceManagers[definition.GetBackend()].Remove(ctx, definition, Pending, func() {
 			s.eventRecorder.Eventf(definition.ToUnstructured(),
 				"Normal",
