@@ -86,7 +86,7 @@ func NewStreamReconciler(client client.Client, gvk schema.GroupVersionKind, jobB
 // Reconcile implements the reconciliation loop for Stream resources.
 func (s *streamReconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 
-	logger := klog.FromContext(ctx).
+	logger := klog.Background().
 		WithValues("stream", request.NamespacedName).
 		WithValues("namespace", request.Namespace).
 		WithValues("streamId", request.Name, "streamKind", s.streamClass.Spec.KindRef)
@@ -126,7 +126,7 @@ func (s *streamReconciler) Reconcile(ctx context.Context, request reconcile.Requ
 }
 
 func (s *streamReconciler) moveFsm(ctx context.Context, definition Definition, job BackendResource, backfillRequest *v1.BackfillRequest) (reconcile.Result, error) {
-	logger := klog.FromContext(ctx).
+	logger := klog.Background().
 		WithValues("namespace", definition.NamespacedName().Namespace).
 		WithValues("streamId", definition.NamespacedName().Name, "streamKind", s.streamClass.Spec.KindRef)
 
@@ -371,7 +371,7 @@ func (s *streamReconciler) moveFsm(ctx context.Context, definition Definition, j
 }
 
 func tryTransitionBackend(ctx context.Context, s *streamReconciler, definition Definition, backfillRequest *v1.BackfillRequest) (bool, reconcile.Result, error) {
-	logger := klog.FromContext(ctx).
+	logger := klog.Background().
 		WithValues("namespace", definition.NamespacedName().Namespace).
 		WithValues("streamId", definition.NamespacedName().Name, "streamKind", s.streamClass.Spec.KindRef)
 	logger.V(0).Info("Trying to transit backend", "backend", definition.GetBackend())
@@ -402,7 +402,7 @@ func tryTransitionBackend(ctx context.Context, s *streamReconciler, definition D
 }
 
 func (s *streamReconciler) transitBackend(ctx context.Context, definition Definition, backfillRequest *v1.BackfillRequest) (reconcile.Result, error) {
-	logger := klog.FromContext(ctx).
+	logger := klog.Background().
 		WithValues("namespace", definition.NamespacedName().Namespace).
 		WithValues("streamId", definition.NamespacedName().Name, "streamKind", s.streamClass.Spec.KindRef)
 	logger.V(0).Info("Transiting the backend", "backend", definition.GetBackend())
