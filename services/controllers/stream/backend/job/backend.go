@@ -90,7 +90,7 @@ func (j *Backend) Apply(ctx context.Context, definition stream.Definition, backf
 	}
 
 	if errors.IsNotFound(err) {
-		newJob, err := j.BuildJob(ctx, definition, backfillRequest, streamClass)
+		newJob, err := j.BuildJob(ctx, definition, backfillRequest, streamClass, false)
 		if err != nil { // coverage-ignore
 			logger.V(0).Error(err, "failed to build job for stream")
 			return reconcile.Result{}, err
@@ -129,7 +129,7 @@ func (j *Backend) Apply(ctx context.Context, definition stream.Definition, backf
 		return reconcile.Result{}, err
 	}
 
-	newJob, err := j.BuildJob(ctx, definition, backfillRequest, streamClass)
+	newJob, err := j.BuildJob(ctx, definition, backfillRequest, streamClass, false)
 	if err != nil { // coverage-ignore
 		logger.V(0).Error(err, "failed to build job for stream")
 		return reconcile.Result{}, err
