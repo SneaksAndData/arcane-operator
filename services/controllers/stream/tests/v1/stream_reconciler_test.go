@@ -107,7 +107,9 @@ func Test_UpdatePhase_Pending_To_Running_no_job(t *testing.T) {
 	defer mockCtrl.Finish()
 
 	mockJob := batchv1.Job{ObjectMeta: metav1.ObjectMeta{Name: objectName.Name, Namespace: objectName.Namespace}}
-	reconciler, _ := createReconciler(k8sClient, &mockJob, mockCtrl)
+	jobBuilder := mocks.NewMockJobBuilder(mockCtrl)
+	jobBuilder.EXPECT().BuildJob(gomock.Any(), gomock.Any(), gomock.Any()).Return(&mockJob, nil).AnyTimes()
+	reconciler, _ := createReconciler(k8sClient, jobBuilder, mockCtrl)
 
 	// Act
 	result, err := reconciler.Reconcile(t.Context(), reconcile.Request{NamespacedName: objectName})
@@ -138,7 +140,9 @@ func Test_UpdatePhase_Pending_To_Running_recreate_job(t *testing.T) {
 		},
 	}
 
-	reconciler, _ := createReconciler(k8sClient, &mockJob, mockCtrl)
+	jobBuilder := mocks.NewMockJobBuilder(mockCtrl)
+	jobBuilder.EXPECT().BuildJob(gomock.Any(), gomock.Any(), gomock.Any()).Return(&mockJob, nil).AnyTimes()
+	reconciler, _ := createReconciler(k8sClient, jobBuilder, mockCtrl)
 
 	// Act
 	result, err := reconciler.Reconcile(t.Context(), reconcile.Request{NamespacedName: objectName})
@@ -196,7 +200,9 @@ func Test_UpdatePhase_Pending_To_Scheduled_no_job(t *testing.T) {
 	defer mockCtrl.Finish()
 
 	mockJob := batchv1.Job{ObjectMeta: metav1.ObjectMeta{Name: objectName.Name, Namespace: objectName.Namespace}}
-	reconciler, _ := createReconciler(k8sClient, &mockJob, mockCtrl)
+	jobBuilder := mocks.NewMockJobBuilder(mockCtrl)
+	jobBuilder.EXPECT().BuildJob(gomock.Any(), gomock.Any(), gomock.Any()).Return(&mockJob, nil).AnyTimes()
+	reconciler, _ := createReconciler(k8sClient, jobBuilder, mockCtrl)
 
 	// Act
 	result, err := reconciler.Reconcile(t.Context(), reconcile.Request{NamespacedName: objectName})
@@ -221,7 +227,9 @@ func Test_UpdatePhase_Pending_To_Backfilling_no_job(t *testing.T) {
 	defer mockCtrl.Finish()
 
 	mockJob := batchv1.Job{ObjectMeta: metav1.ObjectMeta{Name: objectName.Name, Namespace: objectName.Namespace}}
-	reconciler, _ := createReconciler(k8sClient, &mockJob, mockCtrl)
+	jobBuilder := mocks.NewMockJobBuilder(mockCtrl)
+	jobBuilder.EXPECT().BuildJob(gomock.Any(), gomock.Any(), gomock.Any()).Return(&mockJob, nil).AnyTimes()
+	reconciler, _ := createReconciler(k8sClient, jobBuilder, mockCtrl)
 
 	// Act
 	result, err := reconciler.Reconcile(t.Context(), reconcile.Request{NamespacedName: objectName})
@@ -250,7 +258,9 @@ func Test_UpdatePhase_Pending_To_Backfilling_recreate_job(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 
-	reconciler, _ := createReconciler(k8sClient, &mockJob, mockCtrl)
+	jobBuilder := mocks.NewMockJobBuilder(mockCtrl)
+	jobBuilder.EXPECT().BuildJob(gomock.Any(), gomock.Any(), gomock.Any()).Return(&mockJob, nil).AnyTimes()
+	reconciler, _ := createReconciler(k8sClient, jobBuilder, mockCtrl)
 
 	// Act
 	result, err := reconciler.Reconcile(t.Context(), reconcile.Request{NamespacedName: objectName})
@@ -483,7 +493,9 @@ func Test_UpdatePhase_Backfilling_To_Backfilling_with_no_job(t *testing.T) {
 			},
 		},
 	}
-	reconciler, _ := createReconciler(k8sClient, &mockJob, mockCtrl)
+	jobBuilder := mocks.NewMockJobBuilder(mockCtrl)
+	jobBuilder.EXPECT().BuildJob(gomock.Any(), gomock.Any(), gomock.Any()).Return(&mockJob, nil).AnyTimes()
+	reconciler, _ := createReconciler(k8sClient, jobBuilder, mockCtrl)
 
 	// Act
 	result, err := reconciler.Reconcile(t.Context(), reconcile.Request{NamespacedName: objectName})
@@ -513,7 +525,9 @@ func Test_UpdatePhase_Pending_To_Backfilling_with_schedule(t *testing.T) {
 			},
 		},
 	}
-	reconciler, _ := createReconciler(k8sClient, &mockJob, mockCtrl)
+	jobBuilder := mocks.NewMockJobBuilder(mockCtrl)
+	jobBuilder.EXPECT().BuildJob(gomock.Any(), gomock.Any(), gomock.Any()).Return(&mockJob, nil).AnyTimes()
+	reconciler, _ := createReconciler(k8sClient, jobBuilder, mockCtrl)
 
 	// Act
 	result, err := reconciler.Reconcile(t.Context(), reconcile.Request{NamespacedName: objectName})
@@ -560,7 +574,9 @@ func Test_UpdatePhase_Backfilling_To_Suspended(t *testing.T) {
 			},
 		},
 	}
-	reconciler, _ := createReconciler(k8sClient, &mockJob, mockCtrl)
+	jobBuilder := mocks.NewMockJobBuilder(mockCtrl)
+	jobBuilder.EXPECT().BuildJob(gomock.Any(), gomock.Any(), gomock.Any()).Return(&mockJob, nil).AnyTimes()
+	reconciler, _ := createReconciler(k8sClient, jobBuilder, mockCtrl)
 
 	// Act
 	result, err := reconciler.Reconcile(t.Context(), reconcile.Request{NamespacedName: objectName})
@@ -599,7 +615,9 @@ func Test_UpdatePhase_Backfilling_To_Running(t *testing.T) {
 	defer mockCtrl.Finish()
 
 	mockJob := batchv1.Job{ObjectMeta: metav1.ObjectMeta{Namespace: objectName.Namespace, Name: objectName.Name}}
-	reconciler, _ := createReconciler(k8sClient, &mockJob, mockCtrl)
+	jobBuilder := mocks.NewMockJobBuilder(mockCtrl)
+	jobBuilder.EXPECT().BuildJob(gomock.Any(), gomock.Any(), gomock.Any()).Return(&mockJob, nil).AnyTimes()
+	reconciler, _ := createReconciler(k8sClient, jobBuilder, mockCtrl)
 
 	// Act
 	result, err := reconciler.Reconcile(t.Context(), reconcile.Request{NamespacedName: objectName})
@@ -685,7 +703,9 @@ func Test_UpdatePhase_Failed_to_Backfilling(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 	mockJob := batchv1.Job{ObjectMeta: metav1.ObjectMeta{Name: objectName.Name, Namespace: objectName.Namespace}}
-	reconciler, _ := createReconciler(k8sClient, &mockJob, mockCtrl)
+	jobBuilder := mocks.NewMockJobBuilder(mockCtrl)
+	jobBuilder.EXPECT().BuildJob(gomock.Any(), gomock.Any(), gomock.Any()).Return(&mockJob, nil).AnyTimes()
+	reconciler, _ := createReconciler(k8sClient, jobBuilder, mockCtrl)
 
 	// Act
 	result, err := reconciler.Reconcile(t.Context(), reconcile.Request{NamespacedName: objectName})
@@ -717,7 +737,9 @@ func Test_UpdatePhase_Scheduled_to_Scheduled_no_cron_job(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 	mockJob := batchv1.Job{ObjectMeta: metav1.ObjectMeta{Name: objectName.Name, Namespace: objectName.Namespace}}
-	reconciler, _ := createReconciler(k8sClient, &mockJob, mockCtrl)
+	jobBuilder := mocks.NewMockJobBuilder(mockCtrl)
+	jobBuilder.EXPECT().BuildJob(gomock.Any(), gomock.Any(), gomock.Any()).Return(&mockJob, nil).AnyTimes()
+	reconciler, _ := createReconciler(k8sClient, jobBuilder, mockCtrl)
 
 	// Act
 	result, err := reconciler.Reconcile(t.Context(), reconcile.Request{NamespacedName: objectName})
@@ -757,7 +779,9 @@ func Test_UpdatePhase_Scheduled_to_Scheduled_recreate_cron_job(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 	mockJob := batchv1.Job{ObjectMeta: metav1.ObjectMeta{Name: objectName.Name, Namespace: objectName.Namespace}}
-	reconciler, _ := createReconciler(k8sClient, &mockJob, mockCtrl)
+	jobBuilder := mocks.NewMockJobBuilder(mockCtrl)
+	jobBuilder.EXPECT().BuildJob(gomock.Any(), gomock.Any(), gomock.Any()).Return(&mockJob, nil).AnyTimes()
+	reconciler, _ := createReconciler(k8sClient, jobBuilder, mockCtrl)
 
 	// Act
 	result, err := reconciler.Reconcile(t.Context(), reconcile.Request{NamespacedName: objectName})
@@ -826,7 +850,9 @@ func Test_UpdatePhase_Scheduled_to_Suspended(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 	mockJob := batchv1.Job{ObjectMeta: metav1.ObjectMeta{Name: objectName.Name, Namespace: objectName.Namespace}}
-	reconciler, _ := createReconciler(k8sClient, &mockJob, mockCtrl)
+	jobBuilder := mocks.NewMockJobBuilder(mockCtrl)
+	jobBuilder.EXPECT().BuildJob(gomock.Any(), gomock.Any(), gomock.Any()).Return(&mockJob, nil).AnyTimes()
+	reconciler, _ := createReconciler(k8sClient, jobBuilder, mockCtrl)
 
 	// Act
 	result, err := reconciler.Reconcile(t.Context(), reconcile.Request{NamespacedName: objectName})
@@ -846,7 +872,9 @@ func Test_UpdatePhase_Scheduled_to_Backfilling(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 	mockJob := batchv1.Job{ObjectMeta: metav1.ObjectMeta{Name: objectName.Name, Namespace: objectName.Namespace}}
-	reconciler, _ := createReconciler(k8sClient, &mockJob, mockCtrl)
+	jobBuilder := mocks.NewMockJobBuilder(mockCtrl)
+	jobBuilder.EXPECT().BuildJob(gomock.Any(), gomock.Any(), gomock.Any()).Return(&mockJob, nil).AnyTimes()
+	reconciler, _ := createReconciler(k8sClient, jobBuilder, mockCtrl)
 
 	// Act
 	result, err := reconciler.Reconcile(t.Context(), reconcile.Request{NamespacedName: objectName})
@@ -859,12 +887,7 @@ func Test_UpdatePhase_Scheduled_to_Backfilling(t *testing.T) {
 	helpers.AssertBackfillRequestNotCompleted(t, k8sClient, objectName)
 }
 
-func createReconciler(k8sClient client.Client, mockJob *batchv1.Job, mockCtrl *gomock.Controller) (reconcile.Reconciler, *record.FakeRecorder) {
-	var jobBuilder *mocks.MockJobBuilder
-	if mockJob != nil {
-		jobBuilder = mocks.NewMockJobBuilder(mockCtrl)
-		jobBuilder.EXPECT().BuildJob(gomock.Any(), gomock.Any(), gomock.Any()).Return(mockJob, nil).AnyTimes()
-	}
+func createReconciler(k8sClient client.Client, jobBuilder *mocks.MockJobBuilder, mockCtrl *gomock.Controller) (reconcile.Reconciler, *record.FakeRecorder) {
 	recorder := record.NewFakeRecorder(10)
 	gvk := schema.GroupVersionKind{Group: "streaming.sneaksanddata.com", Version: "v1", Kind: "MockStreamDefinition"}
 	mock := v2.MockStreamDefinition("name", "namespace")
