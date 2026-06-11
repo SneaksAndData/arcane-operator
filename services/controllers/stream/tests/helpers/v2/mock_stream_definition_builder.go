@@ -65,12 +65,11 @@ func (b *MockStreamDefinitionBuilder) WithName(n types.NamespacedName) *MockStre
 // WithSchedule configures the stream definition with a cron job backend using
 // the provided schedule, clearing the batch job backend.
 func (b *MockStreamDefinitionBuilder) WithSchedule(schedule string) *MockStreamDefinitionBuilder {
-	b.definition.Spec.ExecutionSettings.StreamingBackend = testv2.StreamingBackend{
-		BatchJobBackend: nil,
-		CronJobBackend: &testv2.CronJobBackend{
-			Schedule: schedule,
-		},
+	if b.definition.Spec.ExecutionSettings.StreamingBackend.CronJobBackend == nil {
+		b.definition.Spec.ExecutionSettings.StreamingBackend.CronJobBackend = &testv2.CronJobBackend{}
+		b.definition.Spec.ExecutionSettings.StreamingBackend.BatchJobBackend = nil
 	}
+	b.definition.Spec.ExecutionSettings.StreamingBackend.CronJobBackend.Schedule = schedule
 	return b
 }
 
@@ -79,6 +78,38 @@ func (b *MockStreamDefinitionBuilder) WithSchedule(schedule string) *MockStreamD
 func (b *MockStreamDefinitionBuilder) WithNoBackend() *MockStreamDefinitionBuilder {
 	b.definition.Spec.ExecutionSettings.StreamingBackend.BatchJobBackend = nil
 	b.definition.Spec.ExecutionSettings.StreamingBackend.CronJobBackend = nil
+	return b
+}
+
+// WithStreamingJobTemplateRef sets the job template reference for the batch job backend,
+// initializing the batch job backend if it is currently nil.
+func (b *MockStreamDefinitionBuilder) WithStreamingJobTemplateRef(name types.NamespacedName) *MockStreamDefinitionBuilder {
+	if b.definition.Spec.ExecutionSettings.StreamingBackend.BatchJobBackend == nil {
+		b.definition.Spec.ExecutionSettings.StreamingBackend.BatchJobBackend = &testv2.BatchJobBackend{}
+		b.definition.Spec.ExecutionSettings.StreamingBackend.CronJobBackend = nil
+	}
+	b.definition.Spec.ExecutionSettings.StreamingBackend.BatchJobBackend.JobTemplateRef.Name = name.Name
+	b.definition.Spec.ExecutionSettings.StreamingBackend.BatchJobBackend.JobTemplateRef.Namespace = name.Namespace
+	return b
+}
+
+// WithScheduledJobTemplateRef sets the job template reference for the batch job backend,
+// initializing the batch job backend if it is currently nil.
+func (b *MockStreamDefinitionBuilder) WithScheduledJobTemplateRef(name types.NamespacedName) *MockStreamDefinitionBuilder {
+	if b.definition.Spec.ExecutionSettings.StreamingBackend.CronJobBackend == nil {
+		b.definition.Spec.ExecutionSettings.StreamingBackend.CronJobBackend = &testv2.CronJobBackend{}
+		b.definition.Spec.ExecutionSettings.StreamingBackend.BatchJobBackend = nil
+	}
+	b.definition.Spec.ExecutionSettings.StreamingBackend.CronJobBackend.JobTemplateRef.Name = name.Name
+	b.definition.Spec.ExecutionSettings.StreamingBackend.CronJobBackend.JobTemplateRef.Namespace = name.Namespace
+	return b
+}
+
+// WithBackfillJobTemplateRef sets the job template reference for the batch job backend,
+// initializing the batch job backend if it is currently nil.
+func (b *MockStreamDefinitionBuilder) WithBackfillJobTemplateRef(name types.NamespacedName) *MockStreamDefinitionBuilder {
+	b.definition.Spec.ExecutionSettings.BackfillJobTemplateRef.Name = name.Name
+	b.definition.Spec.ExecutionSettings.BackfillJobTemplateRef.Namespace = name.Namespace
 	return b
 }
 
