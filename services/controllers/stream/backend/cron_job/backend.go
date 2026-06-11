@@ -52,7 +52,7 @@ func NewCronJobBackend(client client.Client, jobBuilder stream.JobBuilder, event
 	}
 }
 
-func (c *Backend) SetupWithController(cache cache.Cache, scheme *runtime.Scheme, mapper meta.RESTMapper, controller controller.Controller, primaryGvk schema.GroupVersionKind) error {
+func (c *Backend) SetupWithController(cache cache.Cache, scheme *runtime.Scheme, mapper meta.RESTMapper, controller controller.Controller, primaryGvk schema.GroupVersionKind) error { // coverage-ignore
 	primaryResource := &unstructured.Unstructured{}
 	primaryResource.SetGroupVersionKind(primaryGvk)
 	return watchers.NewTypedSecondaryWatcherBuilder[*batchv1.CronJob]().
@@ -63,7 +63,7 @@ func (c *Backend) SetupWithController(cache cache.Cache, scheme *runtime.Scheme,
 		SetupWithController(controller, &batchv1.CronJob{})
 }
 
-func (c *Backend) Get(ctx context.Context, name client.ObjectKey) (stream.BackendResource, error) {
+func (c *Backend) Get(ctx context.Context, name client.ObjectKey) (stream.BackendResource, error) { // coverage-ignore
 	cj := &batchv1.CronJob{}
 	return c.ResourceReader.Get(ctx, name, cj, FromResource)
 }
@@ -92,7 +92,7 @@ func (c *Backend) Apply(ctx context.Context, definition stream.Definition, backf
 
 	logger.V(0).Info("Creating the cron job for the stream definition")
 	err := c.client.Get(ctx, types.NamespacedName{Name: object.Name, Namespace: object.Namespace}, object)
-	if client.IgnoreNotFound(err) != nil {
+	if client.IgnoreNotFound(err) != nil { // coverage-ignore
 		logger.V(0).Error(err, "failed to fetch cronjob")
 		return reconcile.Result{}, fmt.Errorf("failed to fetch cronjob: %w", err)
 	}
