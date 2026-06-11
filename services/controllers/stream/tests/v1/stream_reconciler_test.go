@@ -26,6 +26,9 @@ import (
 )
 
 var objectName = types.NamespacedName{Name: "stream1", Namespace: "default"}
+var streamingJobTemplateName = types.NamespacedName{Name: "streaming-template", Namespace: "default"}
+var backfillJobTemplateName = types.NamespacedName{Name: "backfill-template", Namespace: "default"}
+var batchJobTemplateName = types.NamespacedName{Name: "batch-template", Namespace: "default"}
 
 func Test_UpdatePhase_New_To_Suspended(t *testing.T) {
 	// Arrange
@@ -101,13 +104,18 @@ func Test_UpdatePhase_New_To_Pending_with_no_backend(t *testing.T) {
 
 func Test_UpdatePhase_Pending_To_Running_no_job(t *testing.T) {
 	// Arrange
-	builder := v3.NewMockStreamDefinitionBuilder(objectName).WithSuspendedSpec(false).WithPhase(stream.Pending)
+	builder := v3.NewMockStreamDefinitionBuilder(objectName).
+		WithSuspendedSpec(false).
+		WithPhase(stream.Pending).
+		WithStreamingJobTemplateRef(streamingJobTemplateName)
 	k8sClient := helpers.SetupClientFromBuilders(nil, builder, nil)
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 
 	mockJob := batchv1.Job{ObjectMeta: metav1.ObjectMeta{Name: objectName.Name, Namespace: objectName.Namespace}}
-	reconciler, _ := createReconciler(k8sClient, &mockJob, mockCtrl)
+	jobBuilder := mocks.NewMockJobBuilder(mockCtrl)
+	jobBuilder.EXPECT().BuildJob(gomock.Any(), gomock.Eq(streamingJobTemplateName), gomock.Any()).Return(&mockJob, nil).AnyTimes()
+	reconciler, _ := createReconciler(k8sClient, jobBuilder, mockCtrl)
 
 	// Act
 	result, err := reconciler.Reconcile(t.Context(), reconcile.Request{NamespacedName: objectName})
@@ -122,7 +130,10 @@ func Test_UpdatePhase_Pending_To_Running_no_job(t *testing.T) {
 
 func Test_UpdatePhase_Pending_To_Running_recreate_job(t *testing.T) {
 	// Arrange
-	builder := v3.NewMockStreamDefinitionBuilder(objectName).WithSuspendedSpec(false).WithPhase(stream.Pending)
+	builder := v3.NewMockStreamDefinitionBuilder(objectName).
+		WithSuspendedSpec(false).
+		WithPhase(stream.Pending).
+		WithStreamingJobTemplateRef(streamingJobTemplateName)
 	k8sClient := helpers.SetupClientFromBuilders(nil, builder, helpers.NewFakeClientResourcesBuilder().WithOutdatedJob(objectName))
 
 	mockCtrl := gomock.NewController(t)
@@ -138,7 +149,9 @@ func Test_UpdatePhase_Pending_To_Running_recreate_job(t *testing.T) {
 		},
 	}
 
-	reconciler, _ := createReconciler(k8sClient, &mockJob, mockCtrl)
+	jobBuilder := mocks.NewMockJobBuilder(mockCtrl)
+	jobBuilder.EXPECT().BuildJob(gomock.Any(), gomock.Eq(streamingJobTemplateName), gomock.Any()).Return(&mockJob, nil).AnyTimes()
+	reconciler, _ := createReconciler(k8sClient, jobBuilder, mockCtrl)
 
 	// Act
 	result, err := reconciler.Reconcile(t.Context(), reconcile.Request{NamespacedName: objectName})
@@ -189,14 +202,17 @@ func Test_UpdatePhase_Pending_To_Scheduled_no_job(t *testing.T) {
 	builder := v3.NewMockStreamDefinitionBuilder(objectName).
 		WithPhase(stream.Pending).
 		WithSchedule("* * * * *").
-		WithSuspendedSpec(false)
+		WithSuspendedSpec(false).
+		WithScheduledJobTemplateRef(batchJobTemplateName)
 	k8sClient := helpers.SetupClientFromBuilders(nil, builder, nil)
 
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 
 	mockJob := batchv1.Job{ObjectMeta: metav1.ObjectMeta{Name: objectName.Name, Namespace: objectName.Namespace}}
-	reconciler, _ := createReconciler(k8sClient, &mockJob, mockCtrl)
+	jobBuilder := mocks.NewMockJobBuilder(mockCtrl)
+	jobBuilder.EXPECT().BuildJob(gomock.Any(), gomock.Eq(batchJobTemplateName), gomock.Any()).Return(&mockJob, nil).AnyTimes()
+	reconciler, _ := createReconciler(k8sClient, jobBuilder, mockCtrl)
 
 	// Act
 	result, err := reconciler.Reconcile(t.Context(), reconcile.Request{NamespacedName: objectName})
@@ -214,14 +230,16 @@ func Test_UpdatePhase_Pending_To_Scheduled_no_job(t *testing.T) {
 
 func Test_UpdatePhase_Pending_To_Backfilling_no_job(t *testing.T) {
 	// Arrange
-	builder := v3.NewMockStreamDefinitionBuilder(objectName).WithPhase(stream.Pending)
+	builder := v3.NewMockStreamDefinitionBuilder(objectName).WithPhase(stream.Pending).WithBackfillJobTemplateRef(batchJobTemplateName)
 	k8sClient := helpers.SetupClientFromBuilders(nil, builder, helpers.NewFakeClientResourcesBuilder().WithBackfillRequest(objectName))
 
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 
 	mockJob := batchv1.Job{ObjectMeta: metav1.ObjectMeta{Name: objectName.Name, Namespace: objectName.Namespace}}
-	reconciler, _ := createReconciler(k8sClient, &mockJob, mockCtrl)
+	jobBuilder := mocks.NewMockJobBuilder(mockCtrl)
+	jobBuilder.EXPECT().BuildJob(gomock.Any(), gomock.Eq(batchJobTemplateName), gomock.Any()).Return(&mockJob, nil).AnyTimes()
+	reconciler, _ := createReconciler(k8sClient, jobBuilder, mockCtrl)
 
 	// Act
 	result, err := reconciler.Reconcile(t.Context(), reconcile.Request{NamespacedName: objectName})
@@ -235,7 +253,7 @@ func Test_UpdatePhase_Pending_To_Backfilling_no_job(t *testing.T) {
 
 func Test_UpdatePhase_Pending_To_Backfilling_recreate_job(t *testing.T) {
 	// Arrange
-	builder := v3.NewMockStreamDefinitionBuilder(objectName).WithPhase(stream.Pending)
+	builder := v3.NewMockStreamDefinitionBuilder(objectName).WithPhase(stream.Pending).WithBackfillJobTemplateRef(backfillJobTemplateName)
 	k8sClient := helpers.SetupClientFromBuilders(nil, builder, helpers.NewFakeClientResourcesBuilder().WithBackfillRequest(objectName).WithOutdatedJob(objectName))
 
 	mockJob := batchv1.Job{
@@ -250,7 +268,9 @@ func Test_UpdatePhase_Pending_To_Backfilling_recreate_job(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 
-	reconciler, _ := createReconciler(k8sClient, &mockJob, mockCtrl)
+	jobBuilder := mocks.NewMockJobBuilder(mockCtrl)
+	jobBuilder.EXPECT().BuildJob(gomock.Any(), gomock.Eq(backfillJobTemplateName), gomock.Any()).Return(&mockJob, nil).AnyTimes()
+	reconciler, _ := createReconciler(k8sClient, jobBuilder, mockCtrl)
 
 	// Act
 	result, err := reconciler.Reconcile(t.Context(), reconcile.Request{NamespacedName: objectName})
@@ -468,7 +488,10 @@ func Test_UpdatePhase_Backfilling_To_Backfilling_with_job_running(t *testing.T) 
 
 func Test_UpdatePhase_Backfilling_To_Backfilling_with_no_job(t *testing.T) {
 	// Arrange
-	builder := v3.NewMockStreamDefinitionBuilder(objectName).WithPhase(stream.Backfilling).WithSuspendedSpec(false)
+	builder := v3.NewMockStreamDefinitionBuilder(objectName).
+		WithPhase(stream.Backfilling).
+		WithSuspendedSpec(false).
+		WithBackfillJobTemplateRef(backfillJobTemplateName)
 	k8sClient := helpers.SetupClientFromBuilders(nil, builder, helpers.NewFakeClientResourcesBuilder().WithBackfillRequest(objectName))
 
 	mockCtrl := gomock.NewController(t)
@@ -483,7 +506,9 @@ func Test_UpdatePhase_Backfilling_To_Backfilling_with_no_job(t *testing.T) {
 			},
 		},
 	}
-	reconciler, _ := createReconciler(k8sClient, &mockJob, mockCtrl)
+	jobBuilder := mocks.NewMockJobBuilder(mockCtrl)
+	jobBuilder.EXPECT().BuildJob(gomock.Any(), gomock.Eq(backfillJobTemplateName), gomock.Any()).Return(&mockJob, nil).AnyTimes()
+	reconciler, _ := createReconciler(k8sClient, jobBuilder, mockCtrl)
 
 	// Act
 	result, err := reconciler.Reconcile(t.Context(), reconcile.Request{NamespacedName: objectName})
@@ -498,7 +523,11 @@ func Test_UpdatePhase_Backfilling_To_Backfilling_with_no_job(t *testing.T) {
 
 func Test_UpdatePhase_Pending_To_Backfilling_with_schedule(t *testing.T) {
 	// Arrange
-	builder := v3.NewMockStreamDefinitionBuilder(objectName).WithPhase(stream.Pending).WithSuspendedSpec(false).WithSchedule("* * * * *")
+	builder := v3.NewMockStreamDefinitionBuilder(objectName).
+		WithPhase(stream.Pending).
+		WithSuspendedSpec(false).
+		WithSchedule("* * * * *").
+		WithBackfillJobTemplateRef(backfillJobTemplateName)
 	k8sClient := helpers.SetupClientFromBuilders(nil, builder, helpers.NewFakeClientResourcesBuilder().WithBackfillRequest(objectName))
 
 	mockCtrl := gomock.NewController(t)
@@ -513,7 +542,9 @@ func Test_UpdatePhase_Pending_To_Backfilling_with_schedule(t *testing.T) {
 			},
 		},
 	}
-	reconciler, _ := createReconciler(k8sClient, &mockJob, mockCtrl)
+	jobBuilder := mocks.NewMockJobBuilder(mockCtrl)
+	jobBuilder.EXPECT().BuildJob(gomock.Any(), gomock.Eq(backfillJobTemplateName), gomock.Any()).Return(&mockJob, nil).AnyTimes()
+	reconciler, _ := createReconciler(k8sClient, jobBuilder, mockCtrl)
 
 	// Act
 	result, err := reconciler.Reconcile(t.Context(), reconcile.Request{NamespacedName: objectName})
@@ -560,7 +591,9 @@ func Test_UpdatePhase_Backfilling_To_Suspended(t *testing.T) {
 			},
 		},
 	}
-	reconciler, _ := createReconciler(k8sClient, &mockJob, mockCtrl)
+	jobBuilder := mocks.NewMockJobBuilder(mockCtrl)
+	jobBuilder.EXPECT().BuildJob(gomock.Any(), gomock.Eq(streamingJobTemplateName), gomock.Any()).Return(&mockJob, nil).AnyTimes()
+	reconciler, _ := createReconciler(k8sClient, jobBuilder, mockCtrl)
 
 	// Act
 	result, err := reconciler.Reconcile(t.Context(), reconcile.Request{NamespacedName: objectName})
@@ -599,7 +632,9 @@ func Test_UpdatePhase_Backfilling_To_Running(t *testing.T) {
 	defer mockCtrl.Finish()
 
 	mockJob := batchv1.Job{ObjectMeta: metav1.ObjectMeta{Namespace: objectName.Namespace, Name: objectName.Name}}
-	reconciler, _ := createReconciler(k8sClient, &mockJob, mockCtrl)
+	jobBuilder := mocks.NewMockJobBuilder(mockCtrl)
+	jobBuilder.EXPECT().BuildJob(gomock.Any(), gomock.Eq(streamingJobTemplateName), gomock.Any()).Return(&mockJob, nil).AnyTimes()
+	reconciler, _ := createReconciler(k8sClient, jobBuilder, mockCtrl)
 
 	// Act
 	result, err := reconciler.Reconcile(t.Context(), reconcile.Request{NamespacedName: objectName})
@@ -679,13 +714,18 @@ func Test_UpdatePhase_Failed_to_Suspended_with_BackfillRequest(t *testing.T) {
 
 func Test_UpdatePhase_Failed_to_Backfilling(t *testing.T) {
 	// Arrange
-	builder := v3.NewMockStreamDefinitionBuilder(objectName).WithPhase(stream.Failed).WithSuspendedSpec(false)
+	builder := v3.NewMockStreamDefinitionBuilder(objectName).
+		WithPhase(stream.Failed).
+		WithSuspendedSpec(false).
+		WithBackfillJobTemplateRef(backfillJobTemplateName)
 	k8sClient := helpers.SetupClientFromBuilders(nil, builder, helpers.NewFakeClientResourcesBuilder().WithBackfillRequest(objectName))
 
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 	mockJob := batchv1.Job{ObjectMeta: metav1.ObjectMeta{Name: objectName.Name, Namespace: objectName.Namespace}}
-	reconciler, _ := createReconciler(k8sClient, &mockJob, mockCtrl)
+	jobBuilder := mocks.NewMockJobBuilder(mockCtrl)
+	jobBuilder.EXPECT().BuildJob(gomock.Any(), gomock.Eq(backfillJobTemplateName), gomock.Any()).Return(&mockJob, nil).AnyTimes()
+	reconciler, _ := createReconciler(k8sClient, jobBuilder, mockCtrl)
 
 	// Act
 	result, err := reconciler.Reconcile(t.Context(), reconcile.Request{NamespacedName: objectName})
@@ -702,7 +742,9 @@ func Test_UpdatePhase_Scheduled_to_Scheduled_no_cron_job(t *testing.T) {
 	builder := v3.NewMockStreamDefinitionBuilder(objectName).
 		WithPhase(stream.Scheduled).
 		WithSuspendedSpec(false).
-		WithSchedule("* * * * *")
+		WithSchedule("* * * * *").
+		WithScheduledJobTemplateRef(batchJobTemplateName)
+
 	k8sClient := helpers.SetupClientFromBuilders(nil, builder, nil)
 
 	u, err := helpers.GetStreamDefinitionUnstructured(t.Context(), k8sClient, objectName, helpers.GroupVersionKindV2)
@@ -717,7 +759,9 @@ func Test_UpdatePhase_Scheduled_to_Scheduled_no_cron_job(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 	mockJob := batchv1.Job{ObjectMeta: metav1.ObjectMeta{Name: objectName.Name, Namespace: objectName.Namespace}}
-	reconciler, _ := createReconciler(k8sClient, &mockJob, mockCtrl)
+	jobBuilder := mocks.NewMockJobBuilder(mockCtrl)
+	jobBuilder.EXPECT().BuildJob(gomock.Any(), gomock.Eq(batchJobTemplateName), gomock.Any()).Return(&mockJob, nil).AnyTimes()
+	reconciler, _ := createReconciler(k8sClient, jobBuilder, mockCtrl)
 
 	// Act
 	result, err := reconciler.Reconcile(t.Context(), reconcile.Request{NamespacedName: objectName})
@@ -737,7 +781,8 @@ func Test_UpdatePhase_Scheduled_to_Scheduled_recreate_cron_job(t *testing.T) {
 	builder := v3.NewMockStreamDefinitionBuilder(objectName).
 		WithPhase(stream.Scheduled).
 		WithSuspendedSpec(false).
-		WithSchedule("* * * * *")
+		WithSchedule("* * * * *").
+		WithScheduledJobTemplateRef(batchJobTemplateName)
 	resourceBuilder := helpers.NewFakeClientResourcesBuilder().WithOutdatedCronJob(objectName)
 	k8sClient := helpers.SetupClientFromBuilders(nil, builder, resourceBuilder)
 
@@ -757,7 +802,9 @@ func Test_UpdatePhase_Scheduled_to_Scheduled_recreate_cron_job(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 	mockJob := batchv1.Job{ObjectMeta: metav1.ObjectMeta{Name: objectName.Name, Namespace: objectName.Namespace}}
-	reconciler, _ := createReconciler(k8sClient, &mockJob, mockCtrl)
+	jobBuilder := mocks.NewMockJobBuilder(mockCtrl)
+	jobBuilder.EXPECT().BuildJob(gomock.Any(), gomock.Eq(batchJobTemplateName), gomock.Any()).Return(&mockJob, nil).AnyTimes()
+	reconciler, _ := createReconciler(k8sClient, jobBuilder, mockCtrl)
 
 	// Act
 	result, err := reconciler.Reconcile(t.Context(), reconcile.Request{NamespacedName: objectName})
@@ -826,7 +873,9 @@ func Test_UpdatePhase_Scheduled_to_Suspended(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 	mockJob := batchv1.Job{ObjectMeta: metav1.ObjectMeta{Name: objectName.Name, Namespace: objectName.Namespace}}
-	reconciler, _ := createReconciler(k8sClient, &mockJob, mockCtrl)
+	jobBuilder := mocks.NewMockJobBuilder(mockCtrl)
+	jobBuilder.EXPECT().BuildJob(gomock.Any(), gomock.Eq(streamingJobTemplateName), gomock.Any()).Return(&mockJob, nil).AnyTimes()
+	reconciler, _ := createReconciler(k8sClient, jobBuilder, mockCtrl)
 
 	// Act
 	result, err := reconciler.Reconcile(t.Context(), reconcile.Request{NamespacedName: objectName})
@@ -846,7 +895,9 @@ func Test_UpdatePhase_Scheduled_to_Backfilling(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 	mockJob := batchv1.Job{ObjectMeta: metav1.ObjectMeta{Name: objectName.Name, Namespace: objectName.Namespace}}
-	reconciler, _ := createReconciler(k8sClient, &mockJob, mockCtrl)
+	jobBuilder := mocks.NewMockJobBuilder(mockCtrl)
+	jobBuilder.EXPECT().BuildJob(gomock.Any(), gomock.Eq(streamingJobTemplateName), gomock.Any()).Return(&mockJob, nil).AnyTimes()
+	reconciler, _ := createReconciler(k8sClient, jobBuilder, mockCtrl)
 
 	// Act
 	result, err := reconciler.Reconcile(t.Context(), reconcile.Request{NamespacedName: objectName})
@@ -859,12 +910,7 @@ func Test_UpdatePhase_Scheduled_to_Backfilling(t *testing.T) {
 	helpers.AssertBackfillRequestNotCompleted(t, k8sClient, objectName)
 }
 
-func createReconciler(k8sClient client.Client, mockJob *batchv1.Job, mockCtrl *gomock.Controller) (reconcile.Reconciler, *record.FakeRecorder) {
-	var jobBuilder *mocks.MockJobBuilder
-	if mockJob != nil {
-		jobBuilder = mocks.NewMockJobBuilder(mockCtrl)
-		jobBuilder.EXPECT().BuildJob(gomock.Any(), gomock.Any(), gomock.Any()).Return(mockJob, nil).AnyTimes()
-	}
+func createReconciler(k8sClient client.Client, jobBuilder *mocks.MockJobBuilder, mockCtrl *gomock.Controller) (reconcile.Reconciler, *record.FakeRecorder) {
 	recorder := record.NewFakeRecorder(10)
 	gvk := schema.GroupVersionKind{Group: "streaming.sneaksanddata.com", Version: "v1", Kind: "MockStreamDefinition"}
 	mock := v2.MockStreamDefinition("name", "namespace")

@@ -39,8 +39,8 @@ func (b *FakeClientResourcesBuilder) Apply(fn func(*crfake.ClientBuilder)) *Fake
 // WithOutdatedJob seeds the fake client with a batch Job whose
 // configuration-hash annotation is set to "old-hash".
 func (b *FakeClientResourcesBuilder) WithOutdatedJob(n types.NamespacedName) *FakeClientResourcesBuilder {
-	return b.Apply(func(client2 *crfake.ClientBuilder) {
-		client2.WithObjects(&batchv1.Job{
+	return b.Apply(func(client *crfake.ClientBuilder) {
+		client.WithObjects(&batchv1.Job{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace:   n.Namespace,
 				Name:        n.Name,
@@ -53,8 +53,8 @@ func (b *FakeClientResourcesBuilder) WithOutdatedJob(n types.NamespacedName) *Fa
 // WithOutdatedCronJob seeds the fake client with a CronJob whose
 // configuration-hash annotation is set to "old-hash".
 func (b *FakeClientResourcesBuilder) WithOutdatedCronJob(n types.NamespacedName) *FakeClientResourcesBuilder {
-	return b.Apply(func(client2 *crfake.ClientBuilder) {
-		client2.WithObjects(&batchv1.CronJob{
+	return b.Apply(func(client *crfake.ClientBuilder) {
+		client.WithObjects(&batchv1.CronJob{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace:   n.Namespace,
 				Name:        n.Name,
@@ -66,8 +66,8 @@ func (b *FakeClientResourcesBuilder) WithOutdatedCronJob(n types.NamespacedName)
 
 // WithCompletedJob seeds the fake client with a batch Job in a completed state.
 func (b *FakeClientResourcesBuilder) WithCompletedJob(n types.NamespacedName) *FakeClientResourcesBuilder {
-	return b.Apply(func(client2 *crfake.ClientBuilder) {
-		client2.WithObjects(&batchv1.Job{
+	return b.Apply(func(client *crfake.ClientBuilder) {
+		client.WithObjects(&batchv1.Job{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace:   n.Namespace,
 				Name:        n.Name,
@@ -86,10 +86,9 @@ func (b *FakeClientResourcesBuilder) WithCompletedJob(n types.NamespacedName) *F
 // WithFailedJob seeds the fake client with a batch Job in a failed state
 // (failed twice with backoffLimit = 1).
 func (b *FakeClientResourcesBuilder) WithFailedJob(n types.NamespacedName) *FakeClientResourcesBuilder {
-	return b.Apply(func(client2 *crfake.ClientBuilder) {
-		backoffLimit := int32(1)
-		client2.WithObjects(&batchv1.Job{
-			Spec: batchv1.JobSpec{BackoffLimit: &backoffLimit},
+	return b.Apply(func(client *crfake.ClientBuilder) {
+		client.WithObjects(&batchv1.Job{
+			Spec: batchv1.JobSpec{BackoffLimit: new(int32(1))},
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace:   n.Namespace,
 				Name:        n.Name,
@@ -109,8 +108,8 @@ func (b *FakeClientResourcesBuilder) WithFailedJob(n types.NamespacedName) *Fake
 // WithConsistentJob seeds the fake client with a batch Job whose
 // configuration-hash annotation matches the provided hash.
 func (b *FakeClientResourcesBuilder) WithConsistentJob(n types.NamespacedName, hash string) *FakeClientResourcesBuilder {
-	return b.Apply(func(client2 *crfake.ClientBuilder) {
-		client2.WithObjects(&batchv1.Job{
+	return b.Apply(func(client *crfake.ClientBuilder) {
+		client.WithObjects(&batchv1.Job{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace:   n.Namespace,
 				Name:        n.Name,
@@ -123,8 +122,8 @@ func (b *FakeClientResourcesBuilder) WithConsistentJob(n types.NamespacedName, h
 // WithConsistentCronJob seeds the fake client with a CronJob whose
 // configuration-hash annotation matches the provided hash.
 func (b *FakeClientResourcesBuilder) WithConsistentCronJob(n types.NamespacedName, hash string) *FakeClientResourcesBuilder {
-	return b.Apply(func(client2 *crfake.ClientBuilder) {
-		client2.WithObjects(&batchv1.CronJob{
+	return b.Apply(func(client *crfake.ClientBuilder) {
+		client.WithObjects(&batchv1.CronJob{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace:   n.Namespace,
 				Name:        n.Name,
@@ -137,8 +136,8 @@ func (b *FakeClientResourcesBuilder) WithConsistentCronJob(n types.NamespacedNam
 // WithBackfillRequest seeds the fake client with a BackfillRequest named
 // "backfill1" targeting the MockStreamDefinition identified by n.
 func (b *FakeClientResourcesBuilder) WithBackfillRequest(n types.NamespacedName) *FakeClientResourcesBuilder {
-	return b.Apply(func(client2 *crfake.ClientBuilder) {
-		client2.WithObjects(&v1.BackfillRequest{
+	return b.Apply(func(client *crfake.ClientBuilder) {
+		client.WithObjects(&v1.BackfillRequest{
 			ObjectMeta: metav1.ObjectMeta{Name: "backfill1", Namespace: n.Namespace},
 			Spec: v1.BackfillRequestSpec{
 				StreamClass: "MockStreamDefinition",
