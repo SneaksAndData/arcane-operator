@@ -147,27 +147,6 @@ func (b *FakeClientResourcesBuilder) WithBackfillRequest(n types.NamespacedName)
 	})
 }
 
-// WithStreamingJobTemplate seeds the fake client with a BackfillRequest named
-// "backfill1" targeting the MockStreamDefinition identified by n.
-func (b *FakeClientResourcesBuilder) WithStreamingJobTemplate(n types.NamespacedName) *FakeClientResourcesBuilder {
-	return b.Apply(func(client *crfake.ClientBuilder) {
-		client.WithObjects(&v1.StreamingJobTemplate{
-			ObjectMeta: metav1.ObjectMeta{Name: "template1", Namespace: n.Namespace},
-			Spec: batchv1.Job{
-				Spec: batchv1.JobSpec{
-					Template: corev1.PodTemplateSpec{
-						Spec: corev1.PodSpec{
-							Containers: []corev1.Container{
-								{Name: "main", Image: "busybox"},
-							},
-						},
-					},
-				},
-			},
-		})
-	})
-}
-
 // Build returns a single mutator function that applies all accumulated
 // resources to a *crfake.ClientBuilder. The result is computed on the first
 // call and the same function value is returned on subsequent calls.
