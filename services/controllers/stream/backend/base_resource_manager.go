@@ -34,10 +34,13 @@ func (j *BaseResourceManager) Remove(ctx context.Context, object client.Object, 
 	return reconcile.Result{}, nil
 }
 
-func (j *BaseResourceManager) BuildJob(ctx context.Context, definition stream.Definition, request *v1.BackfillRequest, streamClass *v1.StreamClass) (*batchv1.Job, error) {
+func (j *BaseResourceManager) BuildJob(ctx context.Context, definition stream.Definition, request *v1.BackfillRequest, streamClass *v1.StreamClass, forceStreamingTemplate bool) (*batchv1.Job, error) {
 	logger := klog.FromContext(ctx)
 
 	templateReference := definition.GetJobTemplate(request)
+	if forceStreamingTemplate {
+		templateReference = definition.GetJobTemplate(nil)
+	}
 
 	streamConfiguration, err := definition.CurrentConfiguration(request)
 	if err != nil { // coverage-ignore

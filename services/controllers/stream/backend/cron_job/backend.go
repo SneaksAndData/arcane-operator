@@ -116,7 +116,7 @@ func (c *Backend) Apply(ctx context.Context, definition stream.Definition, backf
 
 	// Temporary add fake backfill request to the job builder since we need to create a CronJob with
 	// STREAMCONTEXT__BACKFILL == "true". Should be removed in the next PRs.
-	j, err := c.BuildJob(ctx, definition, &v1.BackfillRequest{}, streamClass)
+	j, err := c.BuildJob(ctx, definition, &v1.BackfillRequest{}, streamClass, true)
 	if err != nil {
 		logger.V(0).Error(err, "failed to build job for cronjob backend")
 		return reconcile.Result{}, fmt.Errorf("failed to build job for cronjob backend: %w", err)
