@@ -115,7 +115,6 @@ type BackfillRequestSpec struct {
 	//+kubebuilder:validation:XPreserveUnknownFields
 	//+kubebuilder:validation:Optional
 	//+nullable
-	//+kubebuilder:default=nil
 	Payload *runtime.RawExtension `json:"payload,omitempty"`
 }
 
