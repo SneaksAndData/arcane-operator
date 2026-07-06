@@ -82,7 +82,7 @@ func Test_Remove_WithBackfillRequest(t *testing.T) {
 	})
 	require.NoError(t, err)
 	require.NotNil(t, result)
-	helpers.AssertBackfillRequestCompleted(t, k8sClient, objectName)
+	helpers.AssertBackfillRequestNotCompleted(t, k8sClient, objectName)
 }
 
 func Test_Apply(t *testing.T) {
