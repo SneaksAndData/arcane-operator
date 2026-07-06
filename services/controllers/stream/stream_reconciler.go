@@ -291,6 +291,11 @@ func (s *streamReconciler) moveFsm(ctx context.Context, definition Definition, j
 		})
 
 	case phase == Backfilling && backfillRequest == nil:
+		_, err := s.backfillBackendResourceManager.Complete(ctx, definition, Pending, s.streamClass, nil)
+		if err != nil {
+			logger.Error(err, "failed to remove backfill job")
+			return reconcile.Result{}, err
+		}
 		return s.backfillBackendResourceManager.Remove(ctx, definition, Pending, func() {
 			s.eventRecorder.Eventf(definition.ToUnstructured(),
 				"Normal",
@@ -307,6 +312,11 @@ func (s *streamReconciler) moveFsm(ctx context.Context, definition Definition, j
 		})
 
 	case phase == Backfilling && job.IsCompleted():
+		_, err := s.backfillBackendResourceManager.Complete(ctx, definition, Pending, s.streamClass, nil)
+		if err != nil {
+			logger.Error(err, "failed to remove backfill job")
+			return reconcile.Result{}, err
+		}
 		return s.backfillBackendResourceManager.Remove(ctx, definition, Pending, func() {
 			s.eventRecorder.Eventf(definition.ToUnstructured(),
 				"Normal",

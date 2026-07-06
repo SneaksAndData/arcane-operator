@@ -421,7 +421,7 @@ func Test_UpdatePhase_Backfilling_To_Suspended(t *testing.T) {
 	// Assert
 	assertStreamDefinitionPhase(t, k8sClient, objectName, stream.Suspended)
 	assertJobNotExists(t, k8sClient, objectName)
-	assertBackfillRequestCompleted(t, k8sClient)
+	assertBackfillRequestNotCompleted(t, k8sClient)
 }
 
 func Test_UpdatePhase_Backfilling_Job_Failed(t *testing.T) {
@@ -439,7 +439,7 @@ func Test_UpdatePhase_Backfilling_Job_Failed(t *testing.T) {
 	// Assert
 	assertStreamDefinitionPhase(t, k8sClient, objectName, stream.Failed)
 	assertJobNotExists(t, k8sClient, objectName)
-	assertBackfillRequestCompleted(t, k8sClient)
+	assertBackfillRequestNotCompleted(t, k8sClient)
 }
 
 func Test_UpdatePhase_Backfilling_To_Running(t *testing.T) {
@@ -527,7 +527,7 @@ func Test_UpdatePhase_Failed_to_Suspended_with_BackfillRequest(t *testing.T) {
 
 	// Assert
 	assertStreamDefinitionPhase(t, k8sClient, objectName, stream.Suspended)
-	assertBackfillRequestCompleted(t, k8sClient)
+	assertBackfillRequestNotCompleted(t, k8sClient)
 }
 
 func Test_UpdatePhase_Failed_to_Backfilling(t *testing.T) {
