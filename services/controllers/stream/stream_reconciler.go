@@ -170,14 +170,6 @@ func (s *streamReconciler) moveFsm(ctx context.Context, definition Definition, j
 				"The stream was suspended")
 		})
 
-	case phase == Failed && !definition.Suspended() && backfillRequest != nil:
-		return s.backendResourceManagers[definition.GetBackend()].Apply(ctx, definition, backfillRequest, Backfilling, s.streamClass, func() {
-			s.eventRecorder.Eventf(definition.ToUnstructured(),
-				"Normal",
-				"BackfillRequested",
-				"Backfill was requested for the new stream definition: %s", definition.NamespacedName().Name)
-		})
-
 	case phase == Failed:
 		return s.backendResourceManagers[definition.GetBackend()].Remove(ctx, definition, Failed, func() {
 			s.eventRecorder.Eventf(definition.ToUnstructured(),
