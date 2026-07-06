@@ -3,6 +3,7 @@ package v1
 import (
 	batchv1 "k8s.io/api/batch/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 // Phase represents the current phase of the stream class
@@ -107,6 +108,15 @@ type BackfillRequestSpec struct {
 	// Completed indicates whether the backfill request has been completed
 	// +kubebuilder:default=false
 	Completed bool `json:"completed,omitempty"`
+
+	// Payload is an unstructured JSON object with arbitrary nesting. This is used to generate the
+	// `STREAMCONTEXT_OVERRIDE` environment variable for the backfill job. The payload is optional and can be nil.
+	//+kubebuilder:validation:Type=object
+	//+kubebuilder:validation:XPreserveUnknownFields
+	//+kubebuilder:validation:Optional
+	//+nullable
+	//+kubebuilder:default=nil
+	Payload *runtime.RawExtension `json:"payload,omitempty"`
 }
 
 // BackfillRequestStatus defines the observed state of a backfill request
