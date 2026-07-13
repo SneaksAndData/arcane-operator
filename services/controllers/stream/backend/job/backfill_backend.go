@@ -81,6 +81,8 @@ func (b *BackfillBackend) Get(ctx context.Context, name types.NamespacedName) (s
 	return FromResource(obj)
 }
 
+// Remove removes the backfill job. This method DOES NOT mark the backfill request as completed.
+// It is the responsibility of the caller to mark the backfill request as completed if necessary.
 func (b *BackfillBackend) Remove(ctx context.Context, definition stream.Definition, nextPhase stream.Phase, eventFunc controllers.EventFunc) (reconcile.Result, error) {
 	object := &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
@@ -92,23 +94,6 @@ func (b *BackfillBackend) Remove(ctx context.Context, definition stream.Definiti
 	_, err := b.BaseResourceManager.Remove(ctx, object, nil)
 	if err != nil { // coverage-ignore
 		return reconcile.Result{}, fmt.Errorf("failed to remove job: %w", err)
-	}
-
-	request, err := b.GetBackfillRequest(ctx, definition)
-	if err != nil { // coverage-ignore
-		return reconcile.Result{}, fmt.Errorf("failed to get backfill request: %w", err)
-	}
-
-	if request != nil {
-		request.Spec.Completed = true
-		err := b.client.Update(ctx, request)
-		if err != nil { // coverage-ignore
-			return reconcile.Result{}, err
-		}
-		err = b.client.Status().Update(ctx, request)
-		if err != nil { // coverage-ignore
-			return reconcile.Result{}, err
-		}
 	}
 
 	return b.statusManager.UpdateStreamPhase(ctx, definition, nil, nextPhase, eventFunc)
@@ -145,6 +130,30 @@ func (b *BackfillBackend) GetBackfillRequest(ctx context.Context, definition str
 	}
 
 	return nil, nil
+}
+
+// Complete marks the backfill request as completed. It does not remove the backfill job. It is the responsibility of
+// the caller to remove the backfill job if necessary.
+func (b *BackfillBackend) Complete(ctx context.Context, definition stream.Definition, nextPhase stream.Phase, _ *v1.StreamClass, eventFunc controllers.EventFunc) (reconcile.Result, error) {
+
+	request, err := b.GetBackfillRequest(ctx, definition)
+	if err != nil { // coverage-ignore
+		return reconcile.Result{}, fmt.Errorf("failed to get backfill request: %w", err)
+	}
+
+	if request != nil {
+		request.Spec.Completed = true
+		err := b.client.Update(ctx, request)
+		if err != nil { // coverage-ignore
+			return reconcile.Result{}, err
+		}
+		err = b.client.Status().Update(ctx, request)
+		if err != nil { // coverage-ignore
+			return reconcile.Result{}, err
+		}
+	}
+
+	return b.statusManager.UpdateStreamPhase(ctx, definition, request, nextPhase, eventFunc)
 }
 
 func (b *BackfillBackend) getLogger(_ context.Context, request types.NamespacedName) klog.Logger { // coverage-ignore

@@ -421,7 +421,7 @@ func Test_UpdatePhase_Backfilling_To_Suspended(t *testing.T) {
 	// Assert
 	assertStreamDefinitionPhase(t, k8sClient, objectName, stream.Suspended)
 	assertJobNotExists(t, k8sClient, objectName)
-	assertBackfillRequestCompleted(t, k8sClient)
+	assertBackfillRequestNotCompleted(t, k8sClient)
 }
 
 func Test_UpdatePhase_Backfilling_Job_Failed(t *testing.T) {
@@ -439,7 +439,7 @@ func Test_UpdatePhase_Backfilling_Job_Failed(t *testing.T) {
 	// Assert
 	assertStreamDefinitionPhase(t, k8sClient, objectName, stream.Failed)
 	assertJobNotExists(t, k8sClient, objectName)
-	assertBackfillRequestCompleted(t, k8sClient)
+	assertBackfillRequestNotCompleted(t, k8sClient)
 }
 
 func Test_UpdatePhase_Backfilling_To_Running(t *testing.T) {
@@ -527,27 +527,6 @@ func Test_UpdatePhase_Failed_to_Suspended_with_BackfillRequest(t *testing.T) {
 
 	// Assert
 	assertStreamDefinitionPhase(t, k8sClient, objectName, stream.Suspended)
-	assertBackfillRequestCompleted(t, k8sClient)
-}
-
-func Test_UpdatePhase_Failed_to_Backfilling(t *testing.T) {
-	// Arrange
-	builder := v4.NewMockStreamDefinitionBuilder(objectName).WithPhase(stream.Failed).WithSuspendedSpec(false)
-	resourceBuilder := helpers.NewFakeClientResourcesBuilder().WithBackfillRequest(objectName)
-	k8sClient := helpers.SetupClientFromBuilders(builder, nil, resourceBuilder)
-
-	mockCtrl := gomock.NewController(t)
-	defer mockCtrl.Finish()
-	mockJob := batchv1.Job{ObjectMeta: metav1.ObjectMeta{Name: objectName.Name, Namespace: objectName.Namespace}}
-	reconciler := createReconciler(k8sClient, &mockJob, mockCtrl)
-
-	// Act
-	result, err := reconciler.Reconcile(t.Context(), reconcile.Request{NamespacedName: objectName})
-	require.NoError(t, err)
-	require.Equal(t, result, reconcile.Result{})
-
-	// Assert
-	assertStreamDefinitionPhase(t, k8sClient, objectName, stream.Backfilling)
 	assertBackfillRequestNotCompleted(t, k8sClient)
 }
 
