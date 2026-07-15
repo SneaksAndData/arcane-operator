@@ -254,8 +254,8 @@ func (s *streamReconciler) moveFsm(ctx context.Context, definition Definition, j
 		return s.backendResourceManagers[definition.GetBackend()].NoOp(ctx, definition, backfillRequest, Suspended, func() {
 			s.eventRecorder.Eventf(definition.ToUnstructured(),
 				"Normal",
-				"BackfillRequested",
-				"A backfill requested for suspended stream %s", definition.NamespacedName().Name)
+				"BackfillSuspended",
+				"A backfill was suspended for suspended stream %s", definition.NamespacedName().Name)
 		})
 
 	case phase == Suspended && backfillRequest != nil && !definition.Suspended():
@@ -263,7 +263,7 @@ func (s *streamReconciler) moveFsm(ctx context.Context, definition Definition, j
 			s.eventRecorder.Eventf(definition.ToUnstructured(),
 				"Normal",
 				"BackfillRequested",
-				"A backfill requested for suspended stream %s", definition.NamespacedName().Name)
+				"A backfill was requested for suspended stream %s", definition.NamespacedName().Name)
 		})
 
 	case phase == Suspended && backfillRequest == nil && definition.Suspended():
