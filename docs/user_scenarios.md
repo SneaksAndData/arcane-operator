@@ -18,8 +18,11 @@ To suspend the stream, you need to update the stream custom resource (CR) and se
 This will stop the streaming job and prevent it from processing any new data.
 
 ## I want to start backfill for an existing stream
-To start backfill for an existing stream, you need to create a backfill request custom resource (CR) that references the stream.
-The backfill request will be picked up by the operator, which will create a Kubernetes job to run the backfill process.
+To start backfill for an existing stream, you need to create a backfill request custom resource (CR) that references 
+the stream. If the stream was in a `Running` phase, the backfill request will be picked up by the operator, which will 
+create a Kubernetes job to run the backfill process. If the stream was in a `Suspended` phase, you should unsuspend the 
+stream first to start the backfill process. If the stream was in a `Failed` phase, you should fix the issue that caused
+the failure first, and then unsuspend the stream.
 
 Example backfill request:
 ```yaml

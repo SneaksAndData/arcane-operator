@@ -332,9 +332,25 @@ func Test_UpdatePhase_Running_To_Suspended_to_Pending(t *testing.T) {
 	helpers.AssertStreamDefinitionPhase(t, k8sClient, objectName, stream.Pending)
 }
 
-func Test_UpdatePhase_Running_To_Suspended_to_Pending_With_BFR(t *testing.T) {
+func Test_UpdatePhase_Suspended_To_Suspended_to_Pending_With_BFR(t *testing.T) {
 	// Arrange
 	builder := v3.NewMockStreamDefinitionBuilder(objectName).WithPhase(stream.Suspended).WithSuspendedSpec(true)
+	k8sClient := helpers.SetupClientFromBuilders(nil, builder, helpers.NewFakeClientResourcesBuilder().WithBackfillRequest(objectName))
+
+	reconciler, _ := createReconciler(k8sClient, nil)
+
+	// Act
+	result, err := reconciler.Reconcile(t.Context(), reconcile.Request{NamespacedName: objectName})
+	require.NoError(t, err)
+	require.Equal(t, result, reconcile.Result{})
+
+	// Assert
+	helpers.AssertStreamDefinitionPhase(t, k8sClient, objectName, stream.Suspended)
+}
+
+func Test_UpdatePhase_Suspended_To_Pending_to_Pending_With_BFR(t *testing.T) {
+	// Arrange
+	builder := v3.NewMockStreamDefinitionBuilder(objectName).WithPhase(stream.Suspended).WithSuspendedSpec(false)
 	k8sClient := helpers.SetupClientFromBuilders(nil, builder, helpers.NewFakeClientResourcesBuilder().WithBackfillRequest(objectName))
 
 	reconciler, _ := createReconciler(k8sClient, nil)
