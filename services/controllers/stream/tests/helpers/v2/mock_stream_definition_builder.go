@@ -108,8 +108,12 @@ func (b *MockStreamDefinitionBuilder) WithScheduledJobTemplateRef(name types.Nam
 // WithBackfillJobTemplateRef sets the job template reference for the batch job backend,
 // initializing the batch job backend if it is currently nil.
 func (b *MockStreamDefinitionBuilder) WithBackfillJobTemplateRef(name types.NamespacedName) *MockStreamDefinitionBuilder {
-	b.definition.Spec.ExecutionSettings.BackfillJobTemplateRef.Name = name.Name
-	b.definition.Spec.ExecutionSettings.BackfillJobTemplateRef.Namespace = name.Namespace
+	if b.definition.Spec.ExecutionSettings.StreamingBackend.BatchJobBackend == nil {
+		b.definition.Spec.ExecutionSettings.StreamingBackend.BatchJobBackend = &testv2.BatchJobBackend{}
+		b.definition.Spec.ExecutionSettings.StreamingBackend.CronJobBackend = nil
+	}
+	b.definition.Spec.ExecutionSettings.StreamingBackend.BatchJobBackend.BackfillJobTemplateRef.Name = name.Name
+	b.definition.Spec.ExecutionSettings.StreamingBackend.BatchJobBackend.BackfillJobTemplateRef.Namespace = name.Namespace
 	return b
 }
 

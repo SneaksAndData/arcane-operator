@@ -25,7 +25,8 @@ var (
 )
 
 type BatchJobBackendSettings struct {
-	JobTemplateRef corev1.ObjectReference `json:"jobTemplateRef"`
+	BackfillJobTemplateRef *corev1.ObjectReference `json:"backfillJobTemplateRef,omitempty"`
+	JobTemplateRef         corev1.ObjectReference  `json:"jobTemplateRef"`
 }
 
 type CronJobBackendSettings struct {
@@ -39,10 +40,9 @@ type StreamingBackendSettings struct {
 }
 
 type ExecutionSettings struct {
-	Suspended              bool                     `json:"suspended"`
-	LayoutVersion          string                   `json:"layoutVersion"`
-	BackfillJobTemplateRef *corev1.ObjectReference  `json:"backfillJobTemplateRef,omitempty"`
-	StreamingBackend       StreamingBackendSettings `json:"streamingBackend"`
+	Suspended        bool                     `json:"suspended"`
+	LayoutVersion    string                   `json:"layoutVersion"`
+	StreamingBackend StreamingBackendSettings `json:"streamingBackend"`
 }
 
 type ExecutionSettingsWrapper struct {
@@ -98,14 +98,14 @@ func (e *ExecutionSettingsWrapper) StateString() string {
 }
 
 func (e *ExecutionSettingsWrapper) GetJobTemplate(request *v1.BackfillRequest) types.NamespacedName {
-	if request != nil {
-		return types.NamespacedName{
-			Name:      e.underlyingSpec.ExecutionSettings.BackfillJobTemplateRef.Name,
-			Namespace: e.underlyingSpec.ExecutionSettings.BackfillJobTemplateRef.Namespace,
-		}
-	}
-
 	if e.underlyingSpec.ExecutionSettings.StreamingBackend.BatchJobBackend != nil {
+		if request != nil {
+			return types.NamespacedName{
+				Name:      e.underlyingSpec.ExecutionSettings.StreamingBackend.BatchJobBackend.BackfillJobTemplateRef.Name,
+				Namespace: e.underlyingSpec.ExecutionSettings.StreamingBackend.BatchJobBackend.BackfillJobTemplateRef.Namespace,
+			}
+		}
+
 		return types.NamespacedName{
 			Name:      e.underlyingSpec.ExecutionSettings.StreamingBackend.BatchJobBackend.JobTemplateRef.Name,
 			Namespace: e.underlyingSpec.ExecutionSettings.StreamingBackend.BatchJobBackend.JobTemplateRef.Namespace,

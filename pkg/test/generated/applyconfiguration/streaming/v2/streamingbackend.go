@@ -23,10 +23,10 @@ package v2
 //
 // StreamingBackend represents the backend configuration for streaming, including both real-time and batch processing options.
 type StreamingBackendApplyConfiguration struct {
-	// Realtime represents the backend configuration for real-time streaming.
-	Realtime *RealtimeBackendApplyConfiguration `json:"realtime,omitempty"`
-	// Batch represents the backend configuration for batch processing.
-	Batch *BatchBackendApplyConfiguration `json:"batch,omitempty"`
+	// BatchJobBackend represents the backend configuration for real-time streaming.
+	BatchJobBackend *BatchJobBackendApplyConfiguration `json:"changeCapture,omitempty"`
+	// CronJobBackend represents the backend configuration for batch processing.
+	CronJobBackend *CronJobBackendApplyConfiguration `json:"batch,omitempty"`
 }
 
 // StreamingBackendApplyConfiguration constructs a declarative configuration of the StreamingBackend type for use with
@@ -35,18 +35,18 @@ func StreamingBackend() *StreamingBackendApplyConfiguration {
 	return &StreamingBackendApplyConfiguration{}
 }
 
-// WithRealtime sets the Realtime field in the declarative configuration to the given value
+// WithBatchJobBackend sets the BatchJobBackend field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the Realtime field is set to the value of the last call.
-func (b *StreamingBackendApplyConfiguration) WithRealtime(value *RealtimeBackendApplyConfiguration) *StreamingBackendApplyConfiguration {
-	b.Realtime = value
+// If called multiple times, the BatchJobBackend field is set to the value of the last call.
+func (b *StreamingBackendApplyConfiguration) WithBatchJobBackend(value *BatchJobBackendApplyConfiguration) *StreamingBackendApplyConfiguration {
+	b.BatchJobBackend = value
 	return b
 }
 
-// WithBatch sets the Batch field in the declarative configuration to the given value
+// WithCronJobBackend sets the CronJobBackend field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the Batch field is set to the value of the last call.
-func (b *StreamingBackendApplyConfiguration) WithBatch(value *BatchBackendApplyConfiguration) *StreamingBackendApplyConfiguration {
-	b.Batch = value
+// If called multiple times, the CronJobBackend field is set to the value of the last call.
+func (b *StreamingBackendApplyConfiguration) WithCronJobBackend(value *CronJobBackendApplyConfiguration) *StreamingBackendApplyConfiguration {
+	b.CronJobBackend = value
 	return b
 }

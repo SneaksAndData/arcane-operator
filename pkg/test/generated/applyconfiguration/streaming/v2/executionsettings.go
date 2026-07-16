@@ -18,10 +18,6 @@ limitations under the License.
 
 package v2
 
-import (
-	v1 "k8s.io/api/core/v1"
-)
-
 // ExecutionSettingsApplyConfiguration represents a declarative configuration of the ExecutionSettings type for use
 // with apply.
 //
@@ -31,8 +27,6 @@ type ExecutionSettingsApplyConfiguration struct {
 	LayoutVersion *string `json:"layoutVersion,omitempty"`
 	// Suspended indicates whether the stream is suspended.
 	Suspended *bool `json:"suspended,omitempty"`
-	// BackfillJobTemplateRef represents a reference to the job template.
-	BackfillJobTemplateRef *v1.ObjectReference `json:"backfillJobTemplateRef,omitempty"`
 	// StreamingBackend represents the backend configuration for streaming.
 	StreamingBackend *StreamingBackendApplyConfiguration `json:"streamingBackend,omitempty"`
 }
@@ -56,14 +50,6 @@ func (b *ExecutionSettingsApplyConfiguration) WithLayoutVersion(value string) *E
 // If called multiple times, the Suspended field is set to the value of the last call.
 func (b *ExecutionSettingsApplyConfiguration) WithSuspended(value bool) *ExecutionSettingsApplyConfiguration {
 	b.Suspended = &value
-	return b
-}
-
-// WithBackfillJobTemplateRef sets the BackfillJobTemplateRef field in the declarative configuration to the given value
-// and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the BackfillJobTemplateRef field is set to the value of the last call.
-func (b *ExecutionSettingsApplyConfiguration) WithBackfillJobTemplateRef(value v1.ObjectReference) *ExecutionSettingsApplyConfiguration {
-	b.BackfillJobTemplateRef = &value
 	return b
 }
 

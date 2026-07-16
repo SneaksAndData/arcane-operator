@@ -32,6 +32,11 @@ func Test_StreamStateTransitionToScheduled(t *testing.T) {
 				Name:       "arcane-stream-mock",
 				Namespace:  "default",
 			},
+			BackfillJobTemplateRef: corev1.ObjectReference{
+				Kind:      "StreamingJobTemplate",
+				Name:      "arcane-stream-mock",
+				Namespace: "default",
+			},
 		}
 	})
 
@@ -129,6 +134,11 @@ func Test_StreamStateTransitionToRunning(t *testing.T) {
 							Kind:       "StreamingJobTemplate",
 							Name:       "arcane-stream-mock",
 							Namespace:  "default",
+						},
+						BackfillJobTemplateRef: corev1.ObjectReference{
+							Kind:      "StreamingJobTemplate",
+							Name:      "arcane-stream-mock",
+							Namespace: "default",
 						},
 					}
 				})
@@ -238,11 +248,6 @@ func buildV2StreamDefinition(configure func(definition *v2.TestStreamDefinitionV
 			},
 			ExecutionSettings: v2.ExecutionSettings{
 				LayoutVersion: "v1",
-				BackfillJobTemplateRef: corev1.ObjectReference{
-					Kind:      "StreamingJobTemplate",
-					Name:      "arcane-stream-mock",
-					Namespace: "default",
-				},
 			},
 		},
 	}
