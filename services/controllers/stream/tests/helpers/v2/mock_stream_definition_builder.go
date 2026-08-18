@@ -38,6 +38,7 @@ func NewMockStreamDefinitionLayoutV1Builder(objectName types.NamespacedName) *Mo
 						BatchJobBackend: &testv2.BatchJobBackend{},
 						CronJobBackend:  nil,
 					},
+					BackfillJobTemplateRef: &corev1.ObjectReference{},
 				},
 			},
 		},
