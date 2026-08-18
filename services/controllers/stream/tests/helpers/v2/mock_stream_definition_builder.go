@@ -17,9 +17,9 @@ type MockStreamDefinitionBuilder struct {
 	buildOnce  sync.Once
 }
 
-// NewMockStreamDefinitionBuilder creates a new builder pre-populated with
+// NewMockStreamDefinitionLayoutV1Builder creates a new builder pre-populated with
 // the same defaults used by SetupClient.
-func NewMockStreamDefinitionBuilder(objectName types.NamespacedName) *MockStreamDefinitionBuilder {
+func NewMockStreamDefinitionLayoutV1Builder(objectName types.NamespacedName) *MockStreamDefinitionBuilder {
 	return &MockStreamDefinitionBuilder{
 		definition: &testv2.MockStreamDefinition{
 			TypeMeta: metav1.TypeMeta{
@@ -32,6 +32,32 @@ func NewMockStreamDefinitionBuilder(objectName types.NamespacedName) *MockStream
 				Destination: "destinationB",
 				ExecutionSettings: testv2.ExecutionSettings{
 					LayoutVersion: "v1",
+					Suspended:     true,
+					StreamingBackend: testv2.StreamingBackend{
+						BatchJobBackend: &testv2.BatchJobBackend{},
+						CronJobBackend:  nil,
+					},
+				},
+			},
+		},
+	}
+}
+
+// NewMockStreamDefinitionLayoutV2Builder creates a new builder pre-populated with
+// the same defaults used by SetupClient.
+func NewMockStreamDefinitionLayoutV2Builder(objectName types.NamespacedName) *MockStreamDefinitionBuilder {
+	return &MockStreamDefinitionBuilder{
+		definition: &testv2.MockStreamDefinition{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: "streaming.sneaksanddata.com/v2",
+				Kind:       "MockStreamDefinition",
+			},
+			ObjectMeta: metav1.ObjectMeta{Name: objectName.Name, Namespace: objectName.Namespace},
+			Spec: testv2.MockStreamDefinitionSpec{
+				Source:      "sourceA",
+				Destination: "destinationB",
+				ExecutionSettings: testv2.ExecutionSettings{
+					LayoutVersion: "v2",
 					Suspended:     true,
 					StreamingBackend: testv2.StreamingBackend{
 						BatchJobBackend: &testv2.BatchJobBackend{},
@@ -105,11 +131,23 @@ func (b *MockStreamDefinitionBuilder) WithScheduledJobTemplateRef(name types.Nam
 	return b
 }
 
-// WithBackfillJobTemplateRef sets the job template reference for the batch job backend,
+// WithV1BackfillJobTemplateRef sets the job template reference for the batch job backend,
 // initializing the batch job backend if it is currently nil.
-func (b *MockStreamDefinitionBuilder) WithBackfillJobTemplateRef(name types.NamespacedName) *MockStreamDefinitionBuilder {
+func (b *MockStreamDefinitionBuilder) WithV1BackfillJobTemplateRef(name types.NamespacedName) *MockStreamDefinitionBuilder {
 	b.definition.Spec.ExecutionSettings.BackfillJobTemplateRef.Name = name.Name
 	b.definition.Spec.ExecutionSettings.BackfillJobTemplateRef.Namespace = name.Namespace
+	return b
+}
+
+// WithV2BackfillJobTemplateRef sets the job template reference for the batch job backend,
+// initializing the batch job backend if it is currently nil.
+func (b *MockStreamDefinitionBuilder) WithV2BackfillJobTemplateRef(name types.NamespacedName) *MockStreamDefinitionBuilder {
+	if b.definition.Spec.ExecutionSettings.StreamingBackend.BatchJobBackend == nil {
+		b.definition.Spec.ExecutionSettings.StreamingBackend.BatchJobBackend = &testv2.BatchJobBackend{}
+	}
+
+	b.definition.Spec.ExecutionSettings.StreamingBackend.BatchJobBackend.BackfillJobTemplateRef.Name = name.Name
+	b.definition.Spec.ExecutionSettings.StreamingBackend.BatchJobBackend.BackfillJobTemplateRef.Namespace = name.Namespace
 	return b
 }
 
