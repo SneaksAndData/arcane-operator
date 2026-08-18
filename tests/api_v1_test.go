@@ -238,7 +238,7 @@ func buildV2StreamDefinition(configure func(definition *v2.TestStreamDefinitionV
 			},
 			ExecutionSettings: v2.ExecutionSettings{
 				LayoutVersion: "v1",
-				BackfillJobTemplateRef: corev1.ObjectReference{
+				BackfillJobTemplateRef: &corev1.ObjectReference{
 					Kind:      "StreamingJobTemplate",
 					Name:      "arcane-stream-mock",
 					Namespace: "default",
