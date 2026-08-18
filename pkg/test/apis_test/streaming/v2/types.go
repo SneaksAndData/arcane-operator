@@ -21,11 +21,11 @@ type CronJobBackend struct {
 // BatchJobBackend represents the backend configuration for real-time streaming, including the change capture interval
 // and a reference to the job template.
 type BatchJobBackend struct {
-	// ChangeCaptureInterval represents the interval at which changes are captured for real-time processing.
-	ChangeCaptureInterval string `json:"changeCaptureInterval"`
-
 	// JobTemplateRef represents a reference to the job template.
 	JobTemplateRef v1.ObjectReference `json:"jobTemplateRef"`
+
+	// BackfillJobTemplateRef represents a reference to the job template.
+	BackfillJobTemplateRef *v1.ObjectReference `json:"backfillJobTemplateRef,omitempty"`
 }
 
 // StreamingBackend represents the backend configuration for streaming, including both real-time and batch processing options.
@@ -46,7 +46,7 @@ type ExecutionSettings struct {
 	Suspended bool `json:"suspended"`
 
 	// BackfillJobTemplateRef represents a reference to the job template.
-	BackfillJobTemplateRef v1.ObjectReference `json:"backfillJobTemplateRef"`
+	BackfillJobTemplateRef *v1.ObjectReference `json:"backfillJobTemplateRef,omitempty"`
 
 	// StreamingBackend represents the backend configuration for streaming.
 	StreamingBackend StreamingBackend `json:"streamingBackend"`
