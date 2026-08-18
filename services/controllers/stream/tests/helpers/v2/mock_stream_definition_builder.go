@@ -5,6 +5,7 @@ import (
 
 	testv2 "github.com/SneaksAndData/arcane-operator/pkg/test/apis_test/streaming/v2"
 	"github.com/SneaksAndData/arcane-operator/services/controllers/stream"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
@@ -60,8 +61,10 @@ func NewMockStreamDefinitionLayoutV2Builder(objectName types.NamespacedName) *Mo
 					LayoutVersion: "v2",
 					Suspended:     true,
 					StreamingBackend: testv2.StreamingBackend{
-						BatchJobBackend: &testv2.BatchJobBackend{},
-						CronJobBackend:  nil,
+						BatchJobBackend: &testv2.BatchJobBackend{
+							BackfillJobTemplateRef: &corev1.ObjectReference{},
+						},
+						CronJobBackend: nil,
 					},
 				},
 			},
@@ -146,8 +149,10 @@ func (b *MockStreamDefinitionBuilder) WithV2BackfillJobTemplateRef(name types.Na
 		b.definition.Spec.ExecutionSettings.StreamingBackend.BatchJobBackend = &testv2.BatchJobBackend{}
 	}
 
-	b.definition.Spec.ExecutionSettings.StreamingBackend.BatchJobBackend.BackfillJobTemplateRef.Name = name.Name
-	b.definition.Spec.ExecutionSettings.StreamingBackend.BatchJobBackend.BackfillJobTemplateRef.Namespace = name.Namespace
+	b.definition.Spec.ExecutionSettings.StreamingBackend.BatchJobBackend.BackfillJobTemplateRef = &corev1.ObjectReference{
+		Name:      name.Name,
+		Namespace: name.Namespace,
+	}
 	return b
 }
 
