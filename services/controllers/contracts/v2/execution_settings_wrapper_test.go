@@ -1,4 +1,4 @@
-package v1
+package v2
 
 import (
 	"testing"
@@ -199,12 +199,12 @@ func Test_GetStreamingJobName(t *testing.T) {
 		sd.Spec.ExecutionSettings = testv2.ExecutionSettings{
 			LayoutVersion: "v1",
 			Suspended:     false,
-			BackfillJobTemplateRef: &corev1.ObjectReference{
-				Name:      "backfillJobTemplate1",
-				Namespace: "default",
-			},
 			StreamingBackend: testv2.StreamingBackend{
 				BatchJobBackend: &testv2.BatchJobBackend{
+					BackfillJobTemplateRef: &corev1.ObjectReference{
+						Name:      "backfillJobTemplate1",
+						Namespace: "default",
+					},
 					JobTemplateRef: corev1.ObjectReference{
 						Name:      "jobTemplate1",
 						Namespace: "default",
@@ -232,9 +232,11 @@ func Test_GetStreamingJobName(t *testing.T) {
 func Test_GetBackfillJobName(t *testing.T) {
 	// Arrange
 	fakeClient := setupFakeClient(func(sd *testv2.MockStreamDefinition) {
-		sd.Spec.ExecutionSettings.BackfillJobTemplateRef = &corev1.ObjectReference{
-			Name:      "backfillJobTemplate1",
-			Namespace: "default",
+		sd.Spec.ExecutionSettings.StreamingBackend.BatchJobBackend = &testv2.BatchJobBackend{
+			BackfillJobTemplateRef: &corev1.ObjectReference{
+				Name:      "backfillJobTemplate1",
+				Namespace: "default",
+			},
 		}
 	})
 
@@ -343,14 +345,14 @@ func TestUnstructuredWrapper_GetBackend_BatchJob(t *testing.T) {
 		sd.Spec.ExecutionSettings = testv2.ExecutionSettings{
 			LayoutVersion: "v1",
 			Suspended:     false,
-			BackfillJobTemplateRef: &corev1.ObjectReference{
-				Name:      "backfillJobTemplate1",
-				Namespace: "default",
-			},
 			StreamingBackend: testv2.StreamingBackend{
 				BatchJobBackend: &testv2.BatchJobBackend{
 					JobTemplateRef: corev1.ObjectReference{
 						Name:      "jobTemplate1",
+						Namespace: "default",
+					},
+					BackfillJobTemplateRef: &corev1.ObjectReference{
+						Name:      "backfillJobTemplate1",
 						Namespace: "default",
 					},
 				},
@@ -377,10 +379,6 @@ func TestUnstructuredWrapper_GetBackend_CronJob(t *testing.T) {
 		sd.Spec.ExecutionSettings = testv2.ExecutionSettings{
 			LayoutVersion: "v1",
 			Suspended:     false,
-			BackfillJobTemplateRef: &corev1.ObjectReference{
-				Name:      "backfillJobTemplate1",
-				Namespace: "default",
-			},
 			StreamingBackend: testv2.StreamingBackend{
 				CronJobBackend: &testv2.CronJobBackend{
 					JobTemplateRef: corev1.ObjectReference{
@@ -413,9 +411,6 @@ func setupFakeClient(updateStreamDefinition func(sd *testv2.MockStreamDefinition
 		Spec: testv2.MockStreamDefinitionSpec{
 			Source:      "sourceA",
 			Destination: "destinationB",
-			ExecutionSettings: testv2.ExecutionSettings{
-				BackfillJobTemplateRef: &corev1.ObjectReference{},
-			},
 		},
 		Status: testv2.MockStreamDefinitionStatus{
 			Phase: "Running",
