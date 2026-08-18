@@ -144,6 +144,9 @@ func (e *ExecutionSettingsWrapper) Validate() error {
 		return err
 	}
 
+	if e.underlyingSpec.ExecutionSettings.BackfillJobTemplateRef == nil {
+		return errors.New("backfillJobTemplateRef is nil in execution spec with layout version 1")
+	}
 	return nil
 }
 
