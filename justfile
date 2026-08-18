@@ -28,7 +28,7 @@ mock-stream-plugin:
         --namespace default \
         --set jobTemplateSettings.podFailurePolicySettings.retryOnExitCodes="{120,121}" \
         --set jobTemplateSettings.backoffLimit=1 \
-        --version v1.0.14-1-g84c825
+        --version v1.0.14-1-g84c825c
 
 manifests:
     kubectl apply -f integration_tests/manifests/*.yaml
