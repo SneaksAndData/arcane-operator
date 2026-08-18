@@ -413,6 +413,9 @@ func setupFakeClient(updateStreamDefinition func(sd *testv2.MockStreamDefinition
 		Spec: testv2.MockStreamDefinitionSpec{
 			Source:      "sourceA",
 			Destination: "destinationB",
+			ExecutionSettings: testv2.ExecutionSettings{
+				BackfillJobTemplateRef: &corev1.ObjectReference{},
+			},
 		},
 		Status: testv2.MockStreamDefinitionStatus{
 			Phase: "Running",
