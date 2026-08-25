@@ -62,12 +62,14 @@ func (in *BackfillRequest) JobConfigurator() (job.Configurator, error) {
 			WithConfigurator(job.NewBackfillConfigurator(false)).
 			Build(), nil
 	}
-	configurator := job.NewConfiguratorChainBuilder().
-		WithConfigurator(job.NewEnvironmentConfigurator(in.Spec, "OVERRIDE")).
+	configuratorBuilder := job.NewConfiguratorChainBuilder().
 		WithConfigurator(job.NewBackfillConfigurator(true)).
-		WithConfigurator(job.NewBackfillStaticIdConfigurator(in.Name)).
-		Build()
-	return configurator, nil
+		WithConfigurator(job.NewBackfillStaticIdConfigurator(in.Name))
+
+	if in.Spec.Payload != nil {
+		configuratorBuilder = configuratorBuilder.WithConfigurator(job.NewEnvironmentConfigurator(in.Spec.Payload, "OVERRIDE"))
+	}
+	return configuratorBuilder.Build(), nil
 }
 
 func camelCaseToSnakeCase(input string) string {

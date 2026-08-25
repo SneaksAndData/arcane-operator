@@ -18,6 +18,10 @@ limitations under the License.
 
 package v1
 
+import (
+	runtime "k8s.io/apimachinery/pkg/runtime"
+)
+
 // BackfillRequestSpecApplyConfiguration represents a declarative configuration of the BackfillRequestSpec type for use
 // with apply.
 //
@@ -29,6 +33,9 @@ type BackfillRequestSpecApplyConfiguration struct {
 	StreamId *string `json:"streamId,omitempty"`
 	// Completed indicates whether the backfill request has been completed
 	Completed *bool `json:"completed,omitempty"`
+	// Payload is an unstructured JSON object with arbitrary nesting. This is used to generate the
+	// `STREAMCONTEXT_OVERRIDE` environment variable for the backfill job. The payload is optional and can be nil.
+	Payload *runtime.RawExtension `json:"payload,omitempty"`
 }
 
 // BackfillRequestSpecApplyConfiguration constructs a declarative configuration of the BackfillRequestSpec type for use with
@@ -58,5 +65,13 @@ func (b *BackfillRequestSpecApplyConfiguration) WithStreamId(value string) *Back
 // If called multiple times, the Completed field is set to the value of the last call.
 func (b *BackfillRequestSpecApplyConfiguration) WithCompleted(value bool) *BackfillRequestSpecApplyConfiguration {
 	b.Completed = &value
+	return b
+}
+
+// WithPayload sets the Payload field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the Payload field is set to the value of the last call.
+func (b *BackfillRequestSpecApplyConfiguration) WithPayload(value runtime.RawExtension) *BackfillRequestSpecApplyConfiguration {
+	b.Payload = &value
 	return b
 }
