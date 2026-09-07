@@ -67,7 +67,7 @@ func (in *BackfillRequest) JobConfigurator() (job.Configurator, error) {
 		WithConfigurator(job.NewBackfillStaticIdConfigurator(in.Name))
 
 	if in.Spec.Payload != nil {
-		configuratorBuilder = configuratorBuilder.WithConfigurator(job.NewEnvironmentConfigurator(in.Spec.Payload, "OVERRIDE"))
+		configuratorBuilder = configuratorBuilder.WithConfigurator(job.NewEnvironmentConfigurator(in.Spec.Payload, "SPEC_OVERRIDE"))
 	}
 	return configuratorBuilder.Build(), nil
 }
