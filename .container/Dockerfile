@@ -10,7 +10,7 @@ WORKDIR /app
 COPY . ./
 
 
-RUN go install github.com/DataDog/orchestrion@v1.7.0 \
+RUN go install github.com/DataDog/orchestrion@v1.11.0 \
     && orchestrion pin \
     && go mod tidy \
     && go mod verify \
