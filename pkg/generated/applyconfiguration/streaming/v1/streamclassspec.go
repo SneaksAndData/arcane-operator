@@ -33,6 +33,8 @@ type StreamClassSpecApplyConfiguration struct {
 	PluralName *string `json:"pluralName,omitempty"`
 	// SecretRefs is a list of fields to be extracted from the secret
 	SecretRefs []string `json:"secretRefs,omitempty"`
+	// OverridableFields is a nullable list of fields that can be overridden by stream definitions
+	OverridableFields []string `json:"overridableFields,omitempty"`
 }
 
 // StreamClassSpecApplyConfiguration constructs a declarative configuration of the StreamClassSpec type for use with
@@ -79,6 +81,16 @@ func (b *StreamClassSpecApplyConfiguration) WithPluralName(value string) *Stream
 func (b *StreamClassSpecApplyConfiguration) WithSecretRefs(values ...string) *StreamClassSpecApplyConfiguration {
 	for i := range values {
 		b.SecretRefs = append(b.SecretRefs, values[i])
+	}
+	return b
+}
+
+// WithOverridableFields adds the given value to the OverridableFields field in the declarative configuration
+// and returns the receiver, so that objects can be build by chaining "With" function invocations.
+// If called multiple times, values provided by each call will be appended to the OverridableFields field.
+func (b *StreamClassSpecApplyConfiguration) WithOverridableFields(values ...string) *StreamClassSpecApplyConfiguration {
+	for i := range values {
+		b.OverridableFields = append(b.OverridableFields, values[i])
 	}
 	return b
 }

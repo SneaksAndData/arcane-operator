@@ -35,6 +35,10 @@ type StreamClassSpec struct {
 
 	// SecretRefs is a list of fields to be extracted from the secret
 	SecretRefs []string `json:"secretRefs,omitempty"`
+
+	// OverridableFields is a nullable list of fields that can be overridden by stream definitions
+	//+nullable
+	OverridableFields []string `json:"overridableFields,omitempty"`
 }
 
 // StreamClassStatus defines the observed state of a stream class
