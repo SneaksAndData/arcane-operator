@@ -77,3 +77,53 @@ jobs:
         if: always()
         run: |
           kubectl describe pods --namespace default || true
+
+  validate_dockerfile:
+    name: Validate dockerfile
+    runs-on: ubuntu-latest
+    if: ${{ github.ref != 'refs/heads/main' }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get project version
+        uses: SneaksAndData/github-actions/generate_version@v0.1.11
+        id: version
+
+      - name: Get build number
+        shell: bash
+        id: buildnumber
+        run: |
+          dt=$(date +'%Y%m%d%H%M%S')
+          echo "result=$dt" >> "$GITHUB_OUTPUT"
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=semver,pattern={{version}},value=${{steps.version.outputs.version}}
+          flavor:
+            latest=false
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4.0.0
+        with:
+          use: true
+          platforms: linux/arm64,linux/amd64
+
+      - name: Build docker image (validate Dockerfile)
+        uses: docker/build-push-action@v7.0.0
+        with:
+          context: .
+          build-args: |
+            APPVERSION=${{ steps.version.outputs.version }}
+            BUILDNUMBER=${{ steps.buildnumber.outputs.result }}
+          file: .container/Dockerfile
+          push: false
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          platforms: linux/arm64,linux/amd64
