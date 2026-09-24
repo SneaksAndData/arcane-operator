@@ -55,6 +55,10 @@ jobs:
           config: .testcoverage.yaml
 
       - name: Post coverage report
+        # Dependabot-triggered runs get a read-only GITHUB_TOKEN, so posting
+        # a PR comment always fails with "Resource not accessible by
+        # integration". Don't fail the required check because of that.
+        continue-on-error: true
         uses: thollander/actions-comment-pull-request@v3
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
