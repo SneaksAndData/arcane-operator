@@ -64,8 +64,12 @@ spec:
                     --sort-by=metadata.creationTimestamp \
                     --no-headers \
                     --output custom-columns="NAMESPACE:.metadata.namespace,NAME:.metadata.name" \
-                  | head -n $HISTORY_LIMIT  \
-                  | xargs --no-run-if-empty -n2 kubectl delete backfillrequests --namespace
+                  | head -n "$HISTORY_LIMIT" \
+                  | while IFS=' ' read -r namespace name; do
+                      [ -n "$namespace" ] && [ -n "$name" ] || continue
+                      kubectl delete backfillrequests "$name" --namespace "$namespace" || true
+                      sleep 1
+                    done
             env:
               - name: HISTORY_LIMIT
                 value: "{{ .Values.garbageCollector.historyLimit }}"
