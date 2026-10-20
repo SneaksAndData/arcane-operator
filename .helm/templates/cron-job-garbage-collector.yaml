@@ -12,6 +12,7 @@ metadata:
   {{- end }}
 spec:
   schedule: {{ .Values.garbageCollector.schedule | quote }}
+  suspend: {{ .Values.garbageCollector.suspend | default false }}
   concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: {{ .Values.garbageCollector.successfulJobsHistoryLimit | default 3 }}
   failedJobsHistoryLimit: {{ .Values.garbageCollector.failedJobsHistoryLimit | default 1 }}

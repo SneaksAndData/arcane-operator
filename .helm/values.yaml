@@ -285,6 +285,9 @@ garbageCollector:
   # Cron schedule for the garbage collector (e.g., "0 12 * * *" for daily at 12 PM)
   schedule: "0 12 * * *"
 
+  # Suspend the CronJob without disabling it entirely
+  suspend: false
+
   # Number of successful finished jobs to retain
   successfulJobsHistoryLimit: 3
 
