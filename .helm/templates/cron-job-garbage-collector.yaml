@@ -64,7 +64,8 @@ spec:
                     --sort-by=metadata.creationTimestamp \
                     --no-headers \
                     --output custom-columns="NAMESPACE:.metadata.namespace,NAME:.metadata.name" \
-                  | head -n "$HISTORY_LIMIT" \
+                  | tail -r \
+                  | tail -n +$((HISTORY_LIMIT + 1)) \
                   | while IFS=' ' read -r namespace name; do
                       [ -n "$namespace" ] && [ -n "$name" ] || continue
                       kubectl delete backfillrequests "$name" --namespace "$namespace" || true
