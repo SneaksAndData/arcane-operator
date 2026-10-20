@@ -64,8 +64,13 @@ spec:
                     --sort-by=metadata.creationTimestamp \
                     --no-headers \
                     --output custom-columns="NAMESPACE:.metadata.namespace,NAME:.metadata.name" \
-                  | tail -r \
-                  | tail -n +$((HISTORY_LIMIT + 1)) \
+                  | awk -v limit="$HISTORY_LIMIT" '
+                      { items[NR] = $0 }
+                      END {
+                        if (NR <= limit) exit 0
+                        for (i = 1; i <= NR - limit; i++) print items[i]
+                      }
+                    ' \
                   | while IFS=' ' read -r namespace name; do
                       [ -n "$namespace" ] && [ -n "$name" ] || continue
                       kubectl delete backfillrequests "$name" --namespace "$namespace" || true
