@@ -12,7 +12,6 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/klog/v2"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
@@ -86,8 +85,14 @@ func NewStreamReconciler(client client.Client, gvk schema.GroupVersionKind, jobB
 
 // Reconcile implements the reconciliation loop for Stream resources.
 func (s *streamReconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	logger := s.getLogger(ctx, request.NamespacedName)
-	logger.V(0).Info("Reconciling the Stream resource")
+
+	logger := klog.Background().
+		WithValues("stream", request.NamespacedName).
+		WithValues("namespace", request.Namespace).
+		WithValues("streamId", request.Name, "streamKind", s.streamClass.Spec.KindRef)
+
+	ctx = klog.NewContext(ctx, logger)
+	logger.V(0).Info("Reconciling the stream resource")
 
 	streamDefinition, err := GetStreamForClass(ctx, s.client, s.streamClass, request.NamespacedName, s.definitionParser)
 
@@ -97,26 +102,39 @@ func (s *streamReconciler) Reconcile(ctx context.Context, request reconcile.Requ
 	}
 
 	if client.IgnoreNotFound(err) != nil { // coverage-ignore
-		logger.V(0).Error(err, "unable to fetch Stream resource")
+		logger.V(0).Error(err, "Unable to fetch stream resource")
 		return reconcile.Result{}, err
 	}
 
 	backfillRequest, err := s.backfillBackendResourceManager.GetBackfillRequest(ctx, streamDefinition)
 	if client.IgnoreNotFound(err) != nil { // coverage-ignore
-		logger.V(0).Error(err, "unable to fetch BackfillRequest for the Stream, cannot proceed")
+		logger.V(0).Error(err, "unable to fetch BackfillRequest for the stream")
 		return reconcile.Result{}, err
 	}
 
-	streamingJob, err := s.backendResourceManagers[BatchJob].Get(ctx, request.NamespacedName)
-	if err != nil { // coverage-ignore
-		logger.V(0).Error(err, "unable to fetch streaming job for the Stream, cannot proceed")
+	backendResource, err := s.backendResourceManagers[BatchJob].Get(ctx, request.NamespacedName)
+	if client.IgnoreNotFound(err) != nil { // coverage-ignore
+		logger.V(0).Error(err, "Unable to fetch backend resource for the stream")
 		return reconcile.Result{}, err
 	}
 
-	return s.moveFsm(ctx, streamDefinition, streamingJob, backfillRequest)
+	result, err := s.moveFsm(ctx, streamDefinition, backendResource, backfillRequest)
+	if err != nil {
+		s.eventRecorder.Eventf(
+			streamDefinition.ToUnstructured(),
+			"Warning",
+			"StreamSuspended",
+			"Failed to reconcile the stream: %v", err)
+		logger.V(0).Error(err, "Failed to move FSM for the stream")
+	}
+	return result, err
 }
 
 func (s *streamReconciler) moveFsm(ctx context.Context, definition Definition, job BackendResource, backfillRequest *v1.BackfillRequest) (reconcile.Result, error) {
+	logger := klog.Background().
+		WithValues("namespace", definition.NamespacedName().Namespace).
+		WithValues("streamId", definition.NamespacedName().Name, "streamKind", s.streamClass.Spec.KindRef)
+
 	phase := definition.GetPhase()
 
 	switch {
@@ -152,14 +170,6 @@ func (s *streamReconciler) moveFsm(ctx context.Context, definition Definition, j
 				"The stream was suspended")
 		})
 
-	case phase == Failed && !definition.Suspended() && backfillRequest != nil:
-		return s.backendResourceManagers[definition.GetBackend()].Apply(ctx, definition, backfillRequest, Backfilling, s.streamClass, func() {
-			s.eventRecorder.Eventf(definition.ToUnstructured(),
-				"Normal",
-				"BackfillRequested",
-				"Backfill was requested for the new stream definition: %s", definition.NamespacedName().Name)
-		})
-
 	case phase == Failed:
 		return s.backendResourceManagers[definition.GetBackend()].Remove(ctx, definition, Failed, func() {
 			s.eventRecorder.Eventf(definition.ToUnstructured(),
@@ -168,7 +178,17 @@ func (s *streamReconciler) moveFsm(ctx context.Context, definition Definition, j
 				"The stream %s has failed", definition.NamespacedName().Name)
 		})
 
+	case phase == New && definition.GetBackend() == NoBackend:
+		logger.V(0).Info("Backend unknown")
+		return s.backendResourceManagers[definition.GetBackend()].NoOp(ctx, definition, nil, New, func() {
+			s.eventRecorder.Eventf(definition.ToUnstructured(),
+				"Warning",
+				"NoValidBackend",
+				"No valid streaming backend configured for %s", definition.NamespacedName().Name)
+		})
+
 	case phase == New && definition.Suspended():
+		logger.V(0).Info("Transition to suspended")
 		return s.backendResourceManagers[definition.GetBackend()].Remove(ctx, definition, Suspended, func() {
 			s.eventRecorder.Eventf(definition.ToUnstructured(),
 				"Normal",
@@ -177,18 +197,27 @@ func (s *streamReconciler) moveFsm(ctx context.Context, definition Definition, j
 		})
 
 	case phase == New && !definition.Suspended():
-		return s.backfillBackendResourceManager.Apply(ctx, definition, s.newBackfillRequest(definition), Pending, s.streamClass, func() {
-			s.eventRecorder.Eventf(definition.ToUnstructured(),
-				"Normal",
-				"StreamCreated",
-				"Backfill was requested for the new stream definition: %s", definition.NamespacedName().Name)
-		})
-
+		logger.V(0).Info("Transition to Pending")
+		if definition.GetBackend() == BatchJob {
+			return s.backfillBackendResourceManager.Apply(ctx, definition, s.newBackfillRequest(definition), Pending, s.streamClass, func() {
+				s.eventRecorder.Eventf(definition.ToUnstructured(),
+					"Normal",
+					"StreamCreated",
+					"Backfill was requested for the new stream definition: %s", definition.NamespacedName().Name)
+			})
+		}
+		return s.backendResourceManagers[definition.GetBackend()].NoOp(ctx, definition, nil, Pending, func() {})
 	case phase == Pending && backfillRequest == nil:
-		return s.backendResourceManagers[definition.GetBackend()].Apply(ctx, definition, nil, Running, s.streamClass, nil)
+		nextPhase := Running
+		logger.V(0).Info("Switching to the new backend", "backend", definition.GetBackend())
+		if definition.GetBackend() == CronJob {
+			nextPhase = Scheduled
+		}
+		return s.backendResourceManagers[definition.GetBackend()].Apply(ctx, definition, nil, nextPhase, s.streamClass, nil)
 
 	case phase == Pending && backfillRequest != nil:
-		return s.backendResourceManagers[definition.GetBackend()].Apply(ctx, definition, backfillRequest, Backfilling, s.streamClass, nil)
+		logger.V(0).Info("Starting the backfill", "backend", definition.GetBackend())
+		return s.backendResourceManagers[BatchJob].Apply(ctx, definition, backfillRequest, Backfilling, s.streamClass, nil)
 
 	case phase == Running && definition.Suspended():
 		return s.backendResourceManagers[definition.GetBackend()].Remove(ctx, definition, Suspended, func() {
@@ -207,6 +236,13 @@ func (s *streamReconciler) moveFsm(ctx context.Context, definition Definition, j
 		})
 
 	case phase == Running && backfillRequest == nil:
+		transited, result, err := tryTransitionBackend(ctx, s, definition, backfillRequest)
+		if err != nil {
+			return result, err
+		}
+		if transited {
+			return result, nil
+		}
 		return s.backendResourceManagers[definition.GetBackend()].Apply(ctx, definition, backfillRequest, Running, s.streamClass, func() {
 			s.eventRecorder.Eventf(definition.ToUnstructured(),
 				"Normal",
@@ -214,12 +250,20 @@ func (s *streamReconciler) moveFsm(ctx context.Context, definition Definition, j
 				"The streaming job for stream %s is continuing", definition.NamespacedName().Name)
 		})
 
-	case phase == Suspended && backfillRequest != nil:
+	case phase == Suspended && backfillRequest != nil && definition.Suspended():
+		return s.backendResourceManagers[definition.GetBackend()].NoOp(ctx, definition, backfillRequest, Suspended, func() {
+			s.eventRecorder.Eventf(definition.ToUnstructured(),
+				"Normal",
+				"BackfillSuspended",
+				"A backfill was suspended for suspended stream %s", definition.NamespacedName().Name)
+		})
+
+	case phase == Suspended && backfillRequest != nil && !definition.Suspended():
 		return s.backendResourceManagers[definition.GetBackend()].NoOp(ctx, definition, backfillRequest, Pending, func() {
 			s.eventRecorder.Eventf(definition.ToUnstructured(),
 				"Normal",
 				"BackfillRequested",
-				"A backfill requested for suspended stream %s", definition.NamespacedName().Name)
+				"A backfill was requested for suspended stream %s", definition.NamespacedName().Name)
 		})
 
 	case phase == Suspended && backfillRequest == nil && definition.Suspended():
@@ -247,6 +291,11 @@ func (s *streamReconciler) moveFsm(ctx context.Context, definition Definition, j
 		})
 
 	case phase == Backfilling && backfillRequest == nil:
+		_, err := s.backfillBackendResourceManager.Complete(ctx, definition, Pending, s.streamClass, nil)
+		if err != nil {
+			logger.Error(err, "failed to remove backfill job")
+			return reconcile.Result{}, err
+		}
 		return s.backfillBackendResourceManager.Remove(ctx, definition, Pending, func() {
 			s.eventRecorder.Eventf(definition.ToUnstructured(),
 				"Normal",
@@ -263,6 +312,11 @@ func (s *streamReconciler) moveFsm(ctx context.Context, definition Definition, j
 		})
 
 	case phase == Backfilling && job.IsCompleted():
+		_, err := s.backfillBackendResourceManager.Complete(ctx, definition, Pending, s.streamClass, nil)
+		if err != nil {
+			logger.Error(err, "failed to remove backfill job")
+			return reconcile.Result{}, err
+		}
 		return s.backfillBackendResourceManager.Remove(ctx, definition, Pending, func() {
 			s.eventRecorder.Eventf(definition.ToUnstructured(),
 				"Normal",
@@ -277,6 +331,53 @@ func (s *streamReconciler) moveFsm(ctx context.Context, definition Definition, j
 				"BackfillInProgress",
 				"Backfill for stream %s is still in progress", definition.NamespacedName().Name)
 		})
+	case phase == Backfilling && definition.GetBackend() != BatchJob:
+		return s.backendResourceManagers[definition.GetBackend()].Remove(ctx, definition, Pending, func() {
+			s.eventRecorder.Eventf(definition.ToUnstructured(),
+				"Normal",
+				"StreamScheduled",
+				"The stream %s has been scheduled", definition.NamespacedName().Name)
+		})
+
+	case phase == Running && definition.GetBackend() != BatchJob:
+		logger.V(0).Info("Switching backend for the stream without backfill")
+		return s.backendResourceManagers[definition.GetBackend()].Remove(ctx, definition, Pending, func() {
+			s.eventRecorder.Eventf(definition.ToUnstructured(),
+				"Normal",
+				"StreamScheduled",
+				"The stream %s has been scheduled", definition.NamespacedName().Name)
+		})
+
+	case phase == Scheduled && definition.Suspended():
+		return s.backendResourceManagers[definition.GetBackend()].Remove(ctx, definition, Suspended, func() {
+			s.eventRecorder.Eventf(definition.ToUnstructured(),
+				"Normal",
+				"StreamSuspended",
+				"The streaming job %s was suspended", definition.NamespacedName().Name)
+		})
+
+	case phase == Scheduled && backfillRequest != nil:
+		return s.backendResourceManagers[definition.GetBackend()].Remove(ctx, definition, Pending, func() {
+			s.eventRecorder.Eventf(definition.ToUnstructured(),
+				"Normal",
+				"BackfillRequested",
+				"A backfill requested for stream %s, stopping the streaming job to start backfilling", definition.NamespacedName().Name)
+		})
+
+	case phase == Scheduled && backfillRequest == nil:
+		transited, result, err := tryTransitionBackend(ctx, s, definition, backfillRequest)
+		if err != nil {
+			return result, err
+		}
+		if transited {
+			return result, nil
+		}
+		return s.backendResourceManagers[definition.GetBackend()].Apply(ctx, definition, backfillRequest, Scheduled, s.streamClass, func() {
+			s.eventRecorder.Eventf(definition.ToUnstructured(),
+				"Normal",
+				"StreamingScheduled",
+				"The stream %s is scheduled", definition.NamespacedName().Name)
+		})
 	}
 
 	return reconcile.Result{}, fmt.Errorf("failed to reconcile Stream FSM for %s/%s. Current state: %s",
@@ -284,6 +385,86 @@ func (s *streamReconciler) moveFsm(ctx context.Context, definition Definition, j
 		definition.NamespacedName().Name,
 		definition.StateString(),
 	)
+}
+
+func tryTransitionBackend(ctx context.Context, s *streamReconciler, definition Definition, backfillRequest *v1.BackfillRequest) (bool, reconcile.Result, error) {
+	logger := klog.Background().
+		WithValues("namespace", definition.NamespacedName().Namespace).
+		WithValues("streamId", definition.NamespacedName().Name, "streamKind", s.streamClass.Spec.KindRef)
+	logger.V(0).Info("Trying to transit backend", "backend", definition.GetBackend())
+
+	backend, err := definition.GetPreviousBackend(ctx, s.client)
+	if err != nil {
+		logger.V(0).Error(err, "Failed to transit backend", "backend", definition.GetBackend())
+		return false, reconcile.Result{}, fmt.Errorf("failed to get previous backend for stream %s/%s: %w",
+			definition.NamespacedName().Namespace,
+			definition.NamespacedName().Name,
+			err,
+		)
+	}
+	if backend == nil || *backend == definition.GetBackend() {
+		return false, reconcile.Result{}, nil
+	}
+
+	result, err := s.transitBackend(ctx, definition, backfillRequest)
+	if err != nil {
+		logger.V(0).Error(err, "Failed to transit backend", "backend", definition.GetBackend())
+		return false, result, fmt.Errorf("failed to transit backend for stream %s/%s: %w",
+			definition.NamespacedName().Namespace,
+			definition.NamespacedName().Name,
+			err,
+		)
+	}
+	return true, result, nil
+}
+
+func (s *streamReconciler) transitBackend(ctx context.Context, definition Definition, backfillRequest *v1.BackfillRequest) (reconcile.Result, error) {
+	logger := klog.Background().
+		WithValues("namespace", definition.NamespacedName().Namespace).
+		WithValues("streamId", definition.NamespacedName().Name, "streamKind", s.streamClass.Spec.KindRef)
+	logger.V(0).Info("Transiting the backend", "backend", definition.GetBackend())
+
+	var eventFunc controllers.EventFunc
+	switch definition.GetBackend() {
+	case BatchJob:
+		// Ensure that batch job is removed before scheduling the stream again to avoid having orphaned batch jobs if
+		// the stream class was changed to a non-batch job backend. Since we have only two backends, it's safe to assume
+		// that old backend is always BatchJob when the new backend is not BatchJob, and vice versa
+		res, err := s.backendResourceManagers[CronJob].Remove(ctx, definition, Failed, func() {})
+		if err != nil {
+			return res, err
+		}
+
+		// Define the event function to record the event after the backend resource has been successfully removed
+		eventFunc = func() {
+			s.eventRecorder.Eventf(definition.ToUnstructured(),
+				"Normal",
+				"StreamScheduled",
+				"The stream %s has been scheduled", definition.NamespacedName().Name)
+		}
+	case CronJob:
+		// See the comment above for BatchJob case, the same logic applies here to avoid having orphaned cron jobs
+		// if the backend was changed from CronJob to something else
+		res, err := s.backendResourceManagers[BatchJob].Remove(ctx, definition, Failed, func() {})
+		if err != nil {
+			return res, err
+		}
+
+		eventFunc = func() {
+			s.eventRecorder.Eventf(definition.ToUnstructured(),
+				"Normal",
+				"StreamStarted",
+				"The stream %s has been started", definition.NamespacedName().Name)
+		}
+	default:
+		return reconcile.Result{}, fmt.Errorf("unknown backend %s for stream %s/%s",
+			definition.GetBackend(),
+			definition.NamespacedName().Namespace,
+			definition.NamespacedName().Name)
+	}
+
+	// Don't do anything only transit the state. The Pending state will create the required resources if needed.
+	return s.backendResourceManagers[definition.GetBackend()].NoOp(ctx, definition, backfillRequest, Pending, eventFunc)
 }
 
 func (s *streamReconciler) newBackfillRequest(definition Definition) *v1.BackfillRequest {
@@ -297,10 +478,4 @@ func (s *streamReconciler) newBackfillRequest(definition Definition) *v1.Backfil
 			StreamClass: s.streamClass.Name,
 		},
 	}
-}
-
-func (s *streamReconciler) getLogger(_ context.Context, request types.NamespacedName) klog.Logger {
-	return klog.Background().
-		WithName("StreamReconciler").
-		WithValues("namespace", request.Namespace, "streamId", request.Name, "streamKind", s.gvk.Kind)
 }

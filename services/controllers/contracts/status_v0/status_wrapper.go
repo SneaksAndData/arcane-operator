@@ -160,6 +160,18 @@ func (s *StatusWrapper) ComputeConditions(bfr *v1.BackfillRequest) []metav1.Cond
 				},
 			},
 		}
+	case stream.Scheduled:
+		return []metav1.Condition{
+			{
+				Type:    "Ready",
+				Status:  metav1.ConditionTrue,
+				Reason:  "StreamScheduled",
+				Message: "The stream is scheduled to run at the specified time.",
+				LastTransitionTime: metav1.Time{
+					Time: metav1.Now().Time,
+				},
+			},
+		}
 	default:
 		return []metav1.Condition{}
 	}

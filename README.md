@@ -40,23 +40,28 @@ This repository contains the **Arcane Operator**, which is responsible for manag
    - [Extending the platform with your own plugins](#extending-the-platform-with-your-own-plugins)
 
 # Getting started
-Run the following command to install the Arcane Operator in your Kubernetes cluster:
+Install the Arcane CRDs before installing the Arcane Operator: https://github.com/SneaksAndData/arcane-crd.
+The operator chart expects the shared Arcane custom resource definitions to already exist in the cluster.
 
 ```bash
 # Create a namespace for the operator installation
 $ kubectl create namespace arcane
 
+# Install the shared Arcane CRDs
+$ helm install arcane-crd oci://ghcr.io/sneaksanddata/helm/arcane-crd \
+  --version vX.Y.Z \
+  --namespace arcane
+
 # Install the operator in the created namespace
 $ helm install arcane oci://ghcr.io/sneaksanddata/helm/arcane-operator \
-  --version v0.0.14 \
+  --version vX.Y.Z \
   --namespace arcane
 ```
 
-This command creates a namespace `arcane` and installs the stream operator in it. By default, the Helm chart installs two CRDs:
+The `arcane-crd` chart installs the shared Arcane CRDs:
 - StreamClass
 - StreamingJobTemplate
-
-The resources of both kinds are being installed by the streaming plugins.
+- BackfillRequest
 
 ## Verify the installation
 

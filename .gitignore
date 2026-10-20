@@ -359,3 +359,6 @@ NuGet.Config
 
 # Golang vendor directory
 /vendor/
+
+## Mac os files
+**/.DS_Store

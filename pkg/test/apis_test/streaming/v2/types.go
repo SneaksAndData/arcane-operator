@@ -21,17 +21,17 @@ type CronJobBackend struct {
 // BatchJobBackend represents the backend configuration for real-time streaming, including the change capture interval
 // and a reference to the job template.
 type BatchJobBackend struct {
-	// ChangeCaptureInterval represents the interval at which changes are captured for real-time processing.
-	ChangeCaptureInterval string `json:"changeCaptureInterval"`
-
 	// JobTemplateRef represents a reference to the job template.
 	JobTemplateRef v1.ObjectReference `json:"jobTemplateRef"`
+
+	// BackfillJobTemplateRef represents a reference to the job template.
+	BackfillJobTemplateRef *v1.ObjectReference `json:"backfillJobTemplateRef,omitempty"`
 }
 
 // StreamingBackend represents the backend configuration for streaming, including both real-time and batch processing options.
 type StreamingBackend struct {
 	// BatchJobBackend represents the backend configuration for real-time streaming.
-	BatchJobBackend *BatchJobBackend `json:"realtime,omitempty"`
+	BatchJobBackend *BatchJobBackend `json:"changeCapture,omitempty"`
 
 	// CronJobBackend represents the backend configuration for batch processing.
 	CronJobBackend *CronJobBackend `json:"batch,omitempty"`
@@ -39,14 +39,14 @@ type StreamingBackend struct {
 
 // ExecutionSettings represents the execution settings for a stream, including suspension status and backend configuration.
 type ExecutionSettings struct {
-	// APIVersion represents the API version of the execution settings.
-	APIVersion string `json:"apiVersion"`
+	// LayoutVersion represents the layout version of the execution settings.
+	LayoutVersion string `json:"layoutVersion"`
 
 	// Suspended indicates whether the stream is suspended.
 	Suspended bool `json:"suspended"`
 
 	// BackfillJobTemplateRef represents a reference to the job template.
-	BackfillJobTemplateRef v1.ObjectReference `json:"backfillJobTemplateRef"`
+	BackfillJobTemplateRef *v1.ObjectReference `json:"backfillJobTemplateRef,omitempty"`
 
 	// StreamingBackend represents the backend configuration for streaming.
 	StreamingBackend StreamingBackend `json:"streamingBackend"`

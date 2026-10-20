@@ -8,6 +8,8 @@ on:
     
 env:
   REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
 
 jobs:
   validate_commit:
@@ -15,14 +17,14 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ github.ref != 'refs/heads/main' }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Setup Go
-        uses: actions/setup-go@v6.3.0
+        uses: actions/setup-go@v7.0.0
         with:
-          go-version: '1.25.*'
+          go-version: '1.26.*'
 
-      - uses: extractions/setup-just@v3
+      - uses: extractions/setup-just@v4
 
       - name: Check Format
         run: gofmt -d ./
@@ -53,6 +55,10 @@ jobs:
           config: .testcoverage.yaml
 
       - name: Post coverage report
+        # Dependabot-triggered runs get a read-only GITHUB_TOKEN, so posting
+        # a PR comment always fails with "Resource not accessible by
+        # integration". Don't fail the required check because of that.
+        continue-on-error: true
         uses: thollander/actions-comment-pull-request@v3
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -71,9 +77,59 @@ jobs:
         run: just up
 
       - name: Run integration tests
-        run: go test -v ./tests/... -count=1 -kubeconfig-cmd "kind get kubeconfig" -timeout 3m
+        run: go test -v ./tests/... -count=1 -kubeconfig-cmd "kind get kubeconfig" -timeout 5m -parallel 15
 
       - name: Get logs from application pods
         if: always()
         run: |
           kubectl describe pods --namespace default || true
+
+  validate_dockerfile:
+    name: Validate dockerfile
+    runs-on: ubuntu-latest
+    if: ${{ github.ref != 'refs/heads/main' }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Get project version
+        uses: SneaksAndData/github-actions/generate_version@v0.1.12
+        id: version
+
+      - name: Get build number
+        shell: bash
+        id: buildnumber
+        run: |
+          dt=$(date +'%Y%m%d%H%M%S')
+          echo "result=$dt" >> "$GITHUB_OUTPUT"
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=semver,pattern={{version}},value=${{steps.version.outputs.version}}
+          flavor:
+            latest=false
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4.4.1
+        with:
+          use: true
+          platforms: linux/arm64,linux/amd64
+
+      - name: Build docker image (validate Dockerfile)
+        uses: docker/build-push-action@v7.4.0
+        with:
+          context: .
+          build-args: |
+            APPVERSION=${{ steps.version.outputs.version }}
+            BUILDNUMBER=${{ steps.buildnumber.outputs.result }}
+          file: .container/Dockerfile
+          push: false
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          platforms: linux/arm64,linux/amd64

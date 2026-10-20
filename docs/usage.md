@@ -184,22 +184,45 @@ spec:
 - Sufficient permissions to create cluster-scoped resources (CRDs, ClusterRoles, etc.)
 
 ### Installing Arcane Operator
-
 1. **Create a namespace for Arcane:**
 
 ```bash
 kubectl create namespace arcane
 ```
 
-2. **Install the Arcane Operator using Helm:**
+2. **Install the shared Arcane CRDs:**
+
+The Arcane Operator chart expects the shared Arcane custom resource definitions to already be installed.
 
 ```bash
-helm install arcane oci://ghcr.io/sneaksanddata/helm/arcane-operator \
-  --version v0.0.14 \
+helm install arcane-crd oci://ghcr.io/sneaksanddata/helm/arcane-crd \
+  --version vX.Y.Z \
   --namespace arcane
 ```
 
-3. **Verify the installation:**
+3. **Verify that the shared CRDs are installed:**
+
+```bash
+kubectl get crd | grep streaming.sneaksanddata.com
+```
+
+You should see:
+
+```
+streamclasses.streaming.sneaksanddata.com
+streamingjobtemplates.streaming.sneaksanddata.com
+backfillrequests.streaming.sneaksanddata.com
+```
+
+4. **Install the Arcane Operator using Helm:**
+
+```bash
+helm install arcane oci://ghcr.io/sneaksanddata/helm/arcane-operator \
+  --version vX.Y.Z \
+  --namespace arcane
+```
+
+5. **Verify the installation:**
 
 ```bash
 kubectl get pods -n arcane
@@ -210,20 +233,6 @@ You should see the operator pod running:
 ```
 NAME                               READY   STATUS    RESTARTS   AGE
 arcane-operator-55988bbfcb-ql7qr   1/1     Running   0          1m
-```
-
-4. **Check that the CRDs are installed:**
-
-```bash
-kubectl get crd | grep streaming
-```
-
-You should see:
-
-```
-streamclasses.streaming.sneaksanddata.com
-streamingjobtemplate.streaming.sneaksanddata.com
-backfillrequests.streaming.sneaksanddata.com
 ```
 
 ### Installing Streaming Plugins
@@ -642,4 +651,3 @@ name: stream1
 
 - Operator does not require HA and can run as a single spot instance.
 - Each streaming job is independent; ensure your cluster has sufficient resources to handle peak loads.
-

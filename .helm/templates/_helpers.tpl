@@ -148,8 +148,8 @@ Generate the job template viewer cluster role name
 Generate the job template viewer cluster role name
 */}}
 {{- define "app.clusteRole.backfillRequestViewer" -}}
-{{- if .Values.rbac.clusterRole.streamClassViewer.nameOverride }}
-{{- .Values.rbac.clusterRole.streamClassViewer.nameOverride }}
+{{- if .Values.rbac.clusterRole.backfillRequestViewer.nameOverride }}
+{{- .Values.rbac.clusterRole.backfillRequestViewer.nameOverride }}
 {{- else }}
 {{- printf "%s-backfill-request-viewer" (include "app.fullname" .) }}
 {{- end }}
@@ -159,10 +159,9 @@ Generate the job template viewer cluster role name
 Generate the job template viewer cluster role name
 */}}
 {{- define "app.clusteRole.backfillRequestEditor" -}}
-{{- if .Values.rbac.clusterRole.streamClassViewer.nameOverride }}
-{{- .Values.rbac.clusterRole.streamClassViewer.nameOverride }}
+{{- if .Values.rbac.clusterRole.backfillRequestEditor.nameOverride }}
+{{- .Values.rbac.clusterRole.backfillRequestEditor.nameOverride }}
 {{- else }}
 {{- printf "%s-backfill-request-editor" (include "app.fullname" .) }}
 {{- end }}
 {{- end }}
-

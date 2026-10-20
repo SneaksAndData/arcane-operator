@@ -7,13 +7,16 @@ import (
 	v1 "github.com/SneaksAndData/arcane-operator/pkg/apis/streaming/v1"
 	"github.com/SneaksAndData/arcane-operator/services/controllers"
 	"github.com/SneaksAndData/arcane-operator/services/controllers/stream"
+	"github.com/SneaksAndData/arcane-operator/services/controllers/stream/backend"
 	"github.com/SneaksAndData/arcane-operator/services/watchers"
 	batchv1 "k8s.io/api/batch/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/tools/record"
 	"k8s.io/klog/v2"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -25,13 +28,20 @@ import (
 var _ stream.BackfillBackendResourceManager = (*BackfillBackend)(nil)
 
 type BackfillBackend struct {
+	backend.BaseResourceManager
+
 	streamClass   *v1.StreamClass
 	client        client.Client
 	statusManager stream.StatusManager
 }
 
-func NewBackfillBackendResourceManager(class *v1.StreamClass, client client.Client, manager stream.StatusManager) *BackfillBackend {
+func NewBackfillBackendResourceManager(class *v1.StreamClass, client client.Client, manager stream.StatusManager, eventRecorder record.EventRecorder) *BackfillBackend {
 	return &BackfillBackend{
+		BaseResourceManager: backend.BaseResourceManager{
+			Client:        client,
+			JobBuilder:    nil,
+			EventRecorder: eventRecorder,
+		},
 		streamClass:   class,
 		client:        client,
 		statusManager: manager,
@@ -40,7 +50,7 @@ func NewBackfillBackendResourceManager(class *v1.StreamClass, client client.Clie
 
 func (b *BackfillBackend) SetupWithController(cache cache.Cache, _ *runtime.Scheme, _ meta.RESTMapper, controller controller.Controller, _ schema.GroupVersionKind) error { // coverage-ignore (no need to test the wiring of the controller)
 	return watchers.NewTypedSecondaryWatcherBuilder[*v1.BackfillRequest]().
-		WithFilter(stream.NewBackfillRequestFilter(b.streamClass.Name)).
+		WithFilter(NewBackfillRequestFilter(b.streamClass.Name)).
 		WithCache(cache).
 		WithHandler(handler.TypedEnqueueRequestsFromMapFunc(func(ctx context.Context, obj *v1.BackfillRequest) []reconcile.Request {
 			return []reconcile.Request{{
@@ -71,33 +81,19 @@ func (b *BackfillBackend) Get(ctx context.Context, name types.NamespacedName) (s
 	return FromResource(obj)
 }
 
+// Remove removes the backfill job. This method DOES NOT mark the backfill request as completed.
+// It is the responsibility of the caller to mark the backfill request as completed if necessary.
 func (b *BackfillBackend) Remove(ctx context.Context, definition stream.Definition, nextPhase stream.Phase, eventFunc controllers.EventFunc) (reconcile.Result, error) {
-	job, err := b.Get(ctx, definition.NamespacedName())
-	if err != nil { // coverage-ignore
-		return reconcile.Result{}, fmt.Errorf("failed to get backend resource: %w", err)
-	}
-	if job != nil {
-		err := b.client.Delete(ctx, job.ToObject())
-		if client.IgnoreNotFound(err) != nil { // coverage-ignore
-			return reconcile.Result{}, err
-		}
+	object := &batchv1.Job{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      definition.NamespacedName().Name,
+			Namespace: definition.NamespacedName().Namespace,
+		},
 	}
 
-	request, err := b.GetBackfillRequest(ctx, definition)
+	_, err := b.BaseResourceManager.Remove(ctx, object, nil)
 	if err != nil { // coverage-ignore
-		return reconcile.Result{}, fmt.Errorf("failed to get backfill request: %w", err)
-	}
-
-	if request != nil {
-		request.Spec.Completed = true
-		err := b.client.Update(ctx, request)
-		if err != nil { // coverage-ignore
-			return reconcile.Result{}, err
-		}
-		err = b.client.Status().Update(ctx, request)
-		if err != nil { // coverage-ignore
-			return reconcile.Result{}, err
-		}
+		return reconcile.Result{}, fmt.Errorf("failed to remove job: %w", err)
 	}
 
 	return b.statusManager.UpdateStreamPhase(ctx, definition, nil, nextPhase, eventFunc)
@@ -119,6 +115,7 @@ func (b *BackfillBackend) Apply(ctx context.Context, definition stream.Definitio
 func (b *BackfillBackend) NoOp(ctx context.Context, definition stream.Definition, backfillRequest *v1.BackfillRequest, nextPhase stream.Phase, eventFunc controllers.EventFunc) (reconcile.Result, error) { // coverage-ignore
 	return b.statusManager.UpdateStreamPhase(ctx, definition, backfillRequest, nextPhase, eventFunc)
 }
+
 func (b *BackfillBackend) GetBackfillRequest(ctx context.Context, definition stream.Definition) (*v1.BackfillRequest, error) { // coverage-ignore
 	backfillRequestList := &v1.BackfillRequestList{}
 	err := b.client.List(ctx, backfillRequestList, client.InNamespace(definition.NamespacedName().Namespace))
@@ -133,6 +130,30 @@ func (b *BackfillBackend) GetBackfillRequest(ctx context.Context, definition str
 	}
 
 	return nil, nil
+}
+
+// Complete marks the backfill request as completed. It does not remove the backfill job. It is the responsibility of
+// the caller to remove the backfill job if necessary.
+func (b *BackfillBackend) Complete(ctx context.Context, definition stream.Definition, nextPhase stream.Phase, _ *v1.StreamClass, eventFunc controllers.EventFunc) (reconcile.Result, error) {
+
+	request, err := b.GetBackfillRequest(ctx, definition)
+	if err != nil { // coverage-ignore
+		return reconcile.Result{}, fmt.Errorf("failed to get backfill request: %w", err)
+	}
+
+	if request != nil {
+		request.Spec.Completed = true
+		err := b.client.Update(ctx, request)
+		if err != nil { // coverage-ignore
+			return reconcile.Result{}, err
+		}
+		err = b.client.Status().Update(ctx, request)
+		if err != nil { // coverage-ignore
+			return reconcile.Result{}, err
+		}
+	}
+
+	return b.statusManager.UpdateStreamPhase(ctx, definition, request, nextPhase, eventFunc)
 }
 
 func (b *BackfillBackend) getLogger(_ context.Context, request types.NamespacedName) klog.Logger { // coverage-ignore

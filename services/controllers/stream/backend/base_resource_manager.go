@@ -25,7 +25,7 @@ type BaseResourceManager struct {
 
 func (j *BaseResourceManager) Remove(ctx context.Context, object client.Object, updatePhase func() (reconcile.Result, error)) (reconcile.Result, error) {
 	err := j.Client.Delete(ctx, object, client.PropagationPolicy(metav1.DeletePropagationForeground))
-	if client.IgnoreNotFound(err) != nil { // coverage-ignore
+	if client.IgnoreNotFound(err) != nil {
 		return reconcile.Result{}, err
 	}
 
@@ -35,9 +35,15 @@ func (j *BaseResourceManager) Remove(ctx context.Context, object client.Object, 
 	return reconcile.Result{}, nil
 }
 
-func (j *BaseResourceManager) BuildJob(ctx context.Context, definition stream.Definition, request *v1.BackfillRequest, streamClass *v1.StreamClass) (*batchv1.Job, error) {
-	templateReference := definition.GetJobTemplate(request)
-	logger := j.getLogger(ctx, templateReference)
+func (j *BaseResourceManager) BuildJob(ctx context.Context, definition stream.Definition, request *v1.BackfillRequest, streamClass *v1.StreamClass, forceStreamingTemplate bool) (*batchv1.Job, error) {
+	logger := klog.FromContext(ctx)
+
+	var templateReference types.NamespacedName
+	if forceStreamingTemplate {
+		templateReference = definition.GetJobTemplate(nil)
+	} else {
+		templateReference = definition.GetJobTemplate(request)
+	}
 
 	streamConfiguration, err := definition.CurrentConfiguration(request)
 	if err != nil { // coverage-ignore
@@ -46,7 +52,7 @@ func (j *BaseResourceManager) BuildJob(ctx context.Context, definition stream.De
 
 	definitionConfigurator, err := definition.JobConfigurator()
 	if err != nil { // coverage-ignore
-		logger.V(0).Error(err, "failed to get definition configurator")
+		logger.V(0).Error(err, "failed to get job configurator from stream definition")
 		return nil, err
 	}
 
@@ -78,10 +84,4 @@ func (j *BaseResourceManager) BuildJob(ctx context.Context, definition stream.De
 		return nil, err
 	}
 	return newJob, nil
-}
-
-func (c *BaseResourceManager) getLogger(ctx context.Context, request types.NamespacedName) klog.Logger {
-	return klog.FromContext(ctx).
-		WithName("ResourceReader").
-		WithValues("namespace", request.Namespace, "streamId", request.Name)
 }

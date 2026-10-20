@@ -18,8 +18,11 @@ To suspend the stream, you need to update the stream custom resource (CR) and se
 This will stop the streaming job and prevent it from processing any new data.
 
 ## I want to start backfill for an existing stream
-To start backfill for an existing stream, you need to create a backfill request custom resource (CR) that references the stream.
-The backfill request will be picked up by the operator, which will create a Kubernetes job to run the backfill process.
+To start backfill for an existing stream, you need to create a backfill request custom resource (CR) that references 
+the stream. If the stream was in a `Running` phase, the backfill request will be picked up by the operator, which will 
+create a Kubernetes job to run the backfill process. If the stream was in a `Suspended` phase, you should unsuspend the 
+stream first to start the backfill process. If the stream was in a `Failed` phase, you should fix the issue that caused
+the failure first, and then unsuspend the stream.
 
 Example backfill request:
 ```yaml
@@ -56,3 +59,19 @@ This behaviour will be improved once [lock-on](https://github.com/SneaksAndData/
 ## What happens if I delete a backfill request while the backfill job is running?
 If you delete a backfill request while the backfill job is running, the operator will stop the backfill job 
 and restart it in the streaming mode.
+
+## What happens if I suspend a stream while the backfill job is running?
+If you suspend a stream while the backfill job is running, the operator will stop the backfill and **will not** mark
+the backfill request as completed. The backfill request will remain in the active state and you can resume it later by
+unsuspending the stream. This can be useful if the plugin supports the resumable backfill (see the documentation of the 
+plugin you are using for more details).
+
+## What should I do if the backfill job fails?
+If the backfill job fails, you can check the logs of the backfill job pod to see what went wrong. You can pause the
+stream by setting `spec.suspended` to `true`, fix the issue, and then resume the stream by setting `spec.suspended`
+to `false`. If you need to re-run the backfill, you **should** delete the existing backfill request and create a new one.
+
+## What if the backfill job does not have enough resources to complete?
+If the backfill job does not have enough resources to complete, you should suspend the stream by setting
+`spec.suspended` to `true`, and then change the backfillJobTemplate in the stream definition to request more resources.
+After that, you can resume the stream by setting `spec.suspended` to `false`.

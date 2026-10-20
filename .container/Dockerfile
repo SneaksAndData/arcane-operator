@@ -1,4 +1,4 @@
-﻿FROM --platform=$BUILDPLATFORM golang:1.25-bookworm AS build-stage
+﻿FROM --platform=$BUILDPLATFORM golang:1.26-bookworm AS build-stage
 
 ARG TARGETOS 
 ARG TARGETARCH
@@ -10,7 +10,7 @@ WORKDIR /app
 COPY . ./
 
 
-RUN go install github.com/DataDog/orchestrion@v1.7.0 \
+RUN go install github.com/DataDog/orchestrion@v1.11.0 \
     && orchestrion pin \
     && go mod tidy \
     && go mod verify \

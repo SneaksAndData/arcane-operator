@@ -3,6 +3,7 @@ package v1
 import (
 	batchv1 "k8s.io/api/batch/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 // Phase represents the current phase of the stream class
@@ -34,6 +35,10 @@ type StreamClassSpec struct {
 
 	// SecretRefs is a list of fields to be extracted from the secret
 	SecretRefs []string `json:"secretRefs,omitempty"`
+
+	// OverridableFields is a nullable list of fields that can be overridden by stream definitions
+	//+nullable
+	OverridableFields []string `json:"overridableFields,omitempty"`
 }
 
 // StreamClassStatus defines the observed state of a stream class
@@ -107,6 +112,14 @@ type BackfillRequestSpec struct {
 	// Completed indicates whether the backfill request has been completed
 	// +kubebuilder:default=false
 	Completed bool `json:"completed,omitempty"`
+
+	// Payload is an unstructured JSON object with arbitrary nesting. This is used to generate the
+	// `STREAMCONTEXT_OVERRIDE` environment variable for the backfill job. The payload is optional and can be nil.
+	//+kubebuilder:validation:Type=object
+	//+kubebuilder:validation:XPreserveUnknownFields
+	//+kubebuilder:validation:Optional
+	//+nullable
+	Payload *runtime.RawExtension `json:"payload,omitempty"`
 }
 
 // BackfillRequestStatus defines the observed state of a backfill request
@@ -128,6 +141,7 @@ type BackfillRequestStatus struct {
 // +kubebuilder:printcolumn:name="StreamId",type=string,JSONPath=`.spec.streamId`
 // +kubebuilder:printcolumn:name="Completed",type=string,JSONPath=`.spec.completed`
 // +kubebuilder:selectablefield:JSONPath=.spec.completed
+// +kubebuilder:selectablefield:JSONPath=.spec.streamId
 type BackfillRequest struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

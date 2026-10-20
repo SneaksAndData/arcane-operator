@@ -21,13 +21,22 @@ func NewConfiguratorProvider(u *unstructured.Unstructured, parent stream.Definit
 }
 
 func (c *ConfiguratorProvider) JobConfigurator() (job.Configurator, error) { // coverage-ignore (should be tested in integration tests)
-	configurator := job.NewConfiguratorChainBuilder().
+	// For job streams this configurator always emit a non-backfill configurator
+	// which could be overridden by backfill request later in the reconciliation loop if BFR is provided.
+	// For cronjob streams this configurator always emit a backfill configurator since cronjob stream only supports
+	// backfill mode.
+	configuratorBuilder := job.NewConfiguratorChainBuilder().
 		WithConfigurator(job.NewNameConfigurator(c.underlying.GetName())).
 		WithConfigurator(job.NewNamespaceConfigurator(c.underlying.GetNamespace())).
 		WithConfigurator(job.NewMetadataConfigurator(c.underlying.GetName(), c.underlying.GetKind())).
-		WithConfigurator(job.NewBackfillConfigurator(false)).
 		WithConfigurator(job.NewEnvironmentConfigurator(c.underlying.Object["spec"], "SPEC")).
-		WithConfigurator(job.NewOwnerConfigurator(c.parent.ToOwnerReference())).
-		Build()
-	return configurator, nil
+		WithConfigurator(job.NewOwnerConfigurator(c.parent.ToOwnerReference()))
+
+	if c.parent.GetBackend() == stream.CronJob {
+		configuratorBuilder = configuratorBuilder.
+			WithConfigurator(job.NewBackfillConfigurator(true)).
+			WithConfigurator(job.NewBackfillDynamicIdConfigurator())
+	}
+
+	return configuratorBuilder.Build(), nil
 }

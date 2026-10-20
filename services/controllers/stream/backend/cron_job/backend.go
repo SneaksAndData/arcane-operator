@@ -8,6 +8,7 @@ import (
 	"github.com/SneaksAndData/arcane-operator/services/controllers"
 	"github.com/SneaksAndData/arcane-operator/services/controllers/stream"
 	"github.com/SneaksAndData/arcane-operator/services/controllers/stream/backend"
+	"github.com/SneaksAndData/arcane-operator/services/job"
 	"github.com/SneaksAndData/arcane-operator/services/watchers"
 	batchv1 "k8s.io/api/batch/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -51,7 +52,7 @@ func NewCronJobBackend(client client.Client, jobBuilder stream.JobBuilder, event
 	}
 }
 
-func (c *Backend) SetupWithController(cache cache.Cache, scheme *runtime.Scheme, mapper meta.RESTMapper, controller controller.Controller, primaryGvk schema.GroupVersionKind) error {
+func (c *Backend) SetupWithController(cache cache.Cache, scheme *runtime.Scheme, mapper meta.RESTMapper, controller controller.Controller, primaryGvk schema.GroupVersionKind) error { // coverage-ignore
 	primaryResource := &unstructured.Unstructured{}
 	primaryResource.SetGroupVersionKind(primaryGvk)
 	return watchers.NewTypedSecondaryWatcherBuilder[*batchv1.CronJob]().
@@ -62,7 +63,7 @@ func (c *Backend) SetupWithController(cache cache.Cache, scheme *runtime.Scheme,
 		SetupWithController(controller, &batchv1.CronJob{})
 }
 
-func (c *Backend) Get(ctx context.Context, name client.ObjectKey) (stream.BackendResource, error) {
+func (c *Backend) Get(ctx context.Context, name client.ObjectKey) (stream.BackendResource, error) { // coverage-ignore
 	cj := &batchv1.CronJob{}
 	return c.ResourceReader.Get(ctx, name, cj, FromResource)
 }
@@ -81,7 +82,7 @@ func (c *Backend) Remove(ctx context.Context, definition stream.Definition, next
 }
 
 func (c *Backend) Apply(ctx context.Context, definition stream.Definition, backfillRequest *v1.BackfillRequest, nextPhase stream.Phase, streamClass *v1.StreamClass, eventFunc controllers.EventFunc) (reconcile.Result, error) {
-	logger := c.getLogger(ctx, definition.NamespacedName())
+	logger := klog.FromContext(ctx)
 	object := &batchv1.CronJob{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      definition.NamespacedName().Name,
@@ -89,8 +90,10 @@ func (c *Backend) Apply(ctx context.Context, definition stream.Definition, backf
 		},
 	}
 
+	logger.V(0).Info("Creating the cron job for the stream definition")
 	err := c.client.Get(ctx, types.NamespacedName{Name: object.Name, Namespace: object.Namespace}, object)
-	if client.IgnoreNotFound(err) != nil {
+	if client.IgnoreNotFound(err) != nil { // coverage-ignore
+		logger.V(0).Error(err, "failed to fetch cronjob")
 		return reconcile.Result{}, fmt.Errorf("failed to fetch cronjob: %w", err)
 	}
 
@@ -101,7 +104,7 @@ func (c *Backend) Apply(ctx context.Context, definition stream.Definition, backf
 		}
 
 		if equals {
-			logger.V(1).Info("The job already exists with matching configuration, skipping creation")
+			logger.V(0).Info("The job already exists with matching configuration, skipping creation")
 			return c.statusManager.UpdateStreamPhase(ctx, definition, &v1.BackfillRequest{}, nextPhase, eventFunc)
 		}
 
@@ -111,17 +114,44 @@ func (c *Backend) Apply(ctx context.Context, definition stream.Definition, backf
 		}
 	}
 
-	job, err := c.BuildJob(ctx, definition, backfillRequest, streamClass)
+	// Temporary add fake backfill request to the job builder since we need to create a CronJob with
+	// STREAMCONTEXT__BACKFILL == "true". Should be removed in the next PRs.
+	j, err := c.BuildJob(ctx, definition, &v1.BackfillRequest{}, streamClass, true)
 	if err != nil {
+		logger.V(0).Error(err, "failed to build job for cronjob backend")
 		return reconcile.Result{}, fmt.Errorf("failed to build job for cronjob backend: %w", err)
 	}
 
+	schedule, err := definition.GetSchedule()
+	if err != nil {
+		logger.V(0).Error(err, "failed to get schedule from stream definition")
+		return reconcile.Result{}, fmt.Errorf("failed to get schedule from stream definition: %w", err)
+	}
+
+	configuration, err := definition.CurrentConfiguration(backfillRequest)
+	if err != nil {
+		logger.V(0).Error(err, "failed to compute stream configuration hash")
+		return reconcile.Result{}, fmt.Errorf("failed to compute stream configuration hash: %w", err)
+	}
+
+	if object.Annotations == nil {
+		object.Annotations = make(map[string]string)
+	}
+
 	object.Spec.JobTemplate = batchv1.JobTemplateSpec{
-		Spec: job.Spec,
+		Spec: j.Spec,
+	}
+	object.Spec.ConcurrencyPolicy = batchv1.ForbidConcurrent
+	object.Spec.Schedule = schedule
+	object.ResourceVersion = ""
+	object.Annotations[job.ConfigurationHashAnnotation] = configuration
+	object.OwnerReferences = []metav1.OwnerReference{
+		definition.ToOwnerReference(),
 	}
 
 	err = c.client.Create(ctx, object)
 	if err != nil {
+		logger.V(0).Error(err, "failed to create cron job")
 		return reconcile.Result{}, fmt.Errorf("failed to create cron job: %w", err)
 	}
 
@@ -130,10 +160,4 @@ func (c *Backend) Apply(ctx context.Context, definition stream.Definition, backf
 
 func (c *Backend) NoOp(ctx context.Context, definition stream.Definition, backfillRequest *v1.BackfillRequest, nextPhase stream.Phase, eventFunc controllers.EventFunc) (reconcile.Result, error) {
 	return c.statusManager.UpdateStreamPhase(ctx, definition, backfillRequest, nextPhase, eventFunc)
-}
-
-func (c *Backend) getLogger(_ context.Context, request types.NamespacedName) klog.Logger {
-	return klog.Background().
-		WithName("cron_job.Backend").
-		WithValues("namespace", request.Namespace, "streamId", request.Name)
 }

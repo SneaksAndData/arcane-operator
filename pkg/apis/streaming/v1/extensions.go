@@ -2,9 +2,10 @@ package v1
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/SneaksAndData/arcane-operator/services/job"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"strings"
 )
 
 // StateString returns a string representation of the current state
@@ -57,13 +58,18 @@ var _ job.ConfiguratorProvider = (*BackfillRequest)(nil)
 // JobConfigurator returns a JobConfigurator for the BackfillRequest
 func (in *BackfillRequest) JobConfigurator() (job.Configurator, error) {
 	if in == nil {
-		return nil, nil
+		return job.NewConfiguratorChainBuilder().
+			WithConfigurator(job.NewBackfillConfigurator(false)).
+			Build(), nil
 	}
-	configurator := job.NewConfiguratorChainBuilder().
-		WithConfigurator(job.NewEnvironmentConfigurator(in.Spec, "OVERRIDE")).
+	configuratorBuilder := job.NewConfiguratorChainBuilder().
 		WithConfigurator(job.NewBackfillConfigurator(true)).
-		Build()
-	return configurator, nil
+		WithConfigurator(job.NewBackfillStaticIdConfigurator(in.Name))
+
+	if in.Spec.Payload != nil {
+		configuratorBuilder = configuratorBuilder.WithConfigurator(job.NewEnvironmentConfigurator(in.Spec.Payload, "SPEC_OVERRIDE"))
+	}
+	return configuratorBuilder.Build(), nil
 }
 
 func camelCaseToSnakeCase(input string) string {

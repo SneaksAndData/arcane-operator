@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sync"
+
 	v1 "github.com/SneaksAndData/arcane-operator/pkg/apis/streaming/v1"
 	"github.com/SneaksAndData/arcane-operator/services/controllers"
 	corev1 "k8s.io/api/core/v1"
@@ -14,7 +16,6 @@ import (
 	runtime "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sync"
 )
 
 var _ reconcile.Reconciler = (*StreamClassReconciler)(nil)
@@ -39,7 +40,10 @@ func NewStreamClassReconciler(client client.Client, streamControllerFactory Unma
 }
 
 func (s *StreamClassReconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	logger := s.getLogger(ctx, request.NamespacedName)
+	logger := klog.FromContext(ctx).
+		WithValues("stream", request.NamespacedName).
+		WithValues("namespace", request.Namespace, "name", request.Name)
+
 	logger.Info("Reconciling StreamClass")
 
 	sc := &v1.StreamClass{}
@@ -56,20 +60,14 @@ func (s *StreamClassReconciler) SetupWithManager(mgr runtime.Manager) error { //
 	return runtime.NewControllerManagedBy(mgr).For(&v1.StreamClass{}).Complete(s)
 }
 
-func (s *StreamClassReconciler) getLogger(ctx context.Context, request types.NamespacedName) klog.Logger {
-	return klog.FromContext(ctx).
-		WithName("StreamClassReconciler").
-		WithValues("name", request.Name)
-}
-
 func (s *StreamClassReconciler) moveFsm(ctx context.Context, sc *v1.StreamClass, deleted bool, name types.NamespacedName) (reconcile.Result, error) {
-	logger := s.getLogger(ctx, name)
+	logger := klog.FromContext(ctx)
 	switch {
 	case deleted:
 		return s.tryStopStreamController(ctx, name, nil)
 
 	case sc.Status.Phase == "":
-		return s.updatePhase(ctx, sc, name, v1.PhasePending, func() {
+		return s.updatePhase(ctx, sc, v1.PhasePending, func() {
 			s.eventRecorder.Event(sc,
 				corev1.EventTypeNormal,
 				"StreamClassCreated",
@@ -110,19 +108,19 @@ func (s *StreamClassReconciler) tryStartStreamController(ctx context.Context, sc
 	s.rwLock.Lock()
 	defer s.rwLock.Unlock()
 
-	logger := s.getLogger(ctx, name)
+	logger := klog.FromContext(ctx)
 
 	_, ok := s.streamControllers[name]
 	if ok {
-		logger.V(0).Info("Stream controller is already running")
-		return s.updatePhase(ctx, sc, name, nextPhase, eventFunc)
+		logger.V(0).Info("stream controller is already running")
+		return s.updatePhase(ctx, sc, nextPhase, eventFunc)
 	}
 
 	controller, err := s.streamControllerFactory.CreateStreamController(ctx, sc.TargetResourceGvk(), sc)
 
 	if err != nil {
-		logger.V(0).Error(err, "unable to create stream reconciler")
-		return s.updatePhase(ctx, sc, name, v1.PhaseFailed, eventFunc)
+		logger.V(0).Error(err, "unable to create stream controller")
+		return s.updatePhase(ctx, sc, v1.PhaseFailed, eventFunc)
 	}
 
 	controllerContext, cancelFunc := context.WithCancel(ctx)
@@ -133,37 +131,37 @@ func (s *StreamClassReconciler) tryStartStreamController(ctx context.Context, sc
 			return
 		}
 		if err != nil {
-			logger := s.getLogger(ctx, name)
-			logger.V(0).Error(err, "stream controller exited with error")
+			logger := klog.FromContext(ctx)
+			logger.V(0).Error(err, "stream controller exited with an error")
 
-			_, err = s.updatePhase(ctx, sc, name, v1.PhaseFailed, func() {
+			_, err = s.updatePhase(ctx, sc, v1.PhaseFailed, func() {
 				s.eventRecorder.Event(sc,
 					corev1.EventTypeWarning,
 					"StreamControllerError",
 					"Stream controller exited with error, StreamClass moved to Failed state")
 			})
 			if err != nil {
-				logger := s.getLogger(ctx, name)
+				logger := klog.FromContext(ctx)
 				logger.V(0).Error(err, "unable to update StreamClass phase to Failed after stream controller exited with error")
 			}
 		}
 	}()
 
-	logger.V(0).Info("Stream controller is started")
+	logger.V(0).Info("controller is started")
 	s.streamControllers[name] = &StreamControllerHandle{
 		cancelFunc: cancelFunc,
 		gvk:        sc.TargetResourceGvk(),
 	}
 	s.reporter.AddStreamClass(sc.TargetResourceGvk().Kind, "stream_class", sc.MetricsTags())
 
-	return s.updatePhase(ctx, sc, name, nextPhase, eventFunc)
+	return s.updatePhase(ctx, sc, nextPhase, eventFunc)
 }
 
 func (s *StreamClassReconciler) tryStopStreamController(ctx context.Context, name types.NamespacedName, eventFunc controllers.EventFunc) (reconcile.Result, error) {
 	s.rwLock.Lock()
 	defer s.rwLock.Unlock()
 
-	logger := s.getLogger(ctx, name)
+	logger := klog.FromContext(ctx)
 	_, ok := s.streamControllers[name]
 	if !ok {
 		logger.V(0).Info("Stream controller is not running")
@@ -174,22 +172,22 @@ func (s *StreamClassReconciler) tryStopStreamController(ctx context.Context, nam
 	s.reporter.RemoveStreamClass(s.streamControllers[name].gvk.Kind)
 
 	delete(s.streamControllers, name)
-	return s.updatePhase(ctx, nil, name, v1.PhaseStopped, eventFunc)
+	return s.updatePhase(ctx, nil, v1.PhaseStopped, eventFunc)
 }
 
-func (s *StreamClassReconciler) updatePhase(ctx context.Context, sc *v1.StreamClass, name types.NamespacedName, nextPhase v1.Phase, eventFunc controllers.EventFunc) (reconcile.Result, error) {
-	logger := s.getLogger(ctx, name)
+func (s *StreamClassReconciler) updatePhase(ctx context.Context, sc *v1.StreamClass, nextPhase v1.Phase, eventFunc controllers.EventFunc) (reconcile.Result, error) {
+	logger := klog.FromContext(ctx)
 	if sc == nil {
-		logger.V(0).Info("Stream class is deleted, skipping phase update")
+		logger.V(0).Info("stream class is deleted, skipping phase update")
 		return reconcile.Result{}, nil
 	}
 
 	if sc.Status.Phase == nextPhase {
-		logger.V(0).Info("StreamClass phase is already set to", sc.Status.Phase)
+		logger.V(1).Info("phase is already set", sc.Status.Phase)
 		return reconcile.Result{}, nil
 	}
 
-	logger.V(0).Info("Updating StreamClass phase", "from", sc.Status.Phase, "to", nextPhase)
+	logger.V(0).Info("Updating StreamClass phase", "currentPhase", sc.Status.Phase, "nextPhase", nextPhase)
 	sc.Status.Phase = nextPhase
 	err := s.client.Status().Update(ctx, sc)
 
@@ -198,7 +196,7 @@ func (s *StreamClassReconciler) updatePhase(ctx context.Context, sc *v1.StreamCl
 	}
 
 	if client.IgnoreNotFound(err) != nil {
-		logger.V(0).Error(err, "unable to update Stream Class status")
+		logger.V(0).Error(err, "unable to update Stream Class phase")
 		return reconcile.Result{}, err
 	}
 

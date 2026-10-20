@@ -3,8 +3,9 @@ package telemetry
 import (
 	"context"
 	"fmt"
-	"github.com/DataDog/datadog-go/v5/statsd"
 	"time"
+
+	"github.com/DataDog/datadog-go/v5/statsd"
 )
 
 type contextKey string
@@ -22,16 +23,6 @@ func convertTags(tags map[string]string) []string {
 	}
 
 	return result
-}
-
-// WithStatsd enriches the context with a statsd client if it can be instantiated
-func WithStatsd(ctx context.Context, metricsNamespace string) context.Context { // coverage-ignore
-	statsdClient, err := statsd.New("", statsd.WithNamespace(metricsNamespace))
-	if err == nil {
-		return context.WithValue(ctx, MetricsClientContextKey, statsdClient)
-	}
-
-	return ctx
 }
 
 // Gauge reports a GAUGE metric using best-effort approach

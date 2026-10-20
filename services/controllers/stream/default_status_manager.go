@@ -6,7 +6,6 @@ import (
 	v1 "github.com/SneaksAndData/arcane-operator/pkg/apis/streaming/v1"
 	"github.com/SneaksAndData/arcane-operator/services/controllers"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/klog/v2"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -31,7 +30,7 @@ func NewDefaultStatusManager(client client.Client, gvk schema.GroupVersionKind, 
 }
 
 func (s *DefaultStatusManager) UpdateStreamPhase(ctx context.Context, definition Definition, backfillRequest *v1.BackfillRequest, next Phase, eventFunc controllers.EventFunc) (reconcile.Result, error) {
-	logger := s.getLogger(ctx, definition.NamespacedName())
+	logger := klog.FromContext(ctx)
 
 	if definition.GetPhase() == next { // coverage-ignore
 		logger.V(1).Info("Stream phase is already set", "phase", definition.GetPhase())
@@ -78,10 +77,4 @@ func (s *DefaultStatusManager) UpdateStreamPhase(ctx context.Context, definition
 
 	return reconcile.Result{}, nil
 
-}
-
-func (s *DefaultStatusManager) getLogger(_ context.Context, request types.NamespacedName) klog.Logger {
-	return klog.Background().
-		WithName("StreamReconciler").
-		WithValues("namespace", request.Namespace, "streamId", request.Name, "streamKind", s.gvk.Kind)
 }
