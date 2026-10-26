@@ -6,7 +6,6 @@ import (
 	"github.com/SneaksAndData/arcane-operator/services/controllers/stream"
 	"github.com/stretchr/testify/require"
 	"k8s.io/api/batch/v1"
-	batchv1 "k8s.io/api/batch/v1"
 )
 
 func validateBackfillInCronJob(t *testing.T, expected string) func(job stream.BackendResource) {
@@ -26,10 +25,10 @@ func validateBackfillInCronJob(t *testing.T, expected string) func(job stream.Ba
 func validateBackfillId(t *testing.T) func(job stream.BackendResource) {
 	return func(job stream.BackendResource) {
 		var foundBackfillId bool
-		_, ok := job.ToObject().(*batchv1.CronJob)
+		_, ok := job.ToObject().(*v1.CronJob)
 		require.True(t, ok, "Expected a CronJob resource for a job")
 
-		envVars := job.ToObject().(*batchv1.CronJob).Spec.JobTemplate.Spec.Template.Spec.Containers[0].Env
+		envVars := job.ToObject().(*v1.CronJob).Spec.JobTemplate.Spec.Template.Spec.Containers[0].Env
 		var backfillId string
 		for _, envVar := range envVars {
 			if envVar.Name == "STREAMCONTEXT__BACKFILL_ID" {
