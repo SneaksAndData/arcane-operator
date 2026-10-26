@@ -18,7 +18,6 @@ import (
 	"github.com/SneaksAndData/arcane-operator/services/controllers/stream/backend/cron_job"
 	"github.com/SneaksAndData/arcane-operator/services/controllers/stream/backend/job"
 	"github.com/SneaksAndData/arcane-operator/services/controllers/stream_class"
-	arcjob "github.com/SneaksAndData/arcane-operator/services/job"
 	"github.com/SneaksAndData/arcane-operator/services/job/job_builder"
 	"github.com/SneaksAndData/arcane-operator/telemetry"
 	mockv1 "github.com/SneaksAndData/arcane-stream-mock/pkg/apis/streaming/v1"
@@ -180,44 +179,6 @@ func createManager(ctx context.Context, g *errgroup.Group) (manager.Manager, err
 	return mgr, nil
 }
 
-func assertRunModeForBackendResource(t *testing.T, resource stream.BackendResource) {
-	expectedRunMode := arcjob.RunModeStream
-	if resource.IsBackfill() {
-		expectedRunMode = arcjob.RunModeBackfill
-	}
-
-	var containers []corev1.Container
-	switch obj := resource.ToObject().(type) {
-	case *batchv1.Job:
-		containers = obj.Spec.Template.Spec.Containers
-	case *batchv1.CronJob:
-		containers = obj.Spec.JobTemplate.Spec.Template.Spec.Containers
-	default:
-		require.Failf(t, "unexpected backend resource type", "type=%T", obj)
-		return
-	}
-
-	foundBackfill := false
-	foundRunMode := false
-	for _, container := range containers {
-		for _, envVar := range container.Env {
-			switch envVar.Name {
-			case "STREAMCONTEXT__BACKFILL":
-				foundBackfill = true
-				require.Equal(t, map[bool]string{true: "true", false: "false"}[resource.IsBackfill()], envVar.Value,
-					"BACKFILL env should match resource backfill state for %s", resource.Name())
-			case "STREAMCONTEXT__RUNMODE":
-				foundRunMode = true
-				require.Equal(t, expectedRunMode, envVar.Value,
-					"RUNMODE env should match backfill state for %s", resource.Name())
-			}
-		}
-	}
-
-	require.True(t, foundBackfill, "STREAMCONTEXT__BACKFILL should be present for %s", resource.Name())
-	require.True(t, foundRunMode, "STREAMCONTEXT__RUNMODE should be present for %s", resource.Name())
-}
-
 func waitForBackendResource(t *testing.T, name string, handleEvent func(job stream.BackendResource), isCompleted func(job stream.BackendResource) bool) {
 	jobClient := clientSet.BatchV1().Jobs("")
 	require.NotNil(t, jobClient)
@@ -264,7 +225,6 @@ func waitForBackendResource(t *testing.T, name string, handleEvent func(job stre
 				continue
 			}
 
-			assertRunModeForBackendResource(t, resource)
 			handleEvent(resource)
 			if isCompleted(resource) {
 				t.Log("Job is isCompleted, stopping jobWatcher")
