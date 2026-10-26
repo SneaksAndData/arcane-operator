@@ -6,9 +6,9 @@ import (
 )
 
 const (
-	RunModeStream   = "Stream"
-	RunModeBackfill = "Backfill"
-	RunModeMigrate  = "Migrate"
+	RunModeStream   = "stream"
+	RunModeBackfill = "backfill"
+	RunModeMigrate  = "migrate"
 )
 
 var _ Configurator = &runModeConfigurator{}
