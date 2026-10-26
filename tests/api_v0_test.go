@@ -133,6 +133,7 @@ func Test_StaticBackfillId(t *testing.T) {
 		func(job stream.BackendResource) {
 			_, ok := job.ToObject().(*batchv1.Job)
 			require.True(t, ok, "Expected a Job resource for a job")
+			assertRunModeForBackendResource(t, job)
 			envVars := job.ToObject().(*batchv1.Job).Spec.Template.Spec.Containers[0].Env
 			var backfillId string
 			var backfillValue string
@@ -142,6 +143,13 @@ func Test_StaticBackfillId(t *testing.T) {
 				}
 				if envVar.Name == "STREAMCONTEXT__BACKFILL" {
 					backfillValue = envVar.Value
+				}
+				if envVar.Name == "STREAMCONTEXT__RUNMODE" {
+					if job.IsBackfill() {
+						require.Equal(t, "Backfill", envVar.Value, "Backfill job should have STREAMCONTEXT__RUNMODE set to Backfill")
+					} else {
+						require.Equal(t, "Stream", envVar.Value, "Regular job should have STREAMCONTEXT__RUNMODE set to Stream")
+					}
 				}
 			}
 

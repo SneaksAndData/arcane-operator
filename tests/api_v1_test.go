@@ -41,6 +41,7 @@ func Test_StreamStateTransitionToScheduled(t *testing.T) {
 	waitForBackendResource(t, name,
 
 		func(backendResource stream.BackendResource) {
+			assertRunModeForBackendResource(t, backendResource)
 
 			testStream, err := streamingClientSet.
 				StreamingV2().
@@ -106,6 +107,7 @@ func Test_StreamStateTransitionToRunning(t *testing.T) {
 	waitForBackendResource(t, name,
 
 		func(backendResource stream.BackendResource) {
+			assertRunModeForBackendResource(t, backendResource)
 
 			testStream, err := streamingClientSet.
 				StreamingV2().
@@ -176,11 +178,15 @@ func Test_DynamicBackfillId(t *testing.T) {
 		func(job stream.BackendResource) {
 			_, ok := job.ToObject().(*batchv1.CronJob)
 			require.True(t, ok, "Expected a Job resource for a job")
+			assertRunModeForBackendResource(t, job)
 			envVars := job.ToObject().(*batchv1.CronJob).Spec.JobTemplate.Spec.Template.Spec.Containers[0].Env
 			var backfillId string
 			for _, envVar := range envVars {
 				if envVar.Name == "STREAMCONTEXT__BACKFILL" {
 					require.Equal(t, "true", envVar.Value)
+				}
+				if envVar.Name == "STREAMCONTEXT__RUNMODE" {
+					require.Equal(t, "Backfill", envVar.Value, "Backfill job should have STREAMCONTEXT__RUNMODE set to Backfill")
 				}
 				if envVar.Name == "STREAMCONTEXT__BACKFILL_ID" {
 					backfillId = envVar.ValueFrom.FieldRef.FieldPath
