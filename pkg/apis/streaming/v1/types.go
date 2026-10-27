@@ -101,6 +101,15 @@ type StreamingJobTemplateList struct {
 	Items           []StreamingJobTemplate `json:"items"`
 }
 
+// BackfillType represents the type of a backfill request
+// +kubebuilder:validation:Enum=data;migration
+type BackfillType string
+
+const (
+	BackfillTypeData      BackfillType = "data"
+	BackfillTypeMigration BackfillType = "migration"
+)
+
 // BackfillRequestSpec defines the desired state of a backfill request
 type BackfillRequestSpec struct {
 	// StreamClass is the name of the stream class to backfill
@@ -108,6 +117,10 @@ type BackfillRequestSpec struct {
 
 	// StreamId is the ID of the stream to backfill
 	StreamId string `json:"streamId"`
+
+	// BackfillType indicates the type of backfill request, either "data" or "migration"
+	// +kubebuilder:default=data
+	BackfillType BackfillType `json:"backfillType,omitempty"`
 
 	// Completed indicates whether the backfill request has been completed
 	// +kubebuilder:default=false

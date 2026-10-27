@@ -136,12 +136,20 @@ func (b *FakeClientResourcesBuilder) WithConsistentCronJob(n types.NamespacedNam
 // WithBackfillRequest seeds the fake client with a BackfillRequest named
 // "backfill1" targeting the MockStreamDefinition identified by n.
 func (b *FakeClientResourcesBuilder) WithBackfillRequest(n types.NamespacedName) *FakeClientResourcesBuilder {
+	return b.WithBackfillRequestOfType(n, v1.BackfillTypeData)
+}
+
+// WithBackfillRequestOfType seeds the fake client with a BackfillRequest named
+// "backfill1" targeting the MockStreamDefinition identified by n, with the
+// provided backfillType set on its spec.
+func (b *FakeClientResourcesBuilder) WithBackfillRequestOfType(n types.NamespacedName, backfillType v1.BackfillType) *FakeClientResourcesBuilder {
 	return b.Apply(func(client *crfake.ClientBuilder) {
 		client.WithObjects(&v1.BackfillRequest{
 			ObjectMeta: metav1.ObjectMeta{Name: "backfill1", Namespace: n.Namespace},
 			Spec: v1.BackfillRequestSpec{
-				StreamClass: "MockStreamDefinition",
-				StreamId:    n.Name,
+				StreamClass:  "MockStreamDefinition",
+				StreamId:     n.Name,
+				BackfillType: backfillType,
 			},
 		})
 	})
