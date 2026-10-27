@@ -30,6 +30,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	apiruntime "k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	typedcorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
@@ -179,34 +180,43 @@ func createManager(ctx context.Context, g *errgroup.Group) (manager.Manager, err
 	return mgr, nil
 }
 
-func waitForBackendResource(t *testing.T, name string, handleEvents []func(job stream.BackendResource), isCompleted func(job stream.BackendResource) bool) {
+// watchBackendResources creates watchers for both Jobs and CronJobs, merges their event
+// channels into a single channel, and registers cleanup to stop the watchers when the
+// test completes. The returned channel should be created before performing the action
+// that is expected to produce backend resource events, and passed to waitForBackendResource.
+func watchBackendResources(t *testing.T) <-chan watch.Event {
 	jobClient := clientSet.BatchV1().Jobs("")
 	require.NotNil(t, jobClient)
 
 	jobWatcher, err := jobClient.Watch(t.Context(), metav1.ListOptions{})
+	require.NoError(t, err)
 	t.Cleanup(func() {
 		jobWatcher.Stop()
 	})
-	require.NoError(t, err)
 
 	cronJobClient := clientSet.BatchV1().CronJobs("")
 	require.NotNil(t, cronJobClient)
 
 	cronJobWatcher, err := cronJobClient.Watch(t.Context(), metav1.ListOptions{})
+	require.NoError(t, err)
 	t.Cleanup(func() {
 		cronJobWatcher.Stop()
 	})
-	require.NoError(t, err)
 
+	return merge(t.Context(), jobWatcher.ResultChan(), cronJobWatcher.ResultChan())
+}
+
+func waitForBackendResource(t *testing.T, events <-chan watch.Event, name string, handleEvents []func(job stream.BackendResource), isCompleted func(job stream.BackendResource) bool) {
 	for {
 		select {
-		case event, ok := <-merge(t.Context(), jobWatcher.ResultChan(), cronJobWatcher.ResultChan()):
+		case event, ok := <-events:
 			if !ok {
 				t.Error("jobWatcher channel closed")
 				return
 			}
 
 			var resource stream.BackendResource
+			var err error
 			switch obj := event.Object.(type) {
 			case *batchv1.Job:
 				t.Logf("Got a Job: %s", obj.Name)

@@ -20,6 +20,8 @@ func Test_CreateStream(t *testing.T) {
 	// Arrange
 	t.Parallel()
 
+	events := watchBackendResources(t)
+
 	// Act
 	name := createTestStreamDefinition(t, false)
 
@@ -27,7 +29,7 @@ func Test_CreateStream(t *testing.T) {
 	jobs := make(map[types.UID]bool)
 
 	// Watch for job events in the main thread
-	waitForBackendResource(t, name,
+	waitForBackendResource(t, events, name,
 
 		[]func(job stream.BackendResource){
 			func(job stream.BackendResource) {
@@ -64,6 +66,8 @@ func Test_CreateFailedStream(t *testing.T) {
 	// Arrange
 	t.Parallel()
 
+	events := watchBackendResources(t)
+
 	// Act
 	name := createTestStreamDefinition(t, true)
 
@@ -71,7 +75,7 @@ func Test_CreateFailedStream(t *testing.T) {
 	jobs := make(map[types.UID]bool)
 
 	// Watch for job events in the main thread
-	waitForBackendResource(t, name,
+	waitForBackendResource(t, events, name,
 
 		[]func(job stream.BackendResource){
 			func(job stream.BackendResource) {
@@ -128,11 +132,13 @@ func Test_StaticBackfillId(t *testing.T) {
 	var foundBackfillId bool
 	t.Parallel()
 
+	events := watchBackendResources(t)
+
 	// Act
 	name := createTestStreamDefinition(t, false)
 
 	// Watch for job events in the main thread
-	waitForBackendResource(t, name,
+	waitForBackendResource(t, events, name,
 
 		[]func(job stream.BackendResource){
 			func(job stream.BackendResource) {
