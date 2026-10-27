@@ -63,9 +63,14 @@ func (in *BackfillRequest) JobConfigurator() (job.Configurator, error) {
 			WithConfigurator(job.NewRunModeConfigurator(job.RunModeStream)).
 			Build(), nil
 	}
+	runMode := job.RunModeBackfill
+	if in.Spec.BackfillType == BackfillTypeMigration {
+		runMode = job.RunModeMigrate
+	}
+
 	configuratorBuilder := job.NewConfiguratorChainBuilder().
 		WithConfigurator(job.NewBackfillConfigurator(true)).
-		WithConfigurator(job.NewRunModeConfigurator(job.RunModeBackfill)).
+		WithConfigurator(job.NewRunModeConfigurator(runMode)).
 		WithConfigurator(job.NewBackfillStaticIdConfigurator(in.Name))
 
 	if in.Spec.Payload != nil {

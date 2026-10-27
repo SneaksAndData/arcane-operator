@@ -13,6 +13,7 @@ import (
 	"github.com/SneaksAndData/arcane-operator/services/controllers/stream/backend/job"
 	"github.com/SneaksAndData/arcane-operator/services/controllers/stream/tests/helpers"
 	helpersv2 "github.com/SneaksAndData/arcane-operator/services/controllers/stream/tests/helpers/v2"
+	jobConfigurator "github.com/SneaksAndData/arcane-operator/services/job"
 	"github.com/SneaksAndData/arcane-operator/tests/mocks"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -249,6 +250,54 @@ func Test_UpdatePhase_Pending_To_Backfilling_no_job(t *testing.T) {
 	// Assert
 	helpers.AssertStreamDefinitionPhase(t, k8sClient, objectName, stream.Backfilling)
 	helpers.AssertJobExists(t, k8sClient, objectName)
+}
+
+func Test_UpdatePhase_Pending_To_Backfilling_no_job_with_backfill_type_data(t *testing.T) {
+	// Arrange
+	builder := helpersv2.NewMockStreamDefinitionLayoutV2Builder(objectName).WithPhase(stream.Pending).WithV2BackfillJobTemplateRef(batchJobTemplateName)
+	resources := helpers.NewFakeClientResourcesBuilder().WithBackfillRequestOfType(objectName, v1.BackfillTypeData)
+	k8sClient := helpers.SetupClientFromBuilders(nil, builder, resources)
+
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+
+	jobBuilder := mocks.NewMockJobBuilder(mockCtrl)
+	jobBuilder.EXPECT().BuildJob(gomock.Any(), gomock.Eq(batchJobTemplateName), gomock.Any()).
+		DoAndReturn(helpers.ConfigureAndReturnJob(objectName)).AnyTimes()
+	reconciler, _ := createReconciler(k8sClient, jobBuilder)
+
+	// Act
+	result, err := reconciler.Reconcile(t.Context(), reconcile.Request{NamespacedName: objectName})
+	require.NoError(t, err)
+	require.Equal(t, result, reconcile.Result{})
+
+	// Assert
+	helpers.AssertStreamDefinitionPhase(t, k8sClient, objectName, stream.Backfilling)
+	helpers.AssertJobEnvVar(t, k8sClient, objectName, "STREAMCONTEXT__RUNMODE", jobConfigurator.RunModeBackfill)
+}
+
+func Test_UpdatePhase_Pending_To_Backfilling_no_job_with_backfill_type_migration(t *testing.T) {
+	// Arrange
+	builder := helpersv2.NewMockStreamDefinitionLayoutV2Builder(objectName).WithPhase(stream.Pending).WithV2BackfillJobTemplateRef(batchJobTemplateName)
+	resources := helpers.NewFakeClientResourcesBuilder().WithBackfillRequestOfType(objectName, v1.BackfillTypeMigration)
+	k8sClient := helpers.SetupClientFromBuilders(nil, builder, resources)
+
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+
+	jobBuilder := mocks.NewMockJobBuilder(mockCtrl)
+	jobBuilder.EXPECT().BuildJob(gomock.Any(), gomock.Eq(batchJobTemplateName), gomock.Any()).
+		DoAndReturn(helpers.ConfigureAndReturnJob(objectName)).AnyTimes()
+	reconciler, _ := createReconciler(k8sClient, jobBuilder)
+
+	// Act
+	result, err := reconciler.Reconcile(t.Context(), reconcile.Request{NamespacedName: objectName})
+	require.NoError(t, err)
+	require.Equal(t, result, reconcile.Result{})
+
+	// Assert
+	helpers.AssertStreamDefinitionPhase(t, k8sClient, objectName, stream.Backfilling)
+	helpers.AssertJobEnvVar(t, k8sClient, objectName, "STREAMCONTEXT__RUNMODE", jobConfigurator.RunModeMigrate)
 }
 
 func Test_UpdatePhase_Pending_To_Backfilling_recreate_job(t *testing.T) {

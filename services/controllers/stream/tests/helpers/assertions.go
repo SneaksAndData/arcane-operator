@@ -50,6 +50,23 @@ func AssertJobNotExists(t *testing.T, k8sClient client.Client, name types.Namesp
 	require.True(t, errors.IsNotFound(err))
 }
 
+func AssertJobEnvVar(t *testing.T, k8sClient client.Client, name types.NamespacedName, envName string, expectedValue string) {
+	newJob := &batchv1.Job{}
+	err := k8sClient.Get(t.Context(), name, newJob)
+	require.NoError(t, err)
+	require.NotEmpty(t, newJob.Spec.Template.Spec.Containers)
+
+	found := false
+	for _, env := range newJob.Spec.Template.Spec.Containers[0].Env {
+		if env.Name == envName {
+			require.Equal(t, expectedValue, env.Value)
+			found = true
+			break
+		}
+	}
+	require.True(t, found, "expected environment variable %s to be set on job %s", envName, name.String())
+}
+
 func AssertJobConfiguration(t *testing.T, k8sClient client.Client, name types.NamespacedName, expectedConfiguration string) {
 	newJob := &batchv1.Job{}
 	err := k8sClient.Get(t.Context(), name, newJob)
