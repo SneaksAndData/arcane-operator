@@ -22,6 +22,8 @@ import (
 func Test_V2_StreamStateTransitionToScheduled(t *testing.T) {
 	t.Parallel()
 
+	events := watchBackendResources(t)
+
 	// Arrange
 	name := configureV2StreamDefinition(t, "v2", func(definition *v2.TestStreamDefinitionV2) {
 		definition.Spec.ExecutionSettings.Suspended = true
@@ -49,7 +51,7 @@ func Test_V2_StreamStateTransitionToScheduled(t *testing.T) {
 	aggregator := make(map[types.UID]stream.BackendResource)
 
 	// Act
-	waitForBackendResource(t, name,
+	waitForBackendResource(t, events, name,
 
 		[]func(job stream.BackendResource){
 			func(backendResource stream.BackendResource) {
@@ -96,6 +98,8 @@ func Test_V2_StreamStateTransitionToScheduled(t *testing.T) {
 func Test_V2_StreamStateTransitionToRunning(t *testing.T) {
 	t.Parallel()
 
+	events := watchBackendResources(t)
+
 	// Arrange
 	name := configureV2StreamDefinition(t, "v2", func(definition *v2.TestStreamDefinitionV2) {
 		definition.Spec.ExecutionSettings.Suspended = true
@@ -116,7 +120,7 @@ func Test_V2_StreamStateTransitionToRunning(t *testing.T) {
 	aggregator := make(map[types.UID]stream.BackendResource)
 
 	// Act
-	waitForBackendResource(t, name,
+	waitForBackendResource(t, events, name,
 
 		[]func(job stream.BackendResource){
 			func(backendResource stream.BackendResource) {
@@ -172,6 +176,8 @@ func Test_V2_StreamStateTransitionToRunning(t *testing.T) {
 func Test_V2_DynamicBackfillId(t *testing.T) {
 	t.Parallel()
 
+	events := watchBackendResources(t)
+
 	// Act
 	name := configureV2StreamDefinition(t, "v2", func(definition *v2.TestStreamDefinitionV2) {
 		definition.Spec.ExecutionSettings.Suspended = true
@@ -189,7 +195,7 @@ func Test_V2_DynamicBackfillId(t *testing.T) {
 	wakeUp(t, name, stream.Scheduled)
 
 	// Watch for job events in the main thread
-	waitForBackendResource(t, name,
+	waitForBackendResource(t, events, name,
 
 		[]func(job stream.BackendResource){
 			validateBackfillInCronJob(t, "true"),
@@ -206,6 +212,8 @@ func Test_V2_DynamicBackfillId(t *testing.T) {
 func Test_V2_RunModeBackfill(t *testing.T) {
 	t.Parallel()
 
+	events := watchBackendResources(t)
+
 	name := configureV2StreamDefinition(t, "v2", func(definition *v2.TestStreamDefinitionV2) {
 		definition.Spec.ExecutionSettings.StreamingBackend.BatchJobBackend = &v2.BatchJobBackend{
 			JobTemplateRef: corev1.ObjectReference{
@@ -221,7 +229,7 @@ func Test_V2_RunModeBackfill(t *testing.T) {
 		}
 	})
 
-	waitForBackendResource(t, name,
+	waitForBackendResource(t, events, name,
 		[]func(job stream.BackendResource){
 			func(backendResource stream.BackendResource) {
 				job, ok := backendResource.ToObject().(*batchv1.Job)
@@ -241,6 +249,8 @@ func Test_V2_RunModeBackfill(t *testing.T) {
 func Test_V2_RunModeStream(t *testing.T) {
 	t.Parallel()
 
+	events := watchBackendResources(t)
+
 	name := configureV2StreamDefinition(t, "v2", func(definition *v2.TestStreamDefinitionV2) {
 		definition.Spec.ExecutionSettings.StreamingBackend.BatchJobBackend = &v2.BatchJobBackend{
 			JobTemplateRef: corev1.ObjectReference{
@@ -256,7 +266,7 @@ func Test_V2_RunModeStream(t *testing.T) {
 		}
 	})
 
-	waitForBackendResource(t, name,
+	waitForBackendResource(t, events, name,
 		[]func(job stream.BackendResource){
 			func(backendResource stream.BackendResource) {
 				if backendResource.IsBackfill() {
