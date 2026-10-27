@@ -29,7 +29,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Get project version
-        uses: SneaksAndData/github-actions/generate_version@v0.1.12
+        uses: SneaksAndData/github-actions/generate_version@v0.1.13
         id: version
 
       - name: Get build number
@@ -81,7 +81,7 @@ jobs:
           platforms: linux/arm64,linux/amd64
 
       - name: Build and Push Chart
-        uses: SneaksAndData/github-actions/build_helm_chart@v0.1.12
+        uses: SneaksAndData/github-actions/build_helm_chart@v0.1.13
         with:
           application: arcane-operator
           app_version: ${{ steps.meta.outputs.version }}

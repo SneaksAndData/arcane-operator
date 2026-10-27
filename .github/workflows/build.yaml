@@ -95,7 +95,7 @@ jobs:
           fetch-depth: 0
 
       - name: Get project version
-        uses: SneaksAndData/github-actions/generate_version@v0.1.12
+        uses: SneaksAndData/github-actions/generate_version@v0.1.13
         id: version
 
       - name: Get build number
