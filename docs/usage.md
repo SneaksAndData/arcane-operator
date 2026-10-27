@@ -20,6 +20,7 @@ Welcome to the Arcane Kubernetes-native data streaming platform! This guide will
   - [Resuming Streams](#resuming-streams)
   - [Deleting Streams](#deleting-streams)
 - [Backfilling Data](#backfilling-data)
+  - [Backfill Types](#backfill-types)
 - [Advanced Configuration](#advanced-configuration)
   - [Resource Limits](#resource-limits)
   - [Environment Variables and Secrets](#environment-variables-and-secrets)
@@ -167,6 +168,12 @@ spec:
   
   # ID/name of the specific stream to backfill
   streamId: my-database-stream
+  
+  # Type of the backfill: "data" (default) reprocesses historical data,
+  # "migration" runs the job in migration mode. This sets the
+  # STREAMCONTEXT__RUNMODE environment variable to "backfill" or "migrate"
+  # respectively on the backfill job.
+  backfillType: data
   
   # Whether the backfill is completed
   completed: false
@@ -410,6 +417,7 @@ metadata:
 spec:
   streamClass: sqlserver-change-tracking-stream
   streamId: orders-stream
+  backfillType: data
   completed: false
 ```
 
@@ -418,6 +426,13 @@ Apply it:
 ```bash
 kubectl apply -f backfill.yaml
 ```
+
+### Backfill Types
+
+The `backfillType` field controls how the backfill job is run:
+
+- `data` (default) — reprocesses historical data. The job is started with `STREAMCONTEXT__RUNMODE=backfill`.
+- `migration` — runs the job in migration mode, used when migrating stream state/configuration rather than reprocessing data. The job is started with `STREAMCONTEXT__RUNMODE=migrate`.
 
 ### Monitoring Backfill Progress
 
@@ -628,7 +643,9 @@ Use consistent, descriptive names:
 ```yaml
 # Good
 name: orders-sqlserver-to-datalake-prod
+```
 
+```yaml
 # Avoid
 name: stream1
 ```

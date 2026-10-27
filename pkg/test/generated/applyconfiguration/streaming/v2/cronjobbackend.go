@@ -22,28 +22,28 @@ import (
 	v1 "k8s.io/api/core/v1"
 )
 
-// BatchBackendApplyConfiguration represents a declarative configuration of the BatchBackend type for use
+// CronJobBackendApplyConfiguration represents a declarative configuration of the CronJobBackend type for use
 // with apply.
 //
-// BatchBackend represents the backend configuration for batch processing, including the cron schedule and a reference
+// CronJobBackend represents the backend configuration for batch processing, including the cron schedule and a reference
 // to the job template.
-type BatchBackendApplyConfiguration struct {
+type CronJobBackendApplyConfiguration struct {
 	// Schedule represents the cron schedule for batch processing.
 	Schedule *string `json:"schedule,omitempty"`
 	// JobTemplateRef represents a reference to the job template.
 	JobTemplateRef *v1.ObjectReference `json:"jobTemplateRef,omitempty"`
 }
 
-// BatchBackendApplyConfiguration constructs a declarative configuration of the BatchBackend type for use with
+// CronJobBackendApplyConfiguration constructs a declarative configuration of the CronJobBackend type for use with
 // apply.
-func BatchBackend() *BatchBackendApplyConfiguration {
-	return &BatchBackendApplyConfiguration{}
+func CronJobBackend() *CronJobBackendApplyConfiguration {
+	return &CronJobBackendApplyConfiguration{}
 }
 
 // WithSchedule sets the Schedule field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Schedule field is set to the value of the last call.
-func (b *BatchBackendApplyConfiguration) WithSchedule(value string) *BatchBackendApplyConfiguration {
+func (b *CronJobBackendApplyConfiguration) WithSchedule(value string) *CronJobBackendApplyConfiguration {
 	b.Schedule = &value
 	return b
 }
@@ -51,7 +51,7 @@ func (b *BatchBackendApplyConfiguration) WithSchedule(value string) *BatchBacken
 // WithJobTemplateRef sets the JobTemplateRef field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the JobTemplateRef field is set to the value of the last call.
-func (b *BatchBackendApplyConfiguration) WithJobTemplateRef(value v1.ObjectReference) *BatchBackendApplyConfiguration {
+func (b *CronJobBackendApplyConfiguration) WithJobTemplateRef(value v1.ObjectReference) *CronJobBackendApplyConfiguration {
 	b.JobTemplateRef = &value
 	return b
 }

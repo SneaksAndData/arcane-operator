@@ -34,6 +34,7 @@ metadata:
 spec:
   streamClass: arcane-stream-mock
   streamId: my-stream
+  backfillType: data
 ```
 
 ## My stream has failed and I want to restart it
@@ -54,7 +55,7 @@ gracefully and exits with code 0 or the exit code that returned by the plugin ex
 Currently, if you apply any changes to a stream definition YAML, while there is an **active** backfill request,
 Operator will **restart** the backfill to apply your changes.
 
-This behaviour will be improved once [lock-on](https://github.com/SneaksAndData/arcane-operator/issues/235) is implemented.
+This behavior will be improved once [lock-on](https://github.com/SneaksAndData/arcane-operator/issues/235) is implemented.
 
 ## What happens if I delete a backfill request while the backfill job is running?
 If you delete a backfill request while the backfill job is running, the operator will stop the backfill job 
@@ -75,3 +76,9 @@ to `false`. If you need to re-run the backfill, you **should** delete the existi
 If the backfill job does not have enough resources to complete, you should suspend the stream by setting
 `spec.suspended` to `true`, and then change the backfillJobTemplate in the stream definition to request more resources.
 After that, you can resume the stream by setting `spec.suspended` to `false`.
+
+## I want to run a backfill request in migration mode
+Set `spec.backfillType` to `migration` on the `BackfillRequest` CR (it defaults to `data` when omitted). This causes the
+backfill job to start with the `STREAMCONTEXT__RUNMODE` environment variable set to `migrate` instead of `backfill`,
+which plugins can use to run migration logic instead of reprocessing historical data.
+
