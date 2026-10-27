@@ -40,34 +40,36 @@ func Test_StreamStateTransitionToScheduled(t *testing.T) {
 	// Act
 	waitForBackendResource(t, name,
 
-		func(backendResource stream.BackendResource) {
+		[]func(job stream.BackendResource){
+			func(backendResource stream.BackendResource) {
 
-			testStream, err := streamingClientSet.
-				StreamingV2().
-				TestStreamDefinitionV2s("default").
-				Get(t.Context(), name, metav1.GetOptions{})
-			require.NoError(t, err, "Failed to get TestStreamDefinition for update")
+				testStream, err := streamingClientSet.
+					StreamingV2().
+					TestStreamDefinitionV2s("default").
+					Get(t.Context(), name, metav1.GetOptions{})
+				require.NoError(t, err, "Failed to get TestStreamDefinition for update")
 
-			switch stream.Phase(testStream.Status.Phase) {
-			case stream.Running:
-				t.Logf("TestStreamDefinition %s/%s is in Running phase, waiting for Scheduled phase", testStream.Namespace, testStream.Name)
-				updateStream(t, name, func(definition *v2.TestStreamDefinitionV2) {
-					definition.Spec.ExecutionSettings.StreamingBackend.BatchJobBackend = nil
-					definition.Spec.ExecutionSettings.StreamingBackend.CronJobBackend = &v2.CronJobBackend{
-						Schedule: "*/1 * * * *",
-						JobTemplateRef: corev1.ObjectReference{
-							Kind:      "StreamingJobTemplate",
-							Name:      "arcane-stream-mock",
-							Namespace: "default",
-						},
-					}
-				})
+				switch stream.Phase(testStream.Status.Phase) {
+				case stream.Running:
+					t.Logf("TestStreamDefinition %s/%s is in Running phase, waiting for Scheduled phase", testStream.Namespace, testStream.Name)
+					updateStream(t, name, func(definition *v2.TestStreamDefinitionV2) {
+						definition.Spec.ExecutionSettings.StreamingBackend.BatchJobBackend = nil
+						definition.Spec.ExecutionSettings.StreamingBackend.CronJobBackend = &v2.CronJobBackend{
+							Schedule: "*/1 * * * *",
+							JobTemplateRef: corev1.ObjectReference{
+								Kind:      "StreamingJobTemplate",
+								Name:      "arcane-stream-mock",
+								Namespace: "default",
+							},
+						}
+					})
 
-				aggregator[backendResource.UID()] = backendResource
-			default:
-				t.Logf("TestStreamDefinition %s/%s is in unexpected phase %s, waiting for Scheduled phase", testStream.Namespace, testStream.Name, testStream.Status.Phase)
-				aggregator[backendResource.UID()] = backendResource
-			}
+					aggregator[backendResource.UID()] = backendResource
+				default:
+					t.Logf("TestStreamDefinition %s/%s is in unexpected phase %s, waiting for Scheduled phase", testStream.Namespace, testStream.Name, testStream.Status.Phase)
+					aggregator[backendResource.UID()] = backendResource
+				}
+			},
 		},
 
 		func(backendResource stream.BackendResource) bool {
@@ -105,37 +107,39 @@ func Test_StreamStateTransitionToRunning(t *testing.T) {
 	// Act
 	waitForBackendResource(t, name,
 
-		func(backendResource stream.BackendResource) {
+		[]func(job stream.BackendResource){
+			func(backendResource stream.BackendResource) {
 
-			testStream, err := streamingClientSet.
-				StreamingV2().
-				TestStreamDefinitionV2s("default").
-				Get(t.Context(), name, metav1.GetOptions{})
-			require.NoError(t, err, "Failed to get TestStreamDefinition for update")
+				testStream, err := streamingClientSet.
+					StreamingV2().
+					TestStreamDefinitionV2s("default").
+					Get(t.Context(), name, metav1.GetOptions{})
+				require.NoError(t, err, "Failed to get TestStreamDefinition for update")
 
-			switch stream.Phase(testStream.Status.Phase) {
-			case stream.Scheduled:
-				t.Logf("TestStreamDefinition %s/%s is in Running phase, waiting for Scheduled phase", testStream.Namespace, testStream.Name)
-				updateStream(t, name, func(definition *v2.TestStreamDefinitionV2) {
-					definition.Spec.ExecutionSettings.LayoutVersion = "v1"
-					definition.Spec.ExecutionSettings.StreamingBackend.CronJobBackend = nil
-					definition.Spec.ExecutionSettings.StreamingBackend.BatchJobBackend = &v2.BatchJobBackend{
-						JobTemplateRef: corev1.ObjectReference{
-							APIVersion: "streaming.sneaksanddata.com/v1",
-							Kind:       "StreamingJobTemplate",
-							Name:       "arcane-stream-mock",
-							Namespace:  "default",
-						},
-					}
-				})
+				switch stream.Phase(testStream.Status.Phase) {
+				case stream.Scheduled:
+					t.Logf("TestStreamDefinition %s/%s is in Running phase, waiting for Scheduled phase", testStream.Namespace, testStream.Name)
+					updateStream(t, name, func(definition *v2.TestStreamDefinitionV2) {
+						definition.Spec.ExecutionSettings.LayoutVersion = "v1"
+						definition.Spec.ExecutionSettings.StreamingBackend.CronJobBackend = nil
+						definition.Spec.ExecutionSettings.StreamingBackend.BatchJobBackend = &v2.BatchJobBackend{
+							JobTemplateRef: corev1.ObjectReference{
+								APIVersion: "streaming.sneaksanddata.com/v1",
+								Kind:       "StreamingJobTemplate",
+								Name:       "arcane-stream-mock",
+								Namespace:  "default",
+							},
+						}
+					})
 
-				aggregator[backendResource.UID()] = backendResource
-				return
-			default:
-				t.Logf("TestStreamDefinition %s/%s is in unexpected phase %s, waiting for Scheduled phase", testStream.Namespace, testStream.Name, testStream.Status.Phase)
-				aggregator[backendResource.UID()] = backendResource
-				return
-			}
+					aggregator[backendResource.UID()] = backendResource
+					return
+				default:
+					t.Logf("TestStreamDefinition %s/%s is in unexpected phase %s, waiting for Scheduled phase", testStream.Namespace, testStream.Name, testStream.Status.Phase)
+					aggregator[backendResource.UID()] = backendResource
+					return
+				}
+			},
 		},
 
 		func(backendResource stream.BackendResource) bool {
@@ -150,9 +154,6 @@ func Test_StreamStateTransitionToRunning(t *testing.T) {
 // Test_DynamicBackfillId verifies that the backfill job contains the correct backfill ID in its environment variables.
 func Test_DynamicBackfillId(t *testing.T) {
 	t.Parallel()
-
-	// Arrange
-	var foundBackfillId bool
 
 	// Act
 	name := configureV2StreamDefinition(t, "v1", func(definition *v2.TestStreamDefinitionV2) {
@@ -172,24 +173,9 @@ func Test_DynamicBackfillId(t *testing.T) {
 
 	// Watch for job events in the main thread
 	waitForBackendResource(t, name,
-
-		func(job stream.BackendResource) {
-			_, ok := job.ToObject().(*batchv1.CronJob)
-			require.True(t, ok, "Expected a Job resource for a job")
-			envVars := job.ToObject().(*batchv1.CronJob).Spec.JobTemplate.Spec.Template.Spec.Containers[0].Env
-			var backfillId string
-			for _, envVar := range envVars {
-				if envVar.Name == "STREAMCONTEXT__BACKFILL" {
-					require.Equal(t, "true", envVar.Value)
-				}
-				if envVar.Name == "STREAMCONTEXT__BACKFILL_ID" {
-					backfillId = envVar.ValueFrom.FieldRef.FieldPath
-					// The value should be set from the job's metadata.labels['job-name']
-					require.Equal(t, "metadata.labels['job-name']", backfillId,
-						"Expected STREAMCONTEXT__BACKFILL_ID to be sourced from job labels")
-					foundBackfillId = true
-				}
-			}
+		[]func(job stream.BackendResource){
+			validateBackfillInCronJob(t, "true"),
+			validateBackfillId(t),
 		},
 
 		func(backendResource stream.BackendResource) bool {
@@ -197,5 +183,4 @@ func Test_DynamicBackfillId(t *testing.T) {
 			return ok
 		})
 
-	require.True(t, foundBackfillId, "Expected to find a backfill job with STREAMCONTEXT__BACKFILL_ID environment variable")
 }

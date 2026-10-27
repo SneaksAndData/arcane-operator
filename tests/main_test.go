@@ -179,7 +179,7 @@ func createManager(ctx context.Context, g *errgroup.Group) (manager.Manager, err
 	return mgr, nil
 }
 
-func waitForBackendResource(t *testing.T, name string, handleEvent func(job stream.BackendResource), isCompleted func(job stream.BackendResource) bool) {
+func waitForBackendResource(t *testing.T, name string, handleEvents []func(job stream.BackendResource), isCompleted func(job stream.BackendResource) bool) {
 	jobClient := clientSet.BatchV1().Jobs("")
 	require.NotNil(t, jobClient)
 
@@ -225,7 +225,9 @@ func waitForBackendResource(t *testing.T, name string, handleEvent func(job stre
 				continue
 			}
 
-			handleEvent(resource)
+			for _, handleEvent := range handleEvents {
+				handleEvent(resource)
+			}
 			if isCompleted(resource) {
 				t.Log("Job is isCompleted, stopping jobWatcher")
 				return

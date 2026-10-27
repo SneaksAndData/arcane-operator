@@ -35,6 +35,7 @@ func (c *ConfiguratorProvider) JobConfigurator() (job.Configurator, error) { // 
 	if c.parent.GetBackend() == stream.CronJob {
 		configuratorBuilder = configuratorBuilder.
 			WithConfigurator(job.NewBackfillConfigurator(true)).
+			WithConfigurator(job.NewRunModeConfigurator(job.RunModeBackfill)).
 			WithConfigurator(job.NewBackfillDynamicIdConfigurator())
 	}
 
