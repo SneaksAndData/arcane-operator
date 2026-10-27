@@ -29,8 +29,10 @@ func Test_CreateStream(t *testing.T) {
 	// Watch for job events in the main thread
 	waitForBackendResource(t, name,
 
-		func(job stream.BackendResource) {
-			jobs[job.UID()] = job.IsBackfill()
+		[]func(job stream.BackendResource){
+			func(job stream.BackendResource) {
+				jobs[job.UID()] = job.IsBackfill()
+			},
 		},
 
 		func(job stream.BackendResource) bool {
@@ -71,8 +73,10 @@ func Test_CreateFailedStream(t *testing.T) {
 	// Watch for job events in the main thread
 	waitForBackendResource(t, name,
 
-		func(job stream.BackendResource) {
-			jobs[job.UID()] = job.IsFailed()
+		[]func(job stream.BackendResource){
+			func(job stream.BackendResource) {
+				jobs[job.UID()] = job.IsFailed()
+			},
 		},
 
 		func(job stream.BackendResource) bool {
@@ -130,34 +134,36 @@ func Test_StaticBackfillId(t *testing.T) {
 	// Watch for job events in the main thread
 	waitForBackendResource(t, name,
 
-		func(job stream.BackendResource) {
-			_, ok := job.ToObject().(*batchv1.Job)
-			require.True(t, ok, "Expected a Job resource for a job")
-			envVars := job.ToObject().(*batchv1.Job).Spec.Template.Spec.Containers[0].Env
-			var backfillId string
-			var backfillValue string
-			for _, envVar := range envVars {
-				if envVar.Name == "STREAMCONTEXT__BACKFILL_ID" {
-					backfillId = envVar.Value
+		[]func(job stream.BackendResource){
+			func(job stream.BackendResource) {
+				_, ok := job.ToObject().(*batchv1.Job)
+				require.True(t, ok, "Expected a Job resource for a job")
+				envVars := job.ToObject().(*batchv1.Job).Spec.Template.Spec.Containers[0].Env
+				var backfillId string
+				var backfillValue string
+				for _, envVar := range envVars {
+					if envVar.Name == "STREAMCONTEXT__BACKFILL_ID" {
+						backfillId = envVar.Value
+					}
+					if envVar.Name == "STREAMCONTEXT__BACKFILL" {
+						backfillValue = envVar.Value
+					}
 				}
-				if envVar.Name == "STREAMCONTEXT__BACKFILL" {
-					backfillValue = envVar.Value
+
+				if job.IsBackfill() {
+					require.Equal(t, "true", backfillValue, "Backfill job should have STREAMCONTEXT__BACKFILL environment variable set to 'true'")
+				} else {
+					require.Equal(t, "false", backfillValue, "Streaming job should have STREAMCONTEXT__BACKFILL environment variable set to 'false'")
 				}
-			}
 
-			if job.IsBackfill() {
-				require.Equal(t, "true", backfillValue, "Backfill job should have STREAMCONTEXT__BACKFILL environment variable set to 'true'")
-			} else {
-				require.Equal(t, "false", backfillValue, "Streaming job should have STREAMCONTEXT__BACKFILL environment variable set to 'false'")
-			}
-
-			if job.IsBackfill() {
-				foundBackfillId = true
-				require.NotEmpty(t, backfillId, "Expected STREAMCONTEXT__BACKFILL_ID environment variable to be set in backfill job")
-				t.Logf("Backfill job has STREAMCONTEXT__BACKFILL_ID: %s", backfillId)
-			} else {
-				require.Empty(t, backfillId, "Expected STREAMCONTEXT__BACKFILL_ID environment variable to be empty in regular job")
-			}
+				if job.IsBackfill() {
+					foundBackfillId = true
+					require.NotEmpty(t, backfillId, "Expected STREAMCONTEXT__BACKFILL_ID environment variable to be set in backfill job")
+					t.Logf("Backfill job has STREAMCONTEXT__BACKFILL_ID: %s", backfillId)
+				} else {
+					require.Empty(t, backfillId, "Expected STREAMCONTEXT__BACKFILL_ID environment variable to be empty in regular job")
+				}
+			},
 		},
 
 		func(job stream.BackendResource) bool {

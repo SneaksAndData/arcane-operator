@@ -16,6 +16,6 @@ exclude:
     - ^pkg/apis/           # exclude API definitions
     - ^pkg/signals         # exclude signal handlers from sample controller
     - hack/*.go            # exclude hack folder
-    - tests/mocks          # exclude mocks
+    - ^tests/              # we don't collect coverage from integration tests
     - main.go              # application entry point
     - telemetry/app_metrics.go # telemetry initialization code

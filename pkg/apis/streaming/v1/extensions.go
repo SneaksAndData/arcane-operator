@@ -60,10 +60,12 @@ func (in *BackfillRequest) JobConfigurator() (job.Configurator, error) {
 	if in == nil {
 		return job.NewConfiguratorChainBuilder().
 			WithConfigurator(job.NewBackfillConfigurator(false)).
+			WithConfigurator(job.NewRunModeConfigurator(job.RunModeStream)).
 			Build(), nil
 	}
 	configuratorBuilder := job.NewConfiguratorChainBuilder().
 		WithConfigurator(job.NewBackfillConfigurator(true)).
+		WithConfigurator(job.NewRunModeConfigurator(job.RunModeBackfill)).
 		WithConfigurator(job.NewBackfillStaticIdConfigurator(in.Name))
 
 	if in.Spec.Payload != nil {
