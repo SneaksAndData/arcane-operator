@@ -226,7 +226,7 @@ func Test_GetStreamingJobName(t *testing.T) {
 
 	// Assert
 	name := types.NamespacedName{Name: "jobTemplate1", Namespace: "default"}
-	require.Equal(t, name, wrapper.GetJobTemplate(nil))
+	require.Equal(t, name, wrapper.GetJobTemplate(nil, nil))
 }
 
 func Test_GetBackfillJobName(t *testing.T) {
@@ -254,7 +254,7 @@ func Test_GetBackfillJobName(t *testing.T) {
 	name := types.NamespacedName{Name: "backfillJobTemplate1", Namespace: "default"}
 	require.Equal(t, name, wrapper.GetJobTemplate(&v1.BackfillRequest{Spec: v1.BackfillRequestSpec{
 		BackfillType: v1.BackfillTypeData,
-	}}))
+	}}, nil))
 }
 
 func Test_ToOwnerReference(t *testing.T) {

@@ -98,7 +98,7 @@ func (e *ExecutionSettingsWrapper) StateString() string {
 	return fmt.Sprintf("phase=%s", phase)
 }
 
-func (e *ExecutionSettingsWrapper) GetJobTemplate(request *v1.BackfillRequest) types.NamespacedName {
+func (e *ExecutionSettingsWrapper) GetJobTemplate(request *v1.BackfillRequest, eventEmitter stream.EventEmitter) types.NamespacedName {
 	if request != nil {
 		switch request.Spec.BackfillType {
 		case v1.BackfillTypeMigration:
@@ -110,12 +110,18 @@ func (e *ExecutionSettingsWrapper) GetJobTemplate(request *v1.BackfillRequest) t
 			}
 
 			if e.underlyingSpec.ExecutionSettings.StreamingBackend.BatchJobBackend != nil {
+				if eventEmitter != nil {
+					eventEmitter.MigrationJobNameFallback(nil, e.underlyingSpec.ExecutionSettings.StreamingBackend.BatchJobBackend.BackfillJobTemplateRef)
+				}
 				return types.NamespacedName{
 					Name:      e.underlyingSpec.ExecutionSettings.StreamingBackend.BatchJobBackend.BackfillJobTemplateRef.Name,
 					Namespace: e.underlyingSpec.ExecutionSettings.StreamingBackend.BatchJobBackend.BackfillJobTemplateRef.Namespace,
 				}
 			}
 
+			if eventEmitter != nil {
+				eventEmitter.MigrationJobNameFallback(nil, &e.underlyingSpec.ExecutionSettings.StreamingBackend.CronJobBackend.JobTemplateRef)
+			}
 			return types.NamespacedName{
 				Name:      e.underlyingSpec.ExecutionSettings.StreamingBackend.CronJobBackend.JobTemplateRef.Name,
 				Namespace: e.underlyingSpec.ExecutionSettings.StreamingBackend.CronJobBackend.JobTemplateRef.Namespace,

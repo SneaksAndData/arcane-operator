@@ -72,7 +72,7 @@ func (u *UnstructuredWrapper) StateString() string {
 	return fmt.Sprintf("phase=%s", phase)
 }
 
-func (u *UnstructuredWrapper) GetJobTemplate(request *v1.BackfillRequest) types.NamespacedName {
+func (u *UnstructuredWrapper) GetJobTemplate(request *v1.BackfillRequest, _ stream.EventEmitter) types.NamespacedName {
 	if request == nil {
 		namespace := u.streamingJobRef.Namespace
 		if namespace == "" { // coverage-ignore
