@@ -82,3 +82,7 @@ Set `spec.backfillType` to `migration` on the `BackfillRequest` CR (it defaults 
 backfill job to start with the `STREAMCONTEXT__RUNMODE` environment variable set to `migrate` instead of `backfill`,
 which plugins can use to run migration logic instead of reprocessing historical data.
 
+If the stream definition sets `migrationJobTemplateRef`, the migration job is built from that template instead of the 
+regular `backfillJobTemplateRef`. If `migrationJobTemplateRef` is not set, the operator falls back to the stream's 
+regular backfill job template.
+

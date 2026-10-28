@@ -159,6 +159,16 @@ func (b *MockStreamDefinitionBuilder) WithV2BackfillJobTemplateRef(name types.Na
 	return b
 }
 
+// WithMigrationJobTemplateRef sets the job template reference for the batch job backend,
+// initializing the batch job backend if it is currently nil.
+func (b *MockStreamDefinitionBuilder) WithMigrationJobTemplateRef(name types.NamespacedName) *MockStreamDefinitionBuilder {
+	b.definition.Spec.ExecutionSettings.MigrationJobTemplateRef = &corev1.ObjectReference{
+		Name:      name.Name,
+		Namespace: name.Namespace,
+	}
+	return b
+}
+
 // Apply runs an arbitrary mutation function on the underlying definition.
 // This allows composing the builder with the existing functional-option style
 // helpers in this package.

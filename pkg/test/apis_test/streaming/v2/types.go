@@ -50,6 +50,9 @@ type ExecutionSettings struct {
 
 	// StreamingBackend represents the backend configuration for streaming.
 	StreamingBackend StreamingBackend `json:"streamingBackend"`
+
+	// MigrationJobTemplateRef represents a reference to the migration job template.
+	MigrationJobTemplateRef *v1.ObjectReference `json:"migrationJobTemplateRef,omitempty"`
 }
 
 // MockStreamDefinitionSpec is a mock implementation of the StreamDefinitionSpec for testing purposes.

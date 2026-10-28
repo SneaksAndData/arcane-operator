@@ -30,6 +30,7 @@ var objectName = types.NamespacedName{Name: "stream1", Namespace: "default"}
 var streamingJobTemplateName = types.NamespacedName{Name: "streaming-template", Namespace: "default"}
 var backfillJobTemplateName = types.NamespacedName{Name: "backfill-template", Namespace: "default"}
 var batchJobTemplateName = types.NamespacedName{Name: "batch-template", Namespace: "default"}
+var migrationJobTemplateName = types.NamespacedName{Name: "migration-template", Namespace: "default"}
 
 func Test_UpdatePhase_New_To_Suspended(t *testing.T) {
 	// Arrange
@@ -276,9 +277,97 @@ func Test_UpdatePhase_Pending_To_Backfilling_no_job_with_backfill_type_data(t *t
 	helpers.AssertJobEnvVar(t, k8sClient, objectName, "STREAMCONTEXT__RUNMODE", jobConfigurator.RunModeBackfill)
 }
 
-func Test_UpdatePhase_Pending_To_Backfilling_no_job_with_backfill_type_migration(t *testing.T) {
+func Test_UpdatePhase_Pending_To_Backfilling_backfill_type_migration(t *testing.T) {
 	// Arrange
-	builder := helpersv2.NewMockStreamDefinitionLayoutV2Builder(objectName).WithPhase(stream.Pending).WithV2BackfillJobTemplateRef(batchJobTemplateName)
+	builder := helpersv2.NewMockStreamDefinitionLayoutV2Builder(objectName).
+		WithPhase(stream.Pending).
+		WithV2BackfillJobTemplateRef(batchJobTemplateName).
+		WithMigrationJobTemplateRef(migrationJobTemplateName)
+	resources := helpers.NewFakeClientResourcesBuilder().WithBackfillRequestOfType(objectName, v1.BackfillTypeMigration)
+	k8sClient := helpers.SetupClientFromBuilders(nil, builder, resources)
+
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+
+	jobBuilder := mocks.NewMockJobBuilder(mockCtrl)
+	jobBuilder.EXPECT().BuildJob(gomock.Any(), gomock.Eq(migrationJobTemplateName), gomock.Any()).
+		DoAndReturn(helpers.ConfigureAndReturnJob(objectName)).AnyTimes()
+	reconciler, _ := createReconciler(k8sClient, jobBuilder)
+
+	// Act
+	result, err := reconciler.Reconcile(t.Context(), reconcile.Request{NamespacedName: objectName})
+	require.NoError(t, err)
+	require.Equal(t, result, reconcile.Result{})
+
+	// Assert
+	helpers.AssertStreamDefinitionPhase(t, k8sClient, objectName, stream.Backfilling)
+	helpers.AssertJobEnvVar(t, k8sClient, objectName, "STREAMCONTEXT__RUNMODE", jobConfigurator.RunModeMigrate)
+}
+
+func Test_UpdatePhase_Pending_To_Backfilling_backfill_type_migration_with_schedule(t *testing.T) {
+	// Arrange
+	builder := helpersv2.NewMockStreamDefinitionLayoutV2Builder(objectName).
+		WithPhase(stream.Pending).
+		WithSuspendedSpec(false).
+		WithSchedule("* * * * *").
+		WithScheduledJobTemplateRef(batchJobTemplateName).
+		WithMigrationJobTemplateRef(migrationJobTemplateName)
+
+	resources := helpers.NewFakeClientResourcesBuilder().WithBackfillRequestOfType(objectName, v1.BackfillTypeMigration)
+	k8sClient := helpers.SetupClientFromBuilders(nil, builder, resources)
+
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+
+	jobBuilder := mocks.NewMockJobBuilder(mockCtrl)
+	jobBuilder.EXPECT().BuildJob(gomock.Any(), gomock.Eq(migrationJobTemplateName), gomock.Any()).
+		DoAndReturn(helpers.ConfigureAndReturnJob(objectName)).AnyTimes()
+	reconciler, _ := createReconciler(k8sClient, jobBuilder)
+
+	// Act
+	result, err := reconciler.Reconcile(t.Context(), reconcile.Request{NamespacedName: objectName})
+	require.NoError(t, err)
+	require.Equal(t, result, reconcile.Result{})
+
+	// Assert
+	helpers.AssertStreamDefinitionPhase(t, k8sClient, objectName, stream.Backfilling)
+	helpers.AssertJobEnvVar(t, k8sClient, objectName, "STREAMCONTEXT__RUNMODE", jobConfigurator.RunModeMigrate)
+}
+
+func Test_UpdatePhase_Pending_To_Backfilling_no_job_with_backfill_type_migration_template_fallback(t *testing.T) {
+	// Arrange
+	builder := helpersv2.NewMockStreamDefinitionLayoutV2Builder(objectName).
+		WithPhase(stream.Pending).
+		WithV2BackfillJobTemplateRef(batchJobTemplateName)
+	resources := helpers.NewFakeClientResourcesBuilder().WithBackfillRequestOfType(objectName, v1.BackfillTypeMigration)
+	k8sClient := helpers.SetupClientFromBuilders(nil, builder, resources)
+
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+
+	jobBuilder := mocks.NewMockJobBuilder(mockCtrl)
+	jobBuilder.EXPECT().BuildJob(gomock.Any(), gomock.Eq(batchJobTemplateName), gomock.Any()).
+		DoAndReturn(helpers.ConfigureAndReturnJob(objectName)).AnyTimes()
+	reconciler, _ := createReconciler(k8sClient, jobBuilder)
+
+	// Act
+	result, err := reconciler.Reconcile(t.Context(), reconcile.Request{NamespacedName: objectName})
+	require.NoError(t, err)
+	require.Equal(t, result, reconcile.Result{})
+
+	// Assert
+	helpers.AssertStreamDefinitionPhase(t, k8sClient, objectName, stream.Backfilling)
+	helpers.AssertJobEnvVar(t, k8sClient, objectName, "STREAMCONTEXT__RUNMODE", jobConfigurator.RunModeMigrate)
+}
+
+func Test_UpdatePhase_Pending_To_Backfilling_backfill_type_migration_with_schedule_fallback(t *testing.T) {
+	// Arrange
+	builder := helpersv2.NewMockStreamDefinitionLayoutV2Builder(objectName).
+		WithPhase(stream.Pending).
+		WithSuspendedSpec(false).
+		WithSchedule("* * * * *").
+		WithScheduledJobTemplateRef(batchJobTemplateName)
+
 	resources := helpers.NewFakeClientResourcesBuilder().WithBackfillRequestOfType(objectName, v1.BackfillTypeMigration)
 	k8sClient := helpers.SetupClientFromBuilders(nil, builder, resources)
 
@@ -928,7 +1017,7 @@ func Test_UpdatePhase_Scheduled_to_Suspended(t *testing.T) {
 	helpers.AssertCronJobNotExists(t, k8sClient, objectName)
 }
 
-func Test_UpdatePhase_Scheduled_to_Backfilling(t *testing.T) {
+func Test_UpdatePhase_Scheduled_to_Pending(t *testing.T) {
 	// Arrange
 	builder := helpersv2.NewMockStreamDefinitionLayoutV2Builder(objectName).WithPhase(stream.Scheduled).WithSuspendedSpec(false).WithSchedule("* * * * *")
 	k8sClient := helpers.SetupClientFromBuilders(nil, builder, helpers.NewFakeClientResourcesBuilder().WithBackfillRequest(objectName))

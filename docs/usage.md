@@ -434,6 +434,12 @@ The `backfillType` field controls how the backfill job is run:
 - `data` (default) — reprocesses historical data. The job is started with `STREAMCONTEXT__RUNMODE=backfill`.
 - `migration` — runs the job in migration mode, used when migrating stream state/configuration rather than reprocessing data. The job is started with `STREAMCONTEXT__RUNMODE=migrate`.
 
+> [!NOTE]
+> Plugins that define a dedicated `migrationJobTemplateRef` to run migration backfills with a different job template 
+> than regular data backfills. If `migrationJobTemplateRef` is not set, the operator falls back to the stream's regular 
+> backfill job template (`backfillJobTemplateRef`). Cron-based migration backfills use the same job template as regular 
+> backfills if `migrationJobTemplateRef` is not set.
+
 ### Monitoring Backfill Progress
 
 ```bash
