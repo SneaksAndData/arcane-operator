@@ -97,7 +97,7 @@ func (e *ExecutionSettingsWrapper) StateString() string {
 	return fmt.Sprintf("phase=%s", phase)
 }
 
-func (e *ExecutionSettingsWrapper) GetJobTemplate(request *v1.BackfillRequest) types.NamespacedName {
+func (e *ExecutionSettingsWrapper) GetJobTemplate(request *v1.BackfillRequest, _ stream.EventEmitter) types.NamespacedName {
 	if request != nil {
 		return types.NamespacedName{
 			Name:      e.underlyingSpec.ExecutionSettings.BackfillJobTemplateRef.Name,

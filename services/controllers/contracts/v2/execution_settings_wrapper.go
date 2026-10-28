@@ -40,9 +40,10 @@ type StreamingBackendSettings struct {
 }
 
 type ExecutionSettings struct {
-	Suspended        bool                     `json:"suspended"`
-	LayoutVersion    string                   `json:"layoutVersion"`
-	StreamingBackend StreamingBackendSettings `json:"streamingBackend"`
+	Suspended               bool                     `json:"suspended"`
+	LayoutVersion           string                   `json:"layoutVersion"`
+	StreamingBackend        StreamingBackendSettings `json:"streamingBackend"`
+	MigrationJobTemplateRef *corev1.ObjectReference  `json:"migrationJobTemplateRef,omitempty"`
 }
 
 type ExecutionSettingsWrapper struct {
@@ -97,11 +98,47 @@ func (e *ExecutionSettingsWrapper) StateString() string {
 	return fmt.Sprintf("phase=%s", phase)
 }
 
-func (e *ExecutionSettingsWrapper) GetJobTemplate(request *v1.BackfillRequest) types.NamespacedName {
+func (e *ExecutionSettingsWrapper) GetJobTemplate(request *v1.BackfillRequest, eventEmitter stream.EventEmitter) types.NamespacedName {
 	if request != nil {
-		return types.NamespacedName{
-			Name:      e.underlyingSpec.ExecutionSettings.StreamingBackend.BatchJobBackend.BackfillJobTemplateRef.Name,
-			Namespace: e.underlyingSpec.ExecutionSettings.StreamingBackend.BatchJobBackend.BackfillJobTemplateRef.Namespace,
+		switch request.Spec.BackfillType {
+		case v1.BackfillTypeMigration:
+			if e.underlyingSpec.ExecutionSettings.MigrationJobTemplateRef != nil {
+				return types.NamespacedName{
+					Name:      e.underlyingSpec.ExecutionSettings.MigrationJobTemplateRef.Name,
+					Namespace: e.underlyingSpec.ExecutionSettings.MigrationJobTemplateRef.Namespace,
+				}
+			}
+
+			if e.underlyingSpec.ExecutionSettings.StreamingBackend.BatchJobBackend != nil {
+				if eventEmitter != nil {
+					eventEmitter.MigrationJobNameFallback(e.Underlying, e.underlyingSpec.ExecutionSettings.StreamingBackend.BatchJobBackend.BackfillJobTemplateRef)
+				}
+				return types.NamespacedName{
+					Name:      e.underlyingSpec.ExecutionSettings.StreamingBackend.BatchJobBackend.BackfillJobTemplateRef.Name,
+					Namespace: e.underlyingSpec.ExecutionSettings.StreamingBackend.BatchJobBackend.BackfillJobTemplateRef.Namespace,
+				}
+			}
+
+			if eventEmitter != nil {
+				eventEmitter.MigrationJobNameFallback(e.Underlying, &e.underlyingSpec.ExecutionSettings.StreamingBackend.CronJobBackend.JobTemplateRef)
+			}
+			return types.NamespacedName{
+				Name:      e.underlyingSpec.ExecutionSettings.StreamingBackend.CronJobBackend.JobTemplateRef.Name,
+				Namespace: e.underlyingSpec.ExecutionSettings.StreamingBackend.CronJobBackend.JobTemplateRef.Namespace,
+			}
+
+		case v1.BackfillTypeData:
+			if e.underlyingSpec.ExecutionSettings.StreamingBackend.BatchJobBackend != nil {
+				return types.NamespacedName{
+					Name:      e.underlyingSpec.ExecutionSettings.StreamingBackend.BatchJobBackend.BackfillJobTemplateRef.Name,
+					Namespace: e.underlyingSpec.ExecutionSettings.StreamingBackend.BatchJobBackend.BackfillJobTemplateRef.Namespace,
+				}
+			}
+
+			return types.NamespacedName{
+				Name:      e.underlyingSpec.ExecutionSettings.StreamingBackend.CronJobBackend.JobTemplateRef.Name,
+				Namespace: e.underlyingSpec.ExecutionSettings.StreamingBackend.CronJobBackend.JobTemplateRef.Namespace,
+			}
 		}
 	}
 

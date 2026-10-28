@@ -40,9 +40,9 @@ func (j *BaseResourceManager) BuildJob(ctx context.Context, definition stream.De
 
 	var templateReference types.NamespacedName
 	if forceStreamingTemplate {
-		templateReference = definition.GetJobTemplate(nil)
+		templateReference = definition.GetJobTemplate(nil, NewBackendEventEmitter(j.EventRecorder))
 	} else {
-		templateReference = definition.GetJobTemplate(request)
+		templateReference = definition.GetJobTemplate(request, NewBackendEventEmitter(j.EventRecorder))
 	}
 
 	streamConfiguration, err := definition.CurrentConfiguration(request)

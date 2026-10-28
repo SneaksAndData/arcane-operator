@@ -71,7 +71,7 @@ type Definition interface {
 	ToOwnerReference() metav1.OwnerReference
 
 	// GetJobTemplate returns the job template reference based on the stream definition and backfill request.
-	GetJobTemplate(request *v1.BackfillRequest) types.NamespacedName
+	GetJobTemplate(request *v1.BackfillRequest, eventEmitter EventEmitter) types.NamespacedName
 
 	// SetConditions returns the current conditions of the stream definition.
 	SetConditions(conditions []metav1.Condition) error
