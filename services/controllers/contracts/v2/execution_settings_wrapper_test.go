@@ -252,7 +252,9 @@ func Test_GetBackfillJobName(t *testing.T) {
 
 	// Assert
 	name := types.NamespacedName{Name: "backfillJobTemplate1", Namespace: "default"}
-	require.Equal(t, name, wrapper.GetJobTemplate(&v1.BackfillRequest{}))
+	require.Equal(t, name, wrapper.GetJobTemplate(&v1.BackfillRequest{Spec: v1.BackfillRequestSpec{
+		BackfillType: v1.BackfillTypeData,
+	}}))
 }
 
 func Test_ToOwnerReference(t *testing.T) {
