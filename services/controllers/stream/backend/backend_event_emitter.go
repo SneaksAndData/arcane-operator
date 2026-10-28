@@ -22,6 +22,6 @@ func NewBackendEventEmitter(eventRecorder record.EventRecorder) *EventEmitter {
 func (b EventEmitter) MigrationJobNameFallback(object runtime.Object, usedJob *corev1.ObjectReference) {
 	b.eventRecorder.Eventf(object, "Warning",
 		"MigrationFallback",
-		"Migration job not found, falling back to %s", usedJob)
+		"Migration job not found, falling back to %s/%s", usedJob.Namespace, usedJob.Name)
 
 }

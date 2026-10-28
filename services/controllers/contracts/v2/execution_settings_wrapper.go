@@ -111,7 +111,7 @@ func (e *ExecutionSettingsWrapper) GetJobTemplate(request *v1.BackfillRequest, e
 
 			if e.underlyingSpec.ExecutionSettings.StreamingBackend.BatchJobBackend != nil {
 				if eventEmitter != nil {
-					eventEmitter.MigrationJobNameFallback(nil, e.underlyingSpec.ExecutionSettings.StreamingBackend.BatchJobBackend.BackfillJobTemplateRef)
+					eventEmitter.MigrationJobNameFallback(e.Underlying, e.underlyingSpec.ExecutionSettings.StreamingBackend.BatchJobBackend.BackfillJobTemplateRef)
 				}
 				return types.NamespacedName{
 					Name:      e.underlyingSpec.ExecutionSettings.StreamingBackend.BatchJobBackend.BackfillJobTemplateRef.Name,
@@ -120,7 +120,7 @@ func (e *ExecutionSettingsWrapper) GetJobTemplate(request *v1.BackfillRequest, e
 			}
 
 			if eventEmitter != nil {
-				eventEmitter.MigrationJobNameFallback(nil, &e.underlyingSpec.ExecutionSettings.StreamingBackend.CronJobBackend.JobTemplateRef)
+				eventEmitter.MigrationJobNameFallback(e.Underlying, &e.underlyingSpec.ExecutionSettings.StreamingBackend.CronJobBackend.JobTemplateRef)
 			}
 			return types.NamespacedName{
 				Name:      e.underlyingSpec.ExecutionSettings.StreamingBackend.CronJobBackend.JobTemplateRef.Name,
