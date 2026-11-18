@@ -35,7 +35,7 @@ jobs:
 
 
       - name: Get project version
-        uses: SneaksAndData/github-actions/generate_version@v0.1.13
+        uses: SneaksAndData/github-actions/generate_version@v0.1.14
         id: current_version 
         
       - name: Set up variables
@@ -64,7 +64,7 @@ jobs:
           aws-region: us-east-1
 
       - name: Log in to the GitHub Container Registry
-        uses: docker/login-action@v4.6.0
+        uses: docker/login-action@v4.8.0
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
